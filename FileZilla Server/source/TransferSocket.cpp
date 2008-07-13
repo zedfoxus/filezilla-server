@@ -410,6 +410,9 @@ void CTransferSocket::OnSend(int nErrorCode)
 						{
 							CloseHandle(m_hFile);
 							m_hFile = INVALID_HANDLE_VALUE;
+
+							if (m_waitingForSslHandshake)
+								return;
 						}
 					}
 				}
@@ -525,6 +528,9 @@ void CTransferSocket::OnSend(int nErrorCode)
 
 						if (!m_nBufferPos)
 						{
+							if (m_waitingForSslHandshake)
+								return;
+
 							if (m_pGssLayer || m_pSslLayer)
 								if (!ShutDown() && GetLastError() == WSAEWOULDBLOCK)
 									return;
