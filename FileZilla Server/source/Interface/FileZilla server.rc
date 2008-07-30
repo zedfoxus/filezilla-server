@@ -578,7 +578,7 @@ BEGIN
     LTEXT           "No &Transfer timeout:",IDC_STATIC,13,155,68,8
     EDITTEXT        IDC_TRANSFERTIMEOUT,88,152,41,14,ES_AUTOHSCROLL | 
                     ES_NUMBER
-    LTEXT           "in seconds (1-9999, 0 for no timeout). This value specifies the time a user has to initiate a file transfer.",
+    LTEXT           "in seconds (600-9999, 0 for no timeout). This value specifies the time a user has to initiate a file transfer.",
                     IDC_STATIC,137,148,135,26
     LTEXT           "L&ogin timeout:",IDC_STATIC,13,184,45,8
     EDITTEXT        IDC_LOGINTIMEOUT,88,180,41,14,ES_AUTOHSCROLL | ES_NUMBER

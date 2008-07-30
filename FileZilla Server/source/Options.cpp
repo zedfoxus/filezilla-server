@@ -164,11 +164,16 @@ void COptions::SetOption(int nOptionID, _int64 value)
 			value=2;
 		break;
 	case OPTION_TIMEOUT:
-	case OPTION_NOTRANSFERTIMEOUT:
 		if (value<0)
 			value=120;
 		else if (value>9999)
 			value=120;
+		break;
+	case OPTION_NOTRANSFERTIMEOUT:
+		if (value<600)
+			value=600;
+		else if (value>9999)
+			value=600;
 		break;
 	case OPTION_LOGINTIMEOUT:
 		if (value<0)
