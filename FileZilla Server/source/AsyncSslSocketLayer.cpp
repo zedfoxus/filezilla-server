@@ -563,7 +563,9 @@ void CAsyncSslSocketLayer::OnReceive(int nErrorCode)
 			return;
 		}
 
-		if (ShutDownComplete() && m_nShutDown == 1)
+		if (m_nShutDown == 1)
+			ShutDown();
+		if (ShutDownComplete() && m_nShutDown == 2)
 		{
 			//Send shutdown notification if all pending data has been sent
 			DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_INFO, SSL_INFO_SHUTDOWNCOMPLETE);
@@ -693,7 +695,9 @@ void CAsyncSslSocketLayer::OnSend(int nErrorCode)
 
 		// No more data available, ask for more.
 		TriggerEvents();
-		if (m_nShutDown == 1 && ShutDownComplete())
+		if (m_nShutDown == 1)
+			ShutDown();
+		if (m_nShutDown == 2 && ShutDownComplete())
 		{
 			//Send shutdown notification if all pending data has been sent
 			DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_INFO, SSL_INFO_SHUTDOWNCOMPLETE);
@@ -1171,8 +1175,8 @@ BOOL CAsyncSslSocketLayer::ShutDown(int nHow /*=sends*/)
 			WSASetLastError(WSAEWOULDBLOCK);
 			return false;
 		}
-		if (!m_nShutDown)
-			m_nShutDown = 1;
+		if (m_nShutDown != 2)
+			m_nShutDown = 2;
 		else
 		{
 			if (ShutDownComplete())
@@ -1221,7 +1225,7 @@ BOOL CAsyncSslSocketLayer::ShutDown(int nHow /*=sends*/)
 	else
 	{
 		if (!m_nShutDown)
-			m_nShutDown = 1;
+			m_nShutDown = 2;
 		return ShutDownNext(nHow);
 	}
 }
@@ -1248,8 +1252,8 @@ BOOL CAsyncSslSocketLayer::ShutDownComplete()
 
 	if (pBIO_ctrl_pending(m_nbio))
 		return FALSE;
-	else
-		return TRUE;
+
+	return TRUE;
 }
 
 void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int ret)
