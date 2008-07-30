@@ -89,6 +89,8 @@ CControlSocket::CControlSocket(CServerThread *pOwner)
 
 	for (int i = 0; i < 3; i++)
 		m_facts[i] = true;
+
+	m_shutdown = false;;
 }
 
 CControlSocket::~CControlSocket()
@@ -2736,26 +2738,39 @@ void CControlSocket::ForceClose(int nReason)
 		// does get removed real soon.
 		m_transferstatus.socket->Close();
 		delete m_transferstatus.socket;
-		m_transferstatus.socket=0;
+		m_transferstatus.socket = 0;
 	}
+	if (m_shutdown && nReason == 1)
+	{
+		Close();
+		m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+		return;
+	}
+
 	if (!nReason)
 		Send(_T("421 Server is going offline"));
-	else if (nReason==1)
+	else if (nReason == 1)
 		Send(_T("421 Connection timed out."));
-	else if (nReason==2)
+	else if (nReason == 2)
 		Send(_T("421 No-transfer-time exceeded. Closing control connection."));
-	else if (nReason==3)
+	else if (nReason == 3)
 		Send(_T("421 Login time exceeded. Closing control connection."));
-	else if (nReason==4)
+	else if (nReason == 4)
 		Send(_T("421 Kicked by Administrator"));
-	else if (nReason==5)
+	else if (nReason == 5)
 	{
 		// 221 Goodbye
 	}
 	SendStatus(_T("disconnected."), 0);
+	m_shutdown = true;
+	int res = ShutDown();
+	if (m_pSslLayer)
+	{
+		if (!res && GetLastError() == WSAEWOULDBLOCK)
+			return;
+	}
 	Close();
-	m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG,FTM_DELSOCKET,m_userid);
-
+	m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 }
 
 void CControlSocket::IncUserCount(const CStdString &user)
@@ -2806,7 +2821,11 @@ void CControlSocket::CheckForTimeout()
 		if (m_transferstatus.socket->CheckForTimeout())
 			return;
 	}
-	_int64 timeout = m_pOwner->m_pOptions->GetOptionVal(OPTION_TIMEOUT);
+	_int64 timeout;
+	if (m_shutdown)
+		timeout = 3;
+	else
+		timeout = m_pOwner->m_pOptions->GetOptionVal(OPTION_TIMEOUT);
 	if (!timeout)
 		return;
 	SYSTEMTIME sCurrentTime;
@@ -3277,10 +3296,17 @@ int CControlSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 	{
 		if (m_pSslLayer && iter->pLayer == m_pSslLayer)
 		{
-			if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO_ESTABLISHED)
+			if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO && iter->nParam2 == SSL_INFO_ESTABLISHED)
 				SendStatus(_T("SSL connection established"), 0);
 			else if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO && iter->nParam2 == SSL_INFO_SHUTDOWNCOMPLETE)
 			{
+				if (m_shutdown)
+				{
+					delete [] iter->str;
+					Close();
+					m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+					return 0;
+				}
 				if (!m_bQuitCommand)
 				{
 					delete [] iter->str;

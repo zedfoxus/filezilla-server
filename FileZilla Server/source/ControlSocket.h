@@ -144,6 +144,8 @@ protected:
 	// Enabled MLST facts
 	bool m_facts[3];
 
+	bool m_shutdown;
+
 public:
 	int GetSpeedLimit(enum sltype);
 
