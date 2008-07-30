@@ -73,6 +73,8 @@ CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 	m_currentFileOffset = 0;
 
 	m_waitingForSslHandshake = false;
+
+	m_premature_send = false;
 }
 
 void CTransferSocket::Init(t_dirlisting *pDir, int nMode)
@@ -623,6 +625,10 @@ void CTransferSocket::OnSend(int nErrorCode)
 		m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
 		Close();
 	}
+	else if (m_nMode == TRANSFERMODE_NOTSET)
+	{
+		m_premature_send = true;
+	}
 }
 
 void CTransferSocket::OnConnect(int nErrorCode)
@@ -990,6 +996,11 @@ void CTransferSocket::PasvTransfer()
 	if(bAccepted)
 		if (!m_bStarted)
 			InitTransfer(FALSE);
+	if (m_premature_send)
+	{
+		m_premature_send = false;
+		OnSend(0);
+	}
 }
 
 BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)

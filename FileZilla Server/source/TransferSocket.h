@@ -111,6 +111,8 @@ protected:
 	__int64 m_currentFileOffset;
 
 	bool m_waitingForSslHandshake;
+
+	bool m_premature_send;
 };
 
 
