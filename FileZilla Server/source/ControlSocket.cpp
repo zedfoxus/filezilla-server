@@ -2199,8 +2199,13 @@ void CControlSocket::ParseCommand()
 			args.MakeUpper();
 			if (args == _T("C"))
 			{
-				Send(_T("200 Protection level set to C"));
-				m_bProtP = false;
+				if (m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP))
+					Send(_T("534 This server requires an encrypted data connection with PROT P"));
+				else
+				{
+					Send(_T("200 Protection level set to C"));
+					m_bProtP = false;
+				}
 			}
 			else if (args == _T("P"))
 			{
