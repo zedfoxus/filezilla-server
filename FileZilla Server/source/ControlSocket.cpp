@@ -641,6 +641,8 @@ void CControlSocket::ParseCommand()
 						Send(sendme);
 #endif
 					}
+					else
+						m_status.user = _T("");
 				}
 				break;
 			}
@@ -649,6 +651,7 @@ void CControlSocket::ParseCommand()
 				CUser user;
 				if (m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, _T(""), user, true) && user.ForceSsl())
 				{
+					m_status.user = _T("");
 					Send(_T("530 SSL required"));
 					break;
 				}
