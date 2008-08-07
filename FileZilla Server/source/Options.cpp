@@ -170,7 +170,7 @@ void COptions::SetOption(int nOptionID, _int64 value)
 			value=120;
 		break;
 	case OPTION_NOTRANSFERTIMEOUT:
-		if (value<600)
+		if (value<600 && value != 0)
 			value=600;
 		else if (value>9999)
 			value=600;
