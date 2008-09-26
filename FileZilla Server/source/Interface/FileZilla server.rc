@@ -945,12 +945,12 @@ BEGIN
                     IDC_STATIC,7,85,272,8
     EDITTEXT        IDC_OPTIONS_IPFILTER_ALLOWED,7,98,142,48,ES_MULTILINE | 
                     ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
-    LTEXT           "Despite single IP addresses, you can enter IPs with wildcards, IP address ranges, use the IP/subnet syntax or regular expressions (enclosed by '/') to filter hostnames.",
-                    IDC_STATIC,155,101,124,44
+    LTEXT           "Other than single IP addresses, you can also enter IPs with wildcards, IP address ranges, use the IP/subnet syntax or regular expressions (enclosed by '/') to filter hostnames.",
+                    IDC_STATIC,155,101,124,49
     LTEXT           "By default everyone may connect to the server. You may either block individual IP addresses or address ranges. If you block all addresses, you may allow access for individual addresses or ranges again.",
                     IDC_STATIC,7,161,272,24
-    LTEXT           "Despite single IP addresses, you can enter IPs with wildcards, IP address ranges, use the IP/subnet syntax or regular expressions (enclosed by '/') to filter hostnames.",
-                    IDC_STATIC,153,23,126,47
+    LTEXT           "Other than single IP addresses, you can also enter IPs with wildcards, IP address ranges, use the IP/subnet syntax or regular expressions (enclosed by '/') to filter hostnames.",
+                    IDC_STATIC,153,23,126,54
 END
 
 IDD_ENTERSOMETHING DIALOGEX 0, 0, 207, 74
