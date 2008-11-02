@@ -1,4 +1,4 @@
-<p align="center"><b><u>FileZilla Server version 0.9.27 beta</u></b></p>
+<p align="center"><b><u>FileZilla Server version 0.9.28 beta</u></b></p>
 <p align="center">Copyright 2001-2008<br>
 by <a href="mailto:Tim.Kosse@gmx.de">Tim Kosse</a><a href="http://sourceforge.net/projects/filezilla/"><br>
 http://sourceforge.net/projects/filezilla/</a></p>
@@ -67,6 +67,16 @@ as restoring it to normal size.</p>
 </table>
 <p align="left"><b><u>Version History:</u></b></p>
 <p>For a more detailed list of changes, please have a look at the CVS changelog located at <a href="http://filezilla-project.org/changelog.php?type=2">http://filezilla-project.org/changelog.php?type=2</a>.</p>
+<p><b>Version 0.9.28</b></p>
+<blockquote>
+  <u>Fixed bugs:</u>
+  <ul>
+    <li>Directly reject PROT C if PROT P is required instead of complaining after a transfer command</li>
+    <li>Fix race in transfer connection initialization leading to timeouts</li>
+    <li>No-transfer timeouts could not be disabled in 0.9.27</li>
+    <li>Server startup options in installer had no effect</li>
+  </ul>
+</blockquote>
 <p><b>Version 0.9.27</b></p>
 <blockquote>
   <u>Fixed bugs:</u>
