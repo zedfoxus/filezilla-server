@@ -82,7 +82,7 @@ CServer::~CServer()
 	{
 		hMainWnd = 0;
 		DestroyWindow(m_hWnd);
-		m_hWnd=0;
+		m_hWnd = 0;
 	}
 }
 
@@ -209,7 +209,10 @@ LRESULT CALLBACK CServer::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		delete pServer->m_pOptions;
 		pServer->m_pOptions = NULL;
 		if (pServer->m_nTimerID)
+		{
 			KillTimer(pServer->m_hWnd, pServer->m_nTimerID);
+			pServer->m_nTimerID = 0;
+		}
 		PostQuitMessage(0);
 		return 0;
 	}
@@ -460,7 +463,11 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 					if (!m_bQuit)
 						ShowStatus(_T("Server offline."), 1);
 					else
+					{
+						hMainWnd = 0;
 						DestroyWindow(m_hWnd);
+						m_hWnd = 0;
+					}
 				}
 				return -1;
 			}
@@ -483,7 +490,11 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 					if (!m_bQuit)
 						ShowStatus(_T("Server offline."), 1);
 					else
+					{
+						hMainWnd = 0;
 						DestroyWindow(m_hWnd);
+						m_hWnd = 0;
+					}
 				}
 				return -1;
 			}
@@ -523,7 +534,9 @@ void CServer::OnClose()
 
 	if (!m_ThreadArray.size() && !m_ClosedThreads.size())
 	{
+		hMainWnd = 0;
 		DestroyWindow(m_hWnd);
+		m_hWnd = 0;
 		return;
 	}
 
