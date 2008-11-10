@@ -150,8 +150,19 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			if (!nAction)
 				if (MessageBox(0, _T("Autostart service?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES)
 					nStartMode = SERVICE_AUTO_START;
-			TCHAR buffer[MAX_PATH+1];
-			GetModuleFileName(0, buffer, MAX_PATH);
+			TCHAR buffer[MAX_PATH + 3];
+			buffer[0] = '"';
+			DWORD written = GetModuleFileName(0, buffer + 1, MAX_PATH);
+			if (!written)
+			{
+				CloseServiceHandle(hScm);
+
+				MessageBox(0, _T("Failed to get own executable path"), _T("Could not install server"), MB_ICONSTOP);
+				return 1;
+			}
+			buffer[written + 1] = '"';
+			buffer[written + 2] = 0;
+
 			hService=CreateService(hScm, _T("FileZilla Server"),
 				_T("FileZilla Server FTP server"),
 				SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS|SERVICE_INTERACTIVE_PROCESS, nStartMode,
