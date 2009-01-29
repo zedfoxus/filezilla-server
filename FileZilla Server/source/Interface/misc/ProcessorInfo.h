@@ -246,7 +246,7 @@ public:
 
 	   MEMORYSTATUS memoryStatus;
 
-	   memset (&memoryStatus, sizeof (MEMORYSTATUS), 0);
+	   memset (&memoryStatus, 0, sizeof(MEMORYSTATUS));
 	   memoryStatus.dwLength = sizeof (MEMORYSTATUS);
 	   GlobalMemoryStatus (&memoryStatus);
 
