@@ -622,7 +622,7 @@ BEGIN
                     IDC_STATIC,13,127,259,24
     LTEXT           "FXP is often used for illegal Warez transfers. Bounce attacks can also be used for a DoS attack on the server because a malicious user could initiate a lot of server-to-server transfers which have a large impact on the server's bandwidth and accessability.",
                     IDC_STATIC,13,94,259,33
-    LTEXT           "To prevent this problem, you may disable the strict IP filter. In this case only the the first three parts of the IP address are checked. But this decreases security against FXP / bounce attacks.",
+    LTEXT           "To prevent this problem, you may disable the strict IP filter. In this case only the first three parts of the IP address are checked. But this decreases security against FXP / bounce attacks.",
                     IDC_STATIC,13,152,259,24
     LTEXT           "You have to choose between security and compatibility. For optimal results you should block all FXP transfers and enable the strict filter only for incoming transfers.",
                     IDC_STATIC,13,178,259,16
