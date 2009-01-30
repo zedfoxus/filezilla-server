@@ -202,7 +202,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndStatusBar.SetPaneInfo(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED),ID_INDICATOR_SENDLED,SBPS_NOBORDERS,6);
 
 	ShowStatus(GetVersionString(), 0);
-	ShowStatus("Copyright 2001-2006 by Tim Kosse (tim.kosse@filezilla-project.org)", 0);
+	ShowStatus("Copyright 2001-2009 by Tim Kosse (tim.kosse@filezilla-project.org)", 0);
 
 	m_nTimerID=SetTimer(7777, 10000, 0);
 	m_nRateTimerID=SetTimer(7778, 1000, 0);
