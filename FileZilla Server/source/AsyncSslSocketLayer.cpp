@@ -568,6 +568,7 @@ void CAsyncSslSocketLayer::OnReceive(int nErrorCode)
 		if (ShutDownComplete() && m_nShutDown == 2)
 		{
 			//Send shutdown notification if all pending data has been sent
+			TriggerEvent(FD_WRITE, 0, 0);
 			DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_INFO, SSL_INFO_SHUTDOWNCOMPLETE);
 			m_nShutDown++;
 		}
@@ -700,6 +701,7 @@ void CAsyncSslSocketLayer::OnSend(int nErrorCode)
 		if (m_nShutDown == 2 && ShutDownComplete())
 		{
 			//Send shutdown notification if all pending data has been sent
+			TriggerEvent(FD_WRITE, 0, 0);
 			DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_INFO, SSL_INFO_SHUTDOWNCOMPLETE);
 			m_nShutDown++;
 		}
