@@ -476,21 +476,19 @@ void CAsyncSslSocketLayer::OnReceive(int nErrorCode)
 		if (m_nNetworkError)
 			return;
 
-		char buffer[16384];
-
 		m_mayTriggerRead = false;
 		
 		//Get number of bytes we can receive and store in the network input bio
-		int len = pBIO_ctrl_get_write_guarantee(m_nbio);
-		if (len > 16384)
-			len = 16384;
-		else if (!len)
+		size_t len = pBIO_ctrl_get_write_guarantee(m_nbio);
+		if (!len)
 		{
 			m_mayTriggerRead = true;
 			TriggerEvents();
 			return;
 		}
-		
+
+		char *buffer = new char[len];
+
 		int numread = 0;
 		
 		// Receive data
@@ -508,7 +506,7 @@ void CAsyncSslSocketLayer::OnReceive(int nErrorCode)
 			char buffer;
 			pBIO_read(m_sslbio, &buffer, 0);
 		}
-		if (!numread)
+		else if (!numread)
 		{
 			if (GetLayerState() == connected)
 				TriggerEvent(FD_CLOSE, nErrorCode, TRUE);
@@ -520,9 +518,12 @@ void CAsyncSslSocketLayer::OnReceive(int nErrorCode)
 			{
 				m_nNetworkError = GetLastError();
 				TriggerEvent(FD_CLOSE, 0, TRUE);
+
+				delete [] buffer;
 				return;
 			}
 		}
+		delete [] buffer;
 
 		if (m_pRetrySendBuffer)
 		{
@@ -617,8 +618,8 @@ void CAsyncSslSocketLayer::OnSend(int nErrorCode)
 		}
 
 		//Send the data waiting in the network bio
-		char buffer[16384];
-		int len = pBIO_ctrl_pending(m_nbio);
+		size_t len = pBIO_ctrl_pending(m_nbio);
+		char *buffer = new char[len];
 		int numread = pBIO_read(m_nbio, buffer, len);
 		if (numread <= 0)
 			m_mayTriggerWrite = true;
@@ -633,14 +634,17 @@ void CAsyncSslSocketLayer::OnSend(int nErrorCode)
 			if (numsent == SOCKET_ERROR || numsent < numread)
 			{
 				if (numsent == SOCKET_ERROR)
+				{
 					if (GetLastError() != WSAEWOULDBLOCK && GetLastError() != WSAENOTCONN)
 					{
 						m_nNetworkError = GetLastError();
 						TriggerEvent(FD_CLOSE, 0, TRUE);
+						delete [] buffer;
 						return;
 					}
 					else
 						numsent = 0;
+				}
 
 				// Add all data that was retrieved from the network bio but could not be sent to the send buffer.
 				if (m_nNetworkSendBufferMaxLen < (m_nNetworkSendBufferLen + numread - numsent))
@@ -666,10 +670,13 @@ void CAsyncSslSocketLayer::OnSend(int nErrorCode)
 				m_mayTriggerWrite = true;
 				break;
 			}
+			delete [] buffer;
+			buffer = new char[len];
 			numread = pBIO_read(m_nbio, buffer, len);
 			if (numread <= 0)
 				m_mayTriggerWrite = true;
 		}
+		delete [] buffer;
 
 		if (m_pRetrySendBuffer)
 		{
