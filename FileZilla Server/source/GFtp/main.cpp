@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include "krb5.h"
 
-static ccid = 0;
+static int ccid = 0;
 
 #define DLLit extern "C" __declspec(dllexport)
 
@@ -113,7 +113,7 @@ const char* gss_services[] = { "ftp", "host", 0 };
 #define PROT_P							  'P'
 
 
-extern "C" radix_encode(void *in, void *out,
+extern "C" int radix_encode(void *in, void *out,
 					int *len,  int decode);
 extern "C" char *radix_error(int e);
 
@@ -126,7 +126,7 @@ int DoPass(t_GSS_API_data *pGssApiData, char* name, char* passwd, char* sendme);
 
 void reply_gss_error(t_GSS_API_data *pGssApiData, OM_uint32 maj_stat, OM_uint32 min_stat, char* s);
 void ftpd_gss_convert_creds(t_GSS_API_data* pGssApiData, char* name, gss_cred_id_t creds);
-ftpd_gss_userok(t_GSS_API_data *pGssApiData, char * name);
+int ftpd_gss_userok(t_GSS_API_data *pGssApiData, char * name);
 //****
 
 /* ftpd_gss_convert_creds -- write out forwarded creds */
@@ -678,7 +678,7 @@ int DoUser(t_GSS_API_data *pGssApiData, char* user, char* sendme)
 
 }
 
-DoPass(t_GSS_API_data *pGssApiData, char* name, char* passwd, char* sendme)
+int DoPass(t_GSS_API_data *pGssApiData, char* name, char* passwd, char* sendme)
 {
 	char tmpPath[MAX_PATH];
 
