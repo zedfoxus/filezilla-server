@@ -328,6 +328,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				unsigned char *digest = md5.raw_digest();
 				if (memcmp(m_pRecvBuffer + 5, digest, 16))
 				{
+					delete [] digest;
 					SendCommand(_T("Protocol error: Auth failed, closing connection."), 1);
 					Close();
 					m_pAdminInterface->Remove(this);
