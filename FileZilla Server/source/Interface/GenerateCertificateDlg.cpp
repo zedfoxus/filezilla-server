@@ -81,7 +81,7 @@ void CGenerateCertificateDlg::OnOK()
 
 	int bits = 1024;
 	if (m_keysize == 1)
-		bits = 2058;
+		bits = 2048;
 	else if (m_keysize == 2)
 		bits = 4096;
 
