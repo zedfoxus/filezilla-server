@@ -156,6 +156,7 @@ def(int, SSL_CTX_check_private_key, (const SSL_CTX *ctx));
 def(void, SSL_CTX_set_default_passwd_cb, (SSL_CTX *ctx, pem_password_cb *cb));
 def(void, SSL_CTX_set_default_passwd_cb_userdata, (SSL_CTX *ctx, void *u));
 def(int, SSL_CTX_use_certificate_chain_file, (SSL_CTX *ctx, const char *file));
+def(long, SSL_CTX_ctrl, (SSL_CTX *ctx, int cmd, long larg, void *parg));
 
 def(size_t, BIO_ctrl_pending, (BIO *b));
 def(int, BIO_read, (BIO *b, void *data, int len));
@@ -430,6 +431,7 @@ int CAsyncSslSocketLayer::InitSSL()
 		load(m_hSslDll1, SSL_CTX_set_default_passwd_cb_userdata);
 		load(m_hSslDll1, SSL_CTX_set_default_passwd_cb);
 		load(m_hSslDll1, SSL_CTX_use_certificate_chain_file);
+		load(m_hSslDll1, SSL_CTX_ctrl);
 
 		if (bError)
 		{
@@ -1018,6 +1020,9 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /
 			return SSL_FAILURE_INITSSL;
 		}
 		m_contextRefCount[m_ssl_ctx] = 1;
+
+		long options = pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, 0, NULL);
+		pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options | SSL_OP_NO_SSLv2, NULL);
 
 		if (clientMode)
 		{
@@ -2065,6 +2070,9 @@ int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, cons
 			return SSL_FAILURE_INITSSL;
 		}
 		m_contextRefCount[m_ssl_ctx] = 1;
+
+		long options = pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, 0, NULL);
+		pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options | SSL_OP_NO_SSLv2, NULL);
 	}
 
 	pSSL_CTX_set_default_passwd_cb(m_ssl_ctx, pem_passwd_cb);
