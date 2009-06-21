@@ -38,6 +38,7 @@
 #include "ConnectDialog.h"
 #include "mainfrm.h"
 #include "../defs.h"
+#include "OutputFormat.h"
 
 #if defined(_DEBUG) && !defined(MMGR)
 #define new DEBUG_NEW
@@ -1056,7 +1057,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 				m_nRecvCount += size;
 				m_RecvLed.Ping(100);
 				CString str;
-				str.Format("%I64d bytes received", m_nRecvCount);
+				str.Format("%s bytes received", makeUserFriendlyString(m_nRecvCount).GetString());
 				SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVCOUNT), str);
 			}
 			else
@@ -1064,7 +1065,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 				m_nSendCount += size;
 				m_SendLed.Ping(100);
 				CString str;
-				str.Format("%I64d bytes sent", m_nSendCount);
+				str.Format("%s bytes sent", makeUserFriendlyString(m_nSendCount).GetString());
 				SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDCOUNT), str);
 			}
 

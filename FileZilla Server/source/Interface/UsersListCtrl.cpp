@@ -23,6 +23,7 @@
 #include "filezilla server.h"
 #include "UsersListCtrl.h"
 #include "mainfrm.h"
+#include "OutputFormat.h"
 
 #if defined(_DEBUG) && !defined(MMGR)
 #define new DEBUG_NEW
@@ -435,10 +436,10 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 			if (pConnectionData->totalSize != -1)
 			{
 				double percent = (double)pConnectionData->currentOffset / pConnectionData->totalSize * 100;
-				str.Format("%I64d bytes (%1.1f%%)", pConnectionData->currentOffset, percent);
+				str.Format("%s bytes (%1.1f%%)", makeUserFriendlyString(pConnectionData->currentOffset).GetString(), percent);
 			}
 			else
-				str.Format("%I64d bytes", pConnectionData->currentOffset);
+				str.Format("%s bytes", makeUserFriendlyString(pConnectionData->currentOffset).GetString());
 			pConnectionData->columnText[COLUMN_TRANSFERPROGRESS] =  str;
 
 			if (pConnectionData->speed > 1024 * 1024)
