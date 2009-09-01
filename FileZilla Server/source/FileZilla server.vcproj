@@ -189,7 +189,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="version.lib ws2_32.lib odbc32.lib odbccp32.lib zlib.lib mysqlclient.lib"
+				AdditionalDependencies="version.lib ws2_32.lib odbc32.lib odbcc-p32.lib zlib.lib"
 				OutputFile=".\Release/FileZilla server.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
