@@ -26,7 +26,7 @@
 #include "OptionTypes.h"
 #include "SpeedLimit.h"
 
-class CMarkupSTL;
+class TiXmlElement;
 class COptionsHelperWindow;
 class COptions
 {
@@ -40,8 +40,8 @@ public:
 	COptions();
 	virtual ~COptions();
 
-	static CMarkupSTL *GetXML();
-	static BOOL FreeXML(CMarkupSTL *pXML);
+	static TiXmlElement *GetXML();
+	static BOOL FreeXML(TiXmlElement *pXML);
 
 	BOOL ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOOL bFromLocal = FALSE);
 	void SetOption(int nOptionID, LPCTSTR value);
@@ -55,13 +55,11 @@ protected:
 	static std::list<COptions *> m_InstanceList;
 	static bool IsNumeric(LPCTSTR str);
 
-	BOOL ReadSpeedLimits(CMarkupSTL *pXML);
+	BOOL ReadSpeedLimits(TiXmlElement *pXML);
 	BOOL SaveSpeedLimits();
 
-	static SPEEDLIMITSLIST m_sDownloadSpeedLimits;
-	static SPEEDLIMITSLIST m_sUploadSpeedLimits;
-	SPEEDLIMITSLIST m_DownloadSpeedLimits;
-	SPEEDLIMITSLIST m_UploadSpeedLimits;
+	static SPEEDLIMITSLIST m_sSpeedLimits[2];
+	SPEEDLIMITSLIST m_SpeedLimits[2];
 
 	struct t_OptionsCache
 	{

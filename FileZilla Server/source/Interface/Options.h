@@ -38,7 +38,6 @@
 
 #define IOPTIONS_NUM 7
 
-class CMarkupSTL;
 class COptionsDlg;
 class COptions
 {
@@ -49,8 +48,6 @@ public:
 	__int64 GetOptionVal(int nOptionID);
 	COptions();   // Standardkonstruktor
 	virtual ~COptions();
-	static CMarkupSTL *GetXML();
-	static BOOL FreeXML(CMarkupSTL *pXML);
 	void SetOption(int nOptionID, CString value);
 	void SetOption(int nOptionID, __int64 value);
 	

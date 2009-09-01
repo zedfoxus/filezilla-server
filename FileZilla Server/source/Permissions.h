@@ -45,7 +45,7 @@
 #define PERMISSION_DOESALREADYEXIST	0x10
 #define PERMISSION_INVALIDNAME		0x20
 
-class CMarkupSTL;
+class TiXmlElement;
 class CPermissionsHelperWindow;
 class COptions;
 
@@ -149,18 +149,21 @@ protected:
 
 	void ReadSettings();
 
-	void ReadPermissions(CMarkupSTL *pXML, t_group &user, BOOL &bGotHome);
-	void SavePermissions(CMarkupSTL *pXML, const t_group &user);
+	void ReadPermissions(TiXmlElement *pXML, t_group &user, BOOL &bGotHome);
+	void SavePermissions(TiXmlElement *pXML, const t_group &user);
 
-	void ReadSpeedLimits(CMarkupSTL *pXML, t_group &group);
-	void SaveSpeedLimits(CMarkupSTL *pXML, const t_group &group);
+	void ReadSpeedLimits(TiXmlElement *pXML, t_group &group);
+	void SaveSpeedLimits(TiXmlElement *pXML, const t_group &group);
 
-	void ReadIpFilter(CMarkupSTL *pXML, t_group &group);
-	void SaveIpFilter(CMarkupSTL *pXML, const t_group &group);
+	void ReadIpFilter(TiXmlElement *pXML, t_group &group);
+	void SaveIpFilter(TiXmlElement *pXML, const t_group &group);
 
-	void SetKey(CMarkupSTL *pXML, LPCTSTR name, LPCTSTR value);
-	void SetKey(CMarkupSTL *pXML, LPCTSTR name, int value);
+	void SetKey(TiXmlElement *pXML, LPCTSTR name, LPCTSTR value);
+	void SetKey(TiXmlElement *pXML, LPCTSTR name, int value);
 	
+	CStdString ReadText(TiXmlElement* pElement);
+	void SetText(TiXmlElement* pElement, const CStdString& text);
+
 	int GetRealDirectory(CStdString directory, const CUser &user, t_directory &ret, BOOL &truematch);
 
 	static CCriticalSectionWrapper m_sync;

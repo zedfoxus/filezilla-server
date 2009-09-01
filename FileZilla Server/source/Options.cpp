@@ -23,7 +23,7 @@
 #include "options.h"
 #include "platform.h"
 #include "version.h"
-#include "misc\MarkupSTL.h"
+#include "tinyxml/tinyxml.h"
 #include "iputils.h"
 
 #ifdef _DEBUG
@@ -36,8 +36,7 @@ CCriticalSectionWrapper COptions::m_Sync;
 COptions::t_OptionsCache COptions::m_sOptionsCache[OPTIONS_NUM];
 BOOL COptions::m_bInitialized=FALSE;
 
-SPEEDLIMITSLIST COptions::m_sDownloadSpeedLimits;
-SPEEDLIMITSLIST COptions::m_sUploadSpeedLimits;
+SPEEDLIMITSLIST COptions::m_sSpeedLimits[2];
 
 /////////////////////////////////////////////////////////////////////////////
 // COptionsHelperWindow
@@ -100,8 +99,8 @@ protected:
 			for (int i=0;i<OPTIONS_NUM;i++)
 				pWnd->m_pOptions->m_OptionsCache[i].bCached = FALSE;
 			EnterCritSection(COptions::m_Sync);
-			pWnd->m_pOptions->m_DownloadSpeedLimits = COptions::m_sDownloadSpeedLimits;
-			pWnd->m_pOptions->m_UploadSpeedLimits = COptions::m_sUploadSpeedLimits;
+			pWnd->m_pOptions->m_SpeedLimits[0] = COptions::m_sSpeedLimits[0];
+			pWnd->m_pOptions->m_SpeedLimits[1] = COptions::m_sSpeedLimits[1];
 			LeaveCritSection(COptions::m_Sync);
 		}
 		return ::DefWindowProc(hWnd, message, wParam, lParam);
@@ -126,8 +125,8 @@ COptions::COptions()
 		ASSERT(*iter!=this);
 #endif _DEBUG
 	m_InstanceList.push_back(this);
-	m_DownloadSpeedLimits = m_sDownloadSpeedLimits;
-	m_UploadSpeedLimits = m_sUploadSpeedLimits;
+	m_SpeedLimits[0] = m_sSpeedLimits[0];
+	m_SpeedLimits[1] = m_sSpeedLimits[1];
 	LeaveCritSection(m_Sync);
 }
 
@@ -261,45 +260,54 @@ void COptions::SetOption(int nOptionID, _int64 value)
 
 	LeaveCritSection(m_Sync);
 
+	CStdString valuestr;
+	valuestr.Format( _T("%I64d"), value);
+
 	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 	GetModuleFileName( 0, buffer, MAX_PATH );
 	LPTSTR pos=_tcsrchr(buffer, '\\');
 	if (pos)
 		*++pos=0;
 	_tcscat(buffer, _T("FileZilla Server.xml"));
-	CMarkupSTL xml;
-	if (!xml.Load(buffer))
+
+	USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
 		return;
 
-	if (!xml.FindElem( _T("FileZillaServer") ))
+	TiXmlDocument document;
+	if (!document.LoadFile(bufferA))
 		return;
 
-	if (!xml.FindChildElem( _T("Settings") ))
-		xml.AddChildElem( _T("Settings") );
+	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
+	if (!pRoot)
+		return;
 
-	CStdString valuestr;
-	valuestr.Format( _T("%I64d"), value);
-	xml.IntoElem();
-	BOOL res = xml.FindChildElem();
-	while (res)
+	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	if (!pSettings)
+		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+
+	TiXmlElement* pItem;
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
 	{
-		CStdString name=xml.GetChildAttrib( _T("name"));
-		if (!_tcscmp(name, m_Options[nOptionID-1].name))
-		{
-			xml.SetChildAttrib(_T("name"), m_Options[nOptionID-1].name);
-			xml.SetChildAttrib(_T("type"), _T("numeric"));
-			xml.SetChildData(valuestr);
-			break;
-		}
-		res=xml.FindChildElem();
+		const char* pName = pItem->Attribute("name");
+		if (!pName)
+			continue;
+		CStdString name(pName);
+		if (name != m_Options[nOptionID-1].name)
+			continue;
+
+		break;
 	}
-	if (!res)
-	{
-		xml.InsertChildElem(_T("Item"), valuestr);
-		xml.SetChildAttrib(_T("name"), m_Options[nOptionID-1].name);
-		xml.SetChildAttrib(_T("type"), _T("numeric"));
-	}
-	xml.Save(buffer);
+
+	if (!pItem)
+		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
+	pItem->Clear();
+	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name));
+	pItem->SetAttribute("type", "numeric");
+	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr)));
+	
+	document.SaveFile(bufferA);
 }
 
 void COptions::SetOption(int nOptionID, LPCTSTR value)
@@ -610,37 +618,45 @@ void COptions::SetOption(int nOptionID, LPCTSTR value)
 	if (pos)
 		*++pos=0;
 	_tcscat(buffer, _T("FileZilla Server.xml"));
-	CMarkupSTL xml;
-	if (!xml.Load(buffer))
+
+USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
 		return;
 
-	if (!xml.FindElem( _T("FileZillaServer") ))
+	TiXmlDocument document;
+	if (!document.LoadFile(bufferA))
 		return;
 
-	if (!xml.FindChildElem( _T("Settings") ))
-		xml.AddChildElem( _T("Settings") );
+	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
+	if (!pRoot)
+		return;
 
-	xml.IntoElem();
-	BOOL res=xml.FindChildElem();
-	while (res)
+	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	if (!pSettings)
+		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+
+	TiXmlElement* pItem;
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
 	{
-		CStdString name=xml.GetChildAttrib( _T("name"));
-		if (!_tcscmp(name, m_Options[nOptionID-1].name))
-		{
-			xml.SetChildAttrib(_T("name"), m_Options[nOptionID-1].name);
-			xml.SetChildAttrib(_T("type"), _T("string"));
-			xml.SetChildData(str);
-			break;
-		}
-		res=xml.FindChildElem();
+		const char* pName = pItem->Attribute("name");
+		if (!pName)
+			continue;
+		CStdString name(pName);
+		if (name != m_Options[nOptionID-1].name)
+			continue;
+
+		break;
 	}
-	if (!res)
-	{
-		xml.InsertChildElem( _T("Item"), str );
-		xml.SetChildAttrib(_T("name"), m_Options[nOptionID-1].name);
-		xml.SetChildAttrib(_T("type"), _T("string"));
-	}
-	xml.Save(buffer);
+
+	if (!pItem)
+		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
+	pItem->Clear();
+	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name));
+	pItem->SetAttribute("type", "string");
+	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value)));
+	
+	document.SaveFile(bufferA);
 }
 
 CStdString COptions::GetOption(int nOptionID)
@@ -788,8 +804,6 @@ void COptions::Init()
 		return;
 	EnterCritSection(m_Sync);
 	m_bInitialized = TRUE;
-	CFileStatus64 status;
-	CMarkupSTL xml;
 	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 	GetModuleFileName( 0, buffer, MAX_PATH );
 	LPTSTR pos=_tcsrchr(buffer, '\\');
@@ -797,74 +811,95 @@ void COptions::Init()
 		*++pos=0;
 	_tcscat(buffer, _T("FileZilla Server.xml"));
 
-	for (int i=0; i<OPTIONS_NUM; i++)
-		m_sOptionsCache[i].bCached=FALSE;
+	for (int i = 0; i < OPTIONS_NUM; i++)
+		m_sOptionsCache[i].bCached = FALSE;
 
-	if (!GetStatus64(buffer, status) )
-	{
-		xml.AddElem( _T("FileZillaServer") );
-		if (!xml.Save(buffer))
-		{
-			LeaveCritSection(m_Sync);
-			return;
-		}
-	}
-	else if (status.m_attribute&FILE_ATTRIBUTE_DIRECTORY)
+	USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
 	{
 		LeaveCritSection(m_Sync);
 		return;
 	}
 
-	if (xml.Load(buffer))
+	TiXmlDocument document;
+
+	CFileStatus64 status;
+	if (!GetStatus64(buffer, status) )
 	{
-		if (xml.FindElem( _T("FileZillaServer") ))
+		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
+		document.SaveFile(bufferA);
+	}
+	else if (status.m_attribute & FILE_ATTRIBUTE_DIRECTORY)
+	{
+		LeaveCritSection(m_Sync);
+		return;
+	}
+
+	if (!document.LoadFile(bufferA))
+	{
+		LeaveCritSection(m_Sync);
+		return;
+	}
+
+	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
+	if (!pRoot)
+	{
+		LeaveCritSection(m_Sync);
+		return;
+	}
+
+	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	if (!pSettings)
+		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+
+	TiXmlElement* pItem;
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
+	{
+		const char* pName = pItem->Attribute("name");
+		if (!pName)
+			continue;
+		CStdString name(pName);
+		const char* pType = pItem->Attribute("type");
+		if (!pType)
+			continue;
+		CStdString type(pType);
+		TiXmlNode* textNode = pItem->FirstChild();
+		if (!textNode || !textNode->ToText())
+			continue;
+		CStdString value = ConvFromNetwork(textNode->Value());
+
+
+		for (int i=0;i<OPTIONS_NUM;i++)
 		{
-			if (!xml.FindChildElem( _T("Settings") ))
-				xml.AddChildElem( _T("Settings") );
-
-			CStdString str;
-			xml.IntoElem();
-			str=xml.GetTagName();
-			while (xml.FindChildElem())
+			if (!_tcscmp(name, m_Options[i].name))
 			{
-				CStdString value=xml.GetChildData();
-				CStdString name=xml.GetChildAttrib( _T("name") );
-				CStdString type=xml.GetChildAttrib( _T("type") );
-				for (int i=0;i<OPTIONS_NUM;i++)
-				{
-					if (!_tcscmp(name, m_Options[i].name))
-					{
-						if (m_sOptionsCache[i].bCached)
-							break;
-						else
-						{
-							if (type==_T("numeric"))
-							{
-								if (m_Options[i].nType!=1)
-									break;
-								_int64 value64=_ttoi64(value);
-								if (IsNumeric(value))
-									SetOption(i+1, value64);
-							}
-							else
-							{
-								if (m_Options[i].nType!=0)
-									break;
-								SetOption(i+1, value);
-							}
-						}
-						break;
-					}
-				}
-			}
-			ReadSpeedLimits(&xml);
+				if (m_sOptionsCache[i].bCached)
+					break;
 
-			LeaveCritSection(m_Sync);
-			UpdateInstances();
-			return;
+				if (type==_T("numeric"))
+				{
+					if (m_Options[i].nType!=1)
+						break;
+					_int64 value64=_ttoi64(value);
+					if (IsNumeric(value))
+						SetOption(i+1, value64);
+				}
+				else
+				{
+					if (m_Options[i].nType!=0)
+						break;
+					SetOption(i+1, value);
+				}
+				break;
+			}
 		}
 	}
+	ReadSpeedLimits(pSettings);
+
 	LeaveCritSection(m_Sync);
+	UpdateInstances();
+	return;
 }
 
 bool COptions::IsNumeric(LPCTSTR str)
@@ -883,7 +918,7 @@ bool COptions::IsNumeric(LPCTSTR str)
 	return true;
 }
 
-CMarkupSTL *COptions::GetXML()
+TiXmlElement *COptions::GetXML()
 {
 	EnterCritSection(m_Sync);
 	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
@@ -892,24 +927,36 @@ CMarkupSTL *COptions::GetXML()
 	if (pos)
 		*++pos=0;
 	_tcscat(buffer, _T("FileZilla Server.xml"));
-	CMarkupSTL *pXML=new CMarkupSTL;
-	if (!pXML->Load(buffer))
+
+	USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
 	{
 		LeaveCritSection(m_Sync);
-		delete pXML;
+		return 0;
+	}
+
+	TiXmlDocument *pDocument = new TiXmlDocument;
+	
+	if (!pDocument->LoadFile(bufferA))
+	{
+		LeaveCritSection(m_Sync);
+		delete pDocument;
 		return NULL;
 	}
 
-	if (!pXML->FindElem( _T("FileZillaServer") ))
+	TiXmlElement* pElement = pDocument->FirstChildElement("FileZillaServer");
+	if (!pElement)
 	{
 		LeaveCritSection(m_Sync);
-		delete pXML;
+		delete pDocument;
 		return NULL;
 	}
-	return pXML;
+
+	return pElement;
 }
 
-BOOL COptions::FreeXML(CMarkupSTL *pXML)
+BOOL COptions::FreeXML(TiXmlElement *pXML)
 {
 	ASSERT(pXML);
 	if (!pXML)
@@ -920,9 +967,24 @@ BOOL COptions::FreeXML(CMarkupSTL *pXML)
 	if (pos)
 		*++pos=0;
 	_tcscat(buffer, _T("FileZilla Server.xml"));
-	if (!pXML->Save(buffer))
+
+	USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
+	{
+		delete pXML->GetDocument();
+		LeaveCritSection(m_Sync);
 		return FALSE;
-	delete pXML;
+	}
+
+	if (!pXML->GetDocument()->SaveFile(bufferA))
+	{
+		delete pXML->GetDocument();
+		LeaveCritSection(m_Sync);
+		return FALSE;
+	}
+
+	delete pXML->GetDocument();
 	LeaveCritSection(m_Sync);
 	return TRUE;
 }
@@ -956,12 +1018,11 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 			len+=8;
 	}
 
-	len +=4;
+	len += 4;
 	SPEEDLIMITSLIST::const_iterator iter;
-	for (iter = m_sDownloadSpeedLimits.begin(); iter != m_sDownloadSpeedLimits.end(); iter++)
-		len += iter->GetRequiredBufferLen();
-	for (iter = m_sUploadSpeedLimits.begin(); iter != m_sUploadSpeedLimits.end(); iter++)
-		len += iter->GetRequiredBufferLen();
+	for (i = 0; i < 2; i++)
+		for (iter = m_sSpeedLimits[i].begin(); iter != m_sSpeedLimits[i].end(); iter++)
+			len += iter->GetRequiredBufferLen();
 
 	*pBuffer=new char[len];
 	char *p=*pBuffer;
@@ -1015,15 +1076,13 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 		}
 	}
 
-	*p++ = m_sDownloadSpeedLimits.size() << 8;
-	*p++ = m_sDownloadSpeedLimits.size() %256;
-	for (iter = m_sDownloadSpeedLimits.begin(); iter != m_sDownloadSpeedLimits.end(); iter++)
-		p = iter->FillBuffer(p);
-
-	*p++ = m_sUploadSpeedLimits.size() << 8;
-	*p++ = m_sUploadSpeedLimits.size() %256;
-	for (iter = m_sUploadSpeedLimits.begin(); iter != m_sUploadSpeedLimits.end(); iter++)
-		p = iter->FillBuffer(p);
+	for (i = 0; i < 2; i++)
+	{
+		*p++ = m_sSpeedLimits[i].size() << 8;
+		*p++ = m_sSpeedLimits[i].size() %256;
+		for (iter = m_sSpeedLimits[i].begin(); iter != m_sSpeedLimits[i].end(); iter++)
+			p = iter->FillBuffer(p);
+	}
 
 	LeaveCritSection(m_Sync);
 
@@ -1117,14 +1176,20 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 		ul.push_back(limit);
 	}
 
-	m_sDownloadSpeedLimits = dl;
-	m_sUploadSpeedLimits = ul;
+	m_sSpeedLimits[0] = dl;
+	m_sSpeedLimits[1] = ul;
 	VERIFY(SaveSpeedLimits());
 
 	LeaveCritSection(m_Sync);
 
 	UpdateInstances();
 	return TRUE;
+}
+
+static void SetText(TiXmlElement* pElement, const CStdString& text)
+{
+	pElement->Clear();
+	pElement->LinkEndChild(new TiXmlText(ConvToNetwork(text)));
 }
 
 BOOL COptions::SaveSpeedLimits()
@@ -1135,383 +1200,199 @@ BOOL COptions::SaveSpeedLimits()
 	if (pos)
 		*++pos=0;
 	_tcscat(buffer, _T("FileZilla Server.xml"));
-	CMarkupSTL xml;
-	if (!xml.Load(buffer))
+
+	USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
 		return FALSE;
 
-	if (!xml.FindElem( _T("FileZillaServer") ))
+	TiXmlDocument document;
+	if (!document.LoadFile(bufferA))
 		return FALSE;
 
-	EnterCritSection(m_Sync);
+	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
+	if (!pRoot)
+		return FALSE;
 
-	if (!xml.FindChildElem( _T("Settings") ))
-		xml.AddChildElem( _T("Settings") );
+	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	if (!pSettings)
+		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
 
-	xml.IntoElem();
 
-	while (xml.FindChildElem(_T("SpeedLimits")))
-		xml.RemoveChildElem();
-	xml.AddChildElem(_T("SpeedLimits"));
+	TiXmlElement* pSpeedLimits;
+	while ((pSpeedLimits = pSettings->FirstChildElement("SpeedLimits")))
+		pSettings->RemoveChild(pSpeedLimits);
+	
+	pSpeedLimits = pSettings->LinkEndChild(new TiXmlElement("SpeedLimits"))->ToElement();
 
-	CStdString str;
+	const char* names[] = { "Download", "Upload" };
 
-	xml.IntoElem();
-
-	SPEEDLIMITSLIST::iterator iter;
-
-	xml.AddChildElem(_T("Download"));
-	xml.IntoElem();
-	for (iter = m_sDownloadSpeedLimits.begin(); iter != m_sDownloadSpeedLimits.end(); iter++)
+	for (int i = 0; i < 2; i++)
 	{
-		const CSpeedLimit& limit = *iter;
-		xml.AddChildElem(_T("Rule"));
+		TiXmlElement* pSpeedLimit = new TiXmlElement(names[i]);
+		pSpeedLimits->LinkEndChild(pSpeedLimit);
 
-		xml.SetChildAttrib(_T("Speed"), limit.m_Speed);
-
-		xml.IntoElem();
-
-		str.Format(_T("%d"), limit.m_Day);
-		xml.AddChildElem(_T("Days"), str);
-
-		if (limit.m_DateCheck)
+		for (unsigned int j = 0; j < m_sSpeedLimits[i].size(); j++)
 		{
-			xml.AddChildElem(_T("Date"));
-			xml.SetChildAttrib(_T("Year"), limit.m_Date.y);
-			xml.SetChildAttrib(_T("Month"), limit.m_Date.m);
-			xml.SetChildAttrib(_T("Day"), limit.m_Date.d);
-		}
+			CSpeedLimit limit = m_sSpeedLimits[i][j];
 
-		if (limit.m_FromCheck)
-		{
-			xml.AddChildElem(_T("From"));
-			xml.SetChildAttrib(_T("Hour"), limit.m_FromTime.h);
-			xml.SetChildAttrib(_T("Minute"), limit.m_FromTime.m);
-			xml.SetChildAttrib(_T("Second"), limit.m_FromTime.s);
-		}
+			TiXmlElement* pRule = pSpeedLimit->LinkEndChild(new TiXmlElement("Rule"))->ToElement();
 
-		if (limit.m_ToCheck)
-		{
-			xml.AddChildElem(_T("To"));
-			xml.SetChildAttrib(_T("Hour"), limit.m_ToTime.h);
-			xml.SetChildAttrib(_T("Minute"), limit.m_ToTime.m);
-			xml.SetChildAttrib(_T("Second"), limit.m_ToTime.s);
-		}
+			pRule->SetAttribute("Speed", limit.m_Speed);
 
-		xml.OutOfElem();
+			CStdString str;
+			str.Format(_T("%d"), limit.m_Day);
+			TiXmlElement* pDays = pRule->LinkEndChild(new TiXmlElement("Days"))->ToElement();
+			SetText(pDays, str);
+
+			if (limit.m_DateCheck)
+			{
+				TiXmlElement* pDate = pRule->LinkEndChild(new TiXmlElement("Date"))->ToElement();
+				pRule->SetAttribute("Year", limit.m_Date.y);
+				pRule->SetAttribute("Month", limit.m_Date.m);
+				pRule->SetAttribute("Day", limit.m_Date.d);
+			}
+
+			if (limit.m_FromCheck)
+			{
+				TiXmlElement* pFrom = pRule->LinkEndChild(new TiXmlElement("From"))->ToElement();
+				pRule->SetAttribute("Hour", limit.m_FromTime.h);
+				pRule->SetAttribute("Minute", limit.m_FromTime.m);
+				pRule->SetAttribute("Second", limit.m_FromTime.s);
+			}
+	
+			if (limit.m_ToCheck)
+			{
+				TiXmlElement* pTo = pRule->LinkEndChild(new TiXmlElement("To"))->ToElement();
+				pRule->SetAttribute("Hour", limit.m_ToTime.h);
+				pRule->SetAttribute("Minute", limit.m_ToTime.m);
+				pRule->SetAttribute("Second", limit.m_ToTime.s);
+			}
+		}
 	}
-	xml.OutOfElem();
 
-	xml.AddChildElem(_T("Upload"));
-	xml.IntoElem();
-	for (iter = m_sUploadSpeedLimits.begin(); iter != m_sUploadSpeedLimits.end(); iter++)
-	{
-		const CSpeedLimit& limit = *iter;
-		xml.AddChildElem(_T("Rule"));
+	if (!document.SaveFile(bufferA))
+		return FALSE;
 
-		xml.SetChildAttrib(_T("Speed"), limit.m_Speed);
-
-		xml.IntoElem();
-
-		str.Format(_T("%d"), limit.m_Day);
-		xml.AddChildElem(_T("Days"), str);
-
-		if (limit.m_DateCheck)
-		{
-			xml.AddChildElem(_T("Date"));
-			xml.SetChildAttrib(_T("Year"), limit.m_Date.y);
-			xml.SetChildAttrib(_T("Month"), limit.m_Date.m);
-			xml.SetChildAttrib(_T("Day"), limit.m_Date.d);
-		}
-
-		if (limit.m_FromCheck)
-		{
-			xml.AddChildElem(_T("From"));
-			xml.SetChildAttrib(_T("Hour"), limit.m_FromTime.h);
-			xml.SetChildAttrib(_T("Minute"), limit.m_FromTime.m);
-			xml.SetChildAttrib(_T("Second"), limit.m_FromTime.s);
-		}
-
-		if (limit.m_ToCheck)
-		{
-			xml.AddChildElem(_T("To"));
-			xml.SetChildAttrib(_T("Hour"), limit.m_ToTime.h);
-			xml.SetChildAttrib(_T("Minute"), limit.m_ToTime.m);
-			xml.SetChildAttrib(_T("Second"), limit.m_ToTime.s);
-		}
-
-		xml.OutOfElem();
-	}
-	xml.OutOfElem();
-
-	xml.OutOfElem();
-
-	xml.OutOfElem();
-
-	xml.Save(buffer);
-
-	LeaveCritSection(m_Sync);
 	return TRUE;
 }
 
-BOOL COptions::ReadSpeedLimits(CMarkupSTL *pXML)
+// See Permissions.cpp
+CSpeedLimit::t_time ReadTime(TiXmlElement* pElement);
+
+CStdString ReadText(TiXmlElement* pElement)
 {
-	EnterCritSection(m_Sync);
-	pXML->ResetChildPos();
+	TiXmlNode* textNode = pElement->FirstChild();
+	if (!textNode || !textNode->ToText())
+		return _T("");
 
-	while (pXML->FindChildElem(_T("SpeedLimits")))
+	return ConvFromNetwork(textNode->Value());					
+}
+
+BOOL COptions::ReadSpeedLimits(TiXmlElement *pXML)
+{
+	const char* names[] = { "Download", "Upload" };
+
+	for (int i = 0; i < 2; i++)
 	{
-		CStdString str;
-		int n;
-
-		pXML->IntoElem();
-
-		while (pXML->FindChildElem(_T("Download")))
+		for (TiXmlElement* pSpeedLimits = pXML->FirstChildElement("SpeedLimits"); pSpeedLimits; pSpeedLimits = pSpeedLimits->NextSiblingElement("SpeedLimits"))
 		{
-			pXML->IntoElem();
-
-			while (pXML->FindChildElem(_T("Rule")))
+			for (TiXmlElement* pLimit = pSpeedLimits->FirstChildElement(names[i]); pLimit; pLimit = pLimit->NextSiblingElement(names[i]))
 			{
-				CSpeedLimit limit;
-				str = pXML->GetChildAttrib(_T("Speed"));
-				n = _ttoi(str);
-				if (n < 0 || n > 65535)
-					n = 10;
-				limit.m_Speed = n;
-
-				pXML->IntoElem();
-
-				if (pXML->FindChildElem(_T("Days")))
+				for (TiXmlElement* pRule = pLimit->FirstChildElement("Rule"); pRule; pRule = pRule->NextSiblingElement("Rule"))
 				{
-					str = pXML->GetChildData();
-					if (str != _T(""))
+					CSpeedLimit limit;
+					CStdString str;
+					str = ConvFromNetwork(pRule->Attribute("Speed"));
+					int n = _ttoi(str);
+					if (n < 0 || n > 65535)
+						n = 10;
+					limit.m_Speed = n;
+
+					TiXmlElement* pDays = pRule->FirstChildElement("Days");
+					if (pDays)
+					{
+						str = ReadText(pDays);
+						if (str != _T(""))
+							n = _ttoi(str);
+						else
+							n = 0x7F;
+						limit.m_Day = n & 0x7F;
+					}
+
+					limit.m_DateCheck = FALSE;
+
+					TiXmlElement* pDate = pRule->FirstChildElement("Date");
+					if (pDate)
+					{
+						limit.m_DateCheck = TRUE;
+						str = ConvFromNetwork(pDate->Attribute("Year"));
 						n = _ttoi(str);
-					else
-						n = 0x7F;
-					limit.m_Day = n & 0x7F;
-				}
-				pXML->ResetChildPos();
-
-				limit.m_DateCheck = FALSE;
-				if (pXML->FindChildElem(_T("Date")))
-				{
-					limit.m_DateCheck = TRUE;
-					str = pXML->GetChildAttrib(_T("Year"));
-					n = _ttoi(str);
-					if (n < 1900 || n > 3000)
-						n = 2003;
-					limit.m_Date.y = n;
-					str = pXML->GetChildAttrib(_T("Month"));
-					n = _ttoi(str);
-					if (n < 1 || n > 12)
-						n = 1;
-					limit.m_Date.m = n;
-					str = pXML->GetChildAttrib(_T("Day"));
-					n = _ttoi(str);
-					if (n < 1 || n > 31)
-						n = 1;
-					limit.m_Date.d = n;
-				}
-				pXML->ResetChildPos();
-
-				limit.m_FromCheck = FALSE;
-				if (pXML->FindChildElem(_T("From")))
-				{
-					limit.m_FromCheck = TRUE;
-					str = pXML->GetChildAttrib(_T("Hour"));
-					n = _ttoi(str);
-					if (n < 0 || n > 23)
-						n = 0;
-					limit.m_FromTime.h = n;
-					str = pXML->GetChildAttrib(_T("Minute"));
-					n = _ttoi(str);
-					if (n < 0 || n > 59)
-						n = 0;
-					limit.m_FromTime.m = n;
-					str = pXML->GetChildAttrib(_T("Second"));
-					n = _ttoi(str);
-					if (n < 0 || n > 59)
-						n = 0;
-					limit.m_FromTime.s = n;
-				}
-				pXML->ResetChildPos();
-
-				limit.m_ToCheck = FALSE;
-				if (pXML->FindChildElem(_T("To")))
-				{
-					limit.m_ToCheck = TRUE;
-					str = pXML->GetChildAttrib(_T("Hour"));
-					n = _ttoi(str);
-					if (n < 0 || n > 23)
-						n = 0;
-					limit.m_ToTime.h = n;
-					str = pXML->GetChildAttrib(_T("Minute"));
-					n = _ttoi(str);
-					if (n < 0 || n > 59)
-						n = 0;
-					limit.m_ToTime.m = n;
-					str = pXML->GetChildAttrib(_T("Second"));
-					n = _ttoi(str);
-					if (n < 0 || n > 59)
-						n = 0;
-					limit.m_ToTime.s = n;
-				}
-				pXML->ResetChildPos();
-
-				pXML->OutOfElem();
-
-				m_sDownloadSpeedLimits.push_back(limit);
-			}
-			pXML->OutOfElem();
-		}
-		pXML->ResetChildPos();
-
-		while (pXML->FindChildElem(_T("Upload")))
-		{
-			pXML->IntoElem();
-
-			while (pXML->FindChildElem(_T("Rule")))
-			{
-				CSpeedLimit limit;
-				str = pXML->GetChildAttrib(_T("Speed"));
-				n = _ttoi(str);
-				if (n < 0 || n > 65535)
-					n = 10;
-				limit.m_Speed = n;
-
-				pXML->IntoElem();
-
-				if (pXML->FindChildElem(_T("Days")))
-				{
-					str = pXML->GetChildData();
-					if (str != _T(""))
+						if (n < 1900 || n > 3000)
+							n = 2003;
+						limit.m_Date.y = n;
+						str = ConvFromNetwork(pDate->Attribute("Month"));
 						n = _ttoi(str);
+						if (n < 1 || n > 12)
+							n = 1;
+						limit.m_Date.m = n;
+						str = ConvFromNetwork(pDate->Attribute("Day"));
+						n = _ttoi(str);
+						if (n < 1 || n > 31)
+							n = 1;
+						limit.m_Date.d = n;
+					}
+
+					TiXmlElement* pFrom = pRule->FirstChildElement("From");
+					if (pFrom)
+					{
+						limit.m_FromCheck = TRUE;
+						limit.m_FromTime = ReadTime(pFrom);
+					}
 					else
-						n = 0x7F;
-					limit.m_Day = n & 0x7F;
+						limit.m_FromCheck = FALSE;
+
+					TiXmlElement* pTo = pRule->FirstChildElement("To");
+					if (pTo)
+					{
+						limit.m_ToCheck = TRUE;
+						limit.m_ToTime = ReadTime(pTo);
+					}
+					else
+						limit.m_ToCheck = FALSE;
+
+					if (m_sSpeedLimits[i].size() < 20000)
+						m_sSpeedLimits[i].push_back(limit);
 				}
-				pXML->ResetChildPos();
-
-				limit.m_DateCheck = FALSE;
-				if (pXML->FindChildElem(_T("Date")))
-				{
-					limit.m_DateCheck = TRUE;
-					str = pXML->GetChildAttrib(_T("Year"));
-					n = _ttoi(str);
-					if (n < 1900 || n > 3000)
-						n = 2003;
-					limit.m_Date.y = n;
-					str = pXML->GetChildAttrib(_T("Month"));
-					n = _ttoi(str);
-					if (n < 1 || n > 12)
-						n = 1;
-					limit.m_Date.m = n;
-					str = pXML->GetChildAttrib(_T("Day"));
-					n = _ttoi(str);
-					if (n < 1 || n > 31)
-						n = 1;
-					limit.m_Date.d = n;
-				}
-				pXML->ResetChildPos();
-
-				limit.m_FromCheck = FALSE;
-				if (pXML->FindChildElem(_T("From")))
-				{
-					limit.m_FromCheck = TRUE;
-					str = pXML->GetChildAttrib(_T("Hour"));
-					n = _ttoi(str);
-					if (n < 0 || n > 23)
-						n = 0;
-					limit.m_FromTime.h = n;
-					str = pXML->GetChildAttrib(_T("Minute"));
-					n = _ttoi(str);
-					if (n < 0 || n > 59)
-						n = 0;
-					limit.m_FromTime.m = n;
-					str = pXML->GetChildAttrib(_T("Second"));
-					n = _ttoi(str);
-					if (n < 0 || n > 59)
-						n = 0;
-					limit.m_FromTime.s = n;
-				}
-				pXML->ResetChildPos();
-
-				limit.m_ToCheck = FALSE;
-				if (pXML->FindChildElem(_T("To")))
-				{
-					limit.m_ToCheck = TRUE;
-					str = pXML->GetChildAttrib(_T("Hour"));
-					n = _ttoi(str);
-					if (n < 0 || n > 23)
-						n = 0;
-					limit.m_ToTime.h = n;
-					str = pXML->GetChildAttrib(_T("Minute"));
-					n = _ttoi(str);
-					if (n < 0 || n > 59)
-						n = 0;
-					limit.m_ToTime.m = n;
-					str = pXML->GetChildAttrib(_T("Second"));
-					n = _ttoi(str);
-					if (n < 0 || n > 59)
-						n = 0;
-					limit.m_ToTime.s = n;
-				}
-				pXML->ResetChildPos();
-
-				pXML->OutOfElem();
-
-				m_sUploadSpeedLimits.push_back(limit);
 			}
-			pXML->OutOfElem();
 		}
-
-		pXML->OutOfElem();
 	}
-	LeaveCritSection(m_Sync);
-
+	
 	return TRUE;
 }
 
 int COptions::GetCurrentSpeedLimit(int nMode)
 {
 	Init();
-	if (nMode)
+
+	int type[2] = { OPTION_DOWNLOADSPEEDLIMITTYPE, OPTION_UPLOADSPEEDLIMITTYPE };
+	int limit[2] = { OPTION_DOWNLOADSPEEDLIMIT, OPTION_UPLOADSPEEDLIMIT };
+
+	int nType = (int)GetOptionVal(type[nMode]);
+	switch (nType)
 	{
-		int nType = (int)GetOptionVal(OPTION_UPLOADSPEEDLIMITTYPE);
-		switch (nType)
+	case 0:
+		return -1;
+	case 1:
+		return (int)GetOptionVal(limit[nMode]);
+	default:
 		{
-			case 0:
-				return -1;
-			case 1:
-				return (int)GetOptionVal(OPTION_UPLOADSPEEDLIMIT);
-			default:
-				{
-					SYSTEMTIME s;
-					GetLocalTime(&s);
-					for (SPEEDLIMITSLIST::const_iterator iter = m_UploadSpeedLimits.begin(); iter != m_UploadSpeedLimits.end(); iter++)
-						if (iter->IsItActive(s))
-							return iter->m_Speed;
-					return -1;
-				}
-		}
-	}
-	else
-	{
-		int nType = (int)GetOptionVal(OPTION_DOWNLOADSPEEDLIMITTYPE);
-		switch (nType)
-		{
-			case 0:
-				return -1;
-			case 1:
-				return (int)GetOptionVal(OPTION_DOWNLOADSPEEDLIMIT);
-			default:
-				{
-					SYSTEMTIME s;
-					GetLocalTime(&s);
-					for (SPEEDLIMITSLIST::const_iterator iter = m_DownloadSpeedLimits.begin(); iter != m_DownloadSpeedLimits.end(); iter++)
-						if (iter->IsItActive(s))
-							return iter->m_Speed;
-					return -1;
-				}
+			SYSTEMTIME s;
+			GetLocalTime(&s);
+			for (SPEEDLIMITSLIST::const_iterator iter = m_SpeedLimits[nMode].begin(); iter != m_SpeedLimits[nMode].end(); iter++)
+				if (iter->IsItActive(s))
+					return iter->m_Speed;
+			return -1;
 		}
 	}
 }
@@ -1521,81 +1402,99 @@ void COptions::ReloadConfig()
 	EnterCritSection(m_Sync);
 
 	m_bInitialized = TRUE;
-	CFileStatus64 status;
-	CMarkupSTL xml;
 	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
+	LPTSTR pos = _tcsrchr(buffer, '\\');
 	if (pos)
-		*++pos=0;
+		*++pos = 0;
 	_tcscat(buffer, _T("FileZilla Server.xml"));
 
-	for (int i=0; i<OPTIONS_NUM; i++)
+	for (int i = 0; i < OPTIONS_NUM; i++)
 		m_sOptionsCache[i].bCached = FALSE;
 
-	if (!GetStatus64(buffer, status) )
-	{
-		xml.AddElem( _T("FileZillaServer") );
-		if (!xml.Save(buffer))
-		{
-			LeaveCritSection(m_Sync);
-			return;
-		}
-	}
-	else if (status.m_attribute&FILE_ATTRIBUTE_DIRECTORY)
+	USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
 	{
 		LeaveCritSection(m_Sync);
 		return;
 	}
 
-	if (xml.Load(buffer))
+	TiXmlDocument document;
+
+	CFileStatus64 status;
+	if (!GetStatus64(buffer, status) )
 	{
-		if (xml.FindElem( _T("FileZillaServer") ))
+		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
+		document.SaveFile(bufferA);
+	}
+	else if (status.m_attribute & FILE_ATTRIBUTE_DIRECTORY)
+	{
+		LeaveCritSection(m_Sync);
+		return;
+	}
+
+	if (!document.LoadFile(bufferA))
+	{
+		LeaveCritSection(m_Sync);
+		return;
+	}
+
+	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
+	if (!pRoot)
+	{
+		LeaveCritSection(m_Sync);
+		return;
+	}
+
+	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	if (!pSettings)
+		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+
+	TiXmlElement* pItem;
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
+	{
+		const char* pName = pItem->Attribute("name");
+		if (!pName)
+			continue;
+		CStdString name(pName);
+		const char* pType = pItem->Attribute("type");
+		if (!pType)
+			continue;
+		CStdString type(pType);
+		TiXmlNode* textNode = pItem->FirstChild();
+		if (!textNode || !textNode->ToText())
+			continue;
+		CStdString value = ConvFromNetwork(textNode->Value());
+
+
+		for (int i=0;i<OPTIONS_NUM;i++)
 		{
-			if (!xml.FindChildElem( _T("Settings") ))
-				xml.AddChildElem( _T("Settings") );
-
-			CStdString str;
-			xml.IntoElem();
-			str=xml.GetTagName();
-			while (xml.FindChildElem())
+			if (!_tcscmp(name, m_Options[i].name))
 			{
-				CStdString value=xml.GetChildData();
-				CStdString name=xml.GetChildAttrib( _T("name") );
-				CStdString type=xml.GetChildAttrib( _T("type") );
-				for (int i=0;i<OPTIONS_NUM;i++)
-				{
-					if (!_tcscmp(name, m_Options[i].name))
-					{
-						if (m_sOptionsCache[i].bCached)
-							break;
-						else
-						{
-							if (type == _T("numeric"))
-							{
-								if (m_Options[i].nType!=1)
-									break;
-								_int64 value64 = _ttoi64(value);
-								if (IsNumeric(value))
-									SetOption(i+1, value64);
-							}
-							else
-							{
-								if (m_Options[i].nType!=0)
-									break;
-								SetOption(i+1, value);
-							}
-						}
-						break;
-					}
-				}
-			}
-			ReadSpeedLimits(&xml);
+				if (m_sOptionsCache[i].bCached)
+					break;
 
-			LeaveCritSection(m_Sync);
-			UpdateInstances();
-			return;
+				if (type ==_T("numeric"))
+				{
+					if (m_Options[i].nType!=1)
+						break;
+					_int64 value64=_ttoi64(value);
+					if (IsNumeric(value))
+						SetOption(i+1, value64);
+				}
+				else
+				{
+					if (m_Options[i].nType!=0)
+						break;
+					SetOption(i+1, value);
+				}
+				break;
+			}
 		}
 	}
+	ReadSpeedLimits(pSettings);
+
 	LeaveCritSection(m_Sync);
+	UpdateInstances();
 }

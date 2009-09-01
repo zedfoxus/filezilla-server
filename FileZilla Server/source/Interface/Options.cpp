@@ -23,7 +23,7 @@
 #include "options.h"
 #include "../version.h"
 #include "filezilla server.h"
-#include "misc\MarkupSTL.h"
+#include "../tinyxml/tinyxml.h"
 
 #if defined(_DEBUG) && !defined(MMGR)
 #define new DEBUG_NEW
@@ -69,45 +69,54 @@ void COptions::SetOption(int nOptionID, __int64 value)
 	m_OptionsCache[nOptionID-1].nType = 1;
 	m_OptionsCache[nOptionID-1].value = value;
 
+	CString valuestr;
+	valuestr.Format( _T("%I64d"), value);
+
 	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 	GetModuleFileName( 0, buffer, MAX_PATH );
 	LPTSTR pos=_tcsrchr(buffer, '\\');
 	if (pos)
 		*++pos=0;
 	_tcscat(buffer, _T("FileZilla Server Interface.xml"));
-	CMarkupSTL xml;
-	if (!xml.Load(buffer))
-		return;
-	
-	if (!xml.FindElem( _T("FileZillaServer") ))
+
+	USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
 		return;
 
-	if (!xml.FindChildElem( _T("Settings") ))
-		xml.AddChildElem( _T("Settings") );
+	TiXmlDocument document;
+	if (!document.LoadFile(bufferA))
+		return;
+
+	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
+	if (!pRoot)
+		return;
+
+	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	if (!pSettings)
+		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+
+	TiXmlElement* pItem;
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
+	{
+		const char* pName = pItem->Attribute("name");
+		if (!pName)
+			continue;
+		CString name(pName);
+		if (name != m_Options[nOptionID-1].name)
+			continue;
+
+		break;
+	}
+
+	if (!pItem)
+		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
+	pItem->Clear();
+	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name));
+	pItem->SetAttribute("type", "numeric");
+	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr)));
 	
-	CString valuestr;
-	valuestr.Format( _T("%I64d"), value);
-	xml.IntoElem();
-	BOOL res=xml.FindChildElem();
-	while (res)
-	{
-		CString name=xml.GetChildAttrib( _T("name"));
-		if (!_tcscmp(name, m_Options[nOptionID-1].name))
-		{
-			xml.SetChildAttrib(_T("name"), m_Options[nOptionID-1].name);
-			xml.SetChildAttrib(_T("type"), _T("numeric"));
-			xml.SetChildData(valuestr);
-			break;
-		}
-		res=xml.FindChildElem();
-	}
-	if (!res)
-	{
-		xml.InsertChildElem(_T("Item"), valuestr);
-		xml.SetChildAttrib(_T("name"), m_Options[nOptionID-1].name);
-		xml.SetChildAttrib(_T("type"), _T("numeric"));
-	}
-	xml.Save(buffer);
+	document.SaveFile(bufferA);
 }
 
 void COptions::SetOption(int nOptionID, CString value)
@@ -124,37 +133,45 @@ void COptions::SetOption(int nOptionID, CString value)
 	if (pos)
 		*++pos=0;
 	_tcscat(buffer, _T("FileZilla Server Interface.xml"));
-	CMarkupSTL xml;
-	if (!xml.Load(buffer))
-		return;
-	
-	if (!xml.FindElem( _T("FileZillaServer") ))
+
+	USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
 		return;
 
-	if (!xml.FindChildElem( _T("Settings") ))
-		xml.AddChildElem( _T("Settings") );
+	TiXmlDocument document;
+	if (!document.LoadFile(bufferA))
+		return;
+
+	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
+	if (!pRoot)
+		return;
+
+	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	if (!pSettings)
+		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+
+	TiXmlElement* pItem;
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
+	{
+		const char* pName = pItem->Attribute("name");
+		if (!pName)
+			continue;
+		CString name(pName);
+		if (name != m_Options[nOptionID-1].name)
+			continue;
+
+		break;
+	}
+
+	if (!pItem)
+		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
+	pItem->Clear();
+	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name));
+	pItem->SetAttribute("type", "string");
+	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value)));
 	
-	xml.IntoElem();
-	BOOL res=xml.FindChildElem();
-	while (res)
-	{
-		CString name=xml.GetChildAttrib( _T("name"));
-		if (!_tcscmp(name, m_Options[nOptionID-1].name))
-		{
-			xml.SetChildAttrib(_T("name"), m_Options[nOptionID-1].name);
-			xml.SetChildAttrib(_T("type"), _T("string"));
-			xml.SetChildData(value);
-			break;
-		}
-		res=xml.FindChildElem();
-	}
-	if (!res)
-	{
-		xml.InsertChildElem( _T("Item"), value );
-		xml.SetChildAttrib(_T("name"), m_Options[nOptionID-1].name);
-		xml.SetChildAttrib(_T("type"), _T("string"));
-	}
-	xml.Save(buffer);
+	document.SaveFile(bufferA);
 }
 
 CString COptions::GetOption(int nOptionID)
@@ -208,8 +225,6 @@ void COptions::Init()
 	if (m_bInitialized)
 		return;
 	m_bInitialized=TRUE;
-	CFileStatus status;
-	CMarkupSTL xml;
 	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 	GetModuleFileName( 0, buffer, MAX_PATH );
 	LPTSTR pos=_tcsrchr(buffer, '\\');
@@ -217,86 +232,100 @@ void COptions::Init()
 		*++pos=0;
 	_tcscat(buffer, _T("FileZilla Server Interface.xml"));
 	
-	for (int i=0; i<IOPTIONS_NUM; i++)
-		m_OptionsCache[i].bCached=FALSE;
+	for (int i = 0; i < IOPTIONS_NUM; i++)
+		m_OptionsCache[i].bCached = FALSE;
 	
+	USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
+		return;
+
+	TiXmlDocument document;
+
+	CFileStatus status;
 	if (!CFile::GetStatus(buffer, status) )
 	{
-		xml.AddElem( _T("FileZillaServer") );
-		if (!xml.Save(buffer))
-			return;
+		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
+		document.SaveFile(bufferA);
 	}
 	else if (status.m_attribute&FILE_ATTRIBUTE_DIRECTORY)
 		return;
-		
-	if (xml.Load(buffer))
+
+	if (!document.LoadFile(bufferA))
+		return;
+
+	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
+	if (!pRoot)
+		return;
+
+	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	if (!pSettings)
+		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+
+	TiXmlElement* pItem;
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
 	{
-		if (xml.FindElem( _T("FileZillaServer") ))
+		const char* pName = pItem->Attribute("name");
+		if (!pName)
+			continue;
+		CString name(pName);
+		const char* pType = pItem->Attribute("type");
+		if (!pType)
+			continue;
+		CString type(pType);
+		TiXmlNode* textNode = pItem->FirstChild();
+		if (!textNode || !textNode->ToText())
+			continue;
+		CString value = ConvFromNetwork(textNode->Value());
+
+		for (int i = 0; i < IOPTIONS_NUM; i++)
 		{
-			if (!xml.FindChildElem( _T("Settings") ))
-				xml.AddChildElem( _T("Settings") );
-			
-			CString str;
-			xml.IntoElem();
-			str=xml.GetTagName();
-			while (xml.FindChildElem())
+			if (name != m_Options[i].name)
+				continue;
+
+			if (m_OptionsCache[i].bCached)
 			{
-				CString value=xml.GetChildData();
-				CString name=xml.GetChildAttrib( _T("name") );
-				CString type=xml.GetChildAttrib( _T("type") );
-				for (int i=0;i<IOPTIONS_NUM;i++)
-				{
-					if (!_tcscmp(name, m_Options[i].name))
-					{
-						if (m_OptionsCache[i].bCached)
-						{
-							::AfxTrace( _T("Item '%s' is already in cache, ignoring item\n"), name);
-							break;
-						}
-						else
-						{
-							if (type=="numeric")
-							{
-								if (m_Options[i].nType!=1)
-								{
-									::AfxTrace( _T("Type mismatch for option '%s'. Type is %d, should be %d"), name, m_Options[i].nType, 1);
-									break;
-								}
-								m_OptionsCache[i].bCached=TRUE;
-								m_OptionsCache[i].nType=1;
-								_int64 value64=_ttoi64(value);
-
-								switch(i+1) {
-								case IOPTION_LASTSERVERPORT:
-									if (value64<1 || value64>65535)
-										value64 = 14147;
-									break;
-								default:
-									break;
-								}
-
-								m_OptionsCache[i].value=value64;
-							}
-							else
-							{
-								if (type!="string")
-									::AfxTrace( _T("Unknown option type '%s' for item '%s', assuming string\n"), type, name);
-								if (m_Options[i].nType!=0)
-								{
-									::AfxTrace( _T("Type mismatch for option '%s'. Type is %d, should be %d"), name, m_Options[i].nType, 0);
-									break;
-								}
-								m_OptionsCache[i].bCached=TRUE;
-								m_OptionsCache[i].nType=0;
-								
-								m_OptionsCache[i].str=value;
-							}
-						}
-						break;
-					}
-				}
+				::AfxTrace( _T("Item '%s' is already in cache, ignoring item\n"), name);
+				break;
 			}
-			return;
+
+			if (type == "numeric")
+			{
+				if (m_Options[i].nType != 1)
+				{
+					::AfxTrace( _T("Type mismatch for option '%s'. Type is %d, should be %d"), name, m_Options[i].nType, 1);
+					break;
+				}
+				m_OptionsCache[i].bCached = TRUE;
+				m_OptionsCache[i].nType = 1;
+				_int64 value64=_ttoi64(value);
+
+				switch (i+1)
+				{
+				case IOPTION_LASTSERVERPORT:
+					if (value64 < 1 || value64 > 65535)
+						value64 = 14147;
+					break;
+				default:
+					break;
+				}
+
+				m_OptionsCache[i].value = value64;
+			}
+			else
+			{
+				if (type != "string")
+					::AfxTrace( _T("Unknown option type '%s' for item '%s', assuming string\n"), type, name);
+				if (m_Options[i].nType != 0)
+				{
+					::AfxTrace( _T("Type mismatch for option '%s'. Type is %d, should be %d"), name, m_Options[i].nType, 0);
+					break;
+				}
+				m_OptionsCache[i].bCached = TRUE;
+				m_OptionsCache[i].nType = 0;
+
+				m_OptionsCache[i].str = value;
+			}
 		}
 	}
 }
@@ -315,44 +344,4 @@ bool COptions::IsNumeric(LPCTSTR str)
 		p++;
 	}
 	return true;
-}
-
-CMarkupSTL *COptions::GetXML()
-{
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server Interface.xml"));
-	CMarkupSTL *pXML=new CMarkupSTL;
-	if (!pXML->Load(buffer))
-	{
-		delete pXML;
-		return NULL;
-	}
-	
-	if (!pXML->FindElem( _T("FileZillaServer") ))
-	{
-		delete pXML;
-		return NULL;
-	}
-	return pXML;
-}
-
-BOOL COptions::FreeXML(CMarkupSTL *pXML)
-{
-	ASSERT(pXML);
-	if (!pXML)
-		return FALSE;
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server Interface.xml"));
-	if (!pXML->Save(buffer))
-		return FALSE;
-	delete pXML;
-	return TRUE;
 }

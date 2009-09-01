@@ -23,7 +23,7 @@
 #include "stdafx.h"
 #include "misc\md5.h"
 #include "Permissions.h"
-#include "misc\MarkupSTL.h"
+#include "tinyxml/tinyxml.h"
 #include "options.h"
 #include "iputils.h"
 
@@ -966,14 +966,16 @@ void CPermissions::UpdateInstances()
 	LeaveCritSection(m_sync);
 }
 
-void CPermissions::SetKey(CMarkupSTL *pXML, LPCTSTR name, LPCTSTR value)
+void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, LPCTSTR value)
 {
 	ASSERT(pXML);
-	pXML->AddChildElem(_T("Option"), value);
-	pXML->AddChildAttrib(_T("Name"), name);
+	TiXmlElement* pOption = new TiXmlElement("Option");
+	pOption->SetAttribute("Name", ConvToNetwork(name));
+	SetText(pOption, value);
+	pXML->LinkEndChild(pOption);
 }
 
-void CPermissions::SetKey(CMarkupSTL *pXML, LPCTSTR name, int value)
+void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, int value)
 {
 	ASSERT(pXML);
 	CStdString str;
@@ -981,39 +983,39 @@ void CPermissions::SetKey(CMarkupSTL *pXML, LPCTSTR name, int value)
 	SetKey(pXML, name, str);
 }
 
-void CPermissions::SavePermissions(CMarkupSTL *pXML, const t_group &user)
+void CPermissions::SavePermissions(TiXmlElement *pXML, const t_group &user)
 {
-	pXML->AddChildElem(_T("Permissions"));
-	pXML->IntoElem();
-	for (unsigned int i=0; i<user.permissions.size(); i++)
+	TiXmlElement* pPermissions = new TiXmlElement("Permissions");
+	pXML->LinkEndChild(pPermissions);
+
+	for (unsigned int i=0; i < user.permissions.size(); i++)
 	{
-		pXML->AddChildElem(_T("Permission"));
-		pXML->AddChildAttrib(_T("Dir"), user.permissions[i].dir);
-		pXML->IntoElem();
+		TiXmlElement* pPermission = new TiXmlElement("Permission");
+		pPermissions->LinkEndChild(pPermission);
+
+		pPermission->SetAttribute("Dir", ConvToNetwork(user.permissions[i].dir));
 		if (!user.permissions[i].aliases.empty())
 		{
-			pXML->AddChildElem(_T("Aliases"));
-			pXML->IntoElem();
+			TiXmlElement* pAliases = new TiXmlElement("Aliases");
+			pPermission->LinkEndChild(pAliases);
 			for (std::list<CStdString>::const_iterator iter = user.permissions[i].aliases.begin(); iter != user.permissions[i].aliases.end(); iter++)
 			{
-				pXML->AddChildElem(_T("Alias"));
-				pXML->SetChildData(*iter);
+				TiXmlElement *pAlias = new TiXmlElement("Alias");
+				SetText(pAlias, *iter);
+				pAliases->LinkEndChild(pAlias);
 			}
-			pXML->OutOfElem();
 		}
-		SetKey(pXML, _T("FileRead"), user.permissions[i].bFileRead ? _T("1"):_T("0"));
-		SetKey(pXML, _T("FileWrite"), user.permissions[i].bFileWrite ? _T("1"):_T("0"));
-		SetKey(pXML, _T("FileDelete"), user.permissions[i].bFileDelete ?_T("1"):_T("0"));
-		SetKey(pXML, _T("FileAppend"), user.permissions[i].bFileAppend ? _T("1"):_T("0"));
-		SetKey(pXML, _T("DirCreate"), user.permissions[i].bDirCreate ? _T("1"):_T("0"));
-		SetKey(pXML, _T("DirDelete"), user.permissions[i].bDirDelete ? _T("1"):_T("0"));
-		SetKey(pXML, _T("DirList"), user.permissions[i].bDirList ? _T("1"):_T("0"));
-		SetKey(pXML, _T("DirSubdirs"), user.permissions[i].bDirSubdirs ? _T("1"):_T("0"));
-		SetKey(pXML, _T("IsHome"), user.permissions[i].bIsHome ? _T("1"):_T("0"));
-		SetKey(pXML, _T("AutoCreate"), user.permissions[i].bAutoCreate ? _T("1"):_T("0"));
-		pXML->OutOfElem();
+		SetKey(pPermission, _T("FileRead"), user.permissions[i].bFileRead ? _T("1"):_T("0"));
+		SetKey(pPermission, _T("FileWrite"), user.permissions[i].bFileWrite ? _T("1"):_T("0"));
+		SetKey(pPermission, _T("FileDelete"), user.permissions[i].bFileDelete ?_T("1"):_T("0"));
+		SetKey(pPermission, _T("FileAppend"), user.permissions[i].bFileAppend ? _T("1"):_T("0"));
+		SetKey(pPermission, _T("DirCreate"), user.permissions[i].bDirCreate ? _T("1"):_T("0"));
+		SetKey(pPermission, _T("DirDelete"), user.permissions[i].bDirDelete ? _T("1"):_T("0"));
+		SetKey(pPermission, _T("DirList"), user.permissions[i].bDirList ? _T("1"):_T("0"));
+		SetKey(pPermission, _T("DirSubdirs"), user.permissions[i].bDirSubdirs ? _T("1"):_T("0"));
+		SetKey(pPermission, _T("IsHome"), user.permissions[i].bIsHome ? _T("1"):_T("0"));
+		SetKey(pPermission, _T("AutoCreate"), user.permissions[i].bAutoCreate ? _T("1"):_T("0"));
 	}
-	pXML->OutOfElem();
 }
 
 BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
@@ -1199,68 +1201,64 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 
 	// Write the new account data into xml file
 
-	CMarkupSTL *pXML=COptions::GetXML();
-	if (pXML)
+	TiXmlElement *pXML = COptions::GetXML();
+	if (!pXML)
+		return FALSE;
+
+	TiXmlElement* pGroups;
+	while ((pGroups = pXML->FirstChildElement("Groups")))
+		pXML->RemoveChild(pGroups);
+	pGroups = new TiXmlElement("Groups");
+	pXML->LinkEndChild(pGroups);
+
+	//Save the changed user details
+	for (t_GroupsList::const_iterator groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++)
 	{
-		while(pXML->FindChildElem(_T("Groups")))
-			pXML->RemoveChildElem();
-		pXML->AddChildElem(_T("Groups"));
-		pXML->IntoElem();
-	
-		//Save the changed user details
-		for (t_GroupsList::const_iterator groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++)
-		{
-			pXML->AddChildElem(_T("Group"));
-			pXML->AddChildAttrib(_T("Name"), groupiter->group);
-			pXML->IntoElem();
+		TiXmlElement* pGroup = new TiXmlElement("Group");
+		pGroups->LinkEndChild(pGroup);
 		
-			SetKey(pXML, _T("Bypass server userlimit"), groupiter->nBypassUserLimit);
-			SetKey(pXML, _T("User Limit"), groupiter->nUserLimit);
-			SetKey(pXML, _T("IP Limit"), groupiter->nIpLimit);
-			SetKey(pXML, _T("Enabled"), groupiter->nEnabled);
-			SetKey(pXML, _T("Comments"), groupiter->comment);
-			SetKey(pXML, _T("ForceSsl"), groupiter->forceSsl);
+		pGroup->SetAttribute("Name", ConvToNetwork(groupiter->group));
 
-			SaveIpFilter(pXML, *groupiter);		
-			SavePermissions(pXML, *groupiter);
-			SaveSpeedLimits(pXML, *groupiter);
+		SetKey(pGroup, _T("Bypass server userlimit"), groupiter->nBypassUserLimit);
+		SetKey(pGroup, _T("User Limit"), groupiter->nUserLimit);
+		SetKey(pGroup, _T("IP Limit"), groupiter->nIpLimit);
+		SetKey(pGroup, _T("Enabled"), groupiter->nEnabled);
+		SetKey(pGroup, _T("Comments"), groupiter->comment);
+		SetKey(pGroup, _T("ForceSsl"), groupiter->forceSsl);
 
-			pXML->OutOfElem();
-		}
-		pXML->OutOfElem();
-		pXML->ResetChildPos();
-
-		while(pXML->FindChildElem(_T("Users")))
-			pXML->RemoveChildElem();
-		pXML->AddChildElem(_T("Users"));
-		pXML->IntoElem();
-	
-		//Save the changed user details
-		for (t_UsersList::const_iterator iter=m_UsersList.begin(); iter!=m_UsersList.end(); iter++)
-		{
-			pXML->AddChildElem(_T("User"));
-			pXML->AddChildAttrib(_T("Name"), iter->user);
-			pXML->IntoElem();
-		
-			SetKey(pXML, _T("Pass"), iter->password);
-			SetKey(pXML, _T("Group"), iter->group);
-			SetKey(pXML, _T("Bypass server userlimit"), iter->nBypassUserLimit);
-			SetKey(pXML, _T("User Limit"), iter->nUserLimit);
-			SetKey(pXML, _T("IP Limit"), iter->nIpLimit);
-			SetKey(pXML, _T("Enabled"), iter->nEnabled);
-			SetKey(pXML, _T("Comments"), iter->comment);
-			SetKey(pXML, _T("ForceSsl"), iter->forceSsl);
-		
-			SaveIpFilter(pXML, *iter);
-			SavePermissions(pXML, *iter);
-			SaveSpeedLimits(pXML, *iter);
-
-			pXML->OutOfElem();
-		}
-		if (!COptions::FreeXML(pXML))
-			return FALSE;
+		SaveIpFilter(pGroup, *groupiter);		
+		SavePermissions(pGroup, *groupiter);
+		SaveSpeedLimits(pGroup, *groupiter);
 	}
-	else
+
+	TiXmlElement* pUsers;
+	while ((pUsers = pXML->FirstChildElement("Users")))
+		pXML->RemoveChild(pUsers);
+	pUsers = new TiXmlElement("Users");
+	pXML->LinkEndChild(pUsers);
+
+	//Save the changed user details
+	for (t_UsersList::const_iterator iter=m_UsersList.begin(); iter!=m_UsersList.end(); iter++)
+	{
+		TiXmlElement* pUser = new TiXmlElement("User");
+		pUsers->LinkEndChild(pUser);
+		
+		pUser->SetAttribute("Name", ConvToNetwork(iter->user));
+
+		SetKey(pUser, _T("Pass"), iter->password);
+		SetKey(pUser, _T("Group"), iter->group);
+		SetKey(pUser, _T("Bypass server userlimit"), iter->nBypassUserLimit);
+		SetKey(pUser, _T("User Limit"), iter->nUserLimit);
+		SetKey(pUser, _T("IP Limit"), iter->nIpLimit);
+		SetKey(pUser, _T("Enabled"), iter->nEnabled);
+		SetKey(pUser, _T("Comments"), iter->comment);
+		SetKey(pUser, _T("ForceSsl"), iter->forceSsl);
+
+		SaveIpFilter(pUser, *iter);
+		SavePermissions(pUser, *iter);
+		SaveSpeedLimits(pUser, *iter);
+	}
+	if (!COptions::FreeXML(pXML))
 		return FALSE;
 
 	return TRUE;
@@ -1311,29 +1309,28 @@ bool CPermissions::Init()
 	return TRUE;
 }
 
-void CPermissions::ReadPermissions(CMarkupSTL *pXML, t_group &user, BOOL &bGotHome)
+void CPermissions::ReadPermissions(TiXmlElement *pXML, t_group &user, BOOL &bGotHome)
 {
 	bGotHome = FALSE;
-	pXML->ResetChildPos();
-	while (pXML->FindChildElem(_T("Permissions")))
+	for (TiXmlElement* pPermissions = pXML->FirstChildElement("Permissions"); pPermissions; pPermissions = pPermissions->NextSiblingElement("Permissions"))
 	{
-		pXML->IntoElem();
-		while (pXML->FindChildElem(_T("Permission")))
+		for (TiXmlElement* pPermission = pPermissions->FirstChildElement("Permission"); pPermission; pPermission = pPermission->NextSiblingElement("Permission"))
 		{
 			t_directory dir;
-			dir.dir = pXML->GetChildAttrib(_T("Dir"));
+			dir.dir = ConvFromNetwork(pPermission->Attribute("Dir"));
 			dir.dir.Replace('/', '\\');
 			dir.dir.TrimRight('\\');
 			if (dir.dir == _T(""))
 				continue;
 
-			pXML->IntoElem();
-			while (pXML->FindChildElem(_T("Aliases")))
+			for (TiXmlElement* pAliases = pPermission->FirstChildElement("Aliases"); pAliases; pAliases = pAliases->NextSiblingElement("Aliases"))
 			{
-				pXML->IntoElem();
-				while (pXML->FindChildElem(_T("Alias")))
+				for (TiXmlElement* pAlias = pAliases->FirstChildElement("Alias"); pAlias; pAlias = pAlias->NextSiblingElement("Alias"))
 				{
-					CStdString alias = pXML->GetChildData();
+					CStdString alias = ReadText(pAlias);
+					if (alias == _T(""))
+						continue;
+
 					if (alias[0] != '/')
 					{
 						alias.Replace(_T("/"), _T("\\"));
@@ -1357,13 +1354,12 @@ void CPermissions::ReadPermissions(CMarkupSTL *pXML, t_group &user, BOOL &bGotHo
 							dir.aliases.push_back(alias);
 					}
 				}
-				pXML->OutOfElem();
 			}
-			pXML->ResetChildPos();
-			while (pXML->FindChildElem(_T("Option")))
+			for (TiXmlElement* pOption = pPermission->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option"))
 			{
-				CStdString name = pXML->GetChildAttrib(_T("Name"));
-				CStdString value = pXML->GetChildData();
+				CStdString name = ConvFromNetwork(pOption->Attribute("Name"));
+				CStdString value = ReadText(pOption);
+
 				if (name == _T("FileRead"))
 					dir.bFileRead = value == _T("1");
 				else if (name == _T("FileWrite"))
@@ -1395,9 +1391,7 @@ void CPermissions::ReadPermissions(CMarkupSTL *pXML, t_group &user, BOOL &bGotHo
 
 			if (user.permissions.size() < 20000)
 				user.permissions.push_back(dir);
-			pXML->OutOfElem();			
 		}
-		pXML->OutOfElem();
 	}
 }
 
@@ -1446,200 +1440,180 @@ void CPermissions::AutoCreateDirs(LPCTSTR username)
 			}
 }
 
-void CPermissions::ReadSpeedLimits(CMarkupSTL *pXML, t_group &group)
+CSpeedLimit::t_time ReadTime(TiXmlElement* pElement)
 {
-	pXML->ResetChildPos();
-	
-	const CStdString prefixes[] = { _T("Dl"), _T("Ul") };
-	const CStdString names[] = { _T("Download"), _T("Upload") };
+	CSpeedLimit::t_time t;
 
-	while (pXML->FindChildElem(_T("SpeedLimits")))
+	CStdString str = ConvFromNetwork(pElement->Attribute("Hour"));
+	int n = _ttoi(str);
+	if (n < 0 || n > 23)
+		n = 0;
+	t.h = n;
+	str = ConvFromNetwork(pElement->Attribute("Minute"));
+	n = _ttoi(str);
+	if (n < 0 || n > 59)
+		n = 0;
+	t.m = n;
+	str = ConvFromNetwork(pElement->Attribute("Second"));
+	n = _ttoi(str);
+	if (n < 0 || n > 59)
+		n = 0;
+	t.s = n;
+
+	return t;
+}
+
+void CPermissions::ReadSpeedLimits(TiXmlElement *pXML, t_group &group)
+{
+	const CStdString prefixes[] = { _T("Dl"), _T("Ul") };
+	const char* names[] = { "Download", "Upload" };
+
+	for (TiXmlElement* pSpeedLimits = pXML->FirstChildElement("SpeedLimits"); pSpeedLimits; pSpeedLimits = pSpeedLimits->NextSiblingElement("SpeedLimits"))
 	{
 		CStdString str;
 		int n;
 
 		for (int i = 0; i < 2; i++)
 		{
-			str = pXML->GetChildAttrib(prefixes[i] + _T("Type"));
+			str = pSpeedLimits->Attribute(ConvToNetwork(prefixes[i] + _T("Type")));
 			n = _ttoi(str);
 			if (n >= 0 && n < 4)
 				group.nSpeedLimitType[i] = n;
-			str = pXML->GetChildAttrib(prefixes[i] + _T("Limit"));
+			str = pSpeedLimits->Attribute(ConvToNetwork(prefixes[i] + _T("Limit")));
 			n = _ttoi(str);
 			if (n > 0 && n < 65536)
 				group.nSpeedLimit[i] = n;
 
-			str = pXML->GetChildAttrib(_T("Server") + prefixes[i] + _T("LimitBypass"));
+			str = pSpeedLimits->Attribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")));
 			n = _ttoi(str);
 			if (n >= 0 && n < 4)
 				group.nBypassServerSpeedLimit[i] = n;
 
-			pXML->IntoElem();
-
-			while (pXML->FindChildElem(names[i]))
+			for (TiXmlElement* pLimit = pSpeedLimits->FirstChildElement(names[i]); pLimit; pLimit = pLimit->NextSiblingElement(names[i]))
 			{
-				pXML->IntoElem();
-
-				while (pXML->FindChildElem(_T("Rule")))
+				for (TiXmlElement* pRule = pLimit->FirstChildElement("Rule"); pRule; pRule = pRule->NextSiblingElement("Rule"))
 				{
 					CSpeedLimit limit;
-					str = pXML->GetChildAttrib(_T("Speed"));
+					str = ConvFromNetwork(pRule->Attribute("Speed"));
 					n = _ttoi(str);
 					if (n < 0 || n > 65535)
 						n = 10;
 					limit.m_Speed = n;
-			
-					pXML->IntoElem();
-			
-					if (pXML->FindChildElem(_T("Days")))
+
+					TiXmlElement* pDays = pRule->FirstChildElement("Days");
+					if (pDays)
 					{
-						str = pXML->GetChildData();
+						str = ReadText(pDays);
 						if (str != _T(""))
 							n = _ttoi(str);
 						else
 							n = 0x7F;
 						limit.m_Day = n & 0x7F;
 					}
-					pXML->ResetChildPos();
 			
 					limit.m_DateCheck = FALSE;
-					if (pXML->FindChildElem(_T("Date")))
+
+					TiXmlElement* pDate = pRule->FirstChildElement("Date");
+					if (pDate)
 					{
 						limit.m_DateCheck = TRUE;
-						str = pXML->GetChildAttrib(_T("Year"));
+						str = ConvFromNetwork(pDate->Attribute("Year"));
 						n = _ttoi(str);
 						if (n < 1900 || n > 3000)
 							n = 2003;
 						limit.m_Date.y = n;
-						str = pXML->GetChildAttrib(_T("Month"));
+						str = ConvFromNetwork(pDate->Attribute("Month"));
 						n = _ttoi(str);
 						if (n < 1 || n > 12)
 							n = 1;
 						limit.m_Date.m = n;
-						str = pXML->GetChildAttrib(_T("Day"));
+						str = ConvFromNetwork(pDate->Attribute("Day"));
 						n = _ttoi(str);
 						if (n < 1 || n > 31)
 							n = 1;
 						limit.m_Date.d = n;
 					}
-					pXML->ResetChildPos();
 			
-					limit.m_FromCheck = FALSE;
-					if (pXML->FindChildElem(_T("From")))
+					TiXmlElement* pFrom = pRule->FirstChildElement("From");
+					if (pFrom)
 					{
 						limit.m_FromCheck = TRUE;
-						str = pXML->GetChildAttrib(_T("Hour"));
-						n = _ttoi(str);
-						if (n < 0 || n > 23)
-							n = 0;
-						limit.m_FromTime.h = n;
-						str = pXML->GetChildAttrib(_T("Minute"));
-						n = _ttoi(str);
-						if (n < 0 || n > 59)
-							n = 0;
-						limit.m_FromTime.m = n;
-						str = pXML->GetChildAttrib(_T("Second"));
-						n = _ttoi(str);
-						if (n < 0 || n > 59)
-							n = 0;
-						limit.m_FromTime.s = n;
+						limit.m_FromTime = ReadTime(pFrom);
 					}
-					pXML->ResetChildPos();
+					else
+						limit.m_FromCheck = FALSE;
 
-					limit.m_ToCheck = FALSE;
-					if (pXML->FindChildElem(_T("To")))
+					TiXmlElement* pTo = pRule->FirstChildElement("To");
+					if (pTo)
 					{
 						limit.m_ToCheck = TRUE;
-						str = pXML->GetChildAttrib(_T("Hour"));
-						n = _ttoi(str);
-						if (n < 0 || n > 23)
-							n = 0;
-						limit.m_ToTime.h = n;
-						str = pXML->GetChildAttrib(_T("Minute"));
-						n = _ttoi(str);
-						if (n < 0 || n > 59)
-							n = 0;
-						limit.m_ToTime.m = n;
-						str = pXML->GetChildAttrib(_T("Second"));
-						n = _ttoi(str);
-						if (n < 0 || n > 59)
-							n = 0;
-						limit.m_ToTime.s = n;
+						limit.m_ToTime = ReadTime(pTo);
 					}
-					pXML->ResetChildPos();
-			
-					pXML->OutOfElem();
+					else
+						limit.m_ToCheck = FALSE;
 
 					if (group.SpeedLimits[i].size() < 20000)
 						group.SpeedLimits[i].push_back(limit);
 				}
-				pXML->OutOfElem();
 			}
-			pXML->ResetChildPos();
-			pXML->OutOfElem();
 		}
 	}
 }
 
-void CPermissions::SaveSpeedLimits(CMarkupSTL *pXML, const t_group &group)
+void CPermissions::SaveSpeedLimits(TiXmlElement *pXML, const t_group &group)
 {
-	pXML->AddChildElem(_T("SpeedLimits"));
+	TiXmlElement* pSpeedLimits = pXML->LinkEndChild(new TiXmlElement("SpeedLimits"))->ToElement();
 
 	CStdString str;
 
 	const CStdString prefixes[] = { _T("Dl"), _T("Ul") };
-	const CStdString names[] = { _T("Download"), _T("Upload") };
+	const char* names[] = { "Download", "Upload" };
 
 	for (int i = 0; i < 2; i++)
 	{
-		pXML->SetChildAttrib(prefixes[i] + _T("Type"), group.nSpeedLimitType[i]);
-		pXML->SetChildAttrib(prefixes[i] + _T("Limit"), group.nSpeedLimit[i]);
-		pXML->SetChildAttrib(_T("Server") + prefixes[i] + _T("LimitBypass"), group.nBypassServerSpeedLimit[i]);
+		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Type")), group.nSpeedLimitType[i]);
+		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Limit")), group.nSpeedLimit[i]);
+		pSpeedLimits->SetAttribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")), group.nBypassServerSpeedLimit[i]);
 	
-		pXML->IntoElem();
+		TiXmlElement* pSpeedLimit = new TiXmlElement(names[i]);
+		pSpeedLimits->LinkEndChild(pSpeedLimit);
 
-		pXML->AddChildElem(names[i]);
-		pXML->IntoElem();
 		for (unsigned int j = 0; j < group.SpeedLimits[i].size(); j++)
 		{
 			CSpeedLimit limit = group.SpeedLimits[i][j];
-			pXML->AddChildElem(_T("Rule"));
 
-			pXML->SetChildAttrib(_T("Speed"), limit.m_Speed);
+			TiXmlElement* pRule = pSpeedLimit->LinkEndChild(new TiXmlElement("Rule"))->ToElement();
 
-			pXML->IntoElem();
+			pRule->SetAttribute("Speed", limit.m_Speed);
 
 			str.Format(_T("%d"), limit.m_Day);
-			pXML->AddChildElem(_T("Days"), str);
+			TiXmlElement* pDays = pRule->LinkEndChild(new TiXmlElement("Days"))->ToElement();
+			SetText(pDays, str);
 
 			if (limit.m_DateCheck)
 			{
-				pXML->AddChildElem(_T("Date"));
-				pXML->SetChildAttrib(_T("Year"), limit.m_Date.y);
-				pXML->SetChildAttrib(_T("Month"), limit.m_Date.m);
-				pXML->SetChildAttrib(_T("Day"), limit.m_Date.d);
+				TiXmlElement* pDate = pRule->LinkEndChild(new TiXmlElement("Date"))->ToElement();
+				pRule->SetAttribute("Year", limit.m_Date.y);
+				pRule->SetAttribute("Month", limit.m_Date.m);
+				pRule->SetAttribute("Day", limit.m_Date.d);
 			}
 
 			if (limit.m_FromCheck)
 			{
-				pXML->AddChildElem(_T("From"));
-				pXML->SetChildAttrib(_T("Hour"), limit.m_FromTime.h);
-				pXML->SetChildAttrib(_T("Minute"), limit.m_FromTime.m);
-				pXML->SetChildAttrib(_T("Second"), limit.m_FromTime.s);
+				TiXmlElement* pFrom = pRule->LinkEndChild(new TiXmlElement("From"))->ToElement();
+				pRule->SetAttribute("Hour", limit.m_FromTime.h);
+				pRule->SetAttribute("Minute", limit.m_FromTime.m);
+				pRule->SetAttribute("Second", limit.m_FromTime.s);
 			}
 	
 			if (limit.m_ToCheck)
 			{
-				pXML->AddChildElem(_T("To"));
-				pXML->SetChildAttrib(_T("Hour"), limit.m_ToTime.h);
-				pXML->SetChildAttrib(_T("Minute"), limit.m_ToTime.m);
-				pXML->SetChildAttrib(_T("Second"), limit.m_ToTime.s);
+				TiXmlElement* pTo = pRule->LinkEndChild(new TiXmlElement("To"))->ToElement();
+				pRule->SetAttribute("Hour", limit.m_ToTime.h);
+				pRule->SetAttribute("Minute", limit.m_ToTime.m);
+				pRule->SetAttribute("Second", limit.m_ToTime.s);
 			}
-
-			pXML->OutOfElem();
 		}
-		pXML->OutOfElem();
-		pXML->OutOfElem();
 	}
 }
 
@@ -1659,18 +1633,18 @@ void CPermissions::ReloadConfig()
 	return;
 }
 
-void CPermissions::ReadIpFilter(CMarkupSTL *pXML, t_group &group)
+void CPermissions::ReadIpFilter(TiXmlElement *pXML, t_group &group)
 {
-	pXML->ResetChildPos();
-	while (pXML->FindChildElem(_T("IpFilter")))
+	for (TiXmlElement* pFilter = pXML->FirstChildElement("IpFilter"); pFilter; pFilter = pFilter->NextSiblingElement("IpFilter"))
 	{
-		pXML->IntoElem();
-		while (pXML->FindChildElem(_T("Disallowed")))
+		for (TiXmlElement* pDisallowed = pFilter->FirstChildElement("Disallowed"); pDisallowed; pDisallowed = pDisallowed->NextSiblingElement("Disallowed"))
 		{
-			pXML->IntoElem();
-			while (pXML->FindChildElem(_T("IP")))
+			for (TiXmlElement* pIP = pDisallowed->FirstChildElement("IP"); pIP; pIP = pIP->NextSiblingElement("IP"))
 			{
-				CStdString ip = pXML->GetChildData();
+				CStdString ip = ReadText(pIP);
+				if (ip == _T(""))
+					continue;
+
 				if (group.disallowedIPs.size() >= 20000)
 					break;
 
@@ -1682,15 +1656,15 @@ void CPermissions::ReadIpFilter(CMarkupSTL *pXML, t_group &group)
 						group.disallowedIPs.push_back(ip);
 				}
 			}
-			pXML->OutOfElem();
 		}
-		pXML->ResetChildPos();
-		while (pXML->FindChildElem(_T("Allowed")))
+		for (TiXmlElement* pAllowed = pFilter->FirstChildElement("Allowed"); pAllowed; pAllowed = pAllowed->NextSiblingElement("Allowed"))
 		{
-			pXML->IntoElem();
-			while (pXML->FindChildElem(_T("IP")))
+			for (TiXmlElement* pIP = pAllowed->FirstChildElement("IP"); pIP; pIP = pIP->NextSiblingElement("IP"))
 			{
-				CStdString ip = pXML->GetChildData();
+				CStdString ip = ReadText(pIP);
+				if (ip == _T(""))
+					continue;
+
 				if (group.allowedIPs.size() >= 20000)
 					break;
 
@@ -1702,36 +1676,30 @@ void CPermissions::ReadIpFilter(CMarkupSTL *pXML, t_group &group)
 						group.allowedIPs.push_back(ip);
 				}
 			}
-			pXML->OutOfElem();
 		}
-		pXML->OutOfElem();
 	}
 }
 
-void CPermissions::SaveIpFilter(CMarkupSTL *pXML, const t_group &group)
+void CPermissions::SaveIpFilter(TiXmlElement *pXML, const t_group &group)
 {
-	pXML->AddChildElem(_T("IpFilter"));
-	pXML->IntoElem();
-	pXML->AddChildElem(_T("Disallowed"));
-	pXML->IntoElem();
+	TiXmlElement* pFilter = pXML->LinkEndChild(new TiXmlElement("IpFilter"))->ToElement();
+	
+	TiXmlElement* pDisallowed = pFilter->LinkEndChild(new TiXmlElement("Disallowed"))->ToElement();
+		
 	std::list<CStdString>::const_iterator iter;
 	for (iter = group.disallowedIPs.begin(); iter != group.disallowedIPs.end(); iter++)
 	{
-		pXML->AddChildElem(_T("IP"));
-		pXML->SetChildData(*iter);
+		TiXmlElement* pIP = pDisallowed->LinkEndChild(new TiXmlElement("IP"))->ToElement();
+		SetText(pIP, *iter);
 	}
-	pXML->OutOfElem();
 
-	pXML->AddChildElem(_T("Allowed"));
-	pXML->IntoElem();
+	TiXmlElement* pAllowed = pFilter->LinkEndChild(new TiXmlElement("Allowed"))->ToElement();
+		
 	for (iter = group.allowedIPs.begin(); iter != group.allowedIPs.end(); iter++)
 	{
-		pXML->AddChildElem(_T("IP"));
-		pXML->SetChildData(*iter);
+		TiXmlElement* pIP = pAllowed->LinkEndChild(new TiXmlElement("IP"))->ToElement();
+		SetText(pIP, *iter);
 	}
-	pXML->OutOfElem();
-
-	pXML->OutOfElem();
 }
 
 CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString newDir) const
@@ -2081,83 +2049,78 @@ CStdString CUser::GetAliasTarget(const CStdString& path, const CStdString& virtu
 
 void CPermissions::ReadSettings()
 {
-	CMarkupSTL *pXML = COptions::GetXML();
+	TiXmlElement *pXML = COptions::GetXML();
 	if (!pXML)
 		return;
     
-	if (!pXML->FindChildElem(_T("Groups")))
-		pXML->AddChildElem(_T("Groups"));
-	pXML->IntoElem();
-	while (pXML->FindChildElem(_T("Group")))
+	TiXmlElement* pGroups = pXML->FirstChildElement("Groups");
+	if (!pGroups)
+		pGroups = pXML->LinkEndChild(new TiXmlElement("Groups"))->ToElement();
+
+	for (TiXmlElement* pGroup = pGroups->FirstChildElement("Group"); pGroup; pGroup = pGroup->NextSiblingElement("Group"))
 	{
 		t_group group;
 		group.nIpLimit = group.nIpLimit = group.nUserLimit = 0;
 		group.nBypassUserLimit = 2;
-		group.group = pXML->GetChildAttrib(_T("Name"));
-		if (group.group != _T(""))
+		group.group = ConvFromNetwork(pGroup->Attribute("Name"));
+		if (group.group == _T(""))
+			continue;
+
+		for (TiXmlElement* pOption = pGroup->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option"))
 		{
-			pXML->IntoElem();
-		
-			while (pXML->FindChildElem(_T("Option")))
-			{
-				CStdString name = pXML->GetChildAttrib(_T("Name"));
-				CStdString value = pXML->GetChildData();
-				if (name == _T("Bypass server userlimit"))
-					group.nBypassUserLimit = _ttoi(value);
-				else if (name == _T("User Limit"))
-					group.nUserLimit = _ttoi(value);
-				else if (name == _T("IP Limit"))
-					group.nIpLimit = _ttoi(value);
-				else if (name == _T("Enabled"))
-					group.nEnabled = _ttoi(value);
-				else if (name == _T("Comments"))
-					group.comment = value;
-				else if (name == _T("ForceSsl"))
-					group.forceSsl = _ttoi(value);
+			CStdString name = ConvFromNetwork(pOption->Attribute("Name"));
+			CStdString value = ReadText(pOption);
 
-				if (group.nUserLimit<0 || group.nUserLimit>999999999)
-					group.nUserLimit=0;
-				if (group.nIpLimit<0 || group.nIpLimit>999999999)
-					group.nIpLimit=0;
-			}
-
-			ReadIpFilter(pXML, group);
-				
-			BOOL bGotHome = FALSE;
-			ReadPermissions(pXML, group, bGotHome);
-			//Set a home dir if no home dir could be read
-			if (!bGotHome && !group.permissions.empty())
-				group.permissions.begin()->bIsHome = TRUE;
-
-			ReadSpeedLimits(pXML, group);
-				
-			if (m_GroupsList.size() < 20000)
-				m_GroupsList.push_back(group);
-			pXML->OutOfElem();
+			if (name == _T("Bypass server userlimit"))
+				group.nBypassUserLimit = _ttoi(value);
+			else if (name == _T("User Limit"))
+				group.nUserLimit = _ttoi(value);
+			else if (name == _T("IP Limit"))
+				group.nIpLimit = _ttoi(value);
+			else if (name == _T("Enabled"))
+				group.nEnabled = _ttoi(value);
+			else if (name == _T("Comments"))
+				group.comment = value;
+			else if (name == _T("ForceSsl"))
+				group.forceSsl = _ttoi(value);
 		}
-	}
-	pXML->OutOfElem();
-	pXML->ResetChildPos();
-		
-	if (!pXML->FindChildElem(_T("Users")))
-		pXML->AddChildElem(_T("Users"));
-	pXML->IntoElem();
+		if (group.nUserLimit < 0 || group.nUserLimit > 999999999)
+			group.nUserLimit = 0;
+		if (group.nIpLimit < 0 || group.nIpLimit > 999999999)
+			group.nIpLimit = 0;
 
-	while (pXML->FindChildElem(_T("User")))
+		ReadIpFilter(pGroup, group);
+
+		BOOL bGotHome = FALSE;
+		ReadPermissions(pGroup, group, bGotHome);
+		//Set a home dir if no home dir could be read
+		if (!bGotHome && !group.permissions.empty())
+			group.permissions.begin()->bIsHome = TRUE;
+
+		ReadSpeedLimits(pGroup, group);
+
+		if (m_GroupsList.size() < 20000)
+			m_GroupsList.push_back(group);
+	}
+		
+	TiXmlElement* pUsers = pXML->FirstChildElement("Users");
+	if (!pGroups)
+		pUsers = pXML->LinkEndChild(new TiXmlElement("Users"))->ToElement();
+
+	for (TiXmlElement* pUser = pUsers->FirstChildElement("User"); pUser; pUser = pUser->NextSiblingElement("User"))
 	{
 		CUser user;
 		user.nIpLimit = user.nIpLimit = user.nUserLimit = 0;
 		user.nBypassUserLimit = 2;
-		user.user=pXML->GetChildAttrib(_T("Name"));
+		user.user = ConvFromNetwork(pUser->Attribute("Name"));
 		if (user.user == _T(""))
 			continue;
 
-		pXML->IntoElem();
-
-		while (pXML->FindChildElem(_T("Option")))
+		for (TiXmlElement* pOption = pUser->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option"))
 		{
-			CStdString name = pXML->GetChildAttrib(_T("Name"));
-			CStdString value = pXML->GetChildData();
+			CStdString name = ConvFromNetwork(pOption->Attribute("Name"));
+			CStdString value = ReadText(pOption);
+
 			if (name == _T("Pass"))
 			{
 				// If provided password is not a MD5 has, convert it into a MD5 hash
@@ -2173,11 +2136,9 @@ void CPermissions::ReadSettings()
 					md5.update((unsigned char *)tmp, strlen(tmp));
 					md5.finalize();
 					char *res = md5.hex_digest();
-#ifdef _UNICODE
-					pXML->SetChildData(ConvFromNetwork(res));
-#else
-					pXML->SetChildData(res);
-#endif
+
+					pOption->Clear();
+					SetText(pOption, res);
 					user.password = res;
 					delete [] tmp;
 					delete [] res;
@@ -2199,12 +2160,11 @@ void CPermissions::ReadSettings()
 				user.comment = value;
 			else if (name == _T("ForceSsl"))
 				user.forceSsl = _ttoi(value);
-
-			if (user.nUserLimit < 0 || user.nUserLimit > 999999999)
-				user.nUserLimit = 0;
-			if (user.nIpLimit < 0 || user.nIpLimit > 999999999)
-				user.nIpLimit = 0;
 		}
+		if (user.nUserLimit < 0 || user.nUserLimit > 999999999)
+			user.nUserLimit = 0;
+		if (user.nIpLimit < 0 || user.nIpLimit > 999999999)
+			user.nIpLimit = 0;
 
 		if (user.group != _T(""))
 		{
@@ -2219,10 +2179,10 @@ void CPermissions::ReadSettings()
 				user.group = _T("");
 		}
 			
-		ReadIpFilter(pXML, user);
+		ReadIpFilter(pUser, user);
 
 		BOOL bGotHome = FALSE;
-		ReadPermissions(pXML, user, bGotHome);
+		ReadPermissions(pUser, user, bGotHome);
 		user.PrepareAliasMap();
 				
 		//Set a home dir if no home dir could be read
@@ -2253,11 +2213,10 @@ void CPermissions::ReadSettings()
 			}
 		}
 			
-		ReadSpeedLimits(pXML, user);
+		ReadSpeedLimits(pUser, user);
 
 		if (m_UsersList.size() < 20000)
 			m_UsersList.push_back(user);
-		pXML->OutOfElem();
 	}
 	COptions::FreeXML(pXML);
 
@@ -2365,4 +2324,19 @@ void CPermissions::DestroyDirlisting(struct t_dirlisting* pListing)
 		pListing = pListing->pNext;
 		delete pPrev;
 	}
+}
+
+CStdString CPermissions::ReadText(TiXmlElement* pElement)
+{
+	TiXmlNode* textNode = pElement->FirstChild();
+	if (!textNode || !textNode->ToText())
+		return _T("");
+
+	return ConvFromNetwork(textNode->Value());					
+}
+
+void CPermissions::SetText(TiXmlElement* pElement, const CStdString& text)
+{
+	pElement->Clear();
+	pElement->LinkEndChild(new TiXmlText(ConvToNetwork(text)));
 }

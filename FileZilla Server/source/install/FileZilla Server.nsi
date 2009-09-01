@@ -198,7 +198,9 @@ SectionIn 2
   File "uninstall.ico"
   SetOutPath $INSTDIR\source\includes\openssl
   File "..\includes\openssl\*.h"
-
+  SetOutPath $INSTDIR\source\tinyxml
+  File "..\tinyxml\*.h"
+  File "..\tinyxml\*.cpp"
 SectionEnd
 
 ; optional section
@@ -529,6 +531,8 @@ Section "Uninstall"
   Delete "$INSTDIR\source\install\StartupOptions.ini"
   Delete "$INSTDIR\source\install\InterfaceOptions.ini"
   Delete "$INSTDIR\source\includes\openssl\*.h"
+  Delete "$INSTDIR\source\tinyxml\*.h"
+  Delete "$INSTDIR\source\tinyxml\*.cpp"
 
   ; MUST REMOVE UNINSTALLER, too
   Delete $INSTDIR\uninstall.exe
@@ -548,6 +552,7 @@ Section "Uninstall"
   RMDir "$INSTDIR\source\install"
   RMDir "$INSTDIR\source\includes\openssl"
   RMDir "$INSTDIR\source\includes"
+  RMDir "$INSTDIR\source\tinyxml"
   RMDir "$INSTDIR\source"
   RMDir "$INSTDIR"
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "FileZilla Server"
