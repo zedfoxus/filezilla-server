@@ -43,7 +43,7 @@ protected:
 	BOOL FinishLogon();
 	BOOL SendCommand(LPCTSTR pszCommand, int nTextType);
 	CAdminInterface *m_pAdminInterface;
-	BOOL ParseRecvBuffer();
+	int ParseRecvBuffer();
 	virtual void OnReceive(int nErrorCode);
 	virtual void OnSend(int nErrorCode);
 	struct t_data
