@@ -2104,7 +2104,7 @@ void CPermissions::ReadSettings()
 	}
 		
 	TiXmlElement* pUsers = pXML->FirstChildElement("Users");
-	if (!pGroups)
+	if (!pUsers)
 		pUsers = pXML->LinkEndChild(new TiXmlElement("Users"))->ToElement();
 
 	for (TiXmlElement* pUser = pUsers->FirstChildElement("User"); pUser; pUser = pUser->NextSiblingElement("User"))
