@@ -82,8 +82,10 @@
 #define OPTION_AUTOBAN_ATTEMPTS 56
 #define OPTION_AUTOBAN_TYPE 57
 #define OPTION_AUTOBAN_BANTIME 58
+#define OPTION_SERVICE_NAME 59
+#define OPTION_SERVICE_DISPLAY_NAME 60
 
-#define OPTIONS_NUM 58
+#define OPTIONS_NUM 60
 
 #define CONST_WELCOMEMESSAGE_LINESIZE 75
 
@@ -156,7 +158,9 @@ static const t_Option m_Options[OPTIONS_NUM]={	_T("Serverports"),				0,	FALSE,
 												_T("Autoban enable"),			1,	FALSE,
                                                 _T("Autoban attempts"),			1,	FALSE,
 												_T("Autoban type"),				1,	FALSE,
-												_T("Autoban time"),				1,	FALSE
+												_T("Autoban time"),				1,	FALSE,
+												_T("Service name"),				0,	TRUE,
+												_T("Service display name"),		0,	TRUE
 											};
 
 #endif // OPTION_TYPES_INCLUDED

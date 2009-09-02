@@ -34,15 +34,75 @@ DWORD ServiceExecutionThread(LPDWORD param);
 HANDLE hServiceThread=0;
 void KillService();
 
-static LPTSTR strServiceName = _T("FileZilla Server Service");
 SERVICE_STATUS_HANDLE nServiceStatusHandle = 0; 
 HANDLE killServiceEvent = 0;
 BOOL nServiceRunning = 0;
 DWORD nServiceCurrentStatus = 0;
 
+static TCHAR ServiceDisplayName[257] = _T("FileZilla Server FTP server");
+static TCHAR ServiceName[257] = _T("FileZilla Server");
+
 int SetAdminPort(int port);
 int ReloadConfig();
 int CompatMain(LPCSTR lpCmdLine);
+
+void LoadServiceName()
+{
+	COptions *pOptions = new COptions();
+
+	CStdString name = pOptions->GetOption(OPTION_SERVICE_NAME);
+	if (name.size() > 0 && name.size() < 256)
+		_tcscpy(ServiceName, name);
+
+	CStdString display_name = pOptions->GetOption(OPTION_SERVICE_DISPLAY_NAME);
+	if (display_name.size() > 0 && display_name.size() < 256)
+		_tcscpy(ServiceDisplayName, display_name);
+
+	delete pOptions;
+
+}
+
+int SetServiceName(LPCTSTR serviceName)
+{
+	size_t len = _tcslen(serviceName);
+	if (!len || len > 256)
+		return 1;
+
+	COptions *pOptions = new COptions();
+	pOptions->SetOption(OPTION_SERVICE_NAME, serviceName);
+	delete pOptions;
+
+	pOptions = new COptions();
+	if (pOptions->GetOption(OPTION_SERVICE_NAME) != serviceName)
+	{
+		delete pOptions;
+		return 1;
+	}
+	delete pOptions;
+
+	return 0;
+}
+
+int SetServiceDisplayName(LPCTSTR serviceDisplayName)
+{
+	size_t len = _tcslen(serviceDisplayName);
+	if (!len || len > 256)
+		return 1;
+
+	COptions *pOptions = new COptions();
+	pOptions->SetOption(OPTION_SERVICE_DISPLAY_NAME, serviceDisplayName);
+	delete pOptions;
+
+	pOptions = new COptions();
+	if (pOptions->GetOption(OPTION_SERVICE_DISPLAY_NAME) != serviceDisplayName)
+	{
+		delete pOptions;
+		return 1;
+	}
+	delete pOptions;
+
+	return 0;
+}
 
 int APIENTRY WinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -78,20 +138,26 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			nAction = 6;
 		else if (!strcmp(lpCmdLine, "reload-config"))
 			nAction = 7;
+		else if (!strncmp(lpCmdLine, "servicename ", 12))
+			return SetServiceName(CStdString(lpCmdLine + 12));
+		else if (!strncmp(lpCmdLine, "servicedisplayname ", 19))
+			return SetServiceDisplayName(CStdString(lpCmdLine + 19));
 	}
 
 	if (nAction == 6)
 		return SetAdminPort(atoi(lpCmdLine + 10));
 	else if (nAction == 7)
 		return ReloadConfig();
-	
+
+	LoadServiceName();
+
 	SC_HANDLE hService, hScm;
 	hScm = OpenSCManager(0, 0, SC_MANAGER_CONNECT);
 	
 	if (hScm)
 	{
 		bNT = TRUE;
-		hService = OpenService(hScm, _T("FileZilla Server"), GENERIC_READ);
+		hService = OpenService(hScm, ServiceName, GENERIC_READ);
 		if (hService)
 		{
 			bInstalled = TRUE;
@@ -105,9 +171,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 					CloseServiceHandle(hService);
 					CloseServiceHandle(hScm);
 					
-					SERVICE_TABLE_ENTRY servicetable[]=
+					const SERVICE_TABLE_ENTRY servicetable[]=
 					{
-						{strServiceName,(LPSERVICE_MAIN_FUNCTION)ServiceMain},
+						{ServiceName,(LPSERVICE_MAIN_FUNCTION)ServiceMain},
 						{NULL,NULL}
 					};
 					BOOL success;
@@ -163,8 +229,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			buffer[written + 1] = '"';
 			buffer[written + 2] = 0;
 
-			hService=CreateService(hScm, _T("FileZilla Server"),
-				_T("FileZilla Server FTP server"),
+			hService=CreateService(hScm, ServiceName,
+				ServiceDisplayName,
 				SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS|SERVICE_INTERACTIVE_PROCESS, nStartMode,
 				SERVICE_ERROR_NORMAL,
 				buffer,
@@ -190,7 +256,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		{
 			return 1;
 		}
-		hService=OpenService(hScm, _T("FileZilla Server"), SERVICE_ALL_ACCESS);
+		hService=OpenService(hScm, ServiceName, SERVICE_ALL_ACCESS);
 		if(!hService)
 		{
 			CloseServiceHandle(hScm);
@@ -210,7 +276,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		{
 			return 1;
 		}
-		hService=OpenService(hScm, _T("FileZilla Server") ,SERVICE_ALL_ACCESS);
+		hService=OpenService(hScm, ServiceName, SERVICE_ALL_ACCESS);
 		if(!hService)
 		{
 			CloseServiceHandle(hScm);
@@ -230,7 +296,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		{
 			return 1;
 		}
-		hService=OpenService(hScm, _T("FileZilla Server") ,SERVICE_ALL_ACCESS);
+		hService=OpenService(hScm, ServiceName, SERVICE_ALL_ACCESS);
 		if(!hService)
 		{
 			CloseServiceHandle(hScm);
@@ -251,47 +317,41 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 void ServiceMain(DWORD argc, LPTSTR *argv)
 {
+	LoadServiceName();
+
 	BOOL success;
-	nServiceStatusHandle=RegisterServiceCtrlHandler(strServiceName,
+	nServiceStatusHandle = RegisterServiceCtrlHandler(ServiceName,
 		(LPHANDLER_FUNCTION)ServiceCtrlHandler);
-	if(!nServiceStatusHandle)
-	{
+	if (!nServiceStatusHandle)
 		return;
-	}
-	success=UpdateServiceStatus(SERVICE_START_PENDING,NO_ERROR,0,1,3000);
-	if(!success)
-	{
+
+	success = UpdateServiceStatus(SERVICE_START_PENDING, NO_ERROR, 0, 1, 3000);
+	if (!success)
 		return;
-	}
-	killServiceEvent=CreateEvent(0,TRUE,FALSE,0);
-	if(killServiceEvent==NULL)
-	{
+
+	killServiceEvent = CreateEvent(0, TRUE, FALSE, 0);
+	if (killServiceEvent == NULL)
 		return;
-	}
-	success=UpdateServiceStatus(SERVICE_START_PENDING,NO_ERROR,0,2,1000);
-	if(!success)
-	{
+
+	success = UpdateServiceStatus(SERVICE_START_PENDING, NO_ERROR, 0, 2, 1000);
+	if (!success)
 		return;
-	}
-	success=StartServiceThread();
-	if(!success)
-	{
+
+	success = StartServiceThread();
+	if (!success)
 		return;
-	}
-	nServiceCurrentStatus=SERVICE_RUNNING;
-	success=UpdateServiceStatus(SERVICE_RUNNING,NO_ERROR,0,0,0);
-	if(!success)
-	{
+
+	nServiceCurrentStatus = SERVICE_RUNNING;
+	success = UpdateServiceStatus(SERVICE_RUNNING, NO_ERROR, 0, 0, 0);
+	if (!success)
 		return;
-	}
+
 	WaitForSingleObject(killServiceEvent, INFINITE);
 	CloseHandle(killServiceEvent);
 	WaitForSingleObject(hServiceThread, INFINITE);
 	CloseHandle(hServiceThread);
 	UpdateServiceStatus(SERVICE_STOPPED, NO_ERROR, 0, 0, 0);
 }
-
-
 
 BOOL UpdateServiceStatus(DWORD dwCurrentState, DWORD dwWin32ExitCode,
 					 DWORD dwServiceSpecificExitCode, DWORD dwCheckPoint,
@@ -460,7 +520,7 @@ int ReloadConfig()
 
 	if (hScm)
 	{
-		hService = OpenService(hScm, _T("FileZilla Server"), SERVICE_USER_DEFINED_CONTROL);
+		hService = OpenService(hScm, ServiceName, SERVICE_USER_DEFINED_CONTROL);
 		if (hService)
 		{
 			SERVICE_STATUS status;
