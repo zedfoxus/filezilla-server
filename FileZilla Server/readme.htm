@@ -1,4 +1,4 @@
-<p align="center"><b><u>FileZilla Server version 0.9.32 beta</u></b></p>
+<p align="center"><b><u>FileZilla Server version 0.9.33 beta</u></b></p>
 <p align="center">Copyright 2001-2009<br>
 by <a href="mailto:Tim.Kosse@gmx.de">Tim Kosse</a><a href="http://sourceforge.net/projects/filezilla/"><br>
 http://sourceforge.net/projects/filezilla/</a></p>
@@ -67,6 +67,18 @@ as restoring it to normal size.</p>
 </table>
 <p align="left"><b><u>Version History:</u></b></p>
 <p>For a more detailed list of changes, please have a look at the CVS changelog located at <a href="http://filezilla-project.org/changelog.php?type=2">http://filezilla-project.org/changelog.php?type=2</a>.</p>
+<p><b>Version 0.9.33</b></p>
+<blockquote>
+  <u>New features:</u>
+  <ul>
+    <li>Add /servicename and /servicedisplayname options to change the (display) name of the server service.</li>
+  </ul>
+  <u>Fixed bugs:</u>
+  <ul>
+    <li>Fix potential double-delete in admin connection code, could be used for remote denial of service if using remote administration (not enabled by default).</li>
+    <li>Increase minimum value for maximum allowed login attempts before autoban to 10.</li>
+  </ul>
+</blockquote>
 <p><b>Version 0.9.32</b></p>
 <blockquote>
   <u>New features:</u>
@@ -76,7 +88,7 @@ as restoring it to normal size.</p>
   <u>Fixed bugs:</u>
   <ul>
     <li>Disallow weak SSLv2.</li>
-    <li>Slightly reword FTP over TLS/SSL settings page</li>
+    <li>Slightly reword FTP over TLS/SSL settings page.</li>
     <li>Adjust width of user and group lists on permissions dialogs.</li>
   </ul>
 </blockquote>
