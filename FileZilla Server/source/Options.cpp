@@ -237,8 +237,8 @@ void COptions::SetOption(int nOptionID, _int64 value)
 			value = 0;
 		break;
 	case OPTION_AUTOBAN_ATTEMPTS:
-		if (value < 5)
-			value = 5;
+		if (value < 10)
+			value = 10;
 		if (value > 999)
 			value = 999;
 		break;
