@@ -148,7 +148,7 @@ COptions::~COptions()
 	m_pOptionsHelperWindow=0;
 }
 
-void COptions::SetOption(int nOptionID, _int64 value)
+void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 {
 	switch (nOptionID)
 	{
@@ -260,6 +260,9 @@ void COptions::SetOption(int nOptionID, _int64 value)
 
 	LeaveCritSection(m_Sync);
 
+	if (!save)
+		return;
+
 	CStdString valuestr;
 	valuestr.Format( _T("%I64d"), value);
 
@@ -310,7 +313,7 @@ void COptions::SetOption(int nOptionID, _int64 value)
 	document.SaveFile(bufferA);
 }
 
-void COptions::SetOption(int nOptionID, LPCTSTR value)
+void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 {
 	CStdString str = value;
 	Init();
@@ -612,6 +615,9 @@ void COptions::SetOption(int nOptionID, LPCTSTR value)
 	m_OptionsCache[nOptionID-1]=m_sOptionsCache[nOptionID-1];
 	LeaveCritSection(m_Sync);
 
+	if (!save)
+		return;
+
 	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 	GetModuleFileName( 0, buffer, MAX_PATH );
 	LPTSTR pos=_tcsrchr(buffer, '\\');
@@ -870,26 +876,26 @@ void COptions::Init()
 		CStdString value = ConvFromNetwork(textNode->Value());
 
 
-		for (int i=0;i<OPTIONS_NUM;i++)
+		for (int i = 0; i < OPTIONS_NUM; i++)
 		{
 			if (!_tcscmp(name, m_Options[i].name))
 			{
 				if (m_sOptionsCache[i].bCached)
 					break;
 
-				if (type==_T("numeric"))
+				if (type == _T("numeric"))
 				{
-					if (m_Options[i].nType!=1)
+					if (m_Options[i].nType != 1)
 						break;
-					_int64 value64=_ttoi64(value);
+					_int64 value64 = _ttoi64(value);
 					if (IsNumeric(value))
-						SetOption(i+1, value64);
+						SetOption(i + 1, value64, false);
 				}
 				else
 				{
-					if (m_Options[i].nType!=0)
+					if (m_Options[i].nType != 0)
 						break;
-					SetOption(i+1, value);
+					SetOption(i + 1, value, false);
 				}
 				break;
 			}
@@ -1118,9 +1124,9 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 			pBuffer[len]=0;
 			if (!m_Options[i].bOnlyLocal || bFromLocal) //Do not change admin interface settings from remote connections
 #ifdef _UNICODE
-				SetOption(i+1, ConvFromNetwork(pBuffer));
+				SetOption(i+1, ConvFromNetwork(pBuffer), false);
 #else
-				SetOption(i+1, ConvToLocal(ConvFromNetwork(pBuffer)));
+				SetOption(i+1, ConvToLocal(ConvFromNetwork(pBuffer)), false);
 #endif
 			delete [] pBuffer;
 			p+=len;
@@ -1130,7 +1136,7 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 			if ((DWORD)(p-pData+8)>dwDataLength)
 				return FALSE;
 			if (!m_Options[i].bOnlyLocal || bFromLocal) //Do not change admin interface settings from remote connections
-				SetOption(i+1, GET64(p));
+				SetOption(i+1, GET64(p), false);
 			p+=8;
 		}
 		else
@@ -1178,11 +1184,13 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 
 	m_sSpeedLimits[0] = dl;
 	m_sSpeedLimits[1] = ul;
-	VERIFY(SaveSpeedLimits());
+
+	SaveOptions();
 
 	LeaveCritSection(m_Sync);
 
 	UpdateInstances();
+
 	return TRUE;
 }
 
@@ -1192,33 +1200,8 @@ static void SetText(TiXmlElement* pElement, const CStdString& text)
 	pElement->LinkEndChild(new TiXmlText(ConvToNetwork(text)));
 }
 
-BOOL COptions::SaveSpeedLimits()
+BOOL COptions::SaveSpeedLimits(TiXmlElement* pSettings)
 {
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server.xml"));
-
-	USES_CONVERSION;
-	char* bufferA = T2A(buffer);
-	if (!bufferA)
-		return FALSE;
-
-	TiXmlDocument document;
-	if (!document.LoadFile(bufferA))
-		return FALSE;
-
-	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot)
-		return FALSE;
-
-	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
-	if (!pSettings)
-		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
-
-
 	TiXmlElement* pSpeedLimits;
 	while ((pSpeedLimits = pSettings->FirstChildElement("SpeedLimits")))
 		pSettings->RemoveChild(pSpeedLimits);
@@ -1270,9 +1253,6 @@ BOOL COptions::SaveSpeedLimits()
 			}
 		}
 	}
-
-	if (!document.SaveFile(bufferA))
-		return FALSE;
 
 	return TRUE;
 }
@@ -1497,4 +1477,56 @@ void COptions::ReloadConfig()
 
 	LeaveCritSection(m_Sync);
 	UpdateInstances();
+}
+
+void COptions::SaveOptions()
+{
+	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
+	GetModuleFileName( 0, buffer, MAX_PATH );
+	LPTSTR pos=_tcsrchr(buffer, '\\');
+	if (pos)
+		*++pos=0;
+	_tcscat(buffer, _T("FileZilla Server.xml"));
+
+	USES_CONVERSION;
+	char* bufferA = T2A(buffer);
+	if (!bufferA)
+		return;
+
+	TiXmlDocument document;
+	if (!document.LoadFile(bufferA))
+		return;
+
+	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
+	if (!pRoot)
+		return;
+
+	TiXmlElement* pSettings;
+	while ((pSettings = pRoot->FirstChildElement("Settings")))
+		pRoot->RemoveChild(pSettings);
+	pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+
+	for (unsigned int i = 0; i < OPTIONS_NUM; i++)
+	{
+		if (!m_OptionsCache[i].bCached)
+			continue;
+
+		CStdString valuestr;
+		if (!m_OptionsCache[i].nType)
+			valuestr = m_OptionsCache[i].str;
+		else
+			valuestr.Format( _T("%I64d"), m_OptionsCache[i].value);
+
+		TiXmlElement* pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
+		pItem->SetAttribute("name", ConvToNetwork(m_Options[i].name));
+		if (!m_OptionsCache[i].nType)
+			pItem->SetAttribute("type", "string");
+		else
+			pItem->SetAttribute("type", "numeric");
+		pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr)));
+	}
+
+	SaveSpeedLimits(pSettings);
+
+	document.SaveFile(bufferA);
 }

@@ -44,8 +44,8 @@ public:
 	static BOOL FreeXML(TiXmlElement *pXML);
 
 	BOOL ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOOL bFromLocal = FALSE);
-	void SetOption(int nOptionID, LPCTSTR value);
-	void SetOption(int nOptionID, _int64 value);
+	void SetOption(int nOptionID, LPCTSTR value, bool save = true);
+	void SetOption(int nOptionID, _int64 value, bool save = true);
 	int GetCurrentSpeedLimit(int nMode);
 	void ReloadConfig();
 
@@ -55,8 +55,10 @@ protected:
 	static std::list<COptions *> m_InstanceList;
 	static bool IsNumeric(LPCTSTR str);
 
+	void SaveOptions();
+
 	BOOL ReadSpeedLimits(TiXmlElement *pXML);
-	BOOL SaveSpeedLimits();
+	BOOL SaveSpeedLimits(TiXmlElement* pSettings);
 
 	static SPEEDLIMITSLIST m_sSpeedLimits[2];
 	SPEEDLIMITSLIST m_SpeedLimits[2];
