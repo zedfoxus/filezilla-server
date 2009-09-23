@@ -160,9 +160,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 		if (m_hFile != INVALID_HANDLE_VALUE)
 			CloseHandle(m_hFile);
 		m_hFile = INVALID_HANDLE_VALUE;
-		m_status=1;
-		m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-		Close();
+		EndTransfer(1);
 		return;
 	}
 
@@ -220,9 +218,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 						if (m_pDirListing && m_pDirListing->pNext)
 						{
 							ShutDown();
-							Close();
-							m_status = 6;
-							m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+							EndTransfer(6);
 							return;
 						}
 						if (!(m_nBufSize - m_nBufferPos - m_zlibStream.avail_out))
@@ -231,9 +227,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 					else if (res != Z_OK)
 					{
 						ShutDown();
-						Close();
-						m_status = 6;
-						m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+						EndTransfer(6);
 						return;
 					}
 					if (!m_zlibStream.avail_in && m_pDirListing)
@@ -263,11 +257,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				if (numsent == SOCKET_ERROR)
 				{
 					if (GetLastError() != WSAEWOULDBLOCK)
-					{
-						Close();
-						m_status = 1;
-						m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-					}
+						EndTransfer(1);
 					return;
 				}
 
@@ -313,11 +303,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				{
 					int error = GetLastError();
 					if (error != WSAEWOULDBLOCK)
-					{
-						Close();
-						m_status = 1;
-						m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-					}
+						EndTransfer(1);
 					return;
 				}
 
@@ -368,9 +354,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 		}
 		else
 			ShutDown();
-		Close();
-		m_status = 0;
-		m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+		EndTransfer(0);
 	}
 	else if (m_nMode == TRANSFERMODE_SEND)
 	{ //Send file
@@ -398,9 +382,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 						{
 							CloseHandle(m_hFile);
 							m_hFile = INVALID_HANDLE_VALUE;
-							Close();
-							m_status = 3; //TODO: Better reason
-							m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+							EndTransfer(3); // TODO: Better reason
 							return;
 						}
 						m_currentFileOffset += numread;
@@ -440,9 +422,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 					{
 						if (m_hFile != INVALID_HANDLE_VALUE)
 						{
-							Close();
-							m_status = 6;
-							m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+							EndTransfer(6);
 							return;
 						}
 						if (!(m_nBufSize - m_nBufferPos - m_zlibStream.avail_out))
@@ -450,9 +430,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 					}
 					else if (res != Z_OK)
 					{
-						Close();
-						m_status = 6;
-						m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+						EndTransfer(6);
 						return;
 					}
 				}
@@ -476,11 +454,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				if (numsent == SOCKET_ERROR)
 				{
 					if (GetLastError() != WSAEWOULDBLOCK)
-					{
-						Close();
-						m_status = 1;
-						m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-					}
+						EndTransfer(1);
 					return;
 				}
 
@@ -517,9 +491,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 					{
 						CloseHandle(m_hFile);
 						m_hFile = INVALID_HANDLE_VALUE;
-						Close();
-						m_status = 3; //TODO: Better reason
-						m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+						EndTransfer(3); //TODO: Better reason
 						return;
 					}
 
@@ -536,9 +508,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 							if (m_pGssLayer || m_pSslLayer)
 								if (!ShutDown() && GetLastError() == WSAEWOULDBLOCK)
 									return;
-							m_status = 0;
-							m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-							Close();
+							EndTransfer(0);
 							return;
 						}
 					}
@@ -576,9 +546,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 					{
 						CloseHandle(m_hFile);
 						m_hFile = INVALID_HANDLE_VALUE;
-						m_status=1;
-						m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-						Close();
+						EndTransfer(1);
 						return;
 					}
 					m_nBufferPos=numread;
@@ -619,11 +587,9 @@ void CTransferSocket::OnSend(int nErrorCode)
 		}
 		else
 			ShutDown();
-		m_status = 0;
 		Sleep(0); //Give the system the possibility to relay the data
 				  //If not using Sleep(0), GetRight for example can't receive the last chunk.
-		m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-		Close();
+		EndTransfer(0);
 	}
 	else if (m_nMode == TRANSFERMODE_NOTSET)
 	{
@@ -640,13 +606,7 @@ void CTransferSocket::OnConnect(int nErrorCode)
 			CloseHandle(m_hFile);
 			m_hFile = INVALID_HANDLE_VALUE;
 		}
-		Close();
-		if (!m_bSentClose)
-		{
-			m_bSentClose = TRUE;
-			m_status = 2;
-			m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-		}
+		EndTransfer(2);
 		return;
 	}
 
@@ -673,13 +633,7 @@ void CTransferSocket::OnConnect(int nErrorCode)
 		
 		if (code)
 		{
-			Close();
-			if (!m_bSentClose)
-			{
-				m_bSentClose = TRUE;
-				m_status = 2;
-				m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-			}
+			EndTransfer(2);
 			return;
 		}
 		m_waitingForSslHandshake = true;
@@ -695,19 +649,13 @@ void CTransferSocket::OnClose(int nErrorCode)
 {
 	if (nErrorCode)
 	{
-		Close();
 		if (m_hFile)
 		{
 			FlushFileBuffers(m_hFile);
 			CloseHandle(m_hFile);
 			m_hFile = INVALID_HANDLE_VALUE;
 		}
-		if (!m_bSentClose)
-		{
-			m_bSentClose=TRUE;
-			m_status=1;
-			m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-		}
+		EndTransfer(1);
 		return;
 	}
 	if (m_bReady)
@@ -725,26 +673,16 @@ void CTransferSocket::OnClose(int nErrorCode)
 					if (pos == GetPosition64(m_hFile))
 						break; //Leave loop when no data was written to file
 			} while (m_hFile != INVALID_HANDLE_VALUE); //Or file was closed
-			Close();
 			if (m_hFile != INVALID_HANDLE_VALUE)
 			{
 				FlushFileBuffers(m_hFile);
 				CloseHandle(m_hFile);
 				m_hFile = INVALID_HANDLE_VALUE;
 			}
-			if (!m_bSentClose)
-			{
-				m_bSentClose=TRUE;
-				m_status=0;
-				m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-			}
+			EndTransfer(0);
 		}
 		else
-		{
-			Close();
-			m_status=(m_nMode==TRANSFERMODE_RECEIVE)?0:1;
-			m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-		}
+			EndTransfer((m_nMode == TRANSFERMODE_RECEIVE) ? 0 : 1);
 	}
 
 	CAsyncSocketEx::OnClose(nErrorCode);
@@ -787,13 +725,7 @@ void CTransferSocket::OnAccept(int nErrorCode)
 		
 		if (code)
 		{
-			Close();
-			if (!m_bSentClose)
-			{
-				m_bSentClose = TRUE;
-				m_status = 2;
-				m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-			}
+			EndTransfer(2);
 			return;
 		}
 		m_waitingForSslHandshake = true;
@@ -815,18 +747,12 @@ void CTransferSocket::OnReceive(int nErrorCode)
 		obeySpeedLimit = false;
 	else if (nErrorCode)
 	{
-		Close();
 		if (m_hFile != INVALID_HANDLE_VALUE)
 		{
 			CloseHandle(m_hFile);
 			m_hFile = INVALID_HANDLE_VALUE;
 		}
-		if (!m_bSentClose)
-		{
-			m_bSentClose=TRUE;
-			m_status = 3;
-			m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-		}
+		EndTransfer(3);
 		return;
 	}
 	else if (GetState() == closed)
@@ -869,13 +795,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 					CloseHandle(m_hFile);
 					m_hFile = INVALID_HANDLE_VALUE;
 				}
-				Close();
-				if (!m_bSentClose)
-				{
-					m_bSentClose=TRUE;
-					m_status=1;
-					m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-				}
+				EndTransfer(1);
 			}
 			return;
 		}
@@ -886,13 +806,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 				CloseHandle(m_hFile);
 				m_hFile = INVALID_HANDLE_VALUE;
 			}
-			Close();
-			if (!m_bSentClose)
-			{
-				m_bSentClose = TRUE;
-				m_status = 0;
-				m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-			}
+			EndTransfer(0);
 			return;
 		}
 		((CServerThread *)m_pOwner->m_pOwner)->IncRecvCount(numread);
@@ -923,13 +837,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 				{
 					CloseHandle(m_hFile);
 					m_hFile = INVALID_HANDLE_VALUE;
-					Close();
-					if (!m_bSentClose)
-					{
-						m_bSentClose=TRUE;
-						m_status = 3; //TODO: Better reason
-						m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-					}
+					EndTransfer(3); // TODO: Better reason
 					return;
 				}
 				m_currentFileOffset += numwritten;
@@ -945,13 +853,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 				{
 					CloseHandle(m_hFile);
 					m_hFile = INVALID_HANDLE_VALUE;
-					Close();
-					if (!m_bSentClose)
-					{
-						m_bSentClose=TRUE;
-						m_status=3; //TODO: Better reason
-						m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-					}
+					EndTransfer(3); // TODO: Better reason
 					return;
 				}
 				m_currentFileOffset += numwritten;
@@ -960,13 +862,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			{
 				CloseHandle(m_hFile);
 				m_hFile = INVALID_HANDLE_VALUE;
-				Close();
-				if (!m_bSentClose)
-				{
-					m_bSentClose=TRUE;
-					m_status = 6;
-					m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-				}
+				EndTransfer(6);
 				return;
 			}
 		}
@@ -977,13 +873,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			{
 				CloseHandle(m_hFile);
 				m_hFile = INVALID_HANDLE_VALUE;
-				Close();
-				if (!m_bSentClose)
-				{
-					m_bSentClose=TRUE;
-					m_status=3; //TODO: Better reason
-					m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-				}
+				EndTransfer(3); //TODO: Better reason
 				return;
 			}
 			m_currentFileOffset += numwritten;
@@ -1031,9 +921,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			}
 			if (OwnerIP != TransferIP && OwnerIP != _T("127.0.0.1") && TransferIP != _T("127.0.0.1"))
 			{
-				m_status = 5;
-				Close();
-				m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+				EndTransfer(5);
 				return FALSE;
 			}
 		}
@@ -1065,9 +953,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			}
 			if (OwnerIP != TransferIP && OwnerIP != _T("127.0.0.1") && TransferIP != _T("127.0.0.1"))
 			{
-				m_status = 5;
-				Close();
-				m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+				EndTransfer(5);
 				return FALSE;
 			}
 		}
@@ -1092,9 +978,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		m_hFile = CreateFile(m_Filename, GENERIC_READ, shareMode, 0, OPEN_EXISTING, 0, 0);
 		if (m_hFile == INVALID_HANDLE_VALUE)
 		{
-			m_status=3;
-			m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-			Close();
+			EndTransfer(3);
 			return FALSE;
 		}
 		DWORD low=(DWORD)(m_nRest&0xFFFFFFFF);
@@ -1105,9 +989,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			low = SetFilePointer(m_hFile, 0, &high, FILE_END);
 			if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR)
 			{
-				m_status=3;
-				m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-				Close();
+				EndTransfer(3);
 				return FALSE;
 			}
 		}
@@ -1147,13 +1029,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			m_hFile = CreateFile(m_Filename, GENERIC_WRITE, shareMode, 0, OPEN_ALWAYS, 0, 0);
 			if (m_hFile == INVALID_HANDLE_VALUE)
 			{
-				Close();
-				if (!m_bSentClose)
-				{
-					m_bSentClose = TRUE;
-					m_status = 3;
-					m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-				}
+				EndTransfer(3);
 				return FALSE;
 			}
 			DWORD low = (DWORD)(m_nRest&0xFFFFFFFF);
@@ -1161,13 +1037,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			low = SetFilePointer(m_hFile, low, &high, FILE_BEGIN);
 			if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR)
 			{
-				Close();
-				if (!m_bSentClose)
-				{
-					m_bSentClose = TRUE;
-					m_status = 3;
-					m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-				}
+				EndTransfer(3);
 				return FALSE;
 			}
 			SetEndOfFile(m_hFile);
@@ -1205,14 +1075,13 @@ BOOL CTransferSocket::CheckForTimeout()
 	_int64 elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
 	if (timeout && elapsed > (timeout*10000000))
 	{
-		m_status=4;
-		m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+		EndTransfer(4);
+		return TRUE;
 	}
 	else if (!m_bStarted && elapsed > (10 * 10000000))
 	{
-		m_status = 2;
-		m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-		return FALSE;
+		EndTransfer(2);
+		return TRUE;
 	}
 	else if (!timeout)
 		return FALSE;
@@ -1250,11 +1119,9 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 		{
 			if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == GSS_SHUTDOWN_COMPLETE)
 			{
-				m_status = 0;
 				Sleep(0); //Give the system the possibility to relay the data
 				//If not using Sleep(0), GetRight for example can't receive the last chunk.
-				m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-				Close();
+				EndTransfer(0);
 
 				do
 				{
@@ -1269,11 +1136,9 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 		{
 			if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO && iter->nParam2 == SSL_INFO_SHUTDOWNCOMPLETE)
 			{
-				m_status = 0;
 				Sleep(0); //Give the system the possibility to relay the data
 				//If not using Sleep(0), GetRight for example can't receive the last chunk.
-				m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
-				Close();
+				EndTransfer(0);
 
 				do
 				{
@@ -1337,4 +1202,16 @@ bool CTransferSocket::GetZlibStats(_int64 &bytesIn, _int64 &bytesOut) const
 	bytesOut = m_zlibBytesOut;
 	
 	return true;
+}
+
+void CTransferSocket::EndTransfer(int status)
+{
+	Close();
+
+	if (m_bSentClose)
+		return;
+
+	m_bSentClose = TRUE;
+	m_status = status;
+	m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
 }

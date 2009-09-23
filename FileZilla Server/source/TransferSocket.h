@@ -79,6 +79,8 @@ protected:
 
 	virtual int OnLayerCallback(std::list<t_callbackMsg>& callbacks);
 
+	void EndTransfer(int status);
+
 	t_dirlisting *m_pDirListing;
 	BOOL m_bSentClose;
 	CStdString m_Filename;
