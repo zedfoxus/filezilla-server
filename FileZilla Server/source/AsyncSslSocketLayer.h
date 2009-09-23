@@ -172,7 +172,7 @@ private:
 	BOOL ShutDownComplete();
 	int InitSSL();
 	void UnloadSSL();
-	void PrintLastErrorMsg();
+	bool PrintLastErrorMsg();
 	void ClearErrors();
 
 	void TriggerEvents();

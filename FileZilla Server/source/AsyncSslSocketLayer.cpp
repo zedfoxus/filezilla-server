@@ -540,12 +540,15 @@ void CAsyncSslSocketLayer::OnReceive(int nErrorCode)
 			{
 				if (!pBIO_test_flags(m_sslbio, BIO_FLAGS_SHOULD_RETRY))
 				{
-					delete [] m_pRetrySendBuffer;
-					m_pRetrySendBuffer = 0;
+					if (PrintLastErrorMsg())
+					{
+						delete [] m_pRetrySendBuffer;
+						m_pRetrySendBuffer = 0;
 
-					SetLastError(WSAECONNABORTED);
-					TriggerEvent(FD_CLOSE, 0, TRUE);
-					return;
+						SetLastError(WSAECONNABORTED);
+						TriggerEvent(FD_CLOSE, 0, TRUE);
+						return;
+					}
 				}
 			}
 		}
@@ -693,12 +696,15 @@ void CAsyncSslSocketLayer::OnSend(int nErrorCode)
 			{
 				if (!pBIO_test_flags(m_sslbio, BIO_FLAGS_SHOULD_RETRY))
 				{
-					delete [] m_pRetrySendBuffer;
-					m_pRetrySendBuffer = 0;
+					if (PrintLastErrorMsg())
+					{
+						delete [] m_pRetrySendBuffer;
+						m_pRetrySendBuffer = 0;
 
-					SetLastError(WSAECONNABORTED);
-					TriggerEvent(FD_CLOSE, 0, TRUE);
-					return;
+						SetLastError(WSAECONNABORTED);
+						TriggerEvent(FD_CLOSE, 0, TRUE);
+						return;
+					}
 				}
 			}
 		}
@@ -795,10 +801,16 @@ int CAsyncSslSocketLayer::Send(const void* lpBuf, int nBufLen, int nFlags)
 			}
 			else
 			{
-				delete [] m_pRetrySendBuffer;
-				m_pRetrySendBuffer = 0;
+				bool fatal = PrintLastErrorMsg();
+				if (fatal)
+				{
+					delete [] m_pRetrySendBuffer;
+					m_pRetrySendBuffer = 0;
 
-				SetLastError(WSAECONNABORTED);
+					SetLastError(WSAECONNABORTED);
+				}
+				else
+					SetLastError(WSAEWOULDBLOCK);
 			}
 			return SOCKET_ERROR;
 		}
@@ -913,39 +925,40 @@ int CAsyncSslSocketLayer::Receive(void* lpBuf, int nBufLen, int nFlags)
 		{
 			if (!pBIO_test_flags(m_sslbio, BIO_FLAGS_SHOULD_RETRY))
 			{
-				PrintLastErrorMsg();
-				m_nNetworkError = WSAECONNABORTED;
-				WSASetLastError(WSAECONNABORTED);
-				TriggerEvent(FD_CLOSE, 0, TRUE);
-				return SOCKET_ERROR;
-			}
-			else
-			{
-				if (pSSL_get_shutdown(m_ssl))
+				bool fatal = PrintLastErrorMsg();
+				if (fatal)
 				{
-					if (ShutDown() || GetLastError() == WSAEWOULDBLOCK)
-					{
-						if (ShutDownComplete())
-						{
-							TriggerEvent(FD_CLOSE, 0, TRUE);
-							return 0;
-						}
-						else
-							WSASetLastError(WSAEWOULDBLOCK);
-					}
-					else
-					{
-						m_nNetworkError = WSAECONNABORTED;
-						WSASetLastError(WSAECONNABORTED);
-						TriggerEvent(FD_CLOSE, 0, TRUE);
-					}
+					m_nNetworkError = WSAECONNABORTED;
+					WSASetLastError(WSAECONNABORTED);
+					TriggerEvent(FD_CLOSE, 0, TRUE);
 					return SOCKET_ERROR;
 				}
-				m_mayTriggerReadUp = true;
-				TriggerEvents();
-				SetLastError(WSAEWOULDBLOCK);
+			}
+
+			if (pSSL_get_shutdown(m_ssl))
+			{
+				if (ShutDown() || GetLastError() == WSAEWOULDBLOCK)
+				{
+					if (ShutDownComplete())
+					{
+						TriggerEvent(FD_CLOSE, 0, TRUE);
+						return 0;
+					}
+					else
+						WSASetLastError(WSAEWOULDBLOCK);
+				}
+				else
+				{
+					m_nNetworkError = WSAECONNABORTED;
+					WSASetLastError(WSAECONNABORTED);
+					TriggerEvent(FD_CLOSE, 0, TRUE);
+				}
 				return SOCKET_ERROR;
 			}
+			m_mayTriggerReadUp = true;
+			TriggerEvents();
+			SetLastError(WSAEWOULDBLOCK);
+			return SOCKET_ERROR;
 		}
 
 		m_mayTriggerReadUp = true;
@@ -1915,16 +1928,23 @@ void CAsyncSslSocketLayer::OnClose(int nErrorCode)
 		TriggerEvent(FD_CLOSE, nErrorCode, TRUE);
 }
 
-void CAsyncSslSocketLayer::PrintLastErrorMsg()
+bool CAsyncSslSocketLayer::PrintLastErrorMsg()
 {
+	bool fatal = false;
 	int err = pERR_get_error();
 	while (err)
 	{
+		// Something about an undefined const function or
+		// so, no idea where that comes from. OpenSSL is a mess
+		if (err != 336539714)
+			fatal = true;
 		char *buffer = new char[512];
 		pERR_error_string(err, buffer);
 		err = pERR_get_error();
 		DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERBOSE_WARNING, 0, buffer);
 	}
+
+	return fatal;
 }
 
 void CAsyncSslSocketLayer::ClearErrors()
