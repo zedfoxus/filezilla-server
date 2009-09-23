@@ -962,11 +962,19 @@ TiXmlElement *COptions::GetXML()
 	return pElement;
 }
 
-BOOL COptions::FreeXML(TiXmlElement *pXML)
+BOOL COptions::FreeXML(TiXmlElement *pXML, bool save)
 {
 	ASSERT(pXML);
 	if (!pXML)
 		return FALSE;
+
+	if (!save)
+	{
+		delete pXML->GetDocument();
+		LeaveCritSection(m_Sync);
+		return FALSE;
+	}
+
 	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 	GetModuleFileName( 0, buffer, MAX_PATH );
 	LPTSTR pos=_tcsrchr(buffer, '\\');
@@ -1448,26 +1456,26 @@ void COptions::ReloadConfig()
 		CStdString value = ConvFromNetwork(textNode->Value());
 
 
-		for (int i=0;i<OPTIONS_NUM;i++)
+		for (int i = 0;i < OPTIONS_NUM; i++)
 		{
 			if (!_tcscmp(name, m_Options[i].name))
 			{
 				if (m_sOptionsCache[i].bCached)
 					break;
 
-				if (type ==_T("numeric"))
+				if (type == _T("numeric"))
 				{
-					if (m_Options[i].nType!=1)
+					if (m_Options[i].nType != 1)
 						break;
-					_int64 value64=_ttoi64(value);
+					_int64 value64 = _ttoi64(value);
 					if (IsNumeric(value))
-						SetOption(i+1, value64);
+						SetOption(i + 1, value64, false);
 				}
 				else
 				{
-					if (m_Options[i].nType!=0)
+					if (m_Options[i].nType != 0)
 						break;
-					SetOption(i+1, value);
+					SetOption(i  +1, value, false);
 				}
 				break;
 			}

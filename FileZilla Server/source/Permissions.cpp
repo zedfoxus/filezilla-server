@@ -1258,7 +1258,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		SavePermissions(pUser, *iter);
 		SaveSpeedLimits(pUser, *iter);
 	}
-	if (!COptions::FreeXML(pXML))
+	if (!COptions::FreeXML(pXML, true))
 		return FALSE;
 
 	return TRUE;
@@ -2218,7 +2218,7 @@ void CPermissions::ReadSettings()
 		if (m_UsersList.size() < 20000)
 			m_UsersList.push_back(user);
 	}
-	COptions::FreeXML(pXML);
+	COptions::FreeXML(pXML, false);
 
 	EnterCritSection(m_sync);
 

@@ -41,7 +41,7 @@ public:
 	virtual ~COptions();
 
 	static TiXmlElement *GetXML();
-	static BOOL FreeXML(TiXmlElement *pXML);
+	static BOOL FreeXML(TiXmlElement *pXML, bool save);
 
 	BOOL ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOOL bFromLocal = FALSE);
 	void SetOption(int nOptionID, LPCTSTR value, bool save = true);
