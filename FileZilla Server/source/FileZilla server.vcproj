@@ -81,7 +81,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="zlibd.lib version.lib ws2_32.lib odbc32.lib odbccp32.lib"
+				AdditionalDependencies="zlibd.lib version.lib ws2_32.lib"
 				OutputFile=".\Compat_Debug/FileZilla server.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -1417,7 +1417,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\FileZilla3\src\tinyxml\tinystr.cpp"
+				RelativePath="tinyxml\tinystr.cpp"
 				>
 				<FileConfiguration
 					Name="Compat Debug|Win32"
@@ -1437,7 +1437,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\FileZilla3\src\tinyxml\tinyxml.cpp"
+				RelativePath="tinyxml\tinyxml.cpp"
 				>
 				<FileConfiguration
 					Name="Compat Debug|Win32"
@@ -1457,7 +1457,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\FileZilla3\src\tinyxml\tinyxmlerror.cpp"
+				RelativePath="tinyxml\tinyxmlerror.cpp"
 				>
 				<FileConfiguration
 					Name="Compat Debug|Win32"
@@ -1477,7 +1477,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\FileZilla3\src\tinyxml\tinyxmlparser.cpp"
+				RelativePath="tinyxml\tinyxmlparser.cpp"
 				>
 				<FileConfiguration
 					Name="Compat Debug|Win32"
