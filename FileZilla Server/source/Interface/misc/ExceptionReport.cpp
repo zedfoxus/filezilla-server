@@ -254,7 +254,7 @@ Please note: It may be possible - though unlikely - that the exception report ma
 		}
 
 		int nError=0;
-		if (m_hReportFile == INVALID_HANDLE_VALUE && INVALID_HANDLE_VALUE)
+		if (m_hReportFile == INVALID_HANDLE_VALUE)
 			nError = GetLastError();
 		else
 		{

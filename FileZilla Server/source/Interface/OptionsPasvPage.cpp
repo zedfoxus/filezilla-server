@@ -162,8 +162,8 @@ void COptionsPasvPage::LoadData()
 	m_IP = m_pOptionsDlg->GetOption(OPTION_CUSTOMPASVIP);
 	m_URL = m_pOptionsDlg->GetOption(OPTION_CUSTOMPASVIPSERVER);
 	m_bUseCustomPort = m_pOptionsDlg->GetOptionVal(OPTION_USECUSTOMPASVPORT) != 0;
-	m_PortMin.Format("%d", m_pOptionsDlg->GetOptionVal(OPTION_CUSTOMPASVMINPORT));
-	m_PortMax.Format("%d", m_pOptionsDlg->GetOptionVal(OPTION_CUSTOMPASVMAXPORT));
+	m_PortMin.Format("%d", static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_CUSTOMPASVMINPORT)));
+	m_PortMax.Format("%d", static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_CUSTOMPASVMAXPORT)));
 	m_NoExternalOnLocal = m_pOptionsDlg->GetOptionVal(OPTION_NOEXTERNALIPONLOCAL) != 0;
 }
 

@@ -203,7 +203,7 @@ BOOL CMailMsg::MAPISend()
 		message.flFlags                           = 0;
 		message.lpOriginator                      = m_from.size() ? pRecipients : NULL;
 		message.nRecipCount                       = nRecipients - m_from.size(); // don't count originator
-		message.lpRecips                          = nRecipients - m_from.size() ? &pRecipients[m_from.size()] : NULL;
+		message.lpRecips                          = (nRecipients - m_from.size()) ? &pRecipients[m_from.size()] : NULL;
 		message.nFileCount                        = nAttachments;
 		message.lpFiles                           = nAttachments ? pAttachments : NULL;
 

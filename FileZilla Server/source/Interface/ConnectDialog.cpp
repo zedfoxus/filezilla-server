@@ -73,9 +73,9 @@ BOOL CConnectDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 	
-	m_ServerAddress	= m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS);
-	m_ServerPort.Format(_T("%d"), m_pOptions->GetOptionVal(IOPTION_LASTSERVERPORT));
-	m_ServerPassword	= m_pOptions->GetOption(IOPTION_LASTSERVERPASS);
+	m_ServerAddress = m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS);
+	m_ServerPort.Format(_T("%d"), static_cast<int>(m_pOptions->GetOptionVal(IOPTION_LASTSERVERPORT)));
+	m_ServerPassword = m_pOptions->GetOption(IOPTION_LASTSERVERPASS);
 	m_bAlways = m_pOptions->GetOptionVal(IOPTION_ALWAYS) != 0;
 	UpdateData(FALSE);
 

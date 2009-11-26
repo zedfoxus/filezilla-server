@@ -483,8 +483,8 @@ BOOL CAsyncSocketExLayer::GetPeerNameNext( CString& rPeerAddress, UINT& rPeerPor
 		return m_pNextLayer->GetPeerName(rPeerAddress, rPeerPort);
 	else
 	{
-		SOCKADDR* sockAddr;
-		int nSockAddrLen;
+		SOCKADDR* sockAddr = 0;
+		int nSockAddrLen = 0;
 
 		if (m_nFamily == AF_INET6)
 		{
@@ -495,6 +495,11 @@ BOOL CAsyncSocketExLayer::GetPeerNameNext( CString& rPeerAddress, UINT& rPeerPor
 		{
 			sockAddr = (SOCKADDR*)new SOCKADDR_IN;
 			nSockAddrLen = sizeof(SOCKADDR_IN);
+		}
+		else
+		{
+			WSASetLastError(WSAEOPNOTSUPP);
+			return FALSE;
 		}
 
 		memset(sockAddr, 0, nSockAddrLen);
@@ -562,8 +567,8 @@ BOOL CAsyncSocketExLayer::GetSockNameNext( CString& rSockAddress, UINT& rSockPor
 		return m_pNextLayer->GetSockName(rSockAddress, rSockPort);
 	else
 	{
-		SOCKADDR* sockAddr;
-		int nSockAddrLen;
+		SOCKADDR* sockAddr = 0;
+		int nSockAddrLen = 0;
 
 		if (m_nFamily == AF_INET6)
 		{
@@ -574,6 +579,11 @@ BOOL CAsyncSocketExLayer::GetSockNameNext( CString& rSockAddress, UINT& rSockPor
 		{
 			sockAddr = (SOCKADDR*)new SOCKADDR_IN;
 			nSockAddrLen = sizeof(SOCKADDR_IN);
+		}
+		else
+		{
+			WSASetLastError(WSAEOPNOTSUPP);
+			return FALSE;
 		}
 
 		memset(sockAddr, 0, nSockAddrLen);

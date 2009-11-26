@@ -181,7 +181,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			}
 			if (m_nRecvBufferPos < 5)
 				return FALSE;
-			int len = m_pRecvBuffer[3] * 256 + m_pRecvBuffer[4];
+			len = m_pRecvBuffer[3] * 256 + m_pRecvBuffer[4];
 			if (len != 4)
 			{
 				CString str;

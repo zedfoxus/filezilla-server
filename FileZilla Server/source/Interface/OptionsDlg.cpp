@@ -369,12 +369,12 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 				char* utf8 = ConvToNetwork(GetOption(i+1));
 				if (utf8)
 				{
-					int len = strlen(utf8);
-					*p++ = (len / 256) / 256;
-					*p++ = len / 256;
-					*p++ = len % 256;
-					memcpy(p, utf8, len);
-					p += len;
+					int slen = strlen(utf8);
+					*p++ = (slen / 256) / 256;
+					*p++ = slen / 256;
+					*p++ = slen % 256;
+					memcpy(p, utf8, slen);
+					p += slen;
 					delete [] utf8;
 				}
 				else

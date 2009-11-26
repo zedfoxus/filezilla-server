@@ -300,8 +300,8 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 		CConnectionData *pConnectionData = iter->second;
 
 		m_connectionDataMap.erase(iter);
-		for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin() + pConnectionData->listIndex + 1; iter != m_connectionDataArray.end(); iter++)
-			(*iter)->listIndex--;
+		for (std::vector<CConnectionData*>::iterator iter2 = m_connectionDataArray.begin() + pConnectionData->listIndex + 1; iter2 != m_connectionDataArray.end(); iter2++)
+			(*iter2)->listIndex--;
 		m_connectionDataArray.erase(m_connectionDataArray.begin() + pConnectionData->listIndex);
 		delete pConnectionData;
 

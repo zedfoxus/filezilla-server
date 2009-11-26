@@ -229,7 +229,7 @@ BOOL CSAPrefsDialog::OnInitDialog()
 	else
 	{
 		// find start page
-		for (unsigned int i = 0; i <m_pages.size(); i++)
+		for (i = 0; i < m_pages.size(); i++)
 		{
 			pageStruct *pPS = m_pages[i];
 			ASSERT(pPS);

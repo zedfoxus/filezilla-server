@@ -78,8 +78,8 @@ BOOL COptionsAutobanPage::OnInitDialog()
 void COptionsAutobanPage::LoadData()
 {
 	m_enable = m_pOptionsDlg->GetOptionVal(OPTION_AUTOBAN_ENABLE) ? true : false;
-	m_attempts.Format("%d", m_pOptionsDlg->GetOptionVal(OPTION_AUTOBAN_ATTEMPTS));
-	m_time.Format("%d", m_pOptionsDlg->GetOptionVal(OPTION_AUTOBAN_BANTIME));
+	m_attempts.Format("%d", static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_AUTOBAN_ATTEMPTS)));
+	m_time.Format("%d", static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_AUTOBAN_BANTIME)));
 	m_type = m_pOptionsDlg->GetOptionVal(OPTION_AUTOBAN_TYPE) ? 1 : 0;
 }
 

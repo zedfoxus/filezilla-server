@@ -83,10 +83,10 @@ CStdString GetVersionString()
 				{
 					TCHAR ch = 'a';
 					ch += static_cast<TCHAR>(fi->dwFileVersionLS >> 16) - 1;
-					version.Format(_T("%s version %d.%d%c test release %d)"), ProductName, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF, ch, fi->dwFileVersionLS & 0xFFFF);
+					version.Format(_T("%s version %d.%d%c test release %d)"), (LPCTSTR)ProductName, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF, ch, fi->dwFileVersionLS & 0xFFFF);
 				}
 				else
-					version.Format(_T("%s version %d.%d test release %d"), ProductName, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS & 0xFFFF);
+					version.Format(_T("%s version %d.%d test release %d"), (LPCTSTR)ProductName, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS & 0xFFFF);
 			}
 			else
 			{ //final versions
@@ -94,10 +94,10 @@ CStdString GetVersionString()
 				{
 					TCHAR ch = 'a';
 					ch += static_cast<TCHAR>(fi->dwFileVersionLS >> 16) - 1;
-					version.Format(_T("%s version %d.%d%c final"),ProductName, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF, ch);
+					version.Format(_T("%s version %d.%d%c final"), (LPCTSTR)ProductName, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF, ch);
 				}
 				else
-					version.Format(_T("%s version %d.%d final"), ProductName, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF);
+					version.Format(_T("%s version %d.%d final"), (LPCTSTR)ProductName, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF);
 			}
 		}
 		else
@@ -106,17 +106,17 @@ CStdString GetVersionString()
 			if ((fi->dwFileVersionLS & 0xFFFF) / 100)
 				if ((fi->dwFileVersionLS & 0xFFFF) % 100)
 					//test release
-					version.Format(_T("%s version 0.%d.%d%c beta test release %d"), ProductName, fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS >> 16, (fi->dwFileVersionLS & 0xFFFF) / 100 + 'a' - 1, (fi->dwFileVersionLS & 0xFFFF) % 100);
+					version.Format(_T("%s version 0.%d.%d%c beta test release %d"), (LPCTSTR)ProductName, fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS >> 16, (fi->dwFileVersionLS & 0xFFFF) / 100 + 'a' - 1, (fi->dwFileVersionLS & 0xFFFF) % 100);
 				else
 					//final version
-					version.Format(_T("%s version 0.%d.%d%c beta"),ProductName, fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS>>16, (fi->dwFileVersionLS & 0xFFFF) / 100 + 'a' - 1);
+					version.Format(_T("%s version 0.%d.%d%c beta"), (LPCTSTR)ProductName, fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS>>16, (fi->dwFileVersionLS & 0xFFFF) / 100 + 'a' - 1);
 			else
 				if (fi->dwFileVersionLS&0xFFFF)
 					//test release
-					version.Format(_T("%s version 0.%d.%d beta test release %d"), ProductName,fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS >> 16, fi->dwFileVersionLS & 0xFFFF);
+					version.Format(_T("%s version 0.%d.%d beta test release %d"), (LPCTSTR)ProductName, fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS >> 16, fi->dwFileVersionLS & 0xFFFF);
 				else
 					//final version
-					version.Format(_T("%s version 0.%d.%d beta"), ProductName, fi->dwFileVersionMS&0xFFFF, fi->dwFileVersionLS >> 16);
+					version.Format(_T("%s version 0.%d.%d beta"), (LPCTSTR)ProductName, fi->dwFileVersionMS&0xFFFF, fi->dwFileVersionLS >> 16);
 		}
 		
 	}

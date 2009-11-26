@@ -330,9 +330,9 @@ void CGroupsDlg::OnGroupRemove()
 
 			if (!dlg.m_action)
 			{
-				for (unsigned int i = 0; i < m_UsersList.size(); i++)
+				for (unsigned int k = 0; k < m_UsersList.size(); k++)
 				{
-					t_user& user = m_UsersList[i];
+					t_user& user = m_UsersList[k];
 					if (user.group.CompareNoCase(oldName))
 						continue;
 					user.group = dlg.m_groupName;
@@ -342,10 +342,10 @@ void CGroupsDlg::OnGroupRemove()
 			{
 				// Delete affected users
 				t_UsersList newList;
-				for (unsigned int i = 0; i < m_UsersList.size(); i++)
+				for (unsigned int k = 0; k < m_UsersList.size(); k++)
 				{
-					if (m_UsersList[i].group.CompareNoCase(oldName))
-						newList.push_back(m_UsersList[i]);
+					if (m_UsersList[k].group.CompareNoCase(oldName))
+						newList.push_back(m_UsersList[k]);
 				}
 				m_UsersList = newList;
 			}

@@ -505,8 +505,8 @@ void CAsyncSslSocketLayer::OnReceive(int nErrorCode)
 			// will stall. Perhaps it triggers some internal processing.
 			// Also, ignore return value, don't do any error checking. This function
 			// can report errors, even though a later call can succeed.
-			char buffer;
-			pBIO_read(m_sslbio, &buffer, 0);
+			char dummy;
+			pBIO_read(m_sslbio, &dummy, 0);
 		}
 		else if (!numread)
 		{

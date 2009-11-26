@@ -805,7 +805,7 @@ BOOL CAsyncSocketEx::Create(UINT nSocketPort /*=0*/, int nSocketType /*=SOCK_STR
 #ifndef NOLAYERS
 	if (m_pFirstLayer)
 	{
-		BOOL res = m_pFirstLayer->Create(nSocketPort, nSocketType, lEvent, lpszSocketAddress, nFamily, reusable);
+		res = m_pFirstLayer->Create(nSocketPort, nSocketType, lEvent, lpszSocketAddress, nFamily, reusable);
 #ifndef NOSOCKETSTATES
 		if (res)
 			SetState(unconnected);
@@ -1300,7 +1300,7 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 
 		addrinfo hints;
 		int error;
-		BOOL ret;
+		BOOL ret = TRUE;
 		char port[10];
 
 		memset(&hints, 0, sizeof(addrinfo));
@@ -1425,8 +1425,8 @@ BOOL CAsyncSocketEx::GetPeerName( CString& rPeerAddress, UINT& rPeerPort )
 		return m_pFirstLayer->GetPeerName(rPeerAddress, rPeerPort);
 #endif NOLAYERS
 
-	SOCKADDR* sockAddr;
-	int nSockAddrLen;
+	SOCKADDR* sockAddr = 0;
+	int nSockAddrLen = 0;
 
 	if (m_SocketData.nFamily == AF_INET6)
 	{
@@ -1437,6 +1437,11 @@ BOOL CAsyncSocketEx::GetPeerName( CString& rPeerAddress, UINT& rPeerPort )
 	{
 		sockAddr = (SOCKADDR*)new SOCKADDR_IN;
 		nSockAddrLen = sizeof(SOCKADDR_IN);
+	}
+	else
+	{
+		WSASetLastError(WSAEOPNOTSUPP);
+		return FALSE;
 	}
 
 	memset(sockAddr, 0, nSockAddrLen);
@@ -1485,8 +1490,8 @@ BOOL CAsyncSocketEx::GetPeerName( SOCKADDR* lpSockAddr, int* lpSockAddrLen )
 #ifdef _AFX
 BOOL CAsyncSocketEx::GetSockName(CString& rSocketAddress, UINT& rSocketPort)
 {
-	SOCKADDR* sockAddr;
-	int nSockAddrLen;
+	SOCKADDR* sockAddr = 0;
+	int nSockAddrLen = 0;
 
 	if (m_SocketData.nFamily == AF_INET6)
 	{
@@ -1497,6 +1502,11 @@ BOOL CAsyncSocketEx::GetSockName(CString& rSocketAddress, UINT& rSocketPort)
 	{
 		sockAddr = (SOCKADDR*)new SOCKADDR_IN;
 		nSockAddrLen = sizeof(SOCKADDR_IN);
+	}
+	else
+	{
+		WSASetLastError(WSAEOPNOTSUPP);
+		return FALSE;
 	}
 
 	memset(sockAddr, 0, nSockAddrLen);

@@ -111,8 +111,8 @@ void COptionsCompressionPage::SaveData()
 
 void COptionsCompressionPage::LoadData()
 {
-	m_LevelMin.Format("%d", m_pOptionsDlg->GetOptionVal(OPTION_MODEZ_LEVELMIN));
-	m_LevelMax.Format("%d", m_pOptionsDlg->GetOptionVal(OPTION_MODEZ_LEVELMAX));
+	m_LevelMin.Format("%d", static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_MODEZ_LEVELMIN)));
+	m_LevelMax.Format("%d", static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_MODEZ_LEVELMAX)));
 	m_UseModeZ = m_pOptionsDlg->GetOptionVal(OPTION_MODEZ_USE) != 0;
 	m_DisallowLocal = !m_pOptionsDlg->GetOptionVal(OPTION_MODEZ_ALLOWLOCAL);
 	m_disallowedIPs =  m_pOptionsDlg->GetOption(OPTION_MODEZ_DISALLOWED_IPS);
