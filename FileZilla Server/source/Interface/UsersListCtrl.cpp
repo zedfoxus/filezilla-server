@@ -885,7 +885,7 @@ void CUsersListCtrl::OnGetdispinfo(NMHDR* pNMHDR, LRESULT* pResult)
 
 	if (pItem->mask & LVIF_TEXT)
 	{
-		if (_tcslen(m_connectionDataArray[pItem->iItem]->columnText[pItem->iSubItem]) >= pItem->cchTextMax)
+		if (_tcslen(m_connectionDataArray[pItem->iItem]->columnText[pItem->iSubItem]) >= static_cast<size_t>(pItem->cchTextMax))
 		{
 			_tcsncpy(pItem->pszText, m_connectionDataArray[pItem->iItem]->columnText[pItem->iSubItem], pItem->cchTextMax - 4);
 			pItem->pszText[pItem->cchTextMax - 4] = '.';
