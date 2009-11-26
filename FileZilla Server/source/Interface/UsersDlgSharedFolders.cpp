@@ -616,9 +616,6 @@ void CUsersDlgSharedFolders::OnDirmenuEditAliases()
 	}
 
 	CEnterSomething dlg(IDS_SHAREDFOLDERS_ENTERALIASES, IDD_ENTERSOMETHING_LARGE);
-	CString aliases;
-	for (std::list<CString>::const_iterator iter = pUser->permissions[index].aliases.begin(); iter != pUser->permissions[index].aliases.end(); iter++)
-		aliases += *iter + "|";
 	dlg.m_String = m_cDirs.GetItemText(nItem, 1);
 	dlg.allowEmpty = true;
 	if (dlg.DoModal() == IDOK)
