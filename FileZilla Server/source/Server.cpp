@@ -1349,7 +1349,7 @@ BOOL CServer::CreateListenSocket()
 		if (pos < 1 && !ssl && m_pOptions && m_pOptions->GetOptionVal(OPTION_ENABLESSL))
 		{
 			// Now create the ssl ports
-			ports = (m_pOptions ? m_pOptions->GetOption(OPTION_SSLPORTS) : _T("990"));
+			ports = m_pOptions->GetOption(OPTION_SSLPORTS);
 			ports += _T(" ");
 			pos = ports.Find(' ');
 			ssl = true;
