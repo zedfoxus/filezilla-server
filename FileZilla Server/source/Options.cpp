@@ -866,15 +866,20 @@ void COptions::Init()
 		if (!pName)
 			continue;
 		CStdString name(pName);
+
 		const char* pType = pItem->Attribute("type");
 		if (!pType)
 			continue;
 		CStdString type(pType);
+
 		TiXmlNode* textNode = pItem->FirstChild();
 		if (!textNode || !textNode->ToText())
 			continue;
-		CStdString value = ConvFromNetwork(textNode->Value());
-
+		CStdString value;
+		if (textNode && textNode->ToText())
+			value = ConvFromNetwork(textNode->Value());
+		else if (type == _T("numeric"))
+			continue;
 
 		for (int i = 0; i < OPTIONS_NUM; i++)
 		{
