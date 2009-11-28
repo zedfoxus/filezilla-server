@@ -433,7 +433,7 @@ BEGIN
     LTEXT           "List of ports between 1 and 65535.",IDC_STATIC,184,15,86,16
     LTEXT           "&Max. number of users:",IDC_STATIC,13,38,73,8
     EDITTEXT        IDC_MAXUSERS,89,35,40,14,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "(0 for unlimited users)",IDC_STATIC,133,38,67,8
+    LTEXT           "(0 for unlimited users)",IDC_STATIC,133,38,70,8
     GROUPBOX        "Performance settings",IDC_STATIC,7,60,272,57
     LTEXT           "&Number of Threads:",IDC_STATIC,14,75,64,8
     EDITTEXT        IDC_THREADNUM,89,73,40,14,ES_AUTOHSCROLL | ES_NUMBER
@@ -441,7 +441,7 @@ BEGIN
     GROUPBOX        "Timeout settings",IDC_STATIC,7,123,272,78,0,WS_EX_TRANSPARENT
     LTEXT           "&Connections timeout:",IDC_STATIC,13,136,69,8
     EDITTEXT        IDC_TIMEOUT,88,133,41,14,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "in seconds (1-9999, 0 for no timeout)",IDC_STATIC,137,136,135,8
+    LTEXT           "in seconds (1-9999, 0 for no timeout).",IDC_STATIC,137,136,135,8
     LTEXT           "No &Transfer timeout:",IDC_STATIC,13,155,68,8
     EDITTEXT        IDC_TRANSFERTIMEOUT,88,152,41,14,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "in seconds (600-9999, 0 for no timeout). This value specifies the time a user has to initiate a file transfer.",IDC_STATIC,137,148,135,26
@@ -498,9 +498,9 @@ BEGIN
     LTEXT           "&Socket buffer size:",IDC_STATIC,7,72,61,8
     EDITTEXT        IDC_OPTIONS_TRANSFERBUFFERSIZE2,107,69,40,14,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "(default: 65536)",IDC_STATIC,153,72,54,8
-    CONTROL         "&Allow downloading of files which are open for writing by another process",IDC_SHAREWRITE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,133,247,10
-    LTEXT           "Please notice that this can result in corrupt transfers",IDC_STATIC,19,146,169,8
+    CONTROL         "&Allow downloading of files which are open for writing by another process.",IDC_SHAREWRITE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,133,250,10
+    LTEXT           "Please note that this can result in corrupt transfers!",IDC_STATIC,19,146,169,8
     CONTROL         "&Ignore unroutable IPs on PORT command if remote address is routable.",IDC_ACTIVE_IGNORELOCAL,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,165,244,10
 END
@@ -563,9 +563,9 @@ BEGIN
     LTEXT           "Minimum password length is 6 characters. Leave empty to remove password.",IDC_STATIC,7,177,247,8
 END
 
-IDD_OPTIONS_LOGGING DIALOG  0, 0, 286, 208
-STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
-FONT 8, "MS Shell Dlg"
+IDD_OPTIONS_LOGGING DIALOGEX  0, 0, 286, 208
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     CONTROL         "&Enable logging to file",IDC_OPTIONS_LOGGING_ENABLE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,7,81,10
@@ -582,7 +582,7 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,77,87,10
     EDITTEXT        IDC_OPTIONS_LOGGING_DELETETIME,107,75,40,14,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "days",IDC_STATIC,150,77,16,8
-    LTEXT           "All log files will be saved in the Logs\\ subfolder in the FileZilla Server folder.",IDC_STATIC,7,91,239,8
+    LTEXT           "All log files will be saved in the ""Logs"" subfolder in the FileZilla Server folder.",IDC_STATIC,7,91,244,8
 END
 
 IDD_NEWUSER DIALOG  0, 0, 186, 102
@@ -745,7 +745,7 @@ BEGIN
     LTEXT           "&Listen for implicit SSL/TLS connections on the following ports (default: 990):",IDC_STATIC,7,139,242,8
     EDITTEXT        IDC_SSLONLY,7,150,195,14,ES_AUTOHSCROLL
     PUSHBUTTON      "&Generate new certificate...",IDC_GENERATE,175,180,97,14
-    LTEXT           "Note: Explicit FTP over TLS shares the normal FTP port",IDC_STATIC,7,167,176,8
+    LTEXT           "Note: Explicit FTP over TLS shares the normal FTP port!",IDC_STATIC,7,167,178,8
 END
 
 IDD_CERTGEN DIALOGEX 0, 0, 257, 249
@@ -791,11 +791,11 @@ BEGIN
     CONTROL         "&Enable automatic bans",IDC_AUTOBAN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,67,88,10
     LTEXT           "&Ban IP address after",IDC_STATIC,19,82,67,8
     EDITTEXT        ID_ATTEMPTS,87,80,33,14,ES_AUTOHSCROLL
-    LTEXT           "failed attempts within one hour. (minimum of 10)",IDC_STATIC,124,82,152,8
+    LTEXT           "failed attempts within one hour (min. 10).",IDC_STATIC,124,82,152,8
     CONTROL         "Ban &for",IDC_BANTYPE1,"Button",BS_AUTORADIOBUTTON | NOT WS_VISIBLE | WS_GROUP,17,119,39,10
     CONTROL         "Ban &permanently",IDC_BANTYPE2,"Button",BS_AUTORADIOBUTTON | NOT WS_VISIBLE,17,134,70,10
     EDITTEXT        ID_BANTIME,46,100,33,14,ES_AUTOHSCROLL
-    LTEXT           "hours. (1-999)",IDC_STATIC,83,103,48,8
+    LTEXT           "hours (1-999).",IDC_STATIC,83,103,48,8
     LTEXT           "Ban for",IDC_STATIC,19,103,24,8
 END
 
@@ -1368,7 +1368,7 @@ BEGIN
     CONTROL         "Enable Kerberos GSS support",IDC_USEGSS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,14,110,10
     CONTROL         "Prompt for password if necessary",IDC_PROMPTPASSWORD,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,31,119,10
-    LTEXT           "It's recommended to use Kerberos for Windows 2.2 beta 2 or later.",IDC_STATIC,7,48,208,8
+    LTEXT           "It's recommended to use Kerberos for Windows 2.2 beta 2 or later.",IDC_STATIC,7,48,221,8
     LTEXT           "If used with Kerberos for Windows 2.1, it is very likely that FileZilla Server will crash if a user authenticates.",IDC_STATIC,7,63,272,19
 END
 
