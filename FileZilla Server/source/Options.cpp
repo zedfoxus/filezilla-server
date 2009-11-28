@@ -873,8 +873,6 @@ void COptions::Init()
 		CStdString type(pType);
 
 		TiXmlNode* textNode = pItem->FirstChild();
-		if (!textNode || !textNode->ToText())
-			continue;
 		CStdString value;
 		if (textNode && textNode->ToText())
 			value = ConvFromNetwork(textNode->Value());
