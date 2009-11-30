@@ -213,34 +213,18 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVRATE), "0 B/s");
 	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDRATE), "0 B/s");
 
+	CConnectDialog dlg(m_pOptions);
+	if (!m_pOptions->GetOptionVal(IOPTION_ALWAYS) && dlg.DoModal() != IDOK)
+		return 0;
 
-	if (m_pOptions->GetOptionVal(IOPTION_ALWAYS))
+	m_pAdminSocket = new CAdminSocket(this);
+	ShowStatus("Connecting to server...", 0);
+	m_pAdminSocket->Create();
+	m_pAdminSocket->m_Password = m_pOptions->GetOption(IOPTION_LASTSERVERPASS);
+	if (!m_pAdminSocket->Connect(m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS), (UINT)m_pOptions->GetOptionVal(IOPTION_LASTSERVERPORT)) && WSAGetLastError() != WSAEWOULDBLOCK)
 	{
-		m_pAdminSocket = new CAdminSocket(this);
-		ShowStatus("Connecting to server...", 0);
-		m_pAdminSocket->Create();
-		m_pAdminSocket->m_Password = m_pOptions->GetOption(IOPTION_LASTSERVERPASS);
-		if (!m_pAdminSocket->Connect(m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS), (UINT)m_pOptions->GetOptionVal(IOPTION_LASTSERVERPORT)) && WSAGetLastError() != WSAEWOULDBLOCK)
-		{
-			ShowStatus(_T("Error, could not connect to server"), 1);
-			CloseAdminSocket();
-		}
-	}
-	else
-	{
-		CConnectDialog dlg(m_pOptions);
-		if (dlg.DoModal() == IDOK)
-		{
-			m_pAdminSocket = new CAdminSocket(this);
-			ShowStatus("Connecting to server...", 0);
-			m_pAdminSocket->m_Password = m_pOptions->GetOption(IOPTION_LASTSERVERPASS);
-			m_pAdminSocket->Create();
-			if (!m_pAdminSocket->Connect(m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS), (UINT)m_pOptions->GetOptionVal(IOPTION_LASTSERVERPORT)) && WSAGetLastError()!=WSAEWOULDBLOCK)
-			{
-				ShowStatus(_T("Error, could not connect to server"), 1);
-				CloseAdminSocket();
-			}
-		}
+		ShowStatus(_T("Error, could not connect to server"), 1);
+		CloseAdminSocket();
 	}
 
 	return 0;
