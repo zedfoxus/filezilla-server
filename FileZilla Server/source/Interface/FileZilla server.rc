@@ -1209,7 +1209,7 @@ IDR_RT_MANIFEST1        RT_MANIFEST             "res\\manifest.xml"
 
 STRINGTABLE 
 BEGIN
-    IDR_MAINFRAME           "FileZilla server"
+    IDR_MAINFRAME           "FileZilla Server"
 END
 
 STRINGTABLE 

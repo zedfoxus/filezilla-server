@@ -1116,6 +1116,10 @@ void CMainFrame::CloseAdminSocket(bool shouldReconnect /*=true*/)
 		delete m_pAdminSocket;
 		m_pAdminSocket = NULL;
 		SetIcon();
+
+		CString title;
+		title.LoadString(IDR_MAINFRAME);
+		SetWindowText(title + _T(" (disconnected)"));
 	}
 	m_nEdit = 0;
 
@@ -1288,6 +1292,15 @@ LRESULT CMainFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 void CMainFrame::OnAdminInterfaceConnected()
 {
 	m_nReconnectCount = 0;
+
+	CString title;
+	title.LoadString(IDR_MAINFRAME);
+	CString ip;
+	UINT port;
+	if (m_pAdminSocket->GetPeerName(ip, port))
+	{
+		SetWindowText(title + _T(" (") + ip + _T(")"));
+	}
 }
 
 void CMainFrame::OnAdminInterfaceClosed()
