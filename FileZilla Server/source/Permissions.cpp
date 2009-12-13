@@ -377,7 +377,6 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 	if (dir == _T(""))
 		return PERMISSION_INVALIDNAME;
 	logicalDir = dir;
-	dir.MakeLower();
 
 	// Get directory from directory name
 	t_directory directory;
@@ -431,17 +430,16 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 	pDir->pNext = NULL;
 	pResult = pDir;
 
-	CStdString curDir = directory.dir;
-	curDir.MakeLower();
-
 	char* dirToDisplayUTF8 = ConvertFilename(dirToDisplay, useUTF8);
 	if (!dirToDisplayUTF8)
 		return PERMISSION_DENIED;
 		
 	// List aliases in current directory
-	for (std::multimap<CStdString, CUser::t_alias>::const_iterator iter = user.aliasMap.find(curDir);
-		 iter != user.aliasMap.end() && iter->first == curDir; iter++)
+	for (std::multimap<CStdString, CUser::t_alias>::const_iterator iter = user.aliasMap.begin(); iter != user.aliasMap.end(); iter++)
 	{
+		if (iter->first.CompareNoCase(directory.dir))
+			continue;
+
 		t_directory directory;
 		BOOL truematch = false;
 		if (GetRealDirectory(dir + _T("/") + iter->second.name, user, directory, truematch))
@@ -465,9 +463,11 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 		}
 	}
 
-	for (std::multimap<CStdString, CStdString>::const_iterator iter = user.virtualAliasNames.find(dir);
-		iter != user.virtualAliasNames.end() && iter->first == dir; iter++)
+	for (std::multimap<CStdString, CStdString>::const_iterator iter = user.virtualAliasNames.begin(); iter != user.virtualAliasNames.end(); iter++)
 	{
+		if (iter->first.CompareNoCase(dir))
+			continue;
+
 		t_directory directory;
 		BOOL truematch = false;
 		if (GetRealDirectory(dir + _T("/") + iter->second, user, directory, truematch))
@@ -739,11 +739,6 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	 * sequentially or resolve aliases if required.
 	 */
 
-	// After all this is a Windows server, so ignore case
-	// TODO: Use GetVolumeInformation to check case sensitivity of target volume
-	directory.MakeLower();
-
-
 	directory.TrimLeft(_T("/"));
 	
 	// Split server path
@@ -776,13 +771,13 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	// Go through all pieces
 	for (std::list<CStdString>::const_iterator iter = PathPieces.begin(); iter != PathPieces.end(); iter++)
 	{
-		//Check if piece exists
+		// Check if piece exists
 		const CStdString& piece = *iter;
 		virtualPath += piece + _T("/");
 		DWORD nAttributes = GetFileAttributes(path + _T("\\") + piece);
 		if (nAttributes != 0xFFFFFFFF)
 		{
-			if (!(nAttributes&FILE_ATTRIBUTE_DIRECTORY))
+			if (!(nAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				return PERMISSION_FILENOTDIR;
 			path += _T("\\") + piece;
 			continue;
@@ -790,7 +785,6 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 		else
 		{
 			// Physical path did not exist, check aliases
-			path.MakeLower();
 			const CStdString& target = user.GetAliasTarget(path, virtualPath, piece);
 
 			if (target != _T(""))
@@ -824,7 +818,6 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	 */
 	truematch = TRUE;
 	
-	path.MakeLower();
 	while (path != _T(""))
 	{
 		BOOL bFoundMatch = FALSE;
@@ -835,8 +828,7 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 		{
 			CStdString permissionPath = user.permissions[i].dir;
 			user.DoReplacements(permissionPath);
-			permissionPath.MakeLower();
-			if (permissionPath == path)
+			if (!permissionPath.CompareNoCase(path))
 			{
 				bFoundMatch = TRUE;
 				ret = user.permissions[i];
@@ -850,8 +842,7 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 			{
 				CStdString permissionPath = user.pOwner->permissions[i].dir;
 				user.DoReplacements(permissionPath);
-				permissionPath.MakeLower();
-				if (permissionPath == path)
+				if (!permissionPath.CompareNoCase(path))
 				{
 					bFoundMatch = TRUE;
 					ret = user.pOwner->permissions[i];
@@ -1959,9 +1950,7 @@ void CUser::PrepareAliasMap()
 				CStdString dir = alias.Left(pos);
 				if (dir == _T(""))
 					dir = _T("/");
-				dir.MakeLower();
 				virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.Mid(pos + 1)));
-				alias.MakeLower();
 				virtualAliases[alias + _T("/")] = permIter->dir;
 				DoReplacements(virtualAliases[alias + _T("/")]);
 				continue;
@@ -1976,9 +1965,7 @@ void CUser::PrepareAliasMap()
 				continue;
 			alias = alias.Left(pos);
 
-			alias.MakeLower();
 			aliasStruct.targetFolder = permIter->dir;
-			aliasStruct.targetFolder.MakeLower();
 			DoReplacements(aliasStruct.targetFolder);
 
 			aliasMap.insert(std::pair<CStdString, t_alias>(alias, aliasStruct));
@@ -2001,9 +1988,7 @@ void CUser::PrepareAliasMap()
 				CStdString dir = alias.Left(pos);
 				if (dir == _T(""))
 					dir = _T("/");
-				dir.MakeLower();
 				virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.Mid(pos + 1)));
-				alias.MakeLower();
 				virtualAliases[alias + _T("/")] = permIter->dir;
 				DoReplacements(virtualAliases[alias + _T("/")]);
 				continue;
@@ -2018,9 +2003,7 @@ void CUser::PrepareAliasMap()
 				continue;
 			alias = alias.Left(pos);
 			
-			alias.MakeLower();
 			aliasStruct.targetFolder = permIter->dir;
-			aliasStruct.targetFolder.MakeLower();
 			DoReplacements(aliasStruct.targetFolder);
 		
 			aliasMap.insert(std::pair<CStdString, t_alias>(alias, aliasStruct));
@@ -2032,16 +2015,19 @@ CStdString CUser::GetAliasTarget(const CStdString& path, const CStdString& virtu
 {
 	// Find the target for the alias with the specified path and name
 
-	for (std::multimap<CStdString, CUser::t_alias>::const_iterator iter = aliasMap.find(path); iter != aliasMap.end() && iter->first == path; iter++)
+	for (std::multimap<CStdString, CUser::t_alias>::const_iterator iter = aliasMap.begin(); iter != aliasMap.end(); iter++)
 	{
+		if (iter->first.CompareNoCase(path))
+			continue;
+
 		if (!iter->second.name.CompareNoCase(name))
 			return iter->second.targetFolder;
 	}
 
-	{ // braces needed because VC++7.1 complains about perfectly valid code
-		std::map<CStdString, CStdString>::const_iterator iter = virtualAliases.find(virtualPath);
-		if (iter != virtualAliases.end())
-			return iter->second;
+	for (std::map<CStdString, CStdString>::const_iterator iter2 = virtualAliases.begin(); iter2 != virtualAliases.end(); iter2++)
+	{
+		if (!iter2->first.CompareNoCase(virtualPath))
+			return iter2->second;
 	}
 
 	return _T("");
