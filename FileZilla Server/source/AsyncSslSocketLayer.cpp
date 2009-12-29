@@ -157,6 +157,8 @@ def(void, SSL_CTX_set_default_passwd_cb, (SSL_CTX *ctx, pem_password_cb *cb));
 def(void, SSL_CTX_set_default_passwd_cb_userdata, (SSL_CTX *ctx, void *u));
 def(int, SSL_CTX_use_certificate_chain_file, (SSL_CTX *ctx, const char *file));
 def(long, SSL_CTX_ctrl, (SSL_CTX *ctx, int cmd, long larg, void *parg));
+def(int, SSL_set_cipher_list, (SSL *ssl, const char *str));
+def(const char*, SSL_get_cipher_list, (const SSL *ssl, int priority));
 
 def(size_t, BIO_ctrl_pending, (BIO *b));
 def(int, BIO_read, (BIO *b, void *data, int len));
@@ -432,6 +434,8 @@ int CAsyncSslSocketLayer::InitSSL()
 		load(m_hSslDll1, SSL_CTX_set_default_passwd_cb);
 		load(m_hSslDll1, SSL_CTX_use_certificate_chain_file);
 		load(m_hSslDll1, SSL_CTX_ctrl);
+		load(m_hSslDll1, SSL_get_cipher_list);
+		load(m_hSslDll1, SSL_set_cipher_list);
 
 		if (bError)
 		{
@@ -1053,6 +1057,9 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /
 		return SSL_FAILURE_INITSSL;
 	}
 
+	// Disable DES and other weak and export ciphers
+	pSSL_set_cipher_list(m_ssl, "DEFAULT:!DES:!WEAK:!EXP");
+	
 	//Add current instance to list of active instances
 	t_SslLayerList *tmp = m_pSslLayerList;
 	m_pSslLayerList = new t_SslLayerList;
