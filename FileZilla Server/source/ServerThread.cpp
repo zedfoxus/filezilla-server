@@ -172,18 +172,13 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 {
 	CControlSocket *socket = new CControlSocket(this);
 	socket->Attach(sockethandle);
-	CStdString ip;
-	unsigned int port;
-	
+
 	SOCKADDR_IN sockAddr;
 	memset(&sockAddr, 0, sizeof(sockAddr));
 	int nSockAddrLen = sizeof(sockAddr);
 	BOOL bResult = socket->GetPeerName((SOCKADDR*)&sockAddr, &nSockAddrLen);
 	if (bResult)
-	{
-		port = ntohs(sockAddr.sin_port);
-		ip = inet_ntoa(sockAddr.sin_addr);
-	}
+		socket->m_RemoteIP = inet_ntoa(sockAddr.sin_addr);
 	else
 	{
 		socket->m_RemoteIP = _T("ip unknown");
@@ -193,7 +188,6 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 		delete socket;
 		return;
 	}
-	socket->m_RemoteIP=  ip;
 	EnterCritSection(m_GlobalThreadsync);
 	int userid = CalcUserID();
 	if (userid == -1)
@@ -214,11 +208,8 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 
 	// Check if remote IP is blocked due to hammering
 	std::map<DWORD, int>::iterator iter = m_antiHammerInfo.find(sockAddr.sin_addr.s_addr);
-	if (iter != m_antiHammerInfo.end())
-	{
-		if (iter->second > 10)
-			socket->AntiHammerIncrease(25); // ~6 secs delay
-	}
+	if (iter != m_antiHammerInfo.end() && iter->second > 10)
+		socket->AntiHammerIncrease(25); // ~6 secs delay
 	LeaveCritSection(m_GlobalThreadsync);
 	EnterCritSection(m_threadsync);
 	m_LocalUserIDs[userid] = socket;
@@ -231,28 +222,17 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 	op->userid = userid;
 	conndata->pThread = this;
 
-	memset(&sockAddr, 0, sizeof(sockAddr));
-	nSockAddrLen = sizeof(sockAddr);
-	bResult = socket->GetPeerName((SOCKADDR*)&sockAddr, &nSockAddrLen);
-	if (bResult)
-	{
-		conndata->port = ntohs(sockAddr.sin_port);
-#ifdef _UNICODE
-		_tcscpy(conndata->ip, ConvFromLocal(inet_ntoa(sockAddr.sin_addr)));
-#else
-		_tcscpy(conndata->ip, inet_ntoa(sockAddr.sin_addr));
-#endif
-	}
+	conndata->port = ntohs(sockAddr.sin_port);
+	_tcscpy(conndata->ip, socket->m_RemoteIP);
 
 	SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
 
-	if (ssl)
-		if (!socket->InitImplicitSsl())
-			return;
-	
+	if (ssl && !socket->InitImplicitSsl())
+		return;
+
 	socket->AsyncSelect(FD_READ|FD_WRITE|FD_CLOSE);
 	socket->SendStatus(_T("Connected, sending welcome message..."), 0);
-	
+
 	CStdString msg = m_pOptions->GetOption(OPTION_WELCOMEMESSAGE);
 	if (m_RawWelcomeMessage != msg)
 	{
@@ -262,20 +242,20 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 		msg.Replace(_T("%%"), _T("\001"));
 		msg.Replace(_T("%v"), GetVersionString());
 		msg.Replace(_T("\001"), _T("%"));
-	
+
 		ASSERT(msg != _T(""));
 		int oldpos = 0;
 		msg.Replace(_T("\r\n"), _T("\n"));
-		int pos=msg.Find(_T("\n"));
+		int pos = msg.Find(_T("\n"));
 		CStdString line;
-		while (pos!=-1)
+		while (pos != -1)
 		{
 			ASSERT(pos);
 			m_ParsedWelcomeMessage.push_back(_T("220-") +  msg.Mid(oldpos, pos-oldpos) );
-			oldpos=pos + 1;
-			pos=msg.Find(_T("\n"), oldpos);
+			oldpos = pos + 1;
+			pos = msg.Find(_T("\n"), oldpos);
 		}
-	
+
 		line = msg.Mid(oldpos);
 		if (line != _T(""))
 			m_ParsedWelcomeMessage.push_back(_T("220 ") + line);		
@@ -284,7 +264,7 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 			m_ParsedWelcomeMessage.back()[3] = 0;
 		}
 	}
-	
+
 	bool hideStatus = m_pOptions->GetOptionVal(OPTION_WELCOMEMESSAGE_HIDE) != 0;
 	ASSERT(!m_ParsedWelcomeMessage.empty());
 	for (std::list<CStdString>::iterator iter = m_ParsedWelcomeMessage.begin(); iter != m_ParsedWelcomeMessage.end(); iter++)
