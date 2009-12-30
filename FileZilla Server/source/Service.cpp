@@ -22,7 +22,6 @@
 #include "stdafx.h"
 #include "server.h"
 #include "Options.h"
-#include "misc/ExceptionReport.h"
 
 void ServiceMain(DWORD argc, LPTSTR *argv); 
 void ServiceCtrlHandler(DWORD nControlCode);
@@ -464,8 +463,6 @@ DWORD ServiceExecutionThread(LPDWORD param)
 		UpdateServiceStatus(SERVICE_STOPPED, NO_ERROR, 0, 0, 0);
 		return 0;
 	}
-
-	CExceptionReport ExceptionReport;
 
 	CServer *pServer = new CServer;
 	VERIFY(pServer->Create());
