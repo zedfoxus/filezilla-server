@@ -15,7 +15,7 @@
 ;Product Info
 
   !define PRODUCT_NAME "FileZilla Server"
-  !define PRODUCT_VERSION "beta 0.9.33"
+  !define PRODUCT_VERSION "beta 0.9.34"
   !define PRODUCT_UNINSTALL "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
   Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 
@@ -98,7 +98,6 @@ Section "-default files"
   File "..\..\readme.htm"
   File "..\..\legal.htm"
   File "..\..\license.txt"
-  File "dbghelp.dll"
   ; Write the uninstall keys for Windows
   WriteRegStr HKLM "${PRODUCT_UNINSTALL}" "DisplayName" "FileZilla Server (remove only)"
   WriteRegStr HKLM "${PRODUCT_UNINSTALL}" "UninstallString" '"$INSTDIR\uninstall.exe"'
@@ -146,7 +145,6 @@ Section "FileZilla Server (Service)" SecFileZillaServer
  copy_main_done:
 
   ; Put file there
-  File "..\Release\FileZilla Server.pdb"
   File "..\GFtp\Release\FzGss.dll"
 SectionEnd
 
@@ -498,11 +496,9 @@ Section "Uninstall"
   ; remove files
   Delete "$INSTDIR\FileZilla Server.exe"
   Delete "$INSTDIR\FileZilla Server Interface.exe"
-  Delete "$INSTDIR\FileZilla Server.pdb"
   Delete "$INSTDIR\ssleay32.dll"
   Delete "$INSTDIR\libeay32.dll"
   Delete $INSTDIR\FzGss.dll
-  Delete "$INSTDIR\dbghelp.dll"
   Delete $INSTDIR\license.txt
   Delete $INSTDIR\readme.htm
   Delete $INSTDIR\legal.htm

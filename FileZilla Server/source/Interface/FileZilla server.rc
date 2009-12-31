@@ -563,7 +563,7 @@ BEGIN
     LTEXT           "Minimum password length is 6 characters. Leave empty to remove password.",IDC_STATIC,7,177,247,8
 END
 
-IDD_OPTIONS_LOGGING DIALOGEX  0, 0, 286, 208
+IDD_OPTIONS_LOGGING DIALOGEX 0, 0, 286, 208
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
@@ -1161,8 +1161,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,9,33,0
- PRODUCTVERSION 0,9,33,0
+ FILEVERSION 0,9,34,0
+ PRODUCTVERSION 0,9,34,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -1180,12 +1180,12 @@ BEGIN
             VALUE "Comments", "Open Source FTP server for Windows"
             VALUE "CompanyName", "FileZilla Project"
             VALUE "FileDescription", "FileZilla Server"
-            VALUE "FileVersion", "0, 9, 33, 0"
+            VALUE "FileVersion", "0, 9, 34, 0"
             VALUE "InternalName", "FileZilla Server"
             VALUE "LegalCopyright", "Copyright (C) 2001-2009"
             VALUE "OriginalFilename", "FileZilla server.EXE"
             VALUE "ProductName", "FileZilla Server"
-            VALUE "ProductVersion", "0, 9, 33, 0"
+            VALUE "ProductVersion", "0, 9, 34, 0"
         END
     END
     BLOCK "VarFileInfo"

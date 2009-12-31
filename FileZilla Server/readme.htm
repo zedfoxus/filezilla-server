@@ -1,4 +1,4 @@
-<p align="center"><b><u>FileZilla Server version 0.9.33 beta</u></b></p>
+<p align="center"><b><u>FileZilla Server version 0.9.34 beta</u></b></p>
 <p align="center">Copyright 2001-2009<br>
 by <a href="mailto:Tim.Kosse@gmx.de">Tim Kosse</a><a href="http://sourceforge.net/projects/filezilla/"><br>
 http://sourceforge.net/projects/filezilla/</a></p>
@@ -67,6 +67,21 @@ as restoring it to normal size.</p>
 </table>
 <p align="left"><b><u>Version History:</u></b></p>
 <p>For a more detailed list of changes, please have a look at the CVS changelog located at <a href="http://filezilla-project.org/changelog.php?type=2">http://filezilla-project.org/changelog.php?type=2</a>.</p>
+<p><b>Version 0.9.34</b></p>
+<blockquote>
+  <u>New features:</u>
+  <ul>
+    <li>Show address of server in title bar of administration interface (patch submitted by eyebex)</li>
+  </ul>
+  <u>Fixed bugs:</u>
+  <ul>
+    <li>Disable some weak TLS/SSL ciphers such as DES-CBC-SHA which shouldn't be used anymore</li>
+    <li>Work around some obscure error reported by OpenSSL, fixes spurious transfer failures</li>
+    <li>Use case-insensitive comparison instead of always converting to lowercase in permissions handling. Fixes problems with sharing case-sensitive network resources.</li>
+    <li>Settings with empty data were not loaded from settings file correctly and reverted back to default values (patch submitted by eyebex)</li>
+    <li>Improve performance of (re-)loading settings</li>
+  </ul>
+</blockquote>
 <p><b>Version 0.9.33</b></p>
 <blockquote>
   <u>New features:</u>
