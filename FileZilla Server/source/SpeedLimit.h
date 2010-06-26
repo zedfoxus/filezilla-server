@@ -60,6 +60,10 @@ public:
 	int m_Day;
 
 	void Save(TiXmlElement* pElement);
+	bool Load(TiXmlElement* pElement);
+
+protected:
+	t_time ReadTime(TiXmlElement* pElement);
 };
 
 typedef std::vector<CSpeedLimit> SPEEDLIMITSLIST;

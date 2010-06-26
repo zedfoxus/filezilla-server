@@ -1238,9 +1238,6 @@ BOOL COptions::SaveSpeedLimits(TiXmlElement* pSettings)
 	return TRUE;
 }
 
-// See Permissions.cpp
-CSpeedLimit::t_time ReadTime(TiXmlElement* pElement);
-
 CStdString ReadText(TiXmlElement* pElement)
 {
 	TiXmlNode* textNode = pElement->FirstChild();
@@ -1263,64 +1260,8 @@ BOOL COptions::ReadSpeedLimits(TiXmlElement *pXML)
 				for (TiXmlElement* pRule = pLimit->FirstChildElement("Rule"); pRule; pRule = pRule->NextSiblingElement("Rule"))
 				{
 					CSpeedLimit limit;
-					CStdString str;
-					str = ConvFromNetwork(pRule->Attribute("Speed"));
-					int n = _ttoi(str);
-					if (n < 0 || n > 65535)
-						n = 10;
-					limit.m_Speed = n;
-
-					TiXmlElement* pDays = pRule->FirstChildElement("Days");
-					if (pDays)
-					{
-						str = ReadText(pDays);
-						if (str != _T(""))
-							n = _ttoi(str);
-						else
-							n = 0x7F;
-						limit.m_Day = n & 0x7F;
-					}
-
-					limit.m_DateCheck = FALSE;
-
-					TiXmlElement* pDate = pRule->FirstChildElement("Date");
-					if (pDate)
-					{
-						limit.m_DateCheck = TRUE;
-						str = ConvFromNetwork(pDate->Attribute("Year"));
-						n = _ttoi(str);
-						if (n < 1900 || n > 3000)
-							n = 2003;
-						limit.m_Date.y = n;
-						str = ConvFromNetwork(pDate->Attribute("Month"));
-						n = _ttoi(str);
-						if (n < 1 || n > 12)
-							n = 1;
-						limit.m_Date.m = n;
-						str = ConvFromNetwork(pDate->Attribute("Day"));
-						n = _ttoi(str);
-						if (n < 1 || n > 31)
-							n = 1;
-						limit.m_Date.d = n;
-					}
-
-					TiXmlElement* pFrom = pRule->FirstChildElement("From");
-					if (pFrom)
-					{
-						limit.m_FromCheck = TRUE;
-						limit.m_FromTime = ReadTime(pFrom);
-					}
-					else
-						limit.m_FromCheck = FALSE;
-
-					TiXmlElement* pTo = pRule->FirstChildElement("To");
-					if (pTo)
-					{
-						limit.m_ToCheck = TRUE;
-						limit.m_ToTime = ReadTime(pTo);
-					}
-					else
-						limit.m_ToCheck = FALSE;
+					if (!limit.Load(pRule))
+						continue;
 
 					if (m_sSpeedLimits[i].size() < 20000)
 						m_sSpeedLimits[i].push_back(limit);
