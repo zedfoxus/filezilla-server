@@ -175,7 +175,7 @@ BOOL CSAPrefsDialog::OnInitDialog()
 		m_captionBar.m_textClr     = ::GetSysColor(COLOR_3DFACE);
 		m_captionBar.m_fontWeight  = FW_BOLD;
 		m_captionBar.m_fontSize    = 14;
-		m_captionBar.m_csFontName  = "Verdana";
+		m_captionBar.m_csFontName  = _T("Verdana");
 		m_captionBar.SetConstantText(m_csConstantText);
 	}
 	
@@ -289,7 +289,7 @@ LONG CSAPrefsDialog::OnChangePage(UINT u, LONG l)
 
 /////////////////////////////////////////////////////////////////////////////
 
-bool CSAPrefsDialog::AddPage(CSAPrefsSubDlg &dlg, const char *pCaption, CSAPrefsSubDlg* pDlgParent /*=NULL*/)
+bool CSAPrefsDialog::AddPage(CSAPrefsSubDlg &dlg, LPCTSTR pCaption, CSAPrefsSubDlg* pDlgParent /*=NULL*/)
 {
 	if (m_hWnd)
 	{
@@ -350,7 +350,7 @@ bool CSAPrefsDialog::ShowPage(CSAPrefsSubDlg * pPage)
 bool CSAPrefsDialog::ShowPage(int iPage)
 {
 	if (::IsWindow(m_captionBar.m_hWnd))
-   m_captionBar.SetWindowText("");
+   m_captionBar.SetWindowText(_T(""));
 
 	// turn off the current page
    if ((m_iCurPage >= 0) && (m_iCurPage < (int)m_pages.size()))
@@ -576,7 +576,7 @@ void CSAPrefsDialog::OnGetdispinfoPageTree(NMHDR* pNMHDR, LRESULT* pResult)
       if (pTVDispInfo->item.mask & TVIF_TEXT)
       {
          pageStruct *pPS = (pageStruct *)pTVDispInfo->item.lParam;
-         strcpy(pTVDispInfo->item.pszText, pPS->csCaption);
+         _tcscpy(pTVDispInfo->item.pszText, pPS->csCaption);
       }
    }
    

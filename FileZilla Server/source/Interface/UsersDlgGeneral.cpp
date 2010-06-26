@@ -102,10 +102,10 @@ BOOL CUsersDlgGeneral::OnInitDialog()
 	CSAPrefsSubDlg::OnInitDialog();
 	
 	m_bNeedpass = FALSE;
-	m_Pass = "";
+	m_Pass = _T("");
 	UpdateData(FALSE);
 	
-	m_cGroup.AddString("<none>");
+	m_cGroup.AddString(_T("<none>"));
 	for (CUsersDlg::t_GroupsList::iterator iter = m_pOwner->m_GroupsList.begin(); iter != m_pOwner->m_GroupsList.end(); iter++)
 		m_cGroup.AddString(iter->group);
 
@@ -129,12 +129,12 @@ CString CUsersDlgGeneral::Validate()
 		m_cPass.SetFocus();
 		return _T("Empty passwords are not allowed. Please enter a password!");
 	}
-	if (atoi(m_MaxConnCount)<0 || atoi(m_MaxConnCount)>999999999)
+	if (_ttoi(m_MaxConnCount) < 0 || _ttoi(m_MaxConnCount) > 999999999)
 	{
 		m_cMaxConnCount.SetFocus();
 		return _T("The maximum user count has to be between 0 and 999999999!");
 	}
-	if (atoi(m_MaxConnCount)<0 || atoi(m_MaxConnCount)>999999999)
+	if (_ttoi(m_MaxConnCount) < 0 || _ttoi(m_MaxConnCount) > 999999999)
 	{
 		m_cIpLimit.SetFocus();
 		return _T("The maximum user limit per IP has to be between 0 and 999999999!");
@@ -180,7 +180,7 @@ void CUsersDlgGeneral::OnSelchangeGroup()
 {
 	if (m_cGroup.GetCurSel() <= 0)
 	{
-		m_pUser->group = "";
+		m_pUser->group = _T("");
 		UpdateData(TRUE);
 		m_pOwner->SetCtrlState();
 		if (m_nMaxUsersBypass == 2)
@@ -253,9 +253,9 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 	m_nEnabled = pUser->nEnabled;
 	m_nMaxUsersBypass = pUser->nBypassUserLimit;
 	CString str;
-	str.Format("%d", pUser->nUserLimit);
+	str.Format(_T("%d"), pUser->nUserLimit);
 	m_MaxConnCount = str;
-	str.Format("%d", pUser->nIpLimit);
+	str.Format(_T("%d"), pUser->nIpLimit);
 	m_IpLimit = str;
 	m_Comments = pUser->comment;
 	m_nForceSsl = pUser->forceSsl;
@@ -273,8 +273,8 @@ BOOL CUsersDlgGeneral::SaveUser(t_user *pUser)
 	pUser->nEnabled = m_nEnabled;
 	pUser->password = m_Pass;
 	if (!m_bNeedpass)
-		pUser->password = "";
-	else if (m_cPass.GetModify() && m_Pass != "")
+		pUser->password = _T("");
+	else if (m_cPass.GetModify() && m_Pass != _T(""))
 	{
 		char *tmp = ConvToNetwork(pUser->password);
 		if (!tmp)
@@ -283,7 +283,7 @@ BOOL CUsersDlgGeneral::SaveUser(t_user *pUser)
 			*tmp = 0;
 		}
 		MD5 md5;
-		md5.update((unsigned char *)tmp,strlen(tmp));
+		md5.update((unsigned char *)tmp, strlen(tmp));
 		delete [] tmp;
 		md5.finalize();
 		char *res = md5.hex_digest();
@@ -293,10 +293,10 @@ BOOL CUsersDlgGeneral::SaveUser(t_user *pUser)
 	}
 	
 	pUser->nBypassUserLimit = m_nMaxUsersBypass;
-	pUser->nUserLimit = atoi(m_MaxConnCount);
-	pUser->nIpLimit = atoi(m_IpLimit);
+	pUser->nUserLimit = _ttoi(m_MaxConnCount);
+	pUser->nIpLimit = _ttoi(m_IpLimit);
 	if (m_cGroup.GetCurSel()<=0)
-		pUser->group = "";
+		pUser->group = _T("");
 	else
 		m_cGroup.GetLBText(m_cGroup.GetCurSel(), pUser->group);
 

@@ -55,7 +55,7 @@ BOOL CDeleteGroupInUseDlg::OnInitDialog()
 	str2.Format(str, m_groupName);
 	m_Desc.SetWindowText(str2);
 
-	m_NewGroup.AddString("-- None --");
+	m_NewGroup.AddString(_T("-- None --"));
 	for (unsigned int i = 0; i < m_GroupsList->size(); i++)
 	{
 		CString name = (*m_GroupsList)[i].group;

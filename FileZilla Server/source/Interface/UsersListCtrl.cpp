@@ -152,12 +152,12 @@ int CUsersListCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	SetExtendedStyle(LVS_EX_LABELTIP | LVS_EX_SUBITEMIMAGES | LVS_EX_FULLROWSELECT);
 
-	InsertColumn(COLUMN_ID, "ID", LVCFMT_RIGHT, 75);
-	InsertColumn(COLUMN_USER, "Account", LVCFMT_LEFT, 150);
-	InsertColumn(COLUMN_IP, "IP", LVCFMT_RIGHT, 100);
-	InsertColumn(COLUMN_TRANSFERINIT, "Transfer", LVCFMT_LEFT, 250);
-	InsertColumn(COLUMN_TRANSFERPROGRESS, "Progress", LVCFMT_RIGHT, 150);
-	InsertColumn(COLUMN_TRANSFERSPEED, "Speed", LVCFMT_LEFT, 80);
+	InsertColumn(COLUMN_ID, _T("ID"), LVCFMT_RIGHT, 75);
+	InsertColumn(COLUMN_USER, _T("Account"), LVCFMT_LEFT, 150);
+	InsertColumn(COLUMN_IP, _T("IP"), LVCFMT_RIGHT, 100);
+	InsertColumn(COLUMN_TRANSFERINIT, _T("Transfer"), LVCFMT_LEFT, 250);
+	InsertColumn(COLUMN_TRANSFERPROGRESS, _T("Progress"), LVCFMT_RIGHT, 150);
+	InsertColumn(COLUMN_TRANSFERSPEED, _T("Speed"), LVCFMT_LEFT, 80);
 
 	m_SortImg.Create( 8, 8, ILC_MASK, 3, 3 );
 	HICON Icon;
@@ -232,12 +232,12 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 		}
 		memcpy(&pConnectionData->port, pData + pos, 4);
 
-		pConnectionData->columnText[COLUMN_ID].Format("%06d", userid);
+		pConnectionData->columnText[COLUMN_ID].Format(_T("%06d"), userid);
 		m_connectionDataMap[userid] = pConnectionData;
 		pConnectionData->listIndex = m_connectionDataArray.size();
 		m_connectionDataArray.push_back(pConnectionData);
 
-		pConnectionData->columnText[COLUMN_USER] = "(not logged in)";
+		pConnectionData->columnText[COLUMN_USER] = _T("(not logged in)");
 		SetItemCount(GetItemCount() + 1);
 		SetSortColumn(m_sortColumn, m_sortDir);
 
@@ -436,18 +436,18 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 			if (pConnectionData->totalSize != -1)
 			{
 				double percent = (double)pConnectionData->currentOffset / pConnectionData->totalSize * 100;
-				str.Format("%s bytes (%1.1f%%)", makeUserFriendlyString(pConnectionData->currentOffset).GetString(), percent);
+				str.Format(_T("%s bytes (%1.1f%%)"), makeUserFriendlyString(pConnectionData->currentOffset).GetString(), percent);
 			}
 			else
-				str.Format("%s bytes", makeUserFriendlyString(pConnectionData->currentOffset).GetString());
+				str.Format(_T("%s bytes"), makeUserFriendlyString(pConnectionData->currentOffset).GetString());
 			pConnectionData->columnText[COLUMN_TRANSFERPROGRESS] =  str;
 
 			if (pConnectionData->speed > 1024 * 1024)
-				str.Format("%1.1f MB/s", (double)pConnectionData->speed / 1024 / 1024);
+				str.Format(_T("%1.1f MB/s"), (double)pConnectionData->speed / 1024 / 1024);
 			else if (pConnectionData->speed > 1024)
-				str.Format("%1.1f KB/s", (double)pConnectionData->speed / 1024);
+				str.Format(_T("%1.1f KB/s"), (double)pConnectionData->speed / 1024);
 			else
-				str.Format("%1.1f bytes/s", (double)pConnectionData->speed);
+				str.Format(_T("%1.1f bytes/s"), (double)pConnectionData->speed);
 			pConnectionData->columnText[COLUMN_TRANSFERSPEED] =  str;
 			
 			p += 12;
@@ -460,7 +460,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 
 void CUsersListCtrl::OnContextmenuKick() 
 {
-	if (AfxMessageBox("Do you really want to kick the selected user?", MB_ICONQUESTION|MB_YESNO)!=IDYES)
+	if (AfxMessageBox(_T("Do you really want to kick the selected user?"), MB_ICONQUESTION|MB_YESNO)!=IDYES)
 		return;
 	POSITION pos = GetFirstSelectedItemPosition();
 	while (pos)
@@ -478,7 +478,7 @@ void CUsersListCtrl::OnContextmenuKick()
 
 void CUsersListCtrl::OnContextmenuBan() 
 {
-	if (AfxMessageBox("Do you really want to kick the selected user and ban his IP address?", MB_ICONQUESTION|MB_YESNO)!=IDYES)
+	if (AfxMessageBox(_T("Do you really want to kick the selected user and ban his IP address?"), MB_ICONQUESTION|MB_YESNO)!=IDYES)
 		return;
 	POSITION pos = GetFirstSelectedItemPosition();
 	while (pos)
@@ -673,13 +673,13 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 					pConnectionData->totalSize = -1;
 				}
 
-				pConnectionData->columnText[COLUMN_ID].Format("%06d", pConnectionData->userid);
+				pConnectionData->columnText[COLUMN_ID].Format(_T("%06d"), pConnectionData->userid);
 				m_connectionDataMap[pConnectionData->userid] = pConnectionData;
 				pConnectionData->listIndex = m_connectionDataArray.size();
 				m_connectionDataArray.push_back(pConnectionData);
 
-				if (pConnectionData->columnText[COLUMN_USER] == "")
-					pConnectionData->columnText[COLUMN_USER] = "(not logged in)";
+				if (pConnectionData->columnText[COLUMN_USER] == _T(""))
+					pConnectionData->columnText[COLUMN_USER] = _T("(not logged in)");
 				
 				pConnectionData->itemImages[COLUMN_TRANSFERINIT] = pConnectionData->transferMode;
 				pConnectionData->columnText[COLUMN_TRANSFERINIT] = m_showPhysical ? pConnectionData->physicalFile : pConnectionData->logicalFile;

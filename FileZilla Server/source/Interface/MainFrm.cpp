@@ -113,7 +113,8 @@ static UINT indicators[] =
 CMainFrame::CMainFrame(COptions *pOptions)
 {
 	ASSERT(pOptions);
-	nTrayNotificationMsg_ = RegisterWindowMessage("FileZilla Server Tray Notification Message");	
+	s_winClassName = 0;
+	nTrayNotificationMsg_ = RegisterWindowMessage(_T("FileZilla Server Tray Notification Message"));
 	m_bQuit = FALSE;
 	m_nSendCount = 0;
 	m_nRecvCount = 0;
@@ -140,6 +141,7 @@ CMainFrame::~CMainFrame()
 	delete m_pOptions;
 	m_pOptions = 0;
 	CloseAdminSocket(false);
+	delete [] s_winClassName; //Does seem to crash
 }
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -191,11 +193,11 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndStatusBar.GetItemRect(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVLED), rect);  
 
 	//Create the first LED control
-	m_RecvLed.Create("",WS_VISIBLE|WS_CHILD, rect, &m_wndStatusBar, m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVLED)); 
+	m_RecvLed.Create(_T(""), WS_VISIBLE|WS_CHILD, rect, &m_wndStatusBar, m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVLED)); 
 	m_RecvLed.SetLed( CLed::LED_COLOR_GREEN, CLed::LED_OFF, CLed::LED_ROUND);
 
 	//Create the second LED control
-	m_SendLed.Create("",WS_VISIBLE|WS_CHILD, rect, &m_wndStatusBar, m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED)); 
+	m_SendLed.Create(_T(""), WS_VISIBLE|WS_CHILD, rect, &m_wndStatusBar, m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED)); 
 	m_SendLed.SetLed( CLed::LED_COLOR_RED, CLed::LED_OFF, CLed::LED_ROUND);
 
 	m_wndStatusBar.GetItemRect(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED), &rect);
@@ -203,15 +205,15 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndStatusBar.SetPaneInfo(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED),ID_INDICATOR_SENDLED,SBPS_NOBORDERS,6);
 
 	ShowStatus(GetVersionString(), 0);
-	ShowStatus("Copyright 2001-2009 by Tim Kosse (tim.kosse@filezilla-project.org)", 0);
+	ShowStatus(_T("Copyright 2001-2010 by Tim Kosse (tim.kosse@filezilla-project.org)"), 0);
 
-	m_nTimerID=SetTimer(7777, 10000, 0);
-	m_nRateTimerID=SetTimer(7778, 1000, 0);
+	m_nTimerID = SetTimer(7777, 10000, 0);
+	m_nRateTimerID = SetTimer(7778, 1000, 0);
 
-	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDCOUNT), "0 bytes sent");
-	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVCOUNT), "0 bytes received");
-	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVRATE), "0 B/s");
-	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDRATE), "0 B/s");
+	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDCOUNT), _T("0 bytes sent"));
+	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVCOUNT), _T("0 bytes received"));
+	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVRATE), _T("0 B/s"));
+	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDRATE), _T("0 B/s"));
 
 	CConnectDialog dlg(m_pOptions);
 	if (!m_pOptions->GetOptionVal(IOPTION_ALWAYS) && dlg.DoModal() != IDOK)
@@ -235,8 +237,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 // existing window class, but with a different name and icon. 
 // Returns new name if successful; otherwise NULL.
 //
-static LPCSTR RegisterSimilarClass(LPCSTR lpszNewClassName,
-	LPCSTR lpszOldClassName, UINT nIDResource)
+static bool RegisterSimilarClass(LPCTSTR lpszNewClassName,
+	LPCTSTR lpszOldClassName, UINT nIDResource)
 {
 	// Get class info for old class.
 	//
@@ -244,7 +246,7 @@ static LPCSTR RegisterSimilarClass(LPCSTR lpszNewClassName,
 	WNDCLASS wc;
 	if (!::GetClassInfo(hInst, lpszOldClassName, &wc)) {
 		TRACE("Can't find window class %s\n", lpszOldClassName);
-		return NULL;
+		return false;
 	}
 
 	// Register new class with same info, but different name and icon.
@@ -253,15 +255,10 @@ static LPCSTR RegisterSimilarClass(LPCSTR lpszNewClassName,
 	wc.hIcon = ::LoadIcon(hInst, MAKEINTRESOURCE(nIDResource));
 	if (!AfxRegisterClass(&wc)) {
 		TRACE("Unable to register window class%s\n", lpszNewClassName);
-		return NULL;
+		return false;
 	}
-	return lpszNewClassName;
+	return true;
 }
-
-// Static class member holds window class name
-// (NULL if not registered yet).
-// 
-LPCSTR CMainFrame::s_winClassName = NULL;
 
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
@@ -276,14 +273,11 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	cs.dwExStyle &= ~WS_EX_CLIENTEDGE;
 
 	//Change the window class name
-	if (s_winClassName==NULL) 
+	if (!s_winClassName) 
 	{
-		// One-time initialization: register the class
-		//
-		s_winClassName = RegisterSimilarClass("FileZilla Server Main Window", 
-						cs.lpszClass, IDR_MAINFRAME);
-		if (!s_winClassName)
-			return FALSE;
+		s_winClassName = new TCHAR[_tcslen(_T("FileZilla Server Main Window")) + 1];
+		_tcscpy(s_winClassName, _T("FileZilla Server Main Window"));
+		RegisterSimilarClass(s_winClassName, cs.lpszClass, IDR_MAINFRAME);
 	}
 	cs.lpszClass = s_winClassName;
 
@@ -409,7 +403,7 @@ void CMainFrame::OnActive()
 	{
 		if (!GetUsersPane()->m_pListCtrl->GetItemCount())
 		{
-			if (AfxMessageBox("Do you really want to take the server offline?", MB_YESNO | MB_ICONQUESTION) != IDYES)
+			if (AfxMessageBox(_T("Do you really want to take the server offline?"), MB_YESNO | MB_ICONQUESTION) != IDYES)
 				return;
 			int nServerState = m_nServerState | STATE_GOOFFLINE_NOW;
 			unsigned char buffer[2];
@@ -441,7 +435,7 @@ void CMainFrame::OnActive()
 				buffer[0] = nServerState / 256;
 				buffer[1] = nServerState % 256;
 				SendCommand(2, buffer, 2);
-				ShowStatus("Server is going offline...", 0);				
+				ShowStatus(_T("Server is going offline..."), 0);				
 				return;
 			}				
 			else
@@ -451,7 +445,7 @@ void CMainFrame::OnActive()
 				buffer[0] = nServerState / 256;
 				buffer[1] = nServerState % 256;
 				SendCommand(2, buffer, 2);
-				ShowStatus("Server is going offline...", 0);
+				ShowStatus(_T("Server is going offline..."), 0);
 				return;
 			}
 		}
@@ -487,7 +481,7 @@ void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam)
 
 void CMainFrame::SetupTrayIcon()
 {
-	m_TrayIcon.Create(0, nTrayNotificationMsg_, "FileZilla Server",
+	m_TrayIcon.Create(0, nTrayNotificationMsg_, _T("FileZilla Server"),
 		0, IDR_SYSTRAY_MENU);
 	m_TrayIcon.SetIcon(IDI_UNKNOWN);
 }
@@ -565,7 +559,7 @@ void CMainFrame::OnLock()
 	}
 	else
 	{
-		if (AfxMessageBox("Do you really want to lock the server? No new connenctions will be accepted while locked.", MB_YESNO|MB_ICONQUESTION)!=IDYES)
+		if (AfxMessageBox(_T("Do you really want to lock the server? No new connenctions will be accepted while locked."), MB_YESNO|MB_ICONQUESTION)!=IDYES)
 			return;
 		int nServerState = m_nServerState | STATE_LOCKED;
 		unsigned char buffer[2];
@@ -583,119 +577,92 @@ void CMainFrame::OnUpdateLock(CCmdUI* pCmdUI)
 	
 }
 
+CString FormatSpeed(__int64 diff, const int span)
+{
+	diff = (__int64)((double)diff * 1000 / span);
+
+	CString str = _T("");
+	CString digit;
+
+	int shift = 0;
+	while (diff >= 10000)
+	{
+		diff /= 10;
+		shift++;
+	}
+
+	while (diff)
+	{
+		digit = (TCHAR)('0' + static_cast<TCHAR>(diff % 10));
+		str = digit + str;
+		diff /= 10;
+	}
+
+	if (str == _T(""))
+		str = _T("0");
+
+	if (shift % 3)
+		str = str.Left((shift % 3) + 1) + "," + str.Right(str.GetLength() - (shift % 3) - 1);
+	shift += 2;
+	shift /= 3;
+	if (!shift)
+		str += _T(" B/s");
+	else if (shift == 1)
+		str += _T(" KB/s");
+	else if (shift == 2)
+		str += _T(" MB/s");
+	else if (shift == 3)
+		str += _T(" GB/s");
+	else if (shift == 4)
+		str += _T(" TB/s");
+	else
+		str = _T("n/a"); //If this happens, you really have a fast connection
+	return str;
+}
+
 void CMainFrame::OnTimer(UINT_PTR nIDEvent) 
 {
 	if (!nIDEvent)
 		return;
-	else if (nIDEvent==m_nTimerID)
+	else if (nIDEvent == m_nTimerID)
 	{
 		SendCommand(8);
 		m_TrayIcon.RefreshIcon();
 	}
-	else if (nIDEvent==m_nRateTimerID)
+	else if (nIDEvent == m_nRateTimerID)
 	{
-		__int64 diff=m_nSendCount-m_nOldSendCount;
+		const int span = GetTickCount() - m_lastchecktime;
+		m_lastchecktime=GetTickCount();
+
+		__int64 diff = m_nSendCount - m_nOldSendCount;
+		m_nOldSendCount = m_nSendCount;
+
 		if (m_lastwritediff && diff)
 		{
-			__int64 tmp=diff;
-			diff=(diff+m_lastwritediff)/2;
-			m_lastwritediff=tmp;
+			__int64 tmp = diff;
+			diff = (diff + m_lastwritediff) / 2;
+			m_lastwritediff = tmp;
 		}
 		else
-			m_lastwritediff=diff;
+			m_lastwritediff = diff;
 
-		int span=GetTickCount()-m_lastchecktime;
-		diff=(__int64)((double)diff*1000/span);
-
-		CString str="";
-		CString digit;
-		while (diff)
-		{
-			digit = (TCHAR)('0' + static_cast<TCHAR>(diff%10));
-			str=digit+str;
-			diff/=10;
-		}
-		if (str=="")
-			str="0";
-
-		int shift=0;
-		while (str.GetLength()>4)
-		{
-			shift++;
-			str=str.Left(str.GetLength()-1);
-		}
-		if (shift%3)
-			str=str.Left((shift%3)+1)+","+str.Right(str.GetLength()-(shift%3)-1);
-		shift+=2;
-		shift/=3;
-		if (!shift)
-			str+=" B/s";
-		else if (shift==1)
-			str+=" KB/s";
-		else if (shift==2)
-			str+=" MB/s";
-		else if (shift==3)
-			str+=" GB/s";
-		else if (shift==4)
-			str+=" TB/s";
-		else
-			str="n/a"; //If this happens, you really have a fast connection
-		SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDRATE),str);
-		m_nOldSendCount=m_nSendCount;
+		CString writeSpeed = FormatSpeed(diff, span);		
+		SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDRATE), writeSpeed);
 		
-		diff=m_nRecvCount-m_nOldRecvCount;
-		if (diff)
-		{
-			int x=0;
-		}
+		diff = m_nRecvCount - m_nOldRecvCount;
+		m_nOldRecvCount = m_nRecvCount;
+
 		if (m_lastreaddiff && diff)
 		{
-			__int64 tmp=diff;
-			diff=(diff+m_lastreaddiff)/2;
-			m_lastreaddiff=tmp;
+			__int64 tmp = diff;
+			diff = (diff + m_lastreaddiff) / 2;
+			m_lastreaddiff = tmp;
 		}
 		else
-			m_lastreaddiff=diff;
+			m_lastreaddiff = diff;
 		
-		span=GetTickCount()-m_lastchecktime;
-		diff=(__int64)((double)diff*1000/span);
-
-		str=""; //diff in String umwandeln
-		while (diff)
-		{
-			digit = (TCHAR)('0' + static_cast<TCHAR>(diff%10));
-			str=digit+str;
-			diff/=10;
-		}
-		if (str=="")
-			str="0";
-
-		shift=0;
-		while (str.GetLength()>4)
-		{
-			shift++;
-			str=str.Left(str.GetLength()-1);
-		}
-		if (shift%3)
-			str=str.Left((shift%3)+1)+","+str.Right(str.GetLength()-(shift%3)-1);
-		shift+=2;
-		shift/=3;
-		if (!shift)
-			str+=" B/s";
-		else if (shift==1)
-			str+=" KB/s";
-		else if (shift==2)
-			str+=" MB/s";
-		else if (shift==3)
-			str+=" GB/s";
-		else if (shift==4)
-			str+=" TB/s";
-		else
-			str="n/a"; //If this happens, you really have a fast connection
-		SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVRATE),str);
-		m_lastchecktime=GetTickCount();
-		m_nOldRecvCount=m_nRecvCount;
-
+		CString readSpeed = FormatSpeed(diff, span);		
+		SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVRATE), readSpeed);
 	}
 	else if (nIDEvent == m_nReconnectTimerID)
 	{
@@ -779,12 +746,12 @@ void CMainFrame::ShowStatus(const CString& status, int nType)
 
 void CMainFrame::ShowStatusRaw(const char *status, int nType)
 {
-	CStatusView *view = GetStatusPane();
 #ifdef _UNICODE
-	ShowStatus(ConvFromNetwork(status), nType);
+	CString msg(ConvFromNetwork(status));
 #else
-	ShowStatus(ConvToLocal(ConvFromNetwork(status)), nType);
+	CString msg(ConvToLocal(ConvFromNetwork(status)), nType));
 #endif
+	ShowStatus(msg, nType);
 }
 
 void CMainFrame::ParseReply(int nReplyID, unsigned char *pData, int nDataLength)
@@ -961,7 +928,10 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 				ShowStatus(_T("Protocol error: Unexpected data length"), 1);
 				return;
 			}
-			char *buffer = new char[nDataLength - 9 + 160 + 1];
+			
+			CString msg;
+
+			char *buffer = new char[nDataLength - 9 + 1];
 			unsigned char *p = pData + 9;
 			char *q = buffer;
 			int pos = 0;
@@ -969,6 +939,10 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 			{
 				if (*p == '-')
 				{
+					*q = 0;
+					msg = ConvFromNetwork(buffer);
+					q = buffer;
+					
 					DWORD timeHigh = GET32(pData + 1);
 					DWORD timeLow = GET32(pData + 5);
 
@@ -979,20 +953,20 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 					SYSTEMTIME sFileTime;
 					FileTimeToSystemTime(&fFileTime, &sFileTime);
 					
-					*(q++) = ' ';
+					TCHAR datetime[200];
 					int res = GetDateFormat(
 							LOCALE_USER_DEFAULT,	// locale for which date is to be formatted
 							DATE_SHORTDATE,			// flags specifying function options
 							&sFileTime,				// date to be formatted
 							0,						// date format string
-							q,						// buffer for storing formatted string
-							80						// size of buffer
+							datetime,				// buffer for storing formatted string
+							200						// size of buffer
 						);
 
 					if (res)
 					{
-						q += res - 1;
-						*(q++) = ' ';
+						msg += datetime;
+						msg += ' ';
 					}
 	
 					res = GetTimeFormat(
@@ -1000,14 +974,14 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 							TIME_FORCE24HOURFORMAT,	// flags specifying function options
 							&sFileTime,				// date to be formatted
 							0,						// date format string
-							q,						// buffer for storing formatted string
-							80						// size of buffer
+							datetime,				// buffer for storing formatted string
+							200						// size of buffer
 						);
 
 					if (res)
 					{
-						q += res - 1;
-						*(q++) = ' ';
+						msg += datetime;
+						msg += ' ';
 					}
 
 					if ((nDataLength - pos - 9) > 0)
@@ -1024,7 +998,9 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 			}
 			*q = 0;
 			if (q != buffer)
-				ShowStatusRaw(buffer, *pData);
+				msg += ConvFromNetwork(buffer);
+			if (msg != _T(""))
+				ShowStatus(msg, *pData);
 			delete [] buffer;
 		}
 		break;
@@ -1041,7 +1017,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 				m_nRecvCount += size;
 				m_RecvLed.Ping(100);
 				CString str;
-				str.Format("%s bytes received", makeUserFriendlyString(m_nRecvCount).GetString());
+				str.Format(_T("%s bytes received"), makeUserFriendlyString(m_nRecvCount).GetString());
 				SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVCOUNT), str);
 			}
 			else
@@ -1049,7 +1025,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 				m_nSendCount += size;
 				m_SendLed.Ping(100);
 				CString str;
-				str.Format("%s bytes sent", makeUserFriendlyString(m_nSendCount).GetString());
+				str.Format(_T("%s bytes sent"), makeUserFriendlyString(m_nSendCount).GetString());
 				SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDCOUNT), str);
 			}
 

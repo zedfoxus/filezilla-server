@@ -1231,37 +1231,7 @@ BOOL COptions::SaveSpeedLimits(TiXmlElement* pSettings)
 			CSpeedLimit limit = m_sSpeedLimits[i][j];
 
 			TiXmlElement* pRule = pSpeedLimit->LinkEndChild(new TiXmlElement("Rule"))->ToElement();
-
-			pRule->SetAttribute("Speed", limit.m_Speed);
-
-			CStdString str;
-			str.Format(_T("%d"), limit.m_Day);
-			TiXmlElement* pDays = pRule->LinkEndChild(new TiXmlElement("Days"))->ToElement();
-			SetText(pDays, str);
-
-			if (limit.m_DateCheck)
-			{
-				TiXmlElement* pDate = pRule->LinkEndChild(new TiXmlElement("Date"))->ToElement();
-				pRule->SetAttribute("Year", limit.m_Date.y);
-				pRule->SetAttribute("Month", limit.m_Date.m);
-				pRule->SetAttribute("Day", limit.m_Date.d);
-			}
-
-			if (limit.m_FromCheck)
-			{
-				TiXmlElement* pFrom = pRule->LinkEndChild(new TiXmlElement("From"))->ToElement();
-				pFrom->SetAttribute("Hour", limit.m_FromTime.h);
-				pFrom->SetAttribute("Minute", limit.m_FromTime.m);
-				pFrom->SetAttribute("Second", limit.m_FromTime.s);
-			}
-	
-			if (limit.m_ToCheck)
-			{
-				TiXmlElement* pTo = pRule->LinkEndChild(new TiXmlElement("To"))->ToElement();
-				pTo->SetAttribute("Hour", limit.m_ToTime.h);
-				pTo->SetAttribute("Minute", limit.m_ToTime.m);
-				pTo->SetAttribute("Second", limit.m_ToTime.s);
-			}
+			limit.Save(pRule);
 		}
 	}
 

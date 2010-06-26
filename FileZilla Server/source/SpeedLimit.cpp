@@ -22,6 +22,8 @@
 
 #include "stdafx.h"
 #include "SpeedLimit.h"
+#include "xml_utils.h"
+#include "tinyxml/tinyxml.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -32,9 +34,9 @@ CSpeedLimit::CSpeedLimit()
 	m_Day = 0;
 
 	m_Speed = 10;
-	m_ToCheck = FALSE;
-	m_DateCheck = FALSE;
-	m_FromCheck = FALSE;
+	m_ToCheck = false;
+	m_DateCheck = false;
+	m_FromCheck = false;
 }
 
 CSpeedLimit::~CSpeedLimit()
@@ -220,4 +222,41 @@ unsigned char * CSpeedLimit::ParseBuffer(unsigned char *pBuffer, int length)
 	m_Day = *p++;
 
 	return p;
+}
+
+static void SaveTime(TiXmlElement* pElement, CSpeedLimit::t_time t)
+{
+	pElement->SetAttribute("Hour", t.h);
+	pElement->SetAttribute("Minute", t.m);
+	pElement->SetAttribute("Second", t.s);
+}
+
+void CSpeedLimit::Save(TiXmlElement* pElement)
+{
+	pElement->SetAttribute("Speed", m_Speed);
+
+	CStdString str;
+	str.Format(_T("%d"), m_Day);
+	TiXmlElement* pDays = pElement->LinkEndChild(new TiXmlElement("Days"))->ToElement();
+	XML::SetText(pDays, str);
+
+	if (m_DateCheck)
+	{
+		TiXmlElement* pDate = pElement->LinkEndChild(new TiXmlElement("Date"))->ToElement();
+		pDate->SetAttribute("Year", m_Date.y);
+		pDate->SetAttribute("Month", m_Date.m);
+		pDate->SetAttribute("Day", m_Date.d);
+	}
+
+	if (m_FromCheck)
+	{
+		TiXmlElement* pFrom = pElement->LinkEndChild(new TiXmlElement("From"))->ToElement();
+		SaveTime(pFrom, m_FromTime);
+	}
+
+	if (m_ToCheck)
+	{
+		TiXmlElement* pTo = pElement->LinkEndChild(new TiXmlElement("To"))->ToElement();
+		SaveTime(pTo, m_ToTime);
+	}
 }

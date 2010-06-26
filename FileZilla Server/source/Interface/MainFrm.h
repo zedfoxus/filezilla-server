@@ -104,7 +104,7 @@ protected:  // Eingebundene Elemente der Steuerleiste
 	int nTrayNotificationMsg_;
 
 	// static data member to hold window class name
-	static LPCSTR s_winClassName;
+	LPTSTR s_winClassName;
 
 	CUsersDlg *m_pUsersDlg;
 	CGroupsDlg *m_pGroupsDlg;

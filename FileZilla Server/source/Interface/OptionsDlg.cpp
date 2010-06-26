@@ -231,7 +231,7 @@ bool COptionsDlg::AddPage(CSAPrefsSubDlg &page, UINT nCaptionID, CSAPrefsSubDlg 
 {
 	CString str;
 	str.LoadString(nCaptionID);
-	return CSAPrefsDialog::AddPage(page,str,pDlgParent);
+	return CSAPrefsDialog::AddPage(page, str, pDlgParent);
 }
 
 bool COptionsDlg::IsNumeric(LPCTSTR str)

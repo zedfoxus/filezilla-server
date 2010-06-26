@@ -79,56 +79,16 @@ CString CUsersDlgIpFilter::Validate()
 {
 	UpdateData(TRUE);
 
-	CString ips = m_DisallowedAddresses;
-	ips.Replace("\n", " ");
-	ips.Replace("\r", " ");
-	ips.Replace("\t", " ");
-	while (ips.Replace("  ", " "));
-	ips.TrimLeft(" ");
-	ips.TrimRight(" ");
-	ips += " ";
-
-	int pos = ips.Find(" ");
-	while (pos != -1)
+	if (!ParseIPFilter(m_DisallowedAddresses))
 	{
-		CString ip = ips.Left(pos);
-		if (ip == "")
-			break;
-		ips = ips.Mid(pos + 1);
-
-		if (ip != "*" && !IsValidAddressFilter(ip))
-		{
-			GetDlgItem(IDC_USERS_IPFILTER_DISALLOWED)->SetFocus();
-			return _T("Invalid IP address/range/mask");
-		}
-
-		pos = ips.Find(" ");
+		GetDlgItem(IDC_GROUPS_IPFILTER_DISALLOWED)->SetFocus();
+		return _T("Invalid IP address/range/mask");
 	}
 
-	ips = m_AllowedAddresses;
-	ips.Replace("\n", " ");
-	ips.Replace("\r", " ");
-	ips.Replace("\t", " ");
-	while (ips.Replace("  ", " "));
-	ips.TrimLeft(" ");
-	ips.TrimRight(" ");
-	ips += " ";
-
-	pos = ips.Find(" ");
-	while (pos != -1)
+	if (!ParseIPFilter(m_AllowedAddresses))
 	{
-		CString ip = ips.Left(pos);
-		if (ip == "")
-			break;
-		ips = ips.Mid(pos + 1);
-
-		if (ip != "*" && !IsValidAddressFilter(ip))
-		{
-			GetDlgItem(IDC_USERS_IPFILTER_ALLOWED)->SetFocus();
-			return _T("Invalid IP address/range/mask");
-		}
-
-		pos = ips.Find(" ");
+		GetDlgItem(IDC_GROUPS_IPFILTER_ALLOWED)->SetFocus();
+		return _T("Invalid IP address/range/mask");
 	}
 
 	return _T("");
@@ -183,51 +143,8 @@ BOOL CUsersDlgIpFilter::SaveUser(t_user *pUser)
 	pUser->disallowedIPs.clear();
 	pUser->allowedIPs.clear();
 
-	CString ips = m_DisallowedAddresses;
-	ips.Replace("\n", " ");
-	ips.Replace("\r", " ");
-	ips.Replace("\t", " ");
-	while (ips.Replace("  ", " "));
-	ips.TrimLeft(" ");
-	ips.TrimRight(" ");
-	ips += " ";
-
-	int pos = ips.Find(" ");
-	while (pos != -1)
-	{
-		CString ip = ips.Left(pos);
-		if (ip == "")
-			break;
-		ips = ips.Mid(pos + 1);
-
-		if (ip == "*" || IsValidAddressFilter(ip))
-			pUser->disallowedIPs.push_back(ip);
-
-		pos = ips.Find(" ");
-	}
-
-	ips = m_AllowedAddresses;
-	ips.Replace("\n", " ");
-	ips.Replace("\r", " ");
-	ips.Replace("\t", " ");
-	while (ips.Replace("  ", " "));
-	ips.TrimLeft(" ");
-	ips.TrimRight(" ");
-	ips += " ";
-
-	pos = ips.Find(" ");
-	while (pos != -1)
-	{
-		CString ip = ips.Left(pos);
-		if (ip == "")
-			break;
-		ips = ips.Mid(pos + 1);
-
-		if (ip == "*" || IsValidAddressFilter(ip))
-			pUser->allowedIPs.push_back(ip);
-
-		pos = ips.Find(" ");
-	}
+	ParseIPFilter(m_DisallowedAddresses, &pUser->disallowedIPs);
+	ParseIPFilter(m_AllowedAddresses, &pUser->allowedIPs);
 	
 	return TRUE;
 }

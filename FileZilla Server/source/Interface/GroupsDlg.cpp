@@ -50,10 +50,10 @@ CGroupsDlg::CGroupsDlg(CWnd* pParent, bool localConnection)
 	m_pSharedFoldersPage = new CGroupsDlgSharedFolders(this);
 	m_pIpFilterPage = new CGroupsDlgIpFilter(this);
 	
-	AddPage(*m_pGeneralPage, "General");
-	AddPage(*m_pSharedFoldersPage, "Shared folders");
-	AddPage(*m_pSpeedLimitPage, "Speed Limits");
-	AddPage(*m_pIpFilterPage, "IP Filter");
+	AddPage(*m_pGeneralPage, _T("General"));
+	AddPage(*m_pSharedFoldersPage, _T("Shared folders"));
+	AddPage(*m_pSpeedLimitPage, _T("Speed Limits"));
+	AddPage(*m_pIpFilterPage, _T("IP Filter"));
 }
 
 CGroupsDlg::~CGroupsDlg()
