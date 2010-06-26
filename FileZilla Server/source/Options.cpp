@@ -1250,17 +1250,17 @@ BOOL COptions::SaveSpeedLimits(TiXmlElement* pSettings)
 			if (limit.m_FromCheck)
 			{
 				TiXmlElement* pFrom = pRule->LinkEndChild(new TiXmlElement("From"))->ToElement();
-				pRule->SetAttribute("Hour", limit.m_FromTime.h);
-				pRule->SetAttribute("Minute", limit.m_FromTime.m);
-				pRule->SetAttribute("Second", limit.m_FromTime.s);
+				pFrom->SetAttribute("Hour", limit.m_FromTime.h);
+				pFrom->SetAttribute("Minute", limit.m_FromTime.m);
+				pFrom->SetAttribute("Second", limit.m_FromTime.s);
 			}
 	
 			if (limit.m_ToCheck)
 			{
 				TiXmlElement* pTo = pRule->LinkEndChild(new TiXmlElement("To"))->ToElement();
-				pRule->SetAttribute("Hour", limit.m_ToTime.h);
-				pRule->SetAttribute("Minute", limit.m_ToTime.m);
-				pRule->SetAttribute("Second", limit.m_ToTime.s);
+				pTo->SetAttribute("Hour", limit.m_ToTime.h);
+				pTo->SetAttribute("Minute", limit.m_ToTime.m);
+				pTo->SetAttribute("Second", limit.m_ToTime.s);
 			}
 		}
 	}
