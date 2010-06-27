@@ -3503,7 +3503,7 @@ CStdString CControlSocket::GetPassiveIP()
 				m_transferstatus.usedResolvedIP = false;
 
 				if (!bValidSockAddr)
-					return "";
+					return _T("");
 				return inet_ntoa(sockAddr.sin_addr);
 			}
 		}

@@ -721,7 +721,7 @@ CStdString CPermissions::GetHomeDir(LPCTSTR username, bool physicalPath /*=false
 {
 	CUser user;
 	if (!GetUser(username, user))
-		return "";
+		return _T("");
 
 	return GetHomeDir(user, physicalPath);
 }
@@ -1130,7 +1130,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 						break;
 					}
 				if (!user.pOwner)
-					user.group = "";
+					user.group = _T("");
 			}
 
 			if (!user.pOwner)

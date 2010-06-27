@@ -591,7 +591,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 					if (iter == ipBindList.end())
 						ipBindList.push_back(sub);
 				}
-				sub = "";
+				sub = _T("");
 			}
 
 			if (ipBindList.empty())

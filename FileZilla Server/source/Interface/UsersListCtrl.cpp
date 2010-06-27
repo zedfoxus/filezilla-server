@@ -276,10 +276,10 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 #endif
 		delete [] user;
 
-		if (pConnectionData->columnText[COLUMN_USER] == "")
+		if (pConnectionData->columnText[COLUMN_USER] == _T(""))
 		{
 			pConnectionData->itemImages[COLUMN_ID] = 5;
-			pConnectionData->columnText[COLUMN_USER] = "(not logged in)";
+			pConnectionData->columnText[COLUMN_USER] = _T("(not logged in)");
 		}
 		else
 		{
@@ -327,14 +327,14 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 
 		if (!pConnectionData->transferMode)
 		{
-			pConnectionData->physicalFile = "";
-			pConnectionData->logicalFile = "";
+			pConnectionData->physicalFile = _T("");
+			pConnectionData->logicalFile = _T("");
 			pConnectionData->currentOffset = 0;
 			pConnectionData->totalSize = -1;
 			pConnectionData->ResetSpeed();
 
-			pConnectionData->columnText[COLUMN_TRANSFERPROGRESS] =  "";
-			pConnectionData->columnText[COLUMN_TRANSFERSPEED] =  "";
+			pConnectionData->columnText[COLUMN_TRANSFERPROGRESS] =  _T("");
+			pConnectionData->columnText[COLUMN_TRANSFERSPEED] =  _T("");
 		}
 		else
 		{

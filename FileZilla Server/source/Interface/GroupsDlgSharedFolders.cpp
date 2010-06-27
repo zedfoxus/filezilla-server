@@ -329,7 +329,7 @@ void CGroupsDlgSharedFolders::OnDirmenuAdd()
 		dir.bFileAppend = dir.bFileDelete = 
 		dir.bFileWrite = dir.bIsHome =
 		dir.bAutoCreate = FALSE;
-	dir.dir = "";
+	dir.dir = _T("");
 	dir.bIsHome = m_cDirs.GetItemCount()?FALSE:TRUE;
 
 	pGroup->permissions.push_back(dir);

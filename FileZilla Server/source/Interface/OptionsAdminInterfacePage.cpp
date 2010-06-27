@@ -130,11 +130,11 @@ BOOL COptionsAdminInterfacePage::IsDataValid()
 			if (sub == _T("") && cur == '*')
 			{
 				ipBindList.clear();
-				ipBindList.push_back("*");
+				ipBindList.push_back(_T("*"));
 				break;
 			}
 
-			if (sub != "")
+			if (sub != _T(""))
 			{
 				//Parse IP
 				SOCKADDR_IN sockAddr;
@@ -153,7 +153,7 @@ BOOL COptionsAdminInterfacePage::IsDataValid()
 					if (iter == ipBindList.end())
 						ipBindList.push_back(sub);
 				}
-				sub = "";
+				sub = _T("");
 			}
 		}
 		else

@@ -112,8 +112,8 @@ BOOL CUsersDlgIpFilter::DisplayUser(t_user *pUser)
 {
 	m_pUser = pUser;
 
-	m_DisallowedAddresses = "";
-	m_AllowedAddresses = "";
+	m_DisallowedAddresses = _T("");
+	m_AllowedAddresses = _T("");
 
 	if (!pUser)
 	{

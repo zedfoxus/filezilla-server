@@ -246,13 +246,13 @@ MD5::MD5(ifstream& stream){
 
 unsigned char *MD5::raw_digest(){
 
-  uint1 *s = new uint1[16];
-
   if (!finalized){
     cerr << "MD5::raw_digest:  Can't get digest if you haven't "<<
       "finalized the digest!" <<endl;
-    return ( (unsigned char*) "");
+    return 0;
   }
+
+  uint1 *s = new uint1[16];
 
   memcpy(s, digest, 16);
   return s;
@@ -263,13 +263,13 @@ unsigned char *MD5::raw_digest(){
 char *MD5::hex_digest(){
 
   int i;
-  char *s= new char[33];
-
   if (!finalized){
     cerr << "MD5::hex_digest:  Can't get digest if you haven't "<<
       "finalized the digest!" <<endl;
-    return "";
+    return 0;
   }
+
+  char *s= new char[33];
 
   for (i=0; i<16; i++)
     sprintf(s+i*2, "%02x", digest[i]);

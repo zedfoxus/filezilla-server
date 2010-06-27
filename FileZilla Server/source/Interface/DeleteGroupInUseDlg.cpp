@@ -78,6 +78,6 @@ void CDeleteGroupInUseDlg::OnOK()
 	if (m_NewGroup.GetCurSel() > 0)
 		m_NewGroup.GetLBText(m_NewGroup.GetCurSel(), m_groupName);
 	else
-		m_groupName = "";
+		m_groupName = _T("");
 	CDialog::OnOK();
 }

@@ -166,7 +166,7 @@ BOOL CSAPrefsDialog::OnInitDialog()
 	ScreenToClient(m_frameRect);
 	//   m_frameRect.DeflateRect(2,2);
 	
-	if (m_csTitle != "")
+	if (m_csTitle != _T(""))
 		SetWindowText(m_csTitle);
 	
 	// set some styles for the pretty page indicator bar

@@ -114,7 +114,7 @@ BOOL COptionsPasvPage::IsDataValid()
 	if (m_nIPType == 1)
 	{
 		//Ensure a valid IP address has been entered
-		if (m_IP == "")
+		if (m_IP == _T(""))
 		{
 			m_pOptionsDlg->ShowPage(this);
 			GetDlgItem(IDC_OPTIONS_PASV_IP)->SetFocus();

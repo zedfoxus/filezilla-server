@@ -22,7 +22,7 @@
 #include "stdafx.h"
 #include "FileZilla server.h"
 #include "UsersDlgGeneral.h"
-#include "misc\md5.h"
+#include "../misc/md5.h"
 #include "entersomething.h"
 #include "UsersDlg.h"
 #include "UsersDlgSpeedLimit.h"
@@ -124,7 +124,7 @@ void CUsersDlgGeneral::OnNeedpass()
 CString CUsersDlgGeneral::Validate()
 {
 	UpdateData(TRUE);
-	if (m_bNeedpass && m_Pass == "")
+	if (m_bNeedpass && m_Pass == _T(""))
 	{
 		m_cPass.SetFocus();
 		return _T("Empty passwords are not allowed. Please enter a password!");
@@ -221,11 +221,11 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 	if (!pUser)
 	{
 		m_bNeedpass = FALSE;
-		m_Pass = "";
+		m_Pass = _T("");
 		m_nMaxUsersBypass = 0;
-		m_IpLimit = "";
-		m_MaxConnCount = "";
-		m_Comments = "";
+		m_IpLimit = _T("");
+		m_MaxConnCount = _T("");
+		m_Comments = _T("");
 		m_nForceSsl = 0;
 
 		UpdateData(FALSE);
@@ -235,9 +235,9 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 	
 	m_Pass = pUser->password;
 	m_cPass.SetModify(FALSE);
-	m_bNeedpass = pUser->password!="";
+	m_bNeedpass = pUser->password != _T("");
 	
-	if (pUser->group=="" || m_cGroup.SelectString(-1, pUser->group) == CB_ERR)
+	if (pUser->group == _T("") || m_cGroup.SelectString(-1, pUser->group) == CB_ERR)
 	{
 		m_cMaxUsersBypass.SetButtonStyle(BS_AUTOCHECKBOX);
 		m_cEnabled.SetButtonStyle(BS_AUTOCHECKBOX);
