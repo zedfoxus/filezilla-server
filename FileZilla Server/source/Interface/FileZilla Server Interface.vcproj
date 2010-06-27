@@ -754,37 +754,8 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="misc\md5.cpp"
+				RelativePath="..\misc\md5.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="1"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Memcheck|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\misc\mmgr.cpp"
@@ -2013,7 +1984,7 @@
 				>
 			</File>
 			<File
-				RelativePath="misc\md5.h"
+				RelativePath="..\misc\md5.h"
 				>
 			</File>
 			<File
