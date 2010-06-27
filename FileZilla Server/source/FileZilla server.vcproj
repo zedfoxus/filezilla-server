@@ -889,6 +889,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\hash_thread.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\iputils.cpp"
 				>
 			</File>
@@ -1603,6 +1607,10 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\xml_utils.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header-Dateien"
@@ -1669,6 +1677,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\hash_thread.h"
+				>
+			</File>
+			<File
 				RelativePath=".\iputils.h"
 				>
 			</File>
@@ -1718,6 +1730,10 @@
 			</File>
 			<File
 				RelativePath="version.h"
+				>
+			</File>
+			<File
+				RelativePath=".\xml_utils.h"
 				>
 			</File>
 		</Filter>
