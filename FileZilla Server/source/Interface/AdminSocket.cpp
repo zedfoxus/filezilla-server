@@ -23,9 +23,9 @@
 #include "stdafx.h"
 #include "AdminSocket.h"
 #include "MainFrm.h"
-#include "..\OptionTypes.h"
-#include "..\platform.h"
-#include "misc\md5.h"
+#include "../OptionTypes.h"
+#include "../platform.h"
+#include "../misc\md5.h"
 
 //////////////////////////////////////////////////////////////////////
 // Konstruktion/Destruktion

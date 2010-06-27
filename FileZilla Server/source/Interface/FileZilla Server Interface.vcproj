@@ -1996,6 +1996,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\OptionLimits.h"
+				>
+			</File>
+			<File
 				RelativePath="Options.h"
 				>
 			</File>

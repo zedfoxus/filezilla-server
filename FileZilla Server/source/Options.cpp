@@ -25,6 +25,7 @@
 #include "version.h"
 #include "tinyxml/tinyxml.h"
 #include "iputils.h"
+#include "OptionLimits.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -237,10 +238,10 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 			value = 0;
 		break;
 	case OPTION_AUTOBAN_ATTEMPTS:
-		if (value < 10)
-			value = 10;
-		if (value > 999)
-			value = 999;
+		if (value < OPTION_AUTOBAN_ATTEMPTS_MIN)
+			value = OPTION_AUTOBAN_ATTEMPTS_MIN;
+		if (value > OPTION_AUTOBAN_ATTEMPTS_MAX)
+			value = OPTION_AUTOBAN_ATTEMPTS_MAX;
 		break;
 	case OPTION_AUTOBAN_BANTIME:
 		if (value < 1)
