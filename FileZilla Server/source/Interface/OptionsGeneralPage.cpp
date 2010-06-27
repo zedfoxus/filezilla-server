@@ -133,7 +133,7 @@ BOOL COptionsGeneralPage::IsDataValid()
 	for (std::set<int>::const_iterator iter = portSet.begin(); iter != portSet.end(); iter++)
 	{
 		CString tmp;
-		tmp.Format(_T("%d "), iter);
+		tmp.Format(_T("%d "), *iter);
 		m_Port += tmp;
 	}
 	m_Port.TrimRight(' ');
