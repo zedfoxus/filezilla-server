@@ -283,6 +283,8 @@ BOOL COptionsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 			m_OptionsCache[i].str = ConvToLocal(ConvFromNetwork(tmp));
 #endif
 			p += len;
+
+			delete [] tmp;
 		}
 		else if (nType == 1)
 		{
