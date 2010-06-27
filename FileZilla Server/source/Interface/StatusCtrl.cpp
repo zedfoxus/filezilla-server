@@ -274,7 +274,6 @@ void CStatusCtrl::OnOutputcontextClearall()
 
 	SetSel(-1, -1);
 	LimitText(1000*1000);
-	int res = GetLimitText();
 	
 	m_bEmpty = TRUE;
 	m_nMoveToBottom = 0;

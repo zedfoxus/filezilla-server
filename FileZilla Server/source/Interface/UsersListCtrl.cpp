@@ -713,7 +713,6 @@ void CUsersListCtrl::SetDisplayPhysicalNames(bool showPhysical)
 	m_showPhysical = showPhysical;
 
 	// Iterate through all items and reset the transfer column text
-	int count = GetItemCount();
 	for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); iter++)
 	{
 		CConnectionData* pData = *iter;

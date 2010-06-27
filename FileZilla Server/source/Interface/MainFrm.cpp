@@ -749,7 +749,7 @@ void CMainFrame::ShowStatusRaw(const char *status, int nType)
 #ifdef _UNICODE
 	CString msg(ConvFromNetwork(status));
 #else
-	CString msg(ConvToLocal(ConvFromNetwork(status)), nType));
+	CString msg(ConvToLocal(ConvFromNetwork(status)));
 #endif
 	ShowStatus(msg, nType);
 }

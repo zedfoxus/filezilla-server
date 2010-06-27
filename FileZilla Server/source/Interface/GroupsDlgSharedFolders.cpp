@@ -223,7 +223,6 @@ void CGroupsDlgSharedFolders::OnItemchangingDirs(NMHDR* pNMHDR, LRESULT* pResult
 {
 	*pResult = 0;
 	UpdateData(TRUE);
-	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
 
 	t_group *pGroup = m_pOwner->GetCurrentGroup();
 	if (!pGroup)

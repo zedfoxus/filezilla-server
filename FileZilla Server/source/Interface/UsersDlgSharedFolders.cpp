@@ -231,7 +231,6 @@ void CUsersDlgSharedFolders::OnItemchangingDirs(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	*pResult = 0;
 	UpdateData(TRUE);
-	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
 	t_user *pUser = m_pOwner->GetCurrentUser();
 	if (!pUser)
 		return;

@@ -64,8 +64,7 @@ CSAPrefsDialog::~CSAPrefsDialog()
    for (unsigned int i = 0; i < m_pages.size(); i++)
    {
       pageStruct *pPS = m_pages[i];
-      if (pPS)
-         delete pPS;
+      delete pPS;
    }
 }
 
@@ -553,10 +552,9 @@ void CSAPrefsDialog::OnSelchangedPageTree(NMHDR* pNMHDR, LRESULT* pResult)
 		// show that page
       if ((iIdx >= 0) && (iIdx < (int)m_pages.size()))
       {
-         pageStruct *pPS = m_pages[iIdx];
          if (m_iCurPage!=iIdx)
          {
-				PostMessage(WM_CHANGE_PAGE, iIdx);
+			PostMessage(WM_CHANGE_PAGE, iIdx);
          }
       }
    }
