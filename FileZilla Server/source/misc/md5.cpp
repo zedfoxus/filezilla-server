@@ -285,7 +285,11 @@ char *MD5::hex_digest(){
 
 ostream& operator<<(ostream &stream, MD5 context){
 
-  stream << context.hex_digest();
+  char* hex = context.hex_digest();
+  if( hex ) {
+	stream << hex;
+	delete [] hex;
+  }
   return stream;
 }
 
