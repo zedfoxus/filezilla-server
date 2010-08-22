@@ -211,13 +211,10 @@ DWORD __stdcall CStatusCtrl::RichEditStreamInCallback(DWORD_PTR dwCookie, LPBYTE
 				default:
 					if (*p > 127)
 					{
-						*(output++) = '\\';
-						*(output++) = 'u';
-						sprintf(output, "%d ", (signed short)*p);
-						output += 4;
-						*(output++) = ' ';
-						cb -= 7;
-						*pcb += 7;
+						int w = sprintf(output, "\\u%d?", (unsigned short)*p);
+						output += w;
+						cb -= w;
+						*pcb += w;
 					}
 					else
 					{
