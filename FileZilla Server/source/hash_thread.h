@@ -27,7 +27,7 @@ public:
 
 	enum _result Hash(LPCTSTR file, enum _algorithm algorithm, int& id, CServerThread* server_thread);
 
-	enum _result GetResult(int id, CStdString& hash);
+	enum _result GetResult(int id, CHashThread::_algorithm& alg, CStdString& hash, CStdString& file);
 
 	void Stop(CServerThread* server_thread);
 

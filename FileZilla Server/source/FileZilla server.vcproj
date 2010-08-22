@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="Service"
 	ProjectGUID="{45702DF1-B087-4692-9E2A-2F65133A7539}"
 	RootNamespace="Service"

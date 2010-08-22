@@ -221,7 +221,7 @@ enum CHashThread::_result CHashThread::Hash(LPCTSTR file, enum _algorithm algori
 	return PENDING;
 }
 
-enum CHashThread::_result CHashThread::GetResult(int id, CStdString& hash)
+enum CHashThread::_result CHashThread::GetResult(int id, CHashThread::_algorithm& alg, CStdString& hash, CStdString& file)
 {
 	if (id <= 0)
 		return FAILURE_MASK;
@@ -239,6 +239,12 @@ enum CHashThread::_result CHashThread::GetResult(int id, CStdString& hash)
 		m_sync.Unlock();
 		return PENDING;
 	}
+
+	alg = m_algorithm;
+	file = m_filename;
+
+	delete [] m_filename;
+	m_filename = 0;
 
 	m_active_id = 0;
 

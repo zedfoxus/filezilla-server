@@ -546,8 +546,8 @@ static const t_command commands[]={	COMMAND_USER, _T("USER"), TRUE,	 TRUE,
 									COMMAND_PASVSMC, _T("P@SW"), FALSE, FALSE,
 									COMMAND_STRU, _T("STRU"), TRUE, FALSE,
 									COMMAND_CLNT, _T("CLNT"), TRUE, TRUE,
-									COMMAND_MFMT, _T("MFMT"), TRUE, FALSE
-									//COMMAND_HASH, _T("HASH"), TRUE, FALSE
+									COMMAND_MFMT, _T("MFMT"), TRUE, FALSE,
+									COMMAND_HASH, _T("HASH"), TRUE, FALSE
 						};
 
 void CControlSocket::ParseCommand()
@@ -2260,18 +2260,21 @@ void CControlSocket::ParseCommand()
 			break;
 		if (!Send(_T(" MFMT")))
 			break;
-/*		CStdString hash = _T(" HASH ");
-		hash += _T("SHA-1");
-		if (m_hash_algorithm == CHashThread::SHA1)
-			hash += _T("*");
-		hash += _T(";SHA-512");
-		if (m_hash_algorithm == CHashThread::SHA512)
-			hash += _T("*");
-		hash += _T(";MD5");
-		if (m_hash_algorithm == CHashThread::MD5)
-			hash += _T("*");
-		if (!Send(hash))
-			break;*/
+		if (m_pOwner->m_pOptions->GetOptionVal(OPTION_ENABLE_HASH))
+		{
+			CStdString hash = _T(" HASH ");
+			hash += _T("SHA-1");
+			if (m_hash_algorithm == CHashThread::SHA1)
+				hash += _T("*");
+			hash += _T(";SHA-512");
+			if (m_hash_algorithm == CHashThread::SHA512)
+				hash += _T("*");
+			hash += _T(";MD5");
+			if (m_hash_algorithm == CHashThread::MD5)
+				hash += _T("*");
+			if (!Send(hash))
+				break;
+		}
 		if (!Send(_T("211 End")))
 			break;
 		break;
@@ -2660,6 +2663,12 @@ void CControlSocket::ParseCommand()
 		break;
 	case COMMAND_HASH:
 		{
+			if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_ENABLE_HASH))
+			{
+				Send(_T("500 Syntax error, command unrecognized."));
+				break;
+			}
+
 			//Unquote args
 			if (!UnquoteArgs(args))
 			{
@@ -3645,7 +3654,7 @@ void CControlSocket::ParseHashOpts(CStdString args)
 		Send(_T("501 Unknown algorithm"));
 }
 
-void CControlSocket::ProcessHashResult(int hash_id, int res, const CStdString& hash)
+void CControlSocket::ProcessHashResult(int hash_id, int res, CHashThread::_algorithm alg, const CStdString& hash, const CStdString& file)
 {
 	if (hash_id != m_hash_id)
 		return;
@@ -3659,5 +3668,20 @@ void CControlSocket::ProcessHashResult(int hash_id, int res, const CStdString& h
 	else if (res == CHashThread::FAILURE_READ)
 		Send(_T("550 Could not read from file"));
 	else
-		Send(_T("213 ") + hash);
+	{
+		CStdString algname;
+		switch (alg)
+		{
+		case CHashThread::SHA1:
+			algname = "SHA-1";
+			break;
+		case CHashThread::SHA512:
+			algname = "SHA-512";
+			break;
+		case CHashThread::MD5:
+			algname = "MD5";
+			break;
+		}
+		Send(_T("213 ") + algname + _T(" ") + hash + _T(" ") + file);
+	}
 }
