@@ -2253,6 +2253,10 @@ void CControlSocket::ParseCommand()
 				break;
 			if (!Send(_T(" AUTH TLS")))
 				break;
+			if (!Send(_T(" PROT")))
+				break;
+			if (!Send(_T(" PBSZ")))
+				break;
 		}
 		if (!Send(_T(" UTF8")))
 			break;
