@@ -914,7 +914,7 @@ void CControlSocket::ParseCommand()
 				m_transferstatus.socket->UseGSS(m_pGssLayer);
 
 			if (m_pSslLayer && m_bProtP)
-				m_transferstatus.socket->UseSSL(new CAsyncSslSocketLayer(), m_pSslLayer->GetContext());
+				m_transferstatus.socket->UseSSL(m_pSslLayer->GetContext());
 
 			if (!m_transferstatus.socket->Listen())
 			{
@@ -1922,7 +1922,7 @@ void CControlSocket::ParseCommand()
 				m_transferstatus.socket->UseGSS(m_pGssLayer);
 
 			if (m_pSslLayer && m_bProtP)
-				m_transferstatus.socket->UseSSL(new CAsyncSslSocketLayer(), m_pSslLayer->GetContext());
+				m_transferstatus.socket->UseSSL(m_pSslLayer->GetContext());
 
 			if (!m_transferstatus.socket->Listen())
 			{
@@ -2211,12 +2211,18 @@ void CControlSocket::ParseCommand()
 					Send(_T("534 This server requires an encrypted data connection with PROT P"));
 				else
 				{
+					if (m_transferstatus.socket)
+						m_transferstatus.socket->UseSSL(0);
+
 					Send(_T("200 Protection level set to C"));
 					m_bProtP = false;
 				}
 			}
 			else if (args == _T("P"))
 			{
+				if (m_transferstatus.socket)
+					m_transferstatus.socket->UseSSL(m_pSslLayer->GetContext());
+
 				Send(_T("200 Protection level set to P"));
 				m_bProtP = true;
 			}
@@ -3292,7 +3298,7 @@ creation_fallback:
 	}
 
 	if (m_pSslLayer && m_bProtP)
-		pTransferSocket->UseSSL(new CAsyncSslSocketLayer(), m_pSslLayer->GetContext());
+		pTransferSocket->UseSSL(m_pSslLayer->GetContext());
 
 	return TRUE;
 }
