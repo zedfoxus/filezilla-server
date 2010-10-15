@@ -1552,11 +1552,11 @@ void CControlSocket::ParseCommand()
 				if (error & PERMISSION_DENIED)
 					Send(_T("550 Permission denied"));
 				else if (error & PERMISSION_INVALIDNAME)
-					Send(_T("550 Filename invalid."));
+					Send(_T("553 Filename invalid."));
 				else if (error & PERMISSION_DOESALREADYEXIST && (error & PERMISSION_DIRNOTFILE)!=PERMISSION_DIRNOTFILE)
-					Send(_T("550 file exists"));
+					Send(_T("553 file exists"));
 				else if (error)
-					Send(_T("550 Filename invalid"));
+					Send(_T("553 Filename invalid"));
 				else
 				{
 					if (!MoveFile(RenName, physicalFile))
@@ -1975,7 +1975,7 @@ void CControlSocket::ParseCommand()
 			int protocol = _ttoi(args.Left(pos));
 			if (protocol != 1)
 			{
-				Send(_T("522 Extended Port Failure - unknown network protocol"));
+				Send(_T("522 Extended Port Failure - unknown network protocol. Supported protocols: (1)"));
 				m_transferstatus.pasv = -1;
 				break;
 			}
