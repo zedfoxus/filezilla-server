@@ -1391,7 +1391,19 @@ void CControlSocket::ParseCommand()
 				Send(_T("550 File not found"));
 			else
 			{
-				if (!DeleteFile(physicalFile))
+				bool success = DeleteFile(physicalFile);
+				if (!success && GetLastError() == ERROR_ACCESS_DENIED)
+				{
+					DWORD attr = GetFileAttributes(physicalFile);
+					if (attr != INVALID_FILE_ATTRIBUTES && attr & FILE_ATTRIBUTE_READONLY)
+					{
+						attr &= ~FILE_ATTRIBUTE_READONLY;
+						SetFileAttributes(physicalFile, attr);
+
+						success = DeleteFile(physicalFile);
+					}
+				}
+				if (!success)
 					Send(_T("500 Failed to delete the file."));
 				else
 					Send(_T("250 File deleted successfully"));
