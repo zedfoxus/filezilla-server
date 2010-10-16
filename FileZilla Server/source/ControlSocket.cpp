@@ -1493,7 +1493,7 @@ void CControlSocket::ParseCommand()
 							Send(_T("450 Internal error creating the directory."));
 					}
 					else
-						Send(_T("257 Directory created successfully"));
+						Send(_T("257 \"") + logicalFile + _T("\" created successfully"));
 			}
 		}
 		break;
