@@ -972,7 +972,7 @@ void CControlSocket::ParseCommand()
 		}
 		if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
 		{
-			Send(_T("550 PROT P required"));
+			Send(_T("521 PROT P required"));
 			break;
 		}
 		else
@@ -1160,7 +1160,7 @@ void CControlSocket::ParseCommand()
 			}
 			if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
 			{
-				Send(_T("550 PROT P required"));
+				Send(_T("521 PROT P required"));
 				break;
 			}
 			//Much more checks
@@ -1266,7 +1266,7 @@ void CControlSocket::ParseCommand()
 			}
 			if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
 			{
-				Send(_T("550 PROT P required"));
+				Send(_T("521 PROT P required"));
 				break;
 			}
 			//Much more checks
@@ -1633,7 +1633,7 @@ void CControlSocket::ParseCommand()
 			}
 			if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
 			{
-				Send(_T("550 PROT P required"));
+				Send(_T("521 PROT P required"));
 				break;
 			}
 			//Much more checks
@@ -1731,7 +1731,7 @@ void CControlSocket::ParseCommand()
 		}
 		if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
 		{
-			Send(_T("550 PROT P required"));
+			Send(_T("521 PROT P required"));
 			break;
 		}
 		//Much more checks
@@ -2450,7 +2450,7 @@ void CControlSocket::ParseCommand()
 		{
 			if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
 			{
-				Send(_T("550 PROT P required"));
+				Send(_T("521 PROT P required"));
 				break;
 			}
 			if (args != _T(""))
