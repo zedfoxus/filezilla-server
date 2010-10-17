@@ -90,6 +90,7 @@ CControlSocket::CControlSocket(CServerThread *pOwner)
 
 	for (int i = 0; i < 3; i++)
 		m_facts[i] = true;
+	m_facts[fact_perm] = false;
 
 	m_shutdown = false;
 
@@ -3571,7 +3572,7 @@ void CControlSocket::ParseMlstOpts(CStdString args)
 {
 	if (args == _T(""))
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 4; i++)
 			m_facts[i] = false;
 		Send(_T("200 MLST OPTS"));
 		return;
@@ -3588,7 +3589,7 @@ void CControlSocket::ParseMlstOpts(CStdString args)
 		return;
 	}
 
-	bool facts[3] = {0};
+	bool facts[4] = {0};
 	while (args != _T(""))
 	{
 		int pos = args.Find(';');
@@ -3602,23 +3603,27 @@ void CControlSocket::ParseMlstOpts(CStdString args)
 		args = args.Mid(pos + 1);
 
 		if (fact == _T("TYPE"))
-			facts[0] = true;
+			facts[fact_type] = true;
 		else if (fact == _T("SIZE"))
-			facts[1] = true;
+			facts[fact_size] = true;
 		else if (fact == _T("MODIFY"))
-			facts[2] = true;
+			facts[fact_modify] = true;
+		//else if (fact == _T("PERM"))
+		//	facts[fact_perm] = true;
 	}
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 		m_facts[i] = facts[i];
 
 	CStdString factstr;
-	if (facts[0])
+	if (facts[fact_type])
 		factstr += _T("type;");
-	if (facts[1])
+	if (facts[fact_size])
 		factstr += _T("size;");
-	if (facts[2])
+	if (facts[fact_modify])
 		factstr += _T("modify;");
+	if (facts[fact_perm])
+		factstr += _T("perm;");
 	
 	CStdString result = _T("200 MLST OPTS");
 	if (factstr != _T(""))

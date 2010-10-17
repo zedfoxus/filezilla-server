@@ -147,7 +147,7 @@ protected:
 	void ParseHashOpts(CStdString args);
 
 	// Enabled MLST facts
-	bool m_facts[3];
+	bool m_facts[4];
 
 	bool m_shutdown;
 
