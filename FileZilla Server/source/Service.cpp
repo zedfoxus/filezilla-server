@@ -143,12 +143,12 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			return SetServiceDisplayName(CStdString(lpCmdLine + 19));
 	}
 
+	LoadServiceName();
+
 	if (nAction == 6)
 		return SetAdminPort(atoi(lpCmdLine + 10));
 	else if (nAction == 7)
 		return ReloadConfig();
-
-	LoadServiceName();
 
 	SC_HANDLE hService, hScm;
 	hScm = OpenSCManager(0, 0, SC_MANAGER_CONNECT);
@@ -415,6 +415,42 @@ void KillService()
 	nServiceRunning = false;
 }
 
+
+static BOOL CALLBACK SendReloadConfigProc(HWND hwnd, LPARAM lParam)
+{
+	int* res = (int*)lParam;
+
+	TCHAR buffer[100];
+
+	if (!GetClassName(hwnd, buffer, 100))
+		return TRUE;
+
+	if (_tcscmp(buffer, _T("FileZilla Server Helper Window")))
+		return TRUE;
+
+	if (!GetWindowText(hwnd, buffer, 100))
+		return TRUE;
+
+	if (_tcscmp(buffer, _T("FileZilla Server Helper Window")))
+		return TRUE;
+
+	PostMessage(hwnd, WM_FILEZILLA_RELOADCONFIG, 0, 0);
+
+	*res = 0;
+
+	return TRUE;
+}
+
+
+int SendReloadConfig()
+{
+	int res = 1;
+	EnumWindows(SendReloadConfigProc, (LPARAM)&res);
+
+	return res;
+}
+
+
 void ServiceCtrlHandler(DWORD nControlCode)
 {
 	BOOL success;
@@ -427,13 +463,7 @@ void ServiceCtrlHandler(DWORD nControlCode)
 		KillService();		
 		return;
 	case 128:
-		{
-			// Reload config
-			HWND hWnd = FindWindow(_T("FileZilla Server Helper Window"), _T("FileZilla Server Helper Window"));
-
-			if (hWnd)
-				PostMessage(hWnd, WM_FILEZILLA_RELOADCONFIG, 0, 0);
-		}
+		SendReloadConfig();
 		break;
 	default:
 		break;
@@ -506,11 +536,7 @@ int SetAdminPort(int nAdminPort)
 
 int ReloadConfig()
 {
-	HWND hWnd = FindWindow(_T("FileZilla Server Helper Window"), _T("FileZilla Server Helper Window"));
-
-	int res;
-	if (hWnd)
-		res = PostMessage(hWnd, WM_FILEZILLA_RELOADCONFIG, 0, 0) == 0;
+	int res = SendReloadConfig();
 
 	SC_HANDLE hService, hScm;
 	hScm = OpenSCManager(0, 0, SC_MANAGER_CONNECT);
