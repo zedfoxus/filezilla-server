@@ -3125,7 +3125,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 	{
 		if (!user.AccessAllowed(sockAddr))
 		{
-			Send(_T("421 This user is not allowed to connect from this IP"));
+			Send(_T("521 This user is not allowed to connect from this IP"));
 			ForceClose(-1);
 			return FALSE;
 		}
