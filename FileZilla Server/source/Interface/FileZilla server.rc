@@ -497,7 +497,7 @@ BEGIN
     LTEXT           "Please check your changes to the buffer size carefully, too high or too low values can have a huge impact on the data throughput.",IDC_STATIC,7,104,272,24
     LTEXT           "&Socket buffer size:",IDC_STATIC,7,72,61,8
     EDITTEXT        IDC_OPTIONS_TRANSFERBUFFERSIZE2,107,69,40,14,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "(default: 65536)",IDC_STATIC,153,72,54,8
+    LTEXT           "(default: 262144)",IDC_STATIC,153,72,54,8
     CONTROL         "&Allow downloading of files which are open for writing by another process.",IDC_SHAREWRITE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,133,250,10
     LTEXT           "Please note that this can result in corrupt transfers!",IDC_STATIC,19,146,169,8
