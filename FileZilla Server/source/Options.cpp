@@ -214,8 +214,8 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 			value = 32768;
 		break;
 	case OPTION_BUFFERSIZE2:
-		if (value < 256 || value > (1024*1024*1024))
-			value = 65536;
+		if (value < 256 || value > (1024*1024*1024*128))
+			value = 262144;
 		break;
 	case OPTION_CUSTOMPASVIPTYPE:
 		if (value < 0 || value > 2)
