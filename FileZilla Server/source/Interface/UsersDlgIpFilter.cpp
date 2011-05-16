@@ -81,13 +81,13 @@ CString CUsersDlgIpFilter::Validate()
 
 	if (!ParseIPFilter(m_DisallowedAddresses))
 	{
-		GetDlgItem(IDC_GROUPS_IPFILTER_DISALLOWED)->SetFocus();
+		GetDlgItem(IDC_USERS_IPFILTER_DISALLOWED)->SetFocus();
 		return _T("Invalid IP address/range/mask");
 	}
 
 	if (!ParseIPFilter(m_AllowedAddresses))
 	{
-		GetDlgItem(IDC_GROUPS_IPFILTER_ALLOWED)->SetFocus();
+		GetDlgItem(IDC_USERS_IPFILTER_ALLOWED)->SetFocus();
 		return _T("Invalid IP address/range/mask");
 	}
 
