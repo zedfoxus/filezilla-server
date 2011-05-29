@@ -20,6 +20,7 @@
 //
 
 #include "stdafx.h"
+#include "iputils.h"
 #include "ServerThread.h"
 #include "ControlSocket.h"
 #include "transfersocket.h"
@@ -192,7 +193,11 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 	CStdString ip;
 	UINT port = 0;
 	if (socket->GetPeerName(ip, port))
+	{
+		if (socket->GetFamily() == AF_INET6)
+			ip = GetIPV6ShortForm(ip);
 		socket->m_RemoteIP = ip;
+	}
 	else
 	{
 		socket->m_RemoteIP = _T("ip unknown");

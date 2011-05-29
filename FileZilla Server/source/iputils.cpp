@@ -52,7 +52,7 @@ bool IsValidAddressFilter(CStdString& filter)
 	if (left.Find(':') != -1)
 		left = GetIPV6ShortForm(left);
 	if (prefixLength)
-		filter.Format(_T("%s/%d)"), (LPCTSTR)left, prefixLength);
+		filter.Format(_T("%s/%d"), (LPCTSTR)left, prefixLength);
 	else
 		filter = left;
 
@@ -147,7 +147,7 @@ bool MatchesFilter(CStdString filter, CStdString ip)
 	else
 	{
 		// Literal filter
-		if (filter.Find(':'))
+		if (filter.Find(':') != -1)
 			return filter == GetIPV6ShortForm(ip);
 		else
 			return filter == ip;
@@ -502,7 +502,10 @@ CStdString GetIPV6ShortForm(const CStdString& ip)
 
 		s = s.Mid(2);
 	}
-	shortIp = shortIp.Mid( 1, shortIp.GetLength() - 2 );
+	if (shortIp[0] == ':' && shortIp[1] != ':')
+		shortIp = shortIp.Mid(1);
+	if (shortIp[shortIp.GetLength()-1] == ':' && shortIp[shortIp.GetLength()-2] != ':')
+		shortIp = shortIp.Left(shortIp.GetLength()-1);
 
 	return shortIp;
 }
