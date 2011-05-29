@@ -18,7 +18,6 @@
 
 #include "stdafx.h"
 #include "iputils.h"
-#include <boost/regex.hpp>
 
 bool IsLocalhost(const CStdString& ip)
 {
@@ -30,193 +29,129 @@ bool IsLocalhost(const CStdString& ip)
 	return false;
 }
 
-bool IsValidAddressFilter(CStdString& filter, bool allowWildcards /*=true*/)
+bool IsValidAddressFilter(CStdString& filter)
 {
-	// Check for regular expression syntax (to match against the hostname).
-	if (filter.Left(1) == _T("/") && filter.Right(1) == _T("/"))
-	{
-		if (filter.GetLength() < 3)
-			return false;
-
-#ifdef _UNICODE
-		const CStdStringA localFilter = ConvToLocal(filter.Mid(1, filter.GetLength() - 2));
-#else
-		const CStdString localFilter = filter;
-#endif
-		try
-		{
-			boost::regex e(localFilter);
-		}
-		catch (std::runtime_error)
-		{
-			return false;
-		}
-		return true;
-	}
-
-	if (filter.Find(_T("..")) != -1)
+	CStdString left;
+	int pos = filter.Find(_T("/"));
+	int prefixLength = 0;
+	if (!pos)
 		return false;
-
-	// Check for IP/subnet syntax.
-	TCHAR chr = '/';
-	int pos = filter.Find(chr);
-	if (pos == -1)
+	else if (pos != -1)
 	{
-		// Check for IP range syntax.
-		chr = '-';
-		pos = filter.Find(chr);
-	}
-	if (pos != -1)
-	{
-		// Only one slash or dash is allowed.
-		CStdString right = filter.Mid(pos + 1);
-		if (right.Find('/') != -1 || right.Find('-') != -1)
+		left = filter.Left(pos);
+		prefixLength = _ttoi(filter.Mid(pos + 1));
+		if (prefixLength <= 0 || prefixLength > 128)
 			return false;
-
-		// When using IP/subnet or IP range syntax, no wildcards are allowed.
-		if (!IsValidAddressFilter(right, false))
-			return false;
-		CStdString left = filter.Left(pos);
-		if (!IsValidAddressFilter(left, false))
-			return false;
-
-		filter = left + chr + right;
 	}
 	else
-	{
-		int dotCount = 0;
-		for (const TCHAR *cur = filter; *cur; cur++)
-		{
-			// Check for valid characters.
-			if ((*cur < '0' || *cur > '9') && *cur != '.' && (!allowWildcards || (*cur != '*' && *cur != '?')))
-				return false;
-			else
-			{
-				// Count the number of contained dots.
-				if (*cur == '.')
-					dotCount++;
-			}
-		}
-		if (dotCount != 3 || filter.Right(1) == _T(".") || filter.Left(1) == _T("."))
-			return false;
-	}
+		left = filter;
 
-	// Merge redundant wildcards.
-	while (filter.Replace(_T("?*"), _T("*")));
-	while (filter.Replace(_T("*?"), _T("*")));
-	while (filter.Replace(_T("**"), _T("*")));
+	if (!IsIpAddress(left))
+		return false;
+
+	if (left.Find(':') != -1)
+		left = GetIPV6ShortForm(left);
+	if (prefixLength)
+		filter.Format(_T("%s/%d)"), (LPCTSTR)left, prefixLength);
+	else
+		filter = left;
+
 
 	return true;
 }
 
-bool MatchesFilter(const CStdString& filter, unsigned int ip, LPCTSTR pIp)
+int DigitHexToDecNum(TCHAR c)
 {
-	// ip and pIp are the same IP, one as number, the other one as string.
+	if (c >= 'a')
+		return c - 'a' + 10;
+	if (c >= 'A')
+		return c - 'A' + 10;
+	else
+		return c - '0';
+}
 
+bool MatchesFilter(CStdString filter, CStdString ip)
+{
 	// A single asterix matches all IPs.
 	if (filter == _T("*"))
 		return true;
 
-	// Check for regular expression filter.
-	if (filter.Left(1) == _T("/") && filter.Right(1) == _T("/"))
-		return MatchesRegExp(filter.Mid(1, filter.GetLength() - 2), ntohl(ip));
-
 	// Check for IP range syntax.
-	int pos2 = filter.Find('-');
-	if (pos2 != -1)
+	int pos = filter.Find('/');
+	if (pos != -1)
 	{
-#ifdef _UNICODE
-		CStdStringA offset = ConvToLocal(filter.Left(pos2));
-		CStdStringA range = ConvToLocal(filter.Mid(pos2 + 1));
-#else
-		CStdString offset = filter.Left(pos2);
-		CStdString range = filter.Mid(pos2 + 1);
-#endif
-		if (offset == "" || range == "")
-			return false;
-		unsigned int min = htonl(inet_addr(offset));
-		unsigned int max = htonl(inet_addr(range));
-		return (ip >= min) && (ip <= max);
-	}
+		// CIDR filter
+		int prefixLength = _ttoi(filter.Mid(pos+1));
 
-	// Check for IP/subnet syntax.
-	pos2 = filter.Find('/');
-	if (pos2 != -1)
-	{
-#ifdef _UNICODE
-		CStdStringA ipStr = ConvToLocal(filter.Left(pos2));
-		CStdStringA subnet = ConvToLocal(filter.Mid(pos2 + 1));
-#else
-		CStdString ipStr = filter.Left(pos2);
-		CStdString subnet = filter.Mid(pos2 + 1);
-#endif
-		if (ipStr == "" || subnet == "")
-			return false;
-
-		unsigned int ip2 = htonl(inet_addr(ipStr));
-		unsigned int mask = htonl(inet_addr(subnet));
-		return (ip & mask) == (ip2 & mask);
-	}
-
-	// Validate the IP address.
-	LPCTSTR c = filter;
-	LPCTSTR p = pIp;
-
-	// Look if remote and local IP match.
-	while (*c && *p)
-	{
-		if (*c == '*')
+		CStdString left = GetIPV6LongForm(filter.Left(pos));
+		if (ip.Find(':') != -1)
 		{
-			if (*p == '.')
-				break;
+			// IPv6 address
+			if (left.Find(':') == -1)
+				return false;
+			ip = GetIPV6LongForm(ip);
+			LPCTSTR i = ip;
+			LPCTSTR f = left;
+			while (prefixLength >= 4)
+			{
+				if (*i != *f)
+					return false;
 
-			// Advance to the next dot.
-			while (*p && *p != '.')
-				p++;
-			c++;
-			continue;
+				if (!*i)
+					return true;
+
+				if (*i == ':')
+				{
+					++i;
+					++f;
+				}
+				++i;
+				++f;
+
+				prefixLength -= 4;
+			}
+			if (!prefixLength)
+				return true;
+			
+			int mask;
+			if (prefixLength == 1)
+				mask = 0x8;
+			else if (prefixLength == 2)
+				mask = 0xc;
+			else
+				mask = 0xe;
+
+			return (DigitHexToDecNum(*i) & mask) == (DigitHexToDecNum(*f) & mask);
 		}
-		else if (*c != '?') // If it's '?', we don't have to compare.
-			if (*c != *p)
-				break;
-		p++;
-		c++;
+		else
+		{
+			// IPv4 address
+			if (left.Find(':') != -1)
+				return false;
+
+			unsigned long i = ntohl(inet_addr(ConvToLocal(ip)));
+			unsigned long f = ntohl(inet_addr(ConvToLocal(left)));
+
+			while (prefixLength--)
+			{
+				if ((i & 0x80000000u) != (f & 0x80000000))
+					return false;
+
+				i <<= 1;
+				f <<= 1;
+			}
+
+			return true;
+		}
 	}
-	return (!*c) && (!*p);
-}
-
-bool MatchesRegExp(const CStdString& filter, unsigned int addr)
-{
-	// If the IP could not be resolved to a hostname, return false.
-	HOSTENT *host = gethostbyaddr((char*)&addr, sizeof(addr), AF_INET);
-	if (!host)
-		return false;
-#ifdef _UNICODE
-	boost::regex e(ConvToLocal(filter));
-#else
-	boost::regex e(filter);
-#endif
-	return regex_match(host->h_name, e);
-}
-
-bool IsUnroutableIP(unsigned int ip)
-{
-	if (MatchesFilter(_T("127.0.0.1/255.0.0.0"), ip, 0))
-		return true;
-	
-	if (MatchesFilter(_T("10.0.0.0/255.0.0.0"), ip, 0))
-		return true;
-	
-	if (MatchesFilter(_T("172.16.0.0/255.240.0.0"), ip, 0))
-		return true;
-	
-	if (MatchesFilter(_T("192.168.0.0/255.255.0.0"), ip, 0))
-		return true;
-	
-	if (MatchesFilter(_T("169.254.0.0/255.255.0.0"), ip, 0))
-		return true;
-
-	return false;
+	else
+	{
+		// Literal filter
+		if (filter.Find(':'))
+			return filter == GetIPV6ShortForm(ip);
+		else
+			return filter == ip;
+	}
 }
 
 bool ParseIPFilter(CStdString in, std::list<CStdString>* output /*=0*/)
@@ -386,22 +321,12 @@ CStdString GetIPV6LongForm(CStdString short_address)
 	return buffer;
 }
 
-int DigitHexToDecNum(TCHAR c)
-{
-	if (c >= 'a')
-		return c - 'a' + 10;
-	if (c >= 'A')
-		return c - 'A' + 10;
-	else
-		return c - '0';
-}
-
 bool IsRoutableAddress(const CStdString& address)
 {
 	if (address.Find(_T(":")) != -1)
 	{
 		CStdString long_address = GetIPV6LongForm(address);
-		if (long_address.empty())
+		if (long_address.IsEmpty())
 			return false;
 		if (long_address[0] == '0')
 		{
@@ -474,4 +399,110 @@ bool IsRoutableAddress(const CStdString& address)
 
 		return true;
 	}
+}
+
+bool IsIpAddress(const CStdString& address)
+{
+	if (GetIPV6LongForm(address) != _T(""))
+		return true;
+
+	int segment = 0;
+	int dotcount = 0;
+	for (int i = 0; i < address.GetLength(); i++)
+	{
+		const TCHAR& c = address[i];
+		if (c == '.')
+		{
+			if (address[i + 1] == '.')
+				// Disallow multiple dots in a row
+				return false;
+
+			if (segment > 255)
+				return false;
+			if (!dotcount && !segment)
+				return false;
+			dotcount++;
+			segment = 0;
+		}
+		else if (c < '0' || c > '9')
+			return false;
+
+		segment = segment * 10 + c - '0';
+	}
+	if (dotcount != 3)
+		return false;
+
+	if (segment > 255)
+		return false;
+
+	return true;
+}
+
+CStdString GetIPV6ShortForm(const CStdString& ip)
+{
+	// This could be optimized a lot.
+
+	// First get the long form in a well-known format
+	CStdString l = GetIPV6LongForm(ip);
+	if (l.IsEmpty())
+		return CStdString();
+
+	LPCTSTR p = l;
+
+	TCHAR outbuf[42];
+	*outbuf = ':';
+	TCHAR* out = outbuf + 1;
+
+	bool segmentStart = true;
+	bool readLeadingZero = false;
+	while (*p)
+	{
+		switch (*p)
+		{
+		case ':':
+			if (readLeadingZero)
+				*(out++) = '0';
+			*out++ = ':';
+			readLeadingZero = false;
+			segmentStart = true;
+			break;
+		case '0':
+			if (segmentStart)
+				readLeadingZero = true;
+			else
+			{
+				*out++ = '0';
+				readLeadingZero = false;
+			}
+			break;
+		default:
+			readLeadingZero = false;
+			segmentStart = false;
+			*out++ = *p;
+			break;
+		}
+
+		++p;
+	}
+	*(out++) = ':';
+	*out = 0;
+
+	// Replace longest run of concesutive zeroes
+	CStdString shortIp(outbuf);
+
+	CStdString s = _T(":0:0:0:0:0:0:0:0:");
+	while (s.GetLength() > 2)
+	{
+		int pos = shortIp.Find(s);
+		if (pos != -1)
+		{
+			shortIp = shortIp.Left( pos + 1 ) + shortIp.Mid(pos + s.GetLength() -1);
+			break;
+		}
+
+		s = s.Mid(2);
+	}
+	shortIp = shortIp.Mid( 1, shortIp.GetLength() - 2 );
+
+	return shortIp;
 }

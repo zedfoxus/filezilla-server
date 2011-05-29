@@ -904,23 +904,27 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 	{ //Uploads from client
 		if (!m_pOwner->m_pOwner->m_pOptions->GetOptionVal(OPTION_INFXP))
 		{ //Check if the IP of the remote machine is valid
-			CStdString OwnerIP,TransferIP;
+			CStdString OwnerIP, TransferIP;
+			UINT port = 0;
 
 			SOCKADDR_IN sockAddr;
 			memset(&sockAddr, 0, sizeof(sockAddr));
 			int nSockAddrLen = sizeof(sockAddr);
-			BOOL bResult = m_pOwner->GetSockName((SOCKADDR*)&sockAddr, &nSockAddrLen);
-			if (bResult)
-				OwnerIP = inet_ntoa(sockAddr.sin_addr);
+			if (!m_pOwner->GetSockName(OwnerIP, port))
+			{
+				EndTransfer(5);
+				return FALSE;
+			}
 
-			memset(&sockAddr, 0, sizeof(sockAddr));
-			nSockAddrLen = sizeof(sockAddr);
-			bResult = GetSockName((SOCKADDR*)&sockAddr, &nSockAddrLen);
-			if (bResult)
-				TransferIP = inet_ntoa(sockAddr.sin_addr);
+			if (!GetSockName(TransferIP, port))
+			{
+				EndTransfer(5);
+				return FALSE;
+			}
 
 			if (!m_pOwner->m_pOwner->m_pOptions->GetOptionVal(OPTION_NOINFXPSTRICT))
 			{
+				// FIXME: Doesn't do anything
 				OwnerIP.Left(OwnerIP.ReverseFind('.'));
 				TransferIP.Left(OwnerIP.ReverseFind('.'));
 			}
@@ -937,22 +941,14 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		if (!m_pOwner->m_pOwner->m_pOptions->GetOptionVal(OPTION_OUTFXP))
 		{ //Check if remote IP is valid
 			CStdString OwnerIP, TransferIP;
+			UINT port = 0;
 
-			SOCKADDR_IN sockAddr;
-			memset(&sockAddr, 0, sizeof(sockAddr));
-			int nSockAddrLen = sizeof(sockAddr);
-			BOOL bResult = m_pOwner->GetSockName((SOCKADDR*)&sockAddr, &nSockAddrLen);
-			if (bResult)
-				OwnerIP = inet_ntoa(sockAddr.sin_addr);
-
-			memset(&sockAddr, 0, sizeof(sockAddr));
-			nSockAddrLen = sizeof(sockAddr);
-			bResult = GetSockName((SOCKADDR*)&sockAddr, &nSockAddrLen);
-			if (bResult)
-				TransferIP = inet_ntoa(sockAddr.sin_addr);
+			m_pOwner->GetSockName(OwnerIP, port);
+			GetSockName(TransferIP, port);
 
 			if (!m_pOwner->m_pOwner->m_pOptions->GetOptionVal(OPTION_NOOUTFXPSTRICT))
 			{
+				// FIXME
 				OwnerIP.Left(OwnerIP.ReverseFind('.'));
 				TransferIP.Left(OwnerIP.ReverseFind('.'));
 			}
