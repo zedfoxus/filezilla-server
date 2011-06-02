@@ -223,9 +223,9 @@ BEGIN
     EDITTEXT        IDC_USERS_IPFILTER_DISALLOWED,0,19,168,48,ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
     LTEXT           "Exclude the following IPs from the list of disallowed IPs, thus enabling access again:",IDC_STATIC,0,76,202,16
     EDITTEXT        IDC_USERS_IPFILTER_ALLOWED,0,96,168,48,ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
-    LTEXT           "In addition to single IP addresses, you can enter IPs with wildcards, IP address ranges, use the IP/subnet syntax or regular expressions (enclosed in slashes) to filter hostnames.",IDC_STATIC,0,149,208,26
     LTEXT           "If using groups, the user IP limits don't replace the group IP limits, they only extend the group limits.",IDC_STATIC,0,206,293,16
     LTEXT           "By default everyone may connect to the server. You may either block individual IP addresses or address ranges. If you block all addresses, you may allow access for individual addresses or ranges again.",IDC_STATIC,0,178,272,24
+    LTEXT           "You can both enter individual IP addresses or address ranges in CIDR notation (http://en.wikipedia.org/wiki/CIDR_notation)",IDC_STATIC,0,147,204,20
 END
 
 IDD_GROUPS_IPFILTER DIALOGEX 0, 0, 306, 235
@@ -236,8 +236,8 @@ BEGIN
     EDITTEXT        IDC_GROUPS_IPFILTER_DISALLOWED,0,19,168,48,ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
     LTEXT           "Exclude the following IPs from the list of disallowed IPs, thus enabling access again:",IDC_STATIC,0,76,202,16
     EDITTEXT        IDC_GROUPS_IPFILTER_ALLOWED,0,96,168,48,ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
-    LTEXT           "In addition to single IP addresses, you can enter IPs with wildcards, IP address ranges, use the IP/subnet syntax or regular expressions.",IDC_STATIC,0,152,208,26
     LTEXT           "By default everyone may connect to the server. You may either block individual IP addresses or address ranges. If you block all addresses, you may allow access for individual addresses or ranges again.",IDC_STATIC,0,178,272,24
+    LTEXT           "You can both enter individual IP addresses or address ranges in CIDR notation (http://en.wikipedia.org/wiki/CIDR_notation)",IDC_STATIC,0,150,196,24
 END
 
 IDD_DELETEGROUPINUSE DIALOGEX 0, 0, 164, 97
@@ -703,12 +703,11 @@ STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     LTEXT           "The following IP addresses are not allowed to connect to the server:",IDC_STATIC,7,7,272,8
-    EDITTEXT        IDC_OPTIONS_IPFILTER_DISALLOWED,7,18,142,48,ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
-    LTEXT           "Exclude the following IPs from the list of disallowed IPs, thus allow access again:",IDC_STATIC,7,85,272,8
-    EDITTEXT        IDC_OPTIONS_IPFILTER_ALLOWED,7,98,142,48,ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
-    LTEXT           "Other than single IP addresses, you can also enter IPs with wildcards, IP address ranges, use the IP/subnet syntax or regular expressions (enclosed by '/') to filter hostnames.",IDC_STATIC,155,101,124,49
-    LTEXT           "By default everyone may connect to the server. You may either block individual IP addresses or address ranges. If you block all addresses, you may allow access for individual addresses or ranges again.",IDC_STATIC,7,161,272,24
-    LTEXT           "Other than single IP addresses, you can also enter IPs with wildcards, IP address ranges, use the IP/subnet syntax or regular expressions (enclosed by '/') to filter hostnames.",IDC_STATIC,153,23,126,54
+    EDITTEXT        IDC_OPTIONS_IPFILTER_DISALLOWED,7,18,272,48,ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
+    LTEXT           "Exclude the following IPs from the list of disallowed IPs, thus allow access again:",IDC_STATIC,7,78,272,8
+    EDITTEXT        IDC_OPTIONS_IPFILTER_ALLOWED,7,91,272,48,ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
+    LTEXT           "By default everyone may connect to the server. You may either block individual IP addresses or address ranges. If you block all addresses, you may allow access for individual addresses or ranges again.",IDC_STATIC,7,148,272,24
+    LTEXT           "You can both enter individual IP addresses or address ranges in CIDR notation (http://en.wikipedia.org/wiki/CIDR_notation)",IDC_STATIC,7,177,272,24
 END
 
 IDD_ENTERSOMETHING DIALOGEX 0, 0, 207, 74
@@ -722,7 +721,7 @@ BEGIN
     LTEXT           "Static",IDC_TEXT,7,7,193,25
 END
 
-IDD_OPTIONS_SSL DIALOGEX 0, 0, 286, 208
+IDD_OPTIONS_SSL DIALOGEX 0, 0, 286, 209
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
@@ -956,7 +955,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 279
         TOPMARGIN, 7
-        BOTTOMMARGIN, 201
+        BOTTOMMARGIN, 202
     END
 
     IDD_CERTGEN, DIALOG
