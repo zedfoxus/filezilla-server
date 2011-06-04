@@ -385,7 +385,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,12,17,20,20
     LTEXT           "<version>",IDC_VERSION,39,7,119,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2001-2009",IDC_STATIC,39,21,121,8
+    LTEXT           "Copyright (C) 2001-2011",IDC_STATIC,39,21,121,8
     LTEXT           "Written by:",IDC_STATIC,39,35,38,8
     LTEXT           "Tim Kosse",IDC_MAIL,83,35,34,8
     LTEXT           "Homepage:",IDC_STATIC,39,49,38,8
@@ -552,7 +552,7 @@ BEGIN
     LTEXT           "Use * to bind to all addresses.\n127.0.0.1 is the default binding, it always exists and cannot be removed.",IDC_STATIC,7,117,129,32
     LTEXT           "&IP Addresses which are allowed to connect to the admin interface:",IDC_STATIC,150,67,129,16
     EDITTEXT        IDC_OPTIONS_ADMININTERFACE_IPADDRESSES,150,85,129,28,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL
-    LTEXT           "You may use wildcards in the IP Addresses. (example: 123.234.12?.*)\n127.0.0.1 is always allowed to connect to the admin interface.",IDC_STATIC,150,117,129,32
+    LTEXT           "Localhost is always allowed to connect. You can enter additional addresses or address ranges using CIDR notation. Use * to allow all.",IDC_STATIC,150,117,129,32
     CONTROL         "&Change admin password:",IDC_OPTIONS_ADMININTERFACE_CHANGEPASS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,150,95,10
     LTEXT           "&New Password:",IDC_STATIC,20,165,50,8
@@ -577,12 +577,12 @@ BEGIN
     CONTROL         "Log &all to 'FileZilla Server.log'",IDC_OPTIONS_LOGGING_LOGTYPE,
                     "Button",BS_AUTORADIOBUTTON | WS_GROUP,7,52,107,10
     CONTROL         "&Use a different logfile each day (example: fzs-2003-02-10.log)",IDC_OPTIONS_LOGGING_LOGTYPE2,
-                    "Button",BS_AUTORADIOBUTTON,7,64,207,10
+                    "Button",BS_AUTORADIOBUTTON,7,64,216,10
     CONTROL         "&Delete old logfiles after",IDC_OPTIONS_LOGGING_DELETE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,77,87,10
     EDITTEXT        IDC_OPTIONS_LOGGING_DELETETIME,107,75,40,14,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "days",IDC_STATIC,150,77,16,8
-    LTEXT           "All log files will be saved in the ""Logs"" subfolder in the FileZilla Server folder.",IDC_STATIC,7,91,244,8
+    LTEXT           "All log files will be saved in the ""Logs"" subfolder in the FileZilla Server folder.",IDC_STATIC,7,91,247,8
 END
 
 IDD_NEWUSER DIALOG  0, 0, 186, 102
@@ -618,28 +618,29 @@ BEGIN
     CONTROL         "&Force SSL for user login",IDC_FORCESSL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,106,91,10
 END
 
-IDD_OPTIONS_PASV DIALOGEX 0, 0, 286, 208
+IDD_OPTIONS_PASV DIALOGEX 0, 0, 291, 208
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    LTEXT           "External Server &IP Address for passive mode transfers:",IDC_STATIC,7,7,123,19
-    CONTROL         "&Default",IDC_OPTIONS_PASV_IPTYPE1,"Button",BS_AUTORADIOBUTTON | WS_GROUP,7,26,39,10
-    CONTROL         "&Use the following IP:",IDC_OPTIONS_PASV_IPTYPE2,"Button",BS_AUTORADIOBUTTON,7,38,81,10
+    LTEXT           "External Server &IP Address for passive mode transfers:",IDC_STATIC,14,45,123,19
+    CONTROL         "&Default",IDC_OPTIONS_PASV_IPTYPE1,"Button",BS_AUTORADIOBUTTON | WS_GROUP,14,63,39,10
+    CONTROL         "&Use the following IP:",IDC_OPTIONS_PASV_IPTYPE2,"Button",BS_AUTORADIOBUTTON,14,76,81,10
     CONTROL         "&Retrieve external IP address from:",IDC_OPTIONS_PASV_IPTYPE3,
-                    "Button",BS_AUTORADIOBUTTON,8,77,122,10
-    EDITTEXT        IDC_OPTIONS_PASV_IP,19,48,115,14,ES_AUTOHSCROLL | WS_GROUP
-    LTEXT           "You can also enter hostnames",IDC_STATIC,20,65,124,8
-    EDITTEXT        IDC_OPTIONS_PASV_URL,20,89,115,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_OPTIONS_PASV_TEXT,152,25,119,79,ES_MULTILINE | ES_READONLY | NOT WS_BORDER | WS_VSCROLL,WS_EX_STATICEDGE
-    LTEXT           "Information for users with dynamic IPs: If your external IP changes, it might take up to 5 minutes after the next failed transfer until FileZilla Server recognizes the changed IP.\nIn most cases, the IP is updated within 30s after a failed transfer.",IDC_STATIC,7,107,272,33
+                    "Button",BS_AUTORADIOBUTTON,15,114,122,10
+    EDITTEXT        IDC_OPTIONS_PASV_IP,26,86,115,14,ES_AUTOHSCROLL | WS_GROUP
+    LTEXT           "You can also enter hostnames",IDC_STATIC,27,103,124,8
+    EDITTEXT        IDC_OPTIONS_PASV_URL,27,127,115,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OPTIONS_PASV_TEXT,152,47,125,96,ES_MULTILINE | ES_READONLY | NOT WS_BORDER | WS_VSCROLL,WS_EX_STATICEDGE
+    LTEXT           "Information for users with dynamic IPs: If your external IP changes, it might take up to 5 minutes after the next failed transfer until FileZilla Server recognizes the changed IP.\nIn most cases, the IP is updated within 30s after a failed transfer.",IDC_STATIC,14,145,258,33
     CONTROL         "D&on't use external IP for local connections",IDC_OPTIONS_PASV_NOLOCAL,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,146,272,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,183,270,10
     CONTROL         "Use custom &port range:",IDD_OPTIONS_PASV_USEPORTRANGE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,158,89,10
-    EDITTEXT        IDC_OPTIONS_PASV_PORTMIN,15,171,30,14,ES_AUTOHSCROLL | ES_NUMBER
-    CTEXT           "-",IDC_STATIC,47,174,8,8
-    EDITTEXT        IDC_OPTIONS_PASV_PORTMAX,57,171,30,14,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "(1-65535)",IDC_STATIC,92,174,31,8
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,8,89,10
+    EDITTEXT        IDC_OPTIONS_PASV_PORTMIN,98,7,30,14,ES_AUTOHSCROLL | ES_NUMBER
+    CTEXT           "-",IDC_STATIC,130,10,8,8
+    EDITTEXT        IDC_OPTIONS_PASV_PORTMAX,140,7,30,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "(1-65535)",IDC_STATIC,175,10,31,8
+    GROUPBOX        "IPv4 specific",IDC_STATIC,7,33,277,168
 END
 
 IDD_OPTIONS_COMPRESSION DIALOGEX 0, 0, 286, 208
@@ -911,7 +912,7 @@ BEGIN
     IDD_OPTIONS_PASV, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 279
+        RIGHTMARGIN, 284
         VERTGUIDE, 14
         VERTGUIDE, 152
         TOPMARGIN, 7
@@ -1160,8 +1161,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,9,37,0
- PRODUCTVERSION 0,9,37,0
+ FILEVERSION 0,9,38,0
+ PRODUCTVERSION 0,9,38,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -1179,12 +1180,12 @@ BEGIN
             VALUE "Comments", "Open Source FTP server for Windows"
             VALUE "CompanyName", "FileZilla Project"
             VALUE "FileDescription", "FileZilla Server"
-            VALUE "FileVersion", "0, 9, 37, 0"
+            VALUE "FileVersion", "0, 9, 38, 0"
             VALUE "InternalName", "FileZilla Server"
-            VALUE "LegalCopyright", "Copyright (C) 2001-2010"
+            VALUE "LegalCopyright", "Copyright (C) 2001-2011"
             VALUE "OriginalFilename", "FileZilla server.EXE"
             VALUE "ProductName", "FileZilla Server"
-            VALUE "ProductVersion", "0, 9, 37, 0"
+            VALUE "ProductVersion", "0, 9, 38, 0"
         END
     END
     BLOCK "VarFileInfo"
