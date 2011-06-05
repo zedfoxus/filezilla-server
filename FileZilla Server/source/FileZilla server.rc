@@ -84,7 +84,7 @@ BEGIN
             VALUE "FileVersion", "0, 9, 38, 0"
             VALUE "InternalName", "FileZilla Server"
             VALUE "LegalCopyright", "Copyright (C) 2001-2011"
-            VALUE "OriginalFilename", "FileZilla server.EXE"
+            VALUE "OriginalFilename", "FileZilla server.exe"
             VALUE "ProductName", "FileZilla Server"
             VALUE "ProductVersion", "0, 9, 38, 0"
         END

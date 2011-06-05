@@ -14,10 +14,29 @@
 ;--------------------------------
 ;Product Info
 
-  !define PRODUCT_NAME "FileZilla Server"
+  !define PRODUCT_NAME  "FileZilla Server"
+  !define VERSION_MAJOR "0"
+  !define VERSION_MINOR "9"
+  !define VERSION_MICRO "38"
+  !define VERSION_NANO  "0"
   !define PRODUCT_VERSION "beta 0.9.38"
+  !define VERSION_FULL  "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}.${VERSION_NANO}"
+  !define PUBLISHER    "FileZilla Project"
+  !define WEBSITE_URL  "http://filezilla-project.org/"
   !define PRODUCT_UNINSTALL "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
   Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
+
+;--------------------------------
+;Installer's VersionInfo
+
+  VIProductVersion                   "${VERSION_FULL}"
+  VIAddVersionKey "CompanyName"      "${PUBLISHER}"
+  VIAddVersionKey "ProductName"      "${PRODUCT_NAME}" 
+  VIAddVersionKey "ProductVersion"   "${PRODUCT_VERSION}"
+  VIAddVersionKey "FileDescription"  "${PRODUCT_NAME}"
+  VIAddVersionKey "FileVersion"      "${PRODUCT_VERSION}"
+  VIAddVersionKey "LegalCopyright"   "${PUBLISHER}"
+  VIAddVersionKey "OriginalFilename" "FileZilla_Server-${VERSION_MAJOR}_${VERSION_MINOR}_${VERSION_MICRO}.exe"
 
 ;StartOptions Page strings
 LangString StartOptionsTitle ${LANG_ENGLISH} ": Server startup settings"
@@ -52,7 +71,7 @@ LangString StartOptionsTitle ${LANG_ENGLISH} ": Server startup settings"
 ;More
 
   ;General
-  OutFile "../../FileZilla_Server.exe"
+  OutFile "../../FileZilla_Server-${VERSION_MAJOR}_${VERSION_MINOR}_${VERSION_MICRO}.exe"
 
   ;Installation types
   InstType "Standard"
@@ -99,8 +118,20 @@ Section "-default files"
   File "..\..\legal.htm"
   File "..\..\license.txt"
   ; Write the uninstall keys for Windows
-  WriteRegStr HKLM "${PRODUCT_UNINSTALL}" "DisplayName" "FileZilla Server (remove only)"
-  WriteRegStr HKLM "${PRODUCT_UNINSTALL}" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegStr   HKLM "${PRODUCT_UNINSTALL}" "DisplayName" "FileZilla Server (remove only)"
+  WriteRegStr   HKLM "${PRODUCT_UNINSTALL}" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegStr   HKLM "${PRODUCT_UNINSTALL}" "InstallLocation" "$INSTDIR"
+  WriteRegStr   HKLM "${PRODUCT_UNINSTALL}" "DisplayName"    "FileZilla Server (remove only)"
+  WriteRegStr   HKLM "${PRODUCT_UNINSTALL}" "DisplayIcon"    "$INSTDIR\FileZilla server.exe"
+  WriteRegStr   HKLM "${PRODUCT_UNINSTALL}" "DisplayVersion" "${PRODUCT_VERSION}"
+  WriteRegStr   HKLM "${PRODUCT_UNINSTALL}" "URLInfoAbout"   "${WEBSITE_URL}"
+  WriteRegStr   HKLM "${PRODUCT_UNINSTALL}" "URLUpdateInfo"  "${WEBSITE_URL}"
+  WriteRegStr   HKLM "${PRODUCT_UNINSTALL}" "HelpLink"       "${WEBSITE_URL}"
+  WriteRegStr   HKLM "${PRODUCT_UNINSTALL}" "Publisher"      "${PUBLISHER}"
+  WriteRegDWORD HKLM "${PRODUCT_UNINSTALL}" "VersionMajor"   "${VERSION_MAJOR}"
+  WriteRegDWORD HKLM "${PRODUCT_UNINSTALL}" "VersionMinor"   "${VERSION_MINOR}"
+  WriteRegDWORD HKLM "${PRODUCT_UNINSTALL}" "NoModify"       "1"
+  WriteRegDWORD HKLM "${PRODUCT_UNINSTALL}" "NoRepair"       "1"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
 SectionEnd
