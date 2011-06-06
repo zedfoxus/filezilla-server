@@ -1247,7 +1247,7 @@ BOOL CServer::CreateAdminListenSocket()
 
 	if (!DoCreateAdminListenSocket(nAdminPort, (ipBindings != _T("*")) ? _T("127.0.0.1") : NULL, AF_INET))
 	{
-		int p = DoCreateAdminListenSocket(nAdminPort, _T("127.0.0.1"), AF_INET6);
+		int p = DoCreateAdminListenSocket(nAdminPort, _T("127.0.0.1"), AF_INET);
 		if (!p)
 		{
 			CStdString str;
