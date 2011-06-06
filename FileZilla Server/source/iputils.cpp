@@ -83,10 +83,10 @@ bool MatchesFilter(CStdString filter, CStdString ip)
 		// CIDR filter
 		int prefixLength = _ttoi(filter.Mid(pos+1));
 
-		CStdString left = GetIPV6LongForm(filter.Left(pos));
 		if (ip.Find(':') != -1)
 		{
 			// IPv6 address
+			CStdString left = GetIPV6LongForm(filter.Left(pos));
 			if (left.Find(':') == -1)
 				return false;
 			ip = GetIPV6LongForm(ip);
@@ -126,6 +126,7 @@ bool MatchesFilter(CStdString filter, CStdString ip)
 		else
 		{
 			// IPv4 address
+			CStdString left = filter.Left(pos);
 			if (left.Find(':') != -1)
 				return false;
 
