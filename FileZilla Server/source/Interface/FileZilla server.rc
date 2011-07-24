@@ -660,7 +660,7 @@ BEGIN
     LTEXT           "Don't use MODE Z for the following IP addresses:",IDC_STATIC,7,98,179,8
     EDITTEXT        IDC_OPTIONS_COMPRESSION_DISALLOWED_IPS,7,109,162,68,ES_MULTILINE | ES_AUTOHSCROLL | WS_VSCROLL
     LTEXT           "You can also enter IPs with wildcards, IP address ranges or use the IP/subnet syntax.",IDC_STATIC,174,116,105,26
-    LTEXT           "For details about the compression method, please read http://filezilla-project.org/documentation/draft-preston-ftpext-deflate-03.txt",IDC_STATIC,7,183,272,18
+    LTEXT           "For details about the compression method, please read http://filezilla-project.org/specs/draft-preston-ftpext-deflate-03.txt",IDC_STATIC,7,183,272,18
     LTEXT           "You can also enter regular expressions (enclosed in slashes) to filter hostnames.",IDC_STATIC,174,141,105,24
 END
 
