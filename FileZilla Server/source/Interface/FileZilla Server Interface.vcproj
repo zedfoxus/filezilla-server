@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="FZS Interface"
 	ProjectGUID="{516E796E-D29F-4340-9327-FACC9E45C828}"
 	RootNamespace="FZS Interface"
@@ -181,6 +181,7 @@
 				OutputFile=".\Release/FileZilla Server Interface.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Release/FileZilla Server Interface.pdb"
 				GenerateMapFile="true"
