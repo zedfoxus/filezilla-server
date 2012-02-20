@@ -1473,7 +1473,11 @@ void CPermissions::ReadSpeedLimits(TiXmlElement *pXML, t_group &group)
 				group.nSpeedLimitType[i] = n;
 			str = pSpeedLimits->Attribute(ConvToNetwork(prefixes[i] + _T("Limit")));
 			n = _ttoi(str);
-			if (n > 0 && n < 65536)
+			if (n < 0)
+				group.nSpeedLimit[i] = 0;
+			else if (n > 1048576)
+				group.nSpeedLimit[i] = 1048576;
+			else
 				group.nSpeedLimit[i] = n;
 
 			str = pSpeedLimits->Attribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")));
