@@ -385,7 +385,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,12,17,20,20
     LTEXT           "<version>",IDC_VERSION,39,7,119,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2001-2011",IDC_STATIC,39,21,121,8
+    LTEXT           "Copyright (C) 2001-2012",IDC_STATIC,39,21,121,8
     LTEXT           "Written by:",IDC_STATIC,39,35,38,8
     LTEXT           "Tim Kosse",IDC_MAIL,83,35,34,8
     LTEXT           "Homepage:",IDC_STATIC,39,49,38,8
@@ -1161,8 +1161,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,9,40,0
- PRODUCTVERSION 0,9,40,0
+ FILEVERSION 0,9,41,0
+ PRODUCTVERSION 0,9,41,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -1180,12 +1180,12 @@ BEGIN
             VALUE "Comments", "Open Source FTP server for Windows"
             VALUE "CompanyName", "FileZilla Project"
             VALUE "FileDescription", "FileZilla Server"
-            VALUE "FileVersion", "0, 9, 40, 0"
+            VALUE "FileVersion", "0, 9, 41, 0"
             VALUE "InternalName", "FileZilla Server"
-            VALUE "LegalCopyright", "Copyright (C) 2001-2011"
+            VALUE "LegalCopyright", "Copyright (C) 2001-2012"
             VALUE "OriginalFilename", "FileZilla server.exe"
             VALUE "ProductName", "FileZilla Server"
-            VALUE "ProductVersion", "0, 9, 40, 0"
+            VALUE "ProductVersion", "0, 9, 41, 0"
         END
     END
     BLOCK "VarFileInfo"
