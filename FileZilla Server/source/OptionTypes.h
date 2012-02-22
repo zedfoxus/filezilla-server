@@ -99,7 +99,7 @@ struct t_Option
 };
 
 const DWORD SERVER_VERSION = 0x00094100;
-const DWORD PROTOCOL_VERSION = 0x00010C00;
+const DWORD PROTOCOL_VERSION = 0x00010D00;
 
 //												Name					Type		Not remotely
 //																(0=str, 1=numeric)   changeable
