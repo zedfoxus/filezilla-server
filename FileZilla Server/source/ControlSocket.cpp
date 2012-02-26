@@ -883,7 +883,7 @@ void CControlSocket::ParseCommand()
 			{
 				delete m_transferstatus.socket;
 				m_transferstatus.socket = NULL;
-				Send(_T("421 Could not create socket, nno usable IP address found."));
+				Send(_T("421 Could not create socket, no usable IP address found."));
 				m_transferstatus.pasv = -1;
 				break;
 			}
