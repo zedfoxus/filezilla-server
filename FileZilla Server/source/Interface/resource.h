@@ -264,6 +264,7 @@
 #define ID_BANTIME                      1203
 #define IDC_BANTYPE1                    1204
 #define IDC_BANTYPE2                    1205
+#define IDC_8PLUS3                      1206
 #define ID_ACTIVE                       32768
 #define ID_DIRMENU_ADD                  32769
 #define ID_DIRMENU_REMOVE               32770
@@ -312,7 +313,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        168
 #define _APS_NEXT_COMMAND_VALUE         32807
-#define _APS_NEXT_CONTROL_VALUE         1206
+#define _APS_NEXT_CONTROL_VALUE         1207
 #define _APS_NEXT_SYMED_VALUE           1228
 #endif
 #endif

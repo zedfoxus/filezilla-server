@@ -64,6 +64,8 @@ BEGIN
     EDITTEXT        IDC_USERS_GENERAL_COMMENTS,6,170,200,44,ES_MULTILINE | ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL
     LTEXT           "You can enter some comments about the user above",IDC_STATIC,6,218,168,8
     CONTROL         "&Force SSL for user login",IDC_FORCESSL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,126,91,10
+    CONTROL         "Use 8+3 filenames",IDC_8PLUS3,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,6,137,75,10
 END
 
 IDD_USERS_SPEEDLIMIT DIALOG  0, 0, 306, 235
