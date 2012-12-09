@@ -187,6 +187,7 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 	{
 		socket->SendStatus(_T("Failed to attach socket."), 1);
 		closesocket(sockethandle);
+		delete socket;
 		return;
 	}
 
@@ -201,7 +202,6 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 	else
 	{
 		socket->m_RemoteIP = _T("ip unknown");
-		socket->m_userid = 0;
 		socket->SendStatus(_T("Can't get remote IP, disconnected"), 1);
 		socket->Close();
 		delete socket;
@@ -212,7 +212,6 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 	if (userid == -1)
 	{
 		LeaveCritSection(m_GlobalThreadsync);
-		socket->m_userid = 0;
 		socket->SendStatus(_T("Refusing connection, server too busy!"), 1);
 		socket->Send(_T("421 Server too busy, closing connection. Please retry later!"));
 		socket->Close();

@@ -96,6 +96,8 @@ CControlSocket::CControlSocket(CServerThread *pOwner)
 	m_shutdown = false;
 
 	m_hash_id = 0;
+
+	m_userid = 0;
 }
 
 CControlSocket::~CControlSocket()
