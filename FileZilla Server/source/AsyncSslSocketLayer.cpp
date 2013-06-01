@@ -1961,9 +1961,9 @@ void CAsyncSslSocketLayer::ClearErrors()
 		err = pERR_get_error();
 }
 
-bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, unsigned char* country, unsigned char* state,
-			unsigned char* locality, unsigned char* organization, unsigned char* unit, unsigned char* cname,
-			unsigned char *email, CString& err)
+bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, const unsigned char* country, const unsigned char* state,
+			const unsigned char* locality, const unsigned char* organization, const unsigned char* unit, const unsigned char* cname,
+			const unsigned char *email, CString& err)
 {
 	// Certificate valid for a year
 	int days = 365;
@@ -2015,19 +2015,19 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, unsi
 	 * Normally we'd check the return value for errors...
 	 */
 	pX509_NAME_add_entry_by_txt(name, "CN",
-				MBSTRING_ASC, cname, -1, -1, 0);
+				MBSTRING_UTF8, cname, -1, -1, 0);
 	pX509_NAME_add_entry_by_txt(name, "C",
-				MBSTRING_ASC, country, -1, -1, 0);
+				MBSTRING_UTF8, country, -1, -1, 0);
 	pX509_NAME_add_entry_by_txt(name, "ST",
-				MBSTRING_ASC, state, -1, -1, 0);
+				MBSTRING_UTF8, state, -1, -1, 0);
 	pX509_NAME_add_entry_by_txt(name, "L",
-				MBSTRING_ASC, locality, -1, -1, 0);
+				MBSTRING_UTF8, locality, -1, -1, 0);
 	pX509_NAME_add_entry_by_txt(name, "O",
-				MBSTRING_ASC, organization, -1, -1, 0);
+				MBSTRING_UTF8, organization, -1, -1, 0);
 	pX509_NAME_add_entry_by_txt(name, "OU",
-				MBSTRING_ASC, unit, -1, -1, 0);
+				MBSTRING_UTF8, unit, -1, -1, 0);
 	pX509_NAME_add_entry_by_NID(name, NID_pkcs9_emailAddress,
-				MBSTRING_ASC, email, -1, -1, 0);
+				MBSTRING_UTF8, const_cast<unsigned char*>(email), -1, -1, 0);
 
 	/* Its self signed so set the issuer name to be the same as the
  	 * subject.

@@ -85,11 +85,19 @@ void CGenerateCertificateDlg::OnOK()
 	else if (m_keysize == 2)
 		bits = 4096;
 
+	const char* pCountry = ConvToNetwork(m_country);
+	const char* pState = ConvToNetwork(m_state);
+	const char* pCity = ConvToNetwork(m_city);
+	const char* pOrganization = ConvToNetwork(m_organization);
+	const char* pUnit = ConvToNetwork(m_unit);
+	const char* pCname = ConvToNetwork(m_cname);
+	const char* pEmail = ConvToNetwork(m_email);
+
 	CString error;
-	USES_CONVERSION;
-	if (CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR(m_file), bits, (unsigned char*)T2CA(m_country),
-		(unsigned char*)T2CA(m_state), (unsigned char*)T2CA(m_city), (unsigned char*)T2CA(m_organization), (unsigned char*)T2CA(m_unit),
-		(unsigned char*)T2CA(m_cname), (unsigned char*)T2CA(m_email), error))
+	if (CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR(m_file), bits, reinterpret_cast<const unsigned char*>(pCountry),
+		reinterpret_cast<const unsigned char*>(pState), reinterpret_cast<const unsigned char*>(pCity),
+		reinterpret_cast<const unsigned char*>(pOrganization), reinterpret_cast<const unsigned char*>(pUnit),
+		reinterpret_cast<const unsigned char*>(pCname), reinterpret_cast<const unsigned char*>(pEmail), error))
 	{
 		AfxMessageBox(_T("Certificate generated successfully."));
 		EndDialog(IDOK);
@@ -101,6 +109,14 @@ void CGenerateCertificateDlg::OnOK()
 		else
 			AfxMessageBox(_T("Certificate could not be generated."));
 	}
+
+	delete [] pCountry;
+	delete [] pState;
+	delete [] pCity;
+	delete [] pOrganization;
+	delete [] pUnit;
+	delete [] pCname;
+	delete [] pEmail;
 }
 
 void CGenerateCertificateDlg::OnBrowse()

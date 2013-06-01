@@ -143,9 +143,9 @@ public:
 	bool IsUsingSSL();
 	int InitSSLConnection(bool clientMode, void* pContext = 0);
 
-	static bool CreateSslCertificate(LPCTSTR filename, int bits, unsigned char* country, unsigned char* state,
-			unsigned char* locality, unsigned char* organization, unsigned char* unit, unsigned char* cname,
-			unsigned char *email, CString& err);
+	static bool CreateSslCertificate(LPCTSTR filename, int bits, const unsigned char* country, const unsigned char* state,
+			const unsigned char* locality, const unsigned char* organization, const unsigned char* unit, const unsigned char* cname,
+			const unsigned char *email, CString& err);
 
 	int SetCertKeyFile(const char* cert, const char* key, const char* pass, CString* error = 0);
 
