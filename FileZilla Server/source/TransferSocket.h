@@ -55,6 +55,7 @@ public:
 	void UseGSS(CAsyncGssSocketLayer* pGssLayer);
 	bool UseSSL(void* sslContext);
 	virtual ~CTransferSocket();
+	void CloseFile();
 
 // Überschreibungen
 public:

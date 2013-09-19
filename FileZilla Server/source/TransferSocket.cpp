@@ -121,11 +121,7 @@ CTransferSocket::~CTransferSocket()
 {
 	delete [] m_pBuffer;
 	delete [] m_pBuffer2;
-	if (m_hFile != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(m_hFile);
-		m_hFile = INVALID_HANDLE_VALUE;
-	}
+	CloseFile();
 
 	RemoveAllLayers();
 	delete m_pGssLayer;
@@ -159,9 +155,6 @@ void CTransferSocket::OnSend(int nErrorCode)
 	CAsyncSocketEx::OnSend(nErrorCode);
 	if (nErrorCode)
 	{
-		if (m_hFile != INVALID_HANDLE_VALUE)
-			CloseHandle(m_hFile);
-		m_hFile = INVALID_HANDLE_VALUE;
 		EndTransfer(1);
 		return;
 	}
@@ -382,8 +375,6 @@ void CTransferSocket::OnSend(int nErrorCode)
 						DWORD numread;
 						if (!ReadFile(m_hFile, m_pBuffer2, m_nBufSize, &numread, 0))
 						{
-							CloseHandle(m_hFile);
-							m_hFile = INVALID_HANDLE_VALUE;
 							EndTransfer(3); // TODO: Better reason
 							return;
 						}
@@ -394,8 +385,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 
 						if (numread < m_nBufSize)
 						{
-							CloseHandle(m_hFile);
-							m_hFile = INVALID_HANDLE_VALUE;
+							CloseFile();
 
 							if (m_waitingForSslHandshake)
 								return;
@@ -491,16 +481,13 @@ void CTransferSocket::OnSend(int nErrorCode)
 				{
 					if (!ReadFile(m_hFile, m_pBuffer+m_nBufferPos, m_nBufSize-m_nBufferPos, &numread, 0))
 					{
-						CloseHandle(m_hFile);
-						m_hFile = INVALID_HANDLE_VALUE;
 						EndTransfer(3); //TODO: Better reason
 						return;
 					}
 
 					if (!numread)
 					{
-						CloseHandle(m_hFile);
-						m_hFile = INVALID_HANDLE_VALUE;
+						CloseFile();
 
 						if (!m_nBufferPos)
 						{
@@ -526,8 +513,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 
 				if (numread < m_nBufSize)
 				{
-					CloseHandle(m_hFile);
-					m_hFile = INVALID_HANDLE_VALUE;
+					CloseFile();
 				}
 
 				int numsend = numread;
@@ -546,8 +532,6 @@ void CTransferSocket::OnSend(int nErrorCode)
 				{
 					if (GetLastError()!=WSAEWOULDBLOCK)
 					{
-						CloseHandle(m_hFile);
-						m_hFile = INVALID_HANDLE_VALUE;
 						EndTransfer(1);
 						return;
 					}
@@ -603,11 +587,6 @@ void CTransferSocket::OnConnect(int nErrorCode)
 {
 	if (nErrorCode)
 	{
-		if (m_hFile!=INVALID_HANDLE_VALUE)
-		{
-			CloseHandle(m_hFile);
-			m_hFile = INVALID_HANDLE_VALUE;
-		}
 		EndTransfer(2);
 		return;
 	}
@@ -653,12 +632,6 @@ void CTransferSocket::OnClose(int nErrorCode)
 {
 	if (nErrorCode)
 	{
-		if (m_hFile)
-		{
-			FlushFileBuffers(m_hFile);
-			CloseHandle(m_hFile);
-			m_hFile = INVALID_HANDLE_VALUE;
-		}
 		EndTransfer(1);
 		return;
 	}
@@ -677,12 +650,6 @@ void CTransferSocket::OnClose(int nErrorCode)
 					if (pos == GetPosition64(m_hFile))
 						break; //Leave loop when no data was written to file
 			} while (m_hFile != INVALID_HANDLE_VALUE); //Or file was closed
-			if (m_hFile != INVALID_HANDLE_VALUE)
-			{
-				FlushFileBuffers(m_hFile);
-				CloseHandle(m_hFile);
-				m_hFile = INVALID_HANDLE_VALUE;
-			}
 			EndTransfer(0);
 		}
 		else
@@ -753,11 +720,6 @@ void CTransferSocket::OnReceive(int nErrorCode)
 		obeySpeedLimit = false;
 	else if (nErrorCode)
 	{
-		if (m_hFile != INVALID_HANDLE_VALUE)
-		{
-			CloseHandle(m_hFile);
-			m_hFile = INVALID_HANDLE_VALUE;
-		}
 		EndTransfer(3);
 		return;
 	}
@@ -796,22 +758,12 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			}
 			else if (error != WSAEWOULDBLOCK)
 			{
-				if (m_hFile!=INVALID_HANDLE_VALUE)
-				{
-					CloseHandle(m_hFile);
-					m_hFile = INVALID_HANDLE_VALUE;
-				}
 				EndTransfer(1);
 			}
 			return;
 		}
 		if (!numread)
 		{
-			if (m_hFile != INVALID_HANDLE_VALUE)
-			{
-				CloseHandle(m_hFile);
-				m_hFile = INVALID_HANDLE_VALUE;
-			}
 			EndTransfer(0);
 			return;
 		}
@@ -841,8 +793,6 @@ void CTransferSocket::OnReceive(int nErrorCode)
 				DWORD numwritten;
 				if (!WriteFile(m_hFile, m_pBuffer2, m_nBufSize - m_zlibStream.avail_out, &numwritten, 0) || numwritten != m_nBufSize - m_zlibStream.avail_out)
 				{
-					CloseHandle(m_hFile);
-					m_hFile = INVALID_HANDLE_VALUE;
 					EndTransfer(3); // TODO: Better reason
 					return;
 				}
@@ -857,8 +807,6 @@ void CTransferSocket::OnReceive(int nErrorCode)
 				DWORD numwritten;
 				if (!WriteFile(m_hFile, m_pBuffer2, m_nBufSize - m_zlibStream.avail_out, &numwritten, 0) || numwritten != m_nBufSize - m_zlibStream.avail_out)
 				{
-					CloseHandle(m_hFile);
-					m_hFile = INVALID_HANDLE_VALUE;
 					EndTransfer(3); // TODO: Better reason
 					return;
 				}
@@ -866,8 +814,6 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			}
 			else if (res != Z_OK && res != Z_BUF_ERROR)
 			{
-				CloseHandle(m_hFile);
-				m_hFile = INVALID_HANDLE_VALUE;
 				EndTransfer(6);
 				return;
 			}
@@ -877,8 +823,6 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			DWORD numwritten;
 			if (!WriteFile(m_hFile, m_pBuffer, numread, &numwritten, 0) || numwritten!=(unsigned int)numread)
 			{
-				CloseHandle(m_hFile);
-				m_hFile = INVALID_HANDLE_VALUE;
 				EndTransfer(3); //TODO: Better reason
 				return;
 			}
@@ -1224,10 +1168,24 @@ void CTransferSocket::EndTransfer(int status)
 {
 	Close();
 
+	CloseFile();
+
 	if (m_bSentClose)
 		return;
 
 	m_bSentClose = TRUE;
 	m_status = status;
 	m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+}
+
+void CTransferSocket::CloseFile()
+{
+	if (m_hFile != INVALID_HANDLE_VALUE)
+	{
+		if (m_nMode == TRANSFERMODE_RECEIVE)
+			FlushFileBuffers(m_hFile);
+
+		CloseHandle(m_hFile);
+		m_hFile = INVALID_HANDLE_VALUE;
+	}
 }
