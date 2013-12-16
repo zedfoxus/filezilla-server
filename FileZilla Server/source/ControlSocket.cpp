@@ -2811,57 +2811,54 @@ void CControlSocket::ProcessTransferMsg()
 
 	if (!status)
 	{
+		CStdString msg = _T("226 Sucessfully transferred \"") + m_transferstatus.resource + _T("\"");
+
 		if ((mode == TRANSFERMODE_LIST || mode == TRANSFERMODE_NLST || mode == TRANSFERMODE_SEND) && zlibBytesIn && zlibBytesOut)
 		{
+			CStdString str;
 			if (zlibBytesIn >= zlibBytesOut)
 			{
-				CString str;
 				_int64 percent = 10000 - (zlibBytesOut * 10000 / zlibBytesIn);
-				str.Format(_T("226 Transfer OK, compression saved %I64d of %I64d bytes (%I64d.%02I64d%%)"), zlibBytesIn - zlibBytesOut, zlibBytesIn, percent / 100, percent % 100);
-				Send(str);
+				str.Format(_T(", compression saved %I64d of %I64d bytes (%I64d.%02I64d%%)"), zlibBytesIn - zlibBytesOut, zlibBytesIn, percent / 100, percent % 100);
 			}
 			else
 			{
-				CString str;
 				_int64 percent = (zlibBytesOut * 10000 / zlibBytesIn) - 10000;
-				str.Format(_T("226 Transfer OK, unfortunately compression did increase the transfer size by %I64d bytes to %I64d bytes (%I64d.%02I64d%%)"), zlibBytesOut - zlibBytesIn, zlibBytesOut, percent / 100, percent % 100);
-				Send(str);
+				str.Format(_T(", unfortunately compression did increase the transfer size by %I64d bytes to %I64d bytes (%I64d.%02I64d%%)"), zlibBytesOut - zlibBytesIn, zlibBytesOut, percent / 100, percent % 100);
 			}
+			msg += str;
 		}
 		else if (mode == TRANSFERMODE_RECEIVE && zlibBytesIn && zlibBytesOut)
 		{
+			CStdString str;
 			if (zlibBytesOut >= zlibBytesIn)
 			{
-				CString str;
 				_int64 percent = 10000 - (zlibBytesIn * 10000 / zlibBytesOut);
-				str.Format(_T("226 Transfer OK, compression saved %I64d of %I64d bytes (%I64d.%02I64d%%)"), zlibBytesOut - zlibBytesIn, zlibBytesOut, percent / 100, percent % 100);
-				Send(str);
+				str.Format(_T(", compression saved %I64d of %I64d bytes (%I64d.%02I64d%%)"), zlibBytesOut - zlibBytesIn, zlibBytesOut, percent / 100, percent % 100);
 			}
 			else
 			{
-				CString str;
 				_int64 percent = (zlibBytesIn * 10000 / zlibBytesOut) - 10000;
-				str.Format(_T("226 Transfer OK, unfortunately compression did increase the transfer size by %I64d bytes to %I64d bytes (%I64d.%02I64d%%)"), zlibBytesIn - zlibBytesOut, zlibBytesIn, percent / 100, percent % 100);
-				Send(str);
+				str.Format(_T(", unfortunately compression did increase the transfer size by %I64d bytes to %I64d bytes (%I64d.%02I64d%%)"), zlibBytesIn - zlibBytesOut, zlibBytesIn, percent / 100, percent % 100);
 			}
+			msg += str;
 		}
-		else
-			Send(_T("226 Transfer OK"));
+		Send(msg);
 	}
 	else if (status==1)
-		Send(_T("426 Connection closed; transfer aborted."));
+		Send(_T("426 Connection closed; aborted transfer of \"") + m_transferstatus.resource + _T("\""));
 	else if (status==2)
-		Send(_T("425 Can't open data connection."));
+		Send(_T("425 Can't open data connection for transfer of \"") + m_transferstatus.resource + _T("\""));
 	else if (status==3)
 		Send(_T("550 can't access file."));
 	else if (status==4)
 	{
-		Send(_T("426 Connection timed out, aborting transfer"));
+		Send(_T("426 Connection timed out, aborting transfer of \"") + m_transferstatus.resource + _T("\""));
 		ForceClose(1);
 		return;
 	}
 	else if (status==5)
-		Send(_T("425 Can't open data connection"));
+		Send(_T("425 Can't open data connection for transfer of \"") + m_transferstatus.resource + _T("\""));
 	else if (status==6)
 		Send(_T("450 zlib error"));
 	if (status>=0 && m_bWaitGoOffline)
@@ -3049,6 +3046,7 @@ void CControlSocket::ResetTransferstatus()
 	m_transferstatus.port = -1;
 	m_transferstatus.pasv = -1;
 	m_transferstatus.rest = 0;
+	m_transferstatus.resource = _T("");
 }
 
 BOOL CControlSocket::UnquoteArgs(CStdString &args)
