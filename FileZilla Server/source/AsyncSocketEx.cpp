@@ -293,21 +293,23 @@ public:
 			ASSERT(hWnd);
 			CAsyncSocketExHelperWindow *pWnd=(CAsyncSocketExHelperWindow *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 			ASSERT(pWnd);
+			if (!pWnd)
+				return 0;
 			
-			if (message<static_cast<UINT>(WM_SOCKETEX_NOTIFY+pWnd->m_nWindowDataSize)) //Index is within socket storage
+			if (message < static_cast<UINT>(WM_SOCKETEX_NOTIFY+pWnd->m_nWindowDataSize)) //Index is within socket storage
 			{
 				//Lookup socket and verify if it's valid
-				CAsyncSocketEx *pSocket=pWnd->m_pAsyncSocketExWindowData[message-WM_SOCKETEX_NOTIFY].m_pSocket;
-				SOCKET hSocket=wParam;
+				CAsyncSocketEx *pSocket=pWnd->m_pAsyncSocketExWindowData[message - WM_SOCKETEX_NOTIFY].m_pSocket;
+				SOCKET hSocket = wParam;
 				if (!pSocket)
 					return 0;
-				if (hSocket==INVALID_SOCKET)
+				if (hSocket == INVALID_SOCKET)
 					return 0;
 				if (pSocket->m_SocketData.hSocket != hSocket)
 					return 0;
 				
-				int nEvent=lParam&0xFFFF;
-				int nErrorCode=lParam>>16;
+				int nEvent = lParam & 0xFFFF;
+				int nErrorCode = lParam >> 16;
 
 				//Dispatch notification
 #ifndef NOLAYERS
@@ -440,14 +442,14 @@ public:
 							if (nBytes > 0)
 							{
 								// Just repeat message.
-								PostMessage(hWnd, message, wParam, lParam);
+								pSocket->ResendCloseNotify();
 								pSocket->m_SocketData.onCloseCalled = true;								
 								pSocket->OnReceive(WSAESHUTDOWN);
 								break;
 							}
 						}
 
-						pSocket->SetState(nErrorCode?aborted:closed);
+						pSocket->SetState(nErrorCode ? aborted : closed);
 #endif //NOSOCKETSTATES
 						pSocket->OnClose(nErrorCode);
 						break;
@@ -465,7 +467,7 @@ public:
 						DWORD nBytes;
 						if (!pSocket->IOCtl(FIONREAD, &nBytes))
 							nErrorCode = WSAGetLastError();
-						if (nBytes != 0 || nErrorCode != 0)
+						if (nBytes != 0 || nErrorCode != 0 && pSocket->m_pLastLayer)
 							pSocket->m_pLastLayer->CallEvent(nEvent, nErrorCode);
 					}
 					else if (nEvent == FD_CLOSE)
@@ -479,14 +481,16 @@ public:
 							{
 								// Just repeat message.
 								pSocket->ResendCloseNotify();
-								pSocket->m_pLastLayer->CallEvent(FD_READ, 0);
+								if (pSocket->m_pLastLayer)
+									pSocket->m_pLastLayer->CallEvent(FD_READ, 0);
 								return 0;
 							}
 						}
 						pSocket->m_SocketData.onCloseCalled = true;
-						pSocket->m_pLastLayer->CallEvent(nEvent, nErrorCode);
+						if (pSocket->m_pLastLayer)
+							pSocket->m_pLastLayer->CallEvent(nEvent, nErrorCode);
 					}
-					else
+					else if (pSocket->m_pLastLayer)
 						pSocket->m_pLastLayer->CallEvent(nEvent, nErrorCode);
 				}
 			}
@@ -501,14 +505,16 @@ public:
 			ASSERT(hWnd);
 			CAsyncSocketExHelperWindow *pWnd=(CAsyncSocketExHelperWindow *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 			ASSERT(pWnd);
+			if (!pWnd)
+				return 0;
 			
 			if (wParam >= static_cast<UINT>(pWnd->m_nWindowDataSize)) //Index is within socket storage
 			{
 				return 0;
 			}
 			
-			CAsyncSocketEx *pSocket=pWnd->m_pAsyncSocketExWindowData[wParam].m_pSocket;
-			CAsyncSocketExLayer::t_LayerNotifyMsg *pMsg=(CAsyncSocketExLayer::t_LayerNotifyMsg *)lParam;
+			CAsyncSocketEx *pSocket = pWnd->m_pAsyncSocketExWindowData[wParam].m_pSocket;
+			CAsyncSocketExLayer::t_LayerNotifyMsg *pMsg = (CAsyncSocketExLayer::t_LayerNotifyMsg *)lParam;
 			if (!pMsg || !pSocket || pSocket->m_SocketData.hSocket != pMsg->hSocket)
 			{
 				delete pMsg;
@@ -643,13 +649,16 @@ public:
 			ASSERT(hWnd);
 			CAsyncSocketExHelperWindow *pWnd = (CAsyncSocketExHelperWindow *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 			ASSERT(pWnd);
+			if (!pWnd)
+				return 0;
 
 			CAsyncSocketEx *pSocket = NULL;
 			for (int i = 0; i < pWnd->m_nWindowDataSize; i++)
 			{
 				pSocket = pWnd->m_pAsyncSocketExWindowData[i].m_pSocket;
 				if (pSocket && pSocket->m_hAsyncGetHostByNameHandle &&
-					pSocket->m_hAsyncGetHostByNameHandle == (HANDLE)wParam)
+					pSocket->m_hAsyncGetHostByNameHandle == (HANDLE)wParam &&
+					pSocket->m_pAsyncGetHostByNameBuffer)
 					break;
 			}
 			if (!pSocket)
@@ -664,18 +673,18 @@ public:
 
 			SOCKADDR_IN sockAddr;
 			memset(&sockAddr,0,sizeof(sockAddr));
-			sockAddr.sin_family=AF_INET;
+			sockAddr.sin_family = AF_INET;
 			sockAddr.sin_addr.s_addr = ((LPIN_ADDR)((LPHOSTENT)pSocket->m_pAsyncGetHostByNameBuffer)->h_addr)->s_addr;
 
 			sockAddr.sin_port = htons(pSocket->m_nAsyncGetHostByNamePort);
 
 			BOOL res = pSocket->Connect((SOCKADDR*)&sockAddr, sizeof(sockAddr));
 			delete [] pSocket->m_pAsyncGetHostByNameBuffer;
-			pSocket->m_pAsyncGetHostByNameBuffer=0;
-			pSocket->m_hAsyncGetHostByNameHandle=0;
+			pSocket->m_pAsyncGetHostByNameBuffer = 0;
+			pSocket->m_hAsyncGetHostByNameHandle = 0;
 
 			if (!res)
-				if (GetLastError()!=WSAEWOULDBLOCK)
+				if (GetLastError() != WSAEWOULDBLOCK)
 					pSocket->OnConnect(GetLastError());
 			return 0;
 		}
@@ -709,7 +718,9 @@ public:
 			
 			ASSERT(hWnd);
 			CAsyncSocketExHelperWindow *pWnd=(CAsyncSocketExHelperWindow *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-			ASSERT(pWnd);
+			ASSERT(pWnd && pWnd->m_pThreadData);
+			if (!pWnd || !pWnd->m_pThreadData)
+				return 0;
 
 			if (pWnd->m_pThreadData->layerCloseNotify.empty())
 			{
@@ -721,7 +732,8 @@ public:
 			if (pWnd->m_pThreadData->layerCloseNotify.empty())
 				KillTimer(hWnd, 1);
 
-			PostMessage(hWnd, socket->m_SocketData.nSocketIndex + WM_SOCKETEX_NOTIFY, socket->m_SocketData.hSocket, FD_CLOSE);
+			if (socket)
+				PostMessage(hWnd, socket->m_SocketData.nSocketIndex + WM_SOCKETEX_NOTIFY, socket->m_SocketData.hSocket, FD_CLOSE);
 			return 0;
 		}
 		return DefWindowProc(hWnd, message, wParam, lParam);
