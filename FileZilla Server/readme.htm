@@ -1,12 +1,12 @@
-<p align="center"><b><u>FileZilla Server version 0.9.41 beta</u></b></p>
-<p align="center">Copyright 2001-2012<br>
+<p align="center"><b><u>FileZilla Server version 0.9.42 beta</u></b></p>
+<p align="center">Copyright 2001-2013<br>
 by <a href="mailto:tim.kosse@filezilla-project.org">Tim Kosse</a><a href="http://filezilla-project.org/"><br>
-http://filezilla-project.org/</a></p>
+https://filezilla-project.org/</a></p>
 <p align="left"><u><b>Features:</b></u></p>
 <ul>
   <li>almost unlimited number of users</li>
   <li>multi-threaded engine</li>
-  <li>runs as service under 2000 and XP, Vista and Windows 7</li>
+  <li>runs as service under Windows Vista, 7, 8 and 8.1</li>
   <li>anti fxp / bounce attack filter</li>
   <li>secure password storage (as MD5 hash)</li>
   <li>real-time user/group management</li>
@@ -66,7 +66,22 @@ as restoring it to normal size.</p>
   </tr>
 </table>
 <p align="left"><b><u>Version History:</u></b></p>
-<p>For a more detailed list of changes, please have a look at the SVN changelog located at <a href="http://filezilla-project.org/changelog.php?type=2">http://filezilla-project.org/changelog.php?type=2</a>.</p>
+<p>For a more detailed list of changes, please have a look at the SVN changelog located at <a href="https://filezilla-project.org/changelog.php?type=2">http://filezilla-project.org/changelog.php?type=2</a>.</p>
+<p><b>Version 0.9.42</b></p>
+<blockquote>
+  <u>New features</u>
+  <ul>
+    <li>Last version ever to support Windows XP</li>
+    <li>More verbose replies to the transfer commands</li>
+  </ul>
+  <u>Fixed bugs:</u>
+  <ul>
+    <li>Fix an endless loop if a client closes a connection using the QUIT command while a speed limit was in effect on a low-latency connection</li>
+    <li>Fixed a rare memory leak</li>
+    <li>Correct handling of 0.0.0.0/0 in IP address filters</li>
+    <li>Use UTF8 in the distinguished names of created certificates</li>
+  </ul>
+</blockquote>
 <p><b>Version 0.9.41</b></p>
 <blockquote>
   <u>Fixed bugs:</u>
