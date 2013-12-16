@@ -1961,6 +1961,17 @@ void CAsyncSslSocketLayer::ClearErrors()
 		err = pERR_get_error();
 }
 
+namespace {
+void add_dn(X509_NAME* dn, const char* name, const unsigned char* value, int type = V_ASN1_UTF8STRING)
+{
+	if (!name || !*name || !value || !*value)
+		return;
+
+	pX509_NAME_add_entry_by_txt(dn, name,
+		type, value, -1, -1, 0);
+}
+}
+
 bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, const unsigned char* country, const unsigned char* state,
 			const unsigned char* locality, const unsigned char* organization, const unsigned char* unit, const unsigned char* cname,
 			const unsigned char *email, CString& err)
@@ -2014,19 +2025,14 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	 * correct string type and performing checks on its length.
 	 * Normally we'd check the return value for errors...
 	 */
-	pX509_NAME_add_entry_by_txt(name, "CN",
-				MBSTRING_UTF8, cname, -1, -1, 0);
-	pX509_NAME_add_entry_by_txt(name, "C",
-				MBSTRING_UTF8, country, -1, -1, 0);
-	pX509_NAME_add_entry_by_txt(name, "ST",
-				MBSTRING_UTF8, state, -1, -1, 0);
-	pX509_NAME_add_entry_by_txt(name, "L",
-				MBSTRING_UTF8, locality, -1, -1, 0);
-	pX509_NAME_add_entry_by_txt(name, "O",
-				MBSTRING_UTF8, organization, -1, -1, 0);
-	pX509_NAME_add_entry_by_txt(name, "OU",
-				MBSTRING_UTF8, unit, -1, -1, 0);
-	pX509_NAME_add_entry_by_NID(name, NID_pkcs9_emailAddress,
+	add_dn(name, "CN", cname);
+	add_dn(name, "C", country, MBSTRING_UTF8);
+	add_dn(name, "ST", state);
+	add_dn(name, "L", locality);
+	add_dn(name, "O", organization);
+	add_dn(name, "OU", unit);
+	if (email && *email)
+		pX509_NAME_add_entry_by_NID(name, NID_pkcs9_emailAddress,
 				MBSTRING_UTF8, const_cast<unsigned char*>(email), -1, -1, 0);
 
 	/* Its self signed so set the issuer name to be the same as the
