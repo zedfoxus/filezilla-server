@@ -77,6 +77,8 @@ CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 	m_waitingForSslHandshake = false;
 
 	m_premature_send = false;
+
+	m_on_connect_called = false;
 }
 
 void CTransferSocket::Init(t_dirlisting *pDir, int nMode)
@@ -622,6 +624,8 @@ void CTransferSocket::OnConnect(int nErrorCode)
 		m_waitingForSslHandshake = true;
 	}
 
+	m_on_connect_called = true;
+
 	if (!m_bStarted)
 		InitTransfer(FALSE);
 
@@ -917,12 +921,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		AsyncSelect(FD_WRITE|FD_CLOSE);
 	
 	if (m_bAccepted)
-	{
-		CStdString str = _T("150 Connection accepted");
-		if (m_nRest)
-			str.Format(_T("150 Connection accepted, restarting at offset %I64d"), m_nRest);
-		m_pOwner->Send(str);
-	}
+		m_pOwner->SendTransferPreliminary();
 
 	m_bStarted = TRUE;
 	if (m_nMode == TRANSFERMODE_SEND)

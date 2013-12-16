@@ -74,7 +74,9 @@ public:
 
 	void ProcessHashResult(int hash_id, int res, CHashThread::_algorithm alg, const CStdString& hash, const CStdString& file);
 
-// Implementierung
+
+	void SendTransferPreliminary();
+
 protected:
 	BOOL DoUserLogin(LPCTSTR password, bool skipPass = false);
 	BOOL UnquoteArgs(CStdString &args);
@@ -123,6 +125,7 @@ protected:
 		CTransferSocket *socket;
 		bool usedResolvedIP;
 		int family;
+		CStdString resource;
 	} m_transferstatus;
 
 	CStdString RenName;

@@ -1076,6 +1076,7 @@ void CControlSocket::ParseCommand()
 				break;
 			}
 
+			m_transferstatus.resource = logicalDir;
 			if (!m_transferstatus.pasv)
 			{
 				if (m_transferstatus.socket)
@@ -1099,8 +1100,8 @@ void CControlSocket::ParseCommand()
 				if (!CreateTransferSocket(transfersocket))
 					break;
 
-				SendTransferinfoNotification(TRANSFERMODE_LIST, ConvToLocal(physicalDir), ConvToLocal(logicalDir));
-				Send(_T("150 Opening data channel for directory list."));
+				SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
+				SendTransferPreliminary();
 			}
 			else
 			{
@@ -1211,6 +1212,7 @@ void CControlSocket::ParseCommand()
 			}
 			else
 			{
+				m_transferstatus.resource = logicalFile;
 				if (!m_transferstatus.pasv)
 				{
 					if (m_transferstatus.socket)
@@ -1238,8 +1240,7 @@ void CControlSocket::ParseCommand()
 					if (!GetLength64(physicalFile, totalSize))
 						totalSize = -1;
 					SendTransferinfoNotification(TRANSFERMODE_SEND, physicalFile, logicalFile, m_transferstatus.rest, totalSize);
-
-					Send(_T("150 Opening data channel for file transfer."));
+					SendTransferPreliminary();
 				}
 				else
 				{
@@ -1316,6 +1317,7 @@ void CControlSocket::ParseCommand()
 			}
 			else
 			{
+				m_transferstatus.resource = logicalFile;
 				if (!m_transferstatus.pasv)
 				{
 					CTransferSocket *transfersocket = new CTransferSocket(this);
@@ -1335,7 +1337,7 @@ void CControlSocket::ParseCommand()
 						break;
 
 					SendTransferinfoNotification(TRANSFERMODE_RECEIVE, physicalFile, logicalFile, m_transferstatus.rest);
-					Send(_T("150 Opening data channel for file transfer."));
+					SendTransferPreliminary();
 				}
 				else
 				{
@@ -2532,6 +2534,8 @@ void CControlSocket::ParseCommand()
 			}
 			else
 			{
+				m_transferstatus.resource = logicalDir;
+
 				if (!m_transferstatus.pasv)
 				{
 					if (m_transferstatus.socket)
@@ -2556,7 +2560,7 @@ void CControlSocket::ParseCommand()
 						break;
 
 					SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
-					Send(_T("150 Opening data channel for directory list."));
+					SendTransferPreliminary();
 				}
 				else
 				{
@@ -3713,4 +3717,44 @@ void CControlSocket::ProcessHashResult(int hash_id, int res, CHashThread::_algor
 		}
 		Send(_T("213 ") + algname + _T(" ") + hash + _T(" ") + file);
 	}
+}
+
+void CControlSocket::SendTransferPreliminary()
+{
+	bool connected = m_transferstatus.socket && m_transferstatus.socket->WasOnConnectCalled();
+
+	CStdString msg;
+	if (connected)
+		msg = _T("150 Data channel opened for ");
+	else
+		msg = _T("150 Opening data channel for ");
+
+	int mode = m_transferstatus.socket ? m_transferstatus.socket->GetMode() : TRANSFERMODE_NOTSET;
+
+	_int64 rest = m_transferstatus.rest;
+	if (mode == TRANSFERMODE_RECEIVE)
+		msg += _T("file upload to server");
+	else if (mode == TRANSFERMODE_SEND)
+		msg += _T("file download from server");
+	else
+	{
+		msg += _T("directory listing");
+		rest = 0;
+	}
+
+	if (!m_transferstatus.resource.IsEmpty())
+	{
+		msg += _T(" of \"");
+		msg += m_transferstatus.resource;
+		msg += _T("\"");
+	}
+
+	if (rest > 0)
+	{
+		CStdString s;
+		s.Format(_T(", restarting at offset %I64d"), m_transferstatus.rest);
+		msg += s;
+	}
+	
+	Send(msg);
 }

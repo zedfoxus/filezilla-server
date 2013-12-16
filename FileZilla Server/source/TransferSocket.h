@@ -69,6 +69,8 @@ public:
 	__int64 GetCurrentFileOffset() const { return m_currentFileOffset; }
 	bool WasActiveSinceCheck() const { return m_wasActiveSinceCheck; }
 
+	bool WasOnConnectCalled() const { return m_on_connect_called; }
+
 	BOOL pasv;
 // Implementierung
 protected:
@@ -116,6 +118,8 @@ protected:
 	bool m_waitingForSslHandshake;
 
 	bool m_premature_send;
+
+	bool m_on_connect_called;
 };
 
 
