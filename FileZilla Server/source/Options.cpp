@@ -1,6 +1,6 @@
 // FileZilla Server - a Windows ftp server
 
-// Copyright (C) 2002-2004 - Tim Kosse <tim.kosse@gmx.de>
+// Copyright (C) 2002-2013 - Tim Kosse <tim.kosse@filezilla-project.org>
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -390,7 +390,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 			if (str == _T(""))
 			{
 				str = _T("%v");
-				str += _T("\r\nwritten by Tim Kosse (Tim.Kosse@gmx.de)");
+				str += _T("\r\nwritten by Tim Kosse (tim.kosse@filezilla-project.org)");
 				str += _T("\r\nPlease visit http://sourceforge.net/projects/filezilla/");
 			}
 		}
@@ -597,7 +597,7 @@ CStdString COptions::GetOption(int nOptionID)
 			break;
 		case OPTION_WELCOMEMESSAGE:
 			m_sOptionsCache[nOptionID-1].str = _T("%v");
-			m_sOptionsCache[nOptionID-1].str += _T("\r\nwritten by Tim Kosse (Tim.Kosse@gmx.de)");
+			m_sOptionsCache[nOptionID-1].str += _T("\r\nwritten by Tim Kosse (tim.kosse@filezilla-project.org)");
 			m_sOptionsCache[nOptionID-1].str += _T("\r\nPlease visit http://sourceforge.net/projects/filezilla/");
 			break;
 		case OPTION_CUSTOMPASVIPSERVER:

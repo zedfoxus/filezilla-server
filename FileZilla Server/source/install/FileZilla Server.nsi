@@ -1,5 +1,5 @@
 ;FileZilla Server Setup script
-;written by Tim Kosse (Tim.Kosse@gmx.de)
+;written by Tim Kosse (tim.kosse@filezilla-project.org)
 ;Based on
 ;NSIS Modern User Interface version 1.6
 ;Basic Example Script
@@ -19,12 +19,12 @@ SetCompressor /SOLID LZMA
   !define PRODUCT_NAME    "FileZilla Server"
   !define VERSION_MAJOR   "0"
   !define VERSION_MINOR   "9"
-  !define VERSION_MICRO   "41"
+  !define VERSION_MICRO   "42"
   !define VERSION_NANO    "0"
   !define PRODUCT_VERSION "beta ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}"
   !define VERSION_FULL    "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}.${VERSION_NANO}"
   !define PUBLISHER       "FileZilla Project"
-  !define WEBSITE_URL     "http://filezilla-project.org/"
+  !define WEBSITE_URL     "https://filezilla-project.org/"
   !define PRODUCT_UNINSTALL "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
   Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 

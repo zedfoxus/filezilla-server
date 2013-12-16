@@ -1,6 +1,6 @@
 // FileZilla Server - a Windows ftp server
 
-// Copyright (C) 2002-2004 - Tim Kosse <tim.kosse@gmx.de>
+// Copyright (C) 2002-2013 - Tim Kosse <tim.kosse@filezilla-project.org>
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -208,7 +208,7 @@ BOOL CAboutDlg::OnInitDialog()
 	m_mail.ModifyLinkStyle(0, CHyperLink::StyleUseHover);
 	m_mail.SetColors(0xFF0000, 0xFF0000, 
 				   0xFF0000, 0xFF);
-	m_mail.SetURL("mailto:Tim.Kosse@gmx.de");
+	m_mail.SetURL("mailto:tim.kosse@filezilla-project.org");
 
 	m_cDonate.SubclassDlgItem(IDC_DONATE, this, _T("https://www.paypal.com/xclick/business=Tim.Kosse%40gmx.de&item_name=FileZilla&cn=Enter+your+comments+here&tax=0&currency_code=USD"));
 	

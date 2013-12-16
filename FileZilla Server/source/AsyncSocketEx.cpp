@@ -1,4 +1,4 @@
-/*CAsyncSocketEx by Tim Kosse (Tim.Kosse@gmx.de)
+/*CAsyncSocketEx by Tim Kosse (tim.kosse@filezilla-project.org)
             Version 1.3 (2003-04-26)
 --------------------------------------------------------
 
@@ -58,7 +58,7 @@ License
 Feel free to use this class, as long as you don't claim that you wrote it
 and this copyright notice stays intact in the source files.
 If you use this class in commercial applications, please send a short message
-to tim.kosse@gmx.de
+to tim.kosse@filezilla-project.org
 */
 
 #include "stdafx.h"

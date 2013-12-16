@@ -1,4 +1,4 @@
-/*CAsyncSocketEx by Tim Kosse (Tim.Kosse@gmx.de)
+/*CAsyncSocketEx by Tim Kosse (tim.kosse@filezilla-project.org)
             Version 1.1 (2002-11-01)
 --------------------------------------------------------
 
@@ -58,7 +58,7 @@ License
 Feel free to use this class, as long as you don't claim that you wrote it
 and this copyright notice stays intact in the source files.
 If you use this class in commercial applications, please send a short message
-to tim.kosse@gmx.de
+to tim.kosse@filezilla-project.org
 
 */#if !defined(AFX_ASYNCSOCKETEXLAYER_H__90C7FDB6_F3F1_4CC0_B77B_858458A563F3__INCLUDED_)
 #define AFX_ASYNCSOCKETEXLAYER_H__90C7FDB6_F3F1_4CC0_B77B_858458A563F3__INCLUDED_
