@@ -1045,11 +1045,7 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 			memcpy(pBuffer, p, len);
 			pBuffer[len]=0;
 			if (!m_Options[i].bOnlyLocal || bFromLocal) //Do not change admin interface settings from remote connections
-#ifdef _UNICODE
 				SetOption(i+1, ConvFromNetwork(pBuffer), false);
-#else
-				SetOption(i+1, ConvToLocal(ConvFromNetwork(pBuffer)), false);
-#endif
 			delete [] pBuffer;
 			p+=len;
 		}

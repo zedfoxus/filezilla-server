@@ -233,21 +233,9 @@ BOOL CControlSocket::GetCommand(CStdString &command, CStdString &args)
 	//Output command in status window
 	CStdString str2;
 	if (m_useUTF8)
-	{
-#ifdef _UNICODE
-	str2 = ConvFromNetwork(str);
-#else
-	str2 = ConvToLocal(ConvFromNetwork(str));
-#endif
-	}
+		str2 = ConvFromNetwork(str);
 	else
-	{
-#ifdef _UNICODE
-	str2 = ConvFromLocal(str);
-#else
-	str2 = str;
-#endif
-	}
+		str2 = ConvFromLocal(str);
 	
 	//Hide passwords if the server admin wants to.
 	if (!str2.Left(5).CompareNoCase(_T("PASS ")))
@@ -635,21 +623,11 @@ void CControlSocket::ParseCommand()
 			{
 				char sendme[4096];
 
-#ifdef _UNICODE
 				int res = m_pGssLayer->ProcessCommand("USER", ConvToLocal(args), sendme);
-#else
-				int res = m_pGssLayer->ProcessCommand("USER", args, sendme);
-#endif
 				if (res != -1)
 				{
 					if (DoUserLogin(0, true))
-					{
-#ifdef _UNICODE
 						Send(ConvFromLocal(sendme));
-#else
-						Send(sendme);
-#endif
-					}
 					else
 						m_status.user = _T("");
 				}
@@ -676,20 +654,12 @@ void CControlSocket::ParseCommand()
 		else if (m_pGssLayer && m_pGssLayer->AuthSuccessful())
 		{
 			char sendme[4096];
-#ifdef _UNICODE
 			int res = m_pGssLayer->ProcessCommand("PASS", ConvToLocal(m_status.user), ConvToLocal(args), sendme);
-#else
-			int res = m_pGssLayer->ProcessCommand("PASS", m_status.user, args, sendme);
-#endif
 
 			if (res != -1)
 			{
 				if (DoUserLogin(_T(""), true))
-#ifdef _UNICODE
                     Send(ConvFromLocal(sendme));
-#else
-                    Send(sendme);
-#endif
 			}
 		}
 		else if (DoUserLogin(args))
@@ -803,11 +773,7 @@ void CControlSocket::ParseCommand()
 			port += 256 * _ttoi(args.Right(args.GetLength() - (i + 1))); // add ms byte to server socket
 			ip = args.Left(i);
 
-#ifdef _UNICODE
 			int res = inet_addr(ConvToLocal(ip));
-#else
-			int res = inet_addr(ip);
-#endif
 			if (res == INADDR_NONE)
 			{
 				// Fix: Convert IP in PORT command to int and back to string (strips
@@ -828,11 +794,7 @@ void CControlSocket::ParseCommand()
 				}
 
 				ip = decIP.Left(decIP.GetLength() - 1);
-#ifdef _UNICODE
 				res = inet_addr(ConvToLocal(ip));
-#else
-				res = inet_addr(ip);
-#endif
 			}
 
 			if (res == INADDR_NONE || port < 1 || port > 65535)
@@ -2034,11 +1996,7 @@ void CControlSocket::ParseCommand()
 			CStdString ip = args.Left(pos);
 			if (protocol == 1)
 			{
-#ifdef _UNICODE
 				if (inet_addr(ConvToLocal(ip)) == INADDR_NONE)
-#else
-				if (inet_addr(ip) == INADDR_NONE)
-#endif
 				{
 					Send(_T("501 Syntax error, not a valid IPv4 address"));
 					m_transferstatus.pasv = -1;
@@ -2147,11 +2105,7 @@ void CControlSocket::ParseCommand()
 				if (res)
 				{
 					CString error;
-#ifdef _UNICODE
 					int res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLCERTFILE)), ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYFILE)), ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYPASS)), &error);
-#else
-					int res = m_pSslLayer->SetCertKeyFile(m_pOwner->m_pOptions->GetOption(OPTION_SSLCERTFILE), m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYFILE), m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYPASS), &error);
-#endif
 					if (res == SSL_FAILURE_LOADDLLS)
 						SendStatus(_T("Failed to load SSL libraries"), 1);
 					else if (res == SSL_FAILURE_INITSSL)
@@ -2223,13 +2177,8 @@ void CControlSocket::ParseCommand()
 		if (m_pGssLayer)
 		{
 			char sendme[4096];
-#ifdef _UNICODE
 			m_pGssLayer->ProcessCommand("ADAT", ConvToLocal(args), sendme);
 			Send(ConvFromLocal(sendme));
-#else
-			m_pGssLayer->ProcessCommand("ADAT", args, sendme);
-			Send(sendme);
-#endif
 			
 		}
 		else
@@ -2239,13 +2188,8 @@ void CControlSocket::ParseCommand()
 		if (m_pGssLayer)
 		{
 			char sendme[4096];
-#ifdef _UNICODE
 			m_pGssLayer->ProcessCommand("PBSZ", ConvToLocal(args), sendme);
 			Send(ConvFromLocal(sendme));
-#else
-			m_pGssLayer->ProcessCommand("PBSZ", args, sendme);
-			Send(sendme);
-#endif
 		}
 		else if (m_pSslLayer)
 			Send(_T("200 PBSZ=0"));
@@ -2257,13 +2201,8 @@ void CControlSocket::ParseCommand()
 		{
 			char sendme[4096];
 
-#ifdef _UNICODE
 			m_pGssLayer->ProcessCommand("PROT", ConvToLocal(args), sendme);
 			Send(ConvFromLocal(sendme));
-#else
-			m_pGssLayer->ProcessCommand("PROT", args, sendme);
-			Send(sendme);
-#endif
 		}
 		else if (m_pSslLayer)
 		{
@@ -3469,11 +3408,7 @@ bool CControlSocket::InitImplicitSsl()
 	}
 
 	CString error;
-#ifdef _UNICODE
 	res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLCERTFILE)), ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYFILE)), ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYPASS)), &error);
-#else
-	res = m_pSslLayer->SetCertKeyFile(m_pOwner->m_pOptions->GetOption(OPTION_SSLCERTFILE), m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYFILE), m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYPASS), &error);
-#endif
 	if (res == SSL_FAILURE_LOADDLLS)
 		SendStatus(_T("Failed to load SSL libraries"), 1);
 	else if (res == SSL_FAILURE_INITSSL)

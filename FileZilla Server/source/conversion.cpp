@@ -29,12 +29,7 @@ CStdStringW ConvFromNetwork(const char* buffer)
 	return L"";
 }
 
-char* ConvToNetworkA(const CStdStringA& str)
-{
-	return ConvToNetworkW(ConvFromLocal(str));
-}
-
-char* ConvToNetworkW(const CStdStringW& str)
+char* ConvToNetwork(const CStdStringW& str)
 {
 	int len = WideCharToMultiByte(CP_UTF8, 0, str, -1, 0, 0, 0, 0);
 	if (!len)

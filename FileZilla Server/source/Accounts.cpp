@@ -567,11 +567,7 @@ bool t_group::ParseString(const unsigned char* endMarker, unsigned char *&p, CSt
 	CStdStringW str = ConvFromNetwork((const char*)tmp);
 	delete [] tmp;
 	p += len;
-#ifdef _UNICODE
 	string = str;
-#else
-	string = ConvToLocal(str);
-#endif
 	
 	return true;
 }

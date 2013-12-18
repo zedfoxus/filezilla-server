@@ -277,11 +277,7 @@ BOOL COptionsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 			char* tmp = new char[len + 1];
 			memcpy(tmp, p, len);
 			tmp[len] = 0;
-#if _UNICODE
 			m_OptionsCache[i].str = ConvFromNetwork(tmp);
-#else
-			m_OptionsCache[i].str = ConvToLocal(ConvFromNetwork(tmp));
-#endif
 			p += len;
 
 			delete [] tmp;

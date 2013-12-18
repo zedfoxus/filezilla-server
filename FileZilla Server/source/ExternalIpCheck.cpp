@@ -51,20 +51,12 @@ CExternalIpCheck::CExternalIpCheck(CServerThread *pOwner)
 		memset(&sockAddr, 0, sizeof(sockAddr));
 		
 		sockAddr.sin_family = AF_INET;
-#ifdef _UNICODE
 		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname));
-#else
-		sockAddr.sin_addr.s_addr = inet_addr(hostname);
-#endif
 		
 		if (sockAddr.sin_addr.s_addr == INADDR_NONE)
 		{
 			LPHOSTENT lphost;
-#ifdef _UNICODE
 			lphost = gethostbyname(ConvToLocal(hostname));
-#else
-			lphost = gethostbyname(hostname);
-#endif
 			if (lphost != NULL)
 
 				sockAddr.sin_addr.s_addr = ((LPIN_ADDR)lphost->h_addr)->s_addr;
@@ -82,11 +74,7 @@ CExternalIpCheck::CExternalIpCheck(CServerThread *pOwner)
 		if (!ip)
 			return;
 		
-#ifdef _UNICODE
 		m_IP = ConvFromLocal(ip);
-#else
-		m_IP = ip;
-#endif
 	}
 }
 
@@ -182,11 +170,7 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 		return;
 	}
 	
-#ifdef _UNICODE
 	m_IP = ConvFromLocal(ip);
-#else
-	m_IP = ip;
-#endif
 
 	m_nFailedConnections = 0;
 
@@ -244,20 +228,12 @@ void CExternalIpCheck::OnTimer()
 		memset(&sockAddr,0,sizeof(sockAddr));
 		
 		sockAddr.sin_family = AF_INET;
-#ifdef _UNICODE
 		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname));
-#else
-		sockAddr.sin_addr.s_addr = inet_addr(hostname);
-#endif
 		
 		if (sockAddr.sin_addr.s_addr == INADDR_NONE)
 		{
 			LPHOSTENT lphost;
-#ifdef _UNICODE
 			lphost = gethostbyname(ConvToLocal(hostname));
-#else
-			lphost = gethostbyname(hostname);
-#endif
 			if (lphost != NULL)
 				sockAddr.sin_addr.s_addr = ((LPIN_ADDR)lphost->h_addr)->s_addr;
 			else
@@ -274,11 +250,7 @@ void CExternalIpCheck::OnTimer()
 		if (!ip)
 			return;
 	
-#ifdef _UNICODE
 		m_IP = ConvFromLocal(ip);
-#else
-		m_IP = ip;
-#endif
 		m_nFailedConnections = 0;
 		return;
 	}

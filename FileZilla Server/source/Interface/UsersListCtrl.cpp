@@ -218,11 +218,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 		memcpy(ip, pData + pos, len);
 		ip[len] = 0;
 		pos += len;
-#ifdef _UNICODE
 		pConnectionData->columnText[COLUMN_IP] = ConvFromNetwork(ip);
-#else
-		pConnectionData->columnText[COLUMN_IP] = ConvToLocal(ConvFromNetwork(ip));
-#endif
 		delete [] ip;
 
 		if ((pos+4) > dwDataLength)
@@ -269,11 +265,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 		memcpy(user, pData + pos, len);
 		user[len] = 0;
 		pos += len;
-#ifdef _UNICODE
 		pConnectionData->columnText[COLUMN_USER] = ConvFromNetwork(user);
-#else
-		pConnectionData->columnText[COLUMN_USER] = ConvToLocal(ConvFromNetwork(user));
-#endif
 		delete [] user;
 
 		if (pConnectionData->columnText[COLUMN_USER] == _T(""))
@@ -351,11 +343,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 			memcpy(physicalFile, pData + pos, len);
 			physicalFile[len] = 0;
 			pos += len;
-#ifdef _UNICODE
 			pConnectionData->physicalFile = ConvFromNetwork(physicalFile);
-#else
-			pConnectionData->physicalFile = ConvToLocal(ConvFromNetwork(physicalFile));
-#endif
 			delete [] physicalFile;
 
 			len = pData[pos] * 256 + pData[pos+1];
@@ -367,11 +355,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 			memcpy(logicalFile, pData + pos, len);
 			logicalFile[len] = 0;
 			pos += len;
-#ifdef _UNICODE
 			pConnectionData->logicalFile = ConvFromNetwork(logicalFile);
-#else
-			pConnectionData->logicalFile = ConvToLocal(ConvFromNetwork(logicalFile));
-#endif
 			delete [] logicalFile;
 
 			if (pConnectionData->transferMode & 0x20)
@@ -558,11 +542,7 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 				memcpy(ip, pData + pos, len);
 				ip[len] = 0;
 				pos += len;
-#ifdef _UNICODE
 				pConnectionData->columnText[COLUMN_IP] = ConvFromNetwork(ip);
-#else
-				pConnectionData->columnText[COLUMN_IP] = ConvToLocal(ConvFromNetwork(ip));
-#endif
 				delete [] ip;
 				
 				if ((pos+6) > dwDataLength)
@@ -586,11 +566,7 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 				memcpy(user, pData + pos, len);
 				user[len] = 0;
 				pos += len;
-#ifdef _UNICODE
 				pConnectionData->columnText[COLUMN_USER] = ConvFromNetwork(user);
-#else
-				pConnectionData->columnText[COLUMN_USER] = ConvToLocal(ConvFromNetwork(user));
-#endif
 				delete [] user;
 
 				pConnectionData->transferMode = pData[pos++];
@@ -615,11 +591,7 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 					memcpy(physicalFile, pData + pos, len);
 					physicalFile[len] = 0;
 					pos += len;
-#ifdef _UNICODE
 					pConnectionData->physicalFile = ConvFromNetwork(physicalFile);
-#else
-					pConnectionData->physicalFile = ConvToLocal(ConvFromNetwork(physicalFile));
-#endif
 					delete [] physicalFile;
 
 					if ((pos + 2) > dwDataLength)
@@ -641,11 +613,7 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 					memcpy(logicalFile, pData + pos, len);
 					logicalFile[len] = 0;
 					pos += len;
-#ifdef _UNICODE
 					pConnectionData->logicalFile = ConvFromNetwork(logicalFile);
-#else
-					pConnectionData->logicalFile = ConvToLocal(ConvFromNetwork(logicalFile));
-#endif
 					delete [] logicalFile;
 
 					if (pConnectionData->transferMode & 0x20)

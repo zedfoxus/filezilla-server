@@ -1464,17 +1464,7 @@ BOOL CAsyncSslSocketLayer::GetPeerCertificateData(t_SslCertData &SslCertData)
 				int unicodeLen = MultiByteToWideChar(CP_UTF8, 0, (const char *)out, len, unicode, len * 10);
 				if (unicodeLen > 0)
 				{
-#ifdef _UNICODE
 					str = unicode;
-#else
-					LPSTR ansi = new CHAR[len * 10];
-					memset(ansi, 0, sizeof(CHAR) * len * 10);
-					int ansiLen = WideCharToMultiByte(CP_ACP, 0, unicode, unicodeLen, ansi, len * 10, 0, 0);
-					if (ansiLen > 0)
-						str = ansi;
-
-					delete [] ansi;
-#endif
 				}
 				delete [] unicode;
 				pCRYPTO_free(out);
@@ -1572,19 +1562,7 @@ BOOL CAsyncSslSocketLayer::GetPeerCertificateData(t_SslCertData &SslCertData)
 				memset(unicode, 0, sizeof(WCHAR) * len * 10);
 				int unicodeLen = MultiByteToWideChar(CP_UTF8, 0, (const char *)out, len, unicode, len * 10);
 				if (unicodeLen > 0)
-				{
-#ifdef _UNICODE
 					str = unicode;
-#else
-					LPSTR ansi = new CHAR[len * 10];
-					memset(ansi, 0, sizeof(CHAR) * len * 10);
-					int ansiLen = WideCharToMultiByte(CP_ACP, 0, unicode, unicodeLen, ansi, len * 10, 0, 0);
-					if (ansiLen > 0)
-						str = ansi;
-
-					delete [] ansi;
-#endif
-				}
 				delete [] unicode;
 				pCRYPTO_free(out);
 			}
@@ -2049,13 +2027,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	// Write key and certificate to file
 	// We use a memory bio, since the OpenSSL functions accepting a filepointer 
 	// do crash for no obvious reason.
-
-#ifndef _UNICODE
-	FILE* file = fopen(filename, "w+");
-#else
 	FILE* file = _wfopen(filename, _T("w+"));
-#endif
-
 	if (!file)
 	{
 		err = _T("Failed to open output file");

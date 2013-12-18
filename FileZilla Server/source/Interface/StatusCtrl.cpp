@@ -494,8 +494,5 @@ void CStatusCtrl::DoStreamIn(int extraFlags)
 	es.dwCookie = (DWORD)this; // Pass a pointer to the CString to the callback function 
 	es.pfnCallback = RichEditStreamInCallback; // Specify the pointer to the callback function.
 	
-#ifdef _UNICODE
-//	extraFlags |= SF_UNICODE;
-#endif
 	StreamIn(extraFlags | SF_RTF, es); // Perform the streaming
 }
