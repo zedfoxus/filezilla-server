@@ -25,7 +25,6 @@
 #include "ServerThread.h"
 #include "Options.h"
 #include "Permissions.h"
-#include "AsyncGssSocketLayer.h"
 #include "AsyncSslSocketLayer.h"
 #include <math.h>
 #include "iputils.h"
@@ -69,7 +68,6 @@ CControlSocket::CControlSocket(CServerThread *pOwner)
 	m_pSendBuffer = NULL;
 	m_nSendBufferLen = 0;
 
-	m_pGssLayer = NULL;
 	m_pSslLayer = NULL;
 
 	for (int i = 0; i < 2; i++)
@@ -119,7 +117,6 @@ CControlSocket::~CControlSocket()
 	m_nSendBufferLen = 0;
 
 	RemoveAllLayers();
-	delete m_pGssLayer;
 	delete m_pSslLayer;
 }
 
@@ -594,20 +591,6 @@ void CControlSocket::ParseCommand()
 			RenName = _T("");
 			args.MakeLower();
 			m_status.user = args;
-			if (m_pGssLayer && m_pGssLayer->AuthSuccessful())
-			{
-				char sendme[4096];
-
-				int res = m_pGssLayer->ProcessCommand("USER", ConvToLocal(args), sendme);
-				if (res != -1)
-				{
-					if (DoUserLogin(0, true))
-						Send(ConvFromLocal(sendme));
-					else
-						m_status.user = _T("");
-				}
-				break;
-			}
 			if (!m_pSslLayer)
 			{
 				CUser user;
@@ -626,17 +609,6 @@ void CControlSocket::ParseCommand()
 
 		if (m_status.loggedon)
 			Send(_T("503 Bad sequence of commands."));
-		else if (m_pGssLayer && m_pGssLayer->AuthSuccessful())
-		{
-			char sendme[4096];
-			int res = m_pGssLayer->ProcessCommand("PASS", ConvToLocal(m_status.user), ConvToLocal(args), sendme);
-
-			if (res != -1)
-			{
-				if (DoUserLogin(_T(""), true))
-                    Send(ConvFromLocal(sendme));
-			}
-		}
 		else if (DoUserLogin(args))
 			Send(_T("230 Logged on"));
 		break;
@@ -859,9 +831,6 @@ void CControlSocket::ParseCommand()
 				m_transferstatus.pasv = -1;
 				break;
 			}
-
-			if (m_pGssLayer && m_pGssLayer->AuthSuccessful())
-				m_transferstatus.socket->UseGSS(m_pGssLayer);
 
 			if (m_pSslLayer && m_bProtP)
 				m_transferstatus.socket->UseSSL(m_pSslLayer->GetContext());
@@ -1889,9 +1858,6 @@ void CControlSocket::ParseCommand()
 				break;
 			}
 
-			if (m_pGssLayer && m_pGssLayer->AuthSuccessful())
-				m_transferstatus.socket->UseGSS(m_pGssLayer);
-
 			if (m_pSslLayer && m_bProtP)
 				m_transferstatus.socket->UseSSL(m_pSslLayer->GetContext());
 
@@ -2021,46 +1987,14 @@ void CControlSocket::ParseCommand()
 				break;
 			}
 
-			if (m_pGssLayer)
-			{
-				Send(_T("534 Authentication type already set to GSSAPI"));
-				break;
-			}
-			else if (m_pSslLayer)
+			if (m_pSslLayer)
 			{
 				Send(_T("534 Authentication type already set to SSL"));
 				break;
 			}
 			args.MakeUpper();
 
-			if (args == _T("GSSAPI"))
-			{
-				if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_USEGSS))
-				{
-					Send(_T("502 GSSAPI authentication not implemented"));
-					break;
-				}
-
-				m_pGssLayer = new CAsyncGssSocketLayer;
-				BOOL res = AddLayer(m_pGssLayer);
-				if (res)
-				{
-					res = m_pGssLayer->InitGSS(FALSE, (BOOL)m_pOwner->m_pOptions->GetOptionVal(OPTION_GSSPROMPTPASSWORD));
-					if (!res)
-						SendStatus(_T("Unable to init GSS"), 1);
-				}
-				if (!res)
-				{
-					RemoveAllLayers();
-					delete m_pGssLayer;
-					m_pGssLayer = NULL;
-					Send(_T("431 Could not initialize GSSAPI libraries"));
-					break;
-				}
-
-				Send(_T("334 Using authentication type GSSAPI; ADAT must follow"));
-			}
-			else if (args == _T("SSL") || args == _T("TLS"))
+			if (args == _T("SSL") || args == _T("TLS"))
 			{
 				if (m_pSslLayer)
 				{
@@ -2149,37 +2083,16 @@ void CControlSocket::ParseCommand()
 			break;
 		}
 	case COMMAND_ADAT:
-		if (m_pGssLayer)
-		{
-			char sendme[4096];
-			m_pGssLayer->ProcessCommand("ADAT", ConvToLocal(args), sendme);
-			Send(ConvFromLocal(sendme));
-			
-		}
-		else
-			Send(_T("502 Command not implemented for this authentication type"));
+		Send(_T("502 Command not implemented for this authentication type"));
 		break;
 	case COMMAND_PBSZ:
-		if (m_pGssLayer)
-		{
-			char sendme[4096];
-			m_pGssLayer->ProcessCommand("PBSZ", ConvToLocal(args), sendme);
-			Send(ConvFromLocal(sendme));
-		}
-		else if (m_pSslLayer)
+		if (m_pSslLayer)
 			Send(_T("200 PBSZ=0"));
 		else
 			Send(_T("502 Command not implemented for this authentication type"));
 		break;
 	case COMMAND_PROT:
-		if (m_pGssLayer)
-		{
-			char sendme[4096];
-
-			m_pGssLayer->ProcessCommand("PROT", ConvToLocal(args), sendme);
-			Send(ConvFromLocal(sendme));
-		}
-		else if (m_pSslLayer)
+		if (m_pSslLayer)
 		{
 			args.MakeUpper();
 			if (args == _T("C"))
@@ -3237,8 +3150,6 @@ creation_fallback:
 			return FALSE;
 		}
 	}
-	if (m_pGssLayer && m_pGssLayer->AuthSuccessful())
-		m_transferstatus.socket->UseGSS(m_pGssLayer);
 
 	if (pTransferSocket->Connect(m_transferstatus.ip, m_transferstatus.port) == 0)
 	{

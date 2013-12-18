@@ -27,7 +27,6 @@
 
 #include "hash_thread.h"
 
-class CAsyncGssSocketLayer;
 class CAsyncSslSocketLayer;
 class CTransferSocket;
 
@@ -92,7 +91,6 @@ protected:
 
 	virtual int OnLayerCallback(std::list<t_callbackMsg>& callbacks);
 
-	CAsyncGssSocketLayer *m_pGssLayer;
 	CAsyncSslSocketLayer *m_pSslLayer;
 
 	std::list<CStdStringA> m_RecvLineBuffer;

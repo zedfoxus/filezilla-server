@@ -39,7 +39,6 @@ struct t_dirlisting;
 
 /////////////////////////////////////////////////////////////////////////////
 // Befehlsziel CTransferSocket 
-class CAsyncGssSocketLayer;
 class CAsyncSslSocketLayer;
 class CTransferSocket : public CAsyncSocketEx
 {
@@ -52,7 +51,6 @@ public:
 	void Init(t_dirlisting *pDir, int nMode);
 	void Init(const CStdString& filename, int nMode, _int64 rest);
 	inline bool InitCalled() { return m_bReady; }
-	void UseGSS(CAsyncGssSocketLayer* pGssLayer);
 	bool UseSSL(void* sslContext);
 	virtual ~CTransferSocket();
 	void CloseFile();
@@ -102,7 +100,6 @@ protected:
 	BOOL m_bAccepted;
 	SYSTEMTIME m_LastActiveTime;
 	bool m_wasActiveSinceCheck;
-	CAsyncGssSocketLayer* m_pGssLayer;
 	
 	CAsyncSslSocketLayer* m_pSslLayer;
 	void* m_sslContext;

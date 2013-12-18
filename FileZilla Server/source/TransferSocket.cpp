@@ -24,7 +24,6 @@
 #include "ControlSocket.h"
 #include "options.h"
 #include "ServerThread.h"
-#include "AsyncGssSocketLayer.h"
 #include "AsyncSslSocketLayer.h"
 #include "Permissions.h"
 #include "iputils.h"
@@ -57,8 +56,6 @@ CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 	GetSystemTime(&m_LastActiveTime);
 	m_wasActiveSinceCheck = false;
 	m_nRest = 0;
-
-	m_pGssLayer = 0;
 
 	m_hFile = INVALID_HANDLE_VALUE;
 
@@ -126,7 +123,6 @@ CTransferSocket::~CTransferSocket()
 	CloseFile();
 
 	RemoveAllLayers();
-	delete m_pGssLayer;
 	delete m_pSslLayer;
 
 	CPermissions::DestroyDirlisting(m_pDirListing);
@@ -344,7 +340,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 			return;
 		}
 
-		if (m_pGssLayer || m_pSslLayer)
+		if (m_pSslLayer)
 		{
 			if (!ShutDown() && GetLastError() == WSAEWOULDBLOCK)
 				return;
@@ -496,7 +492,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 							if (m_waitingForSslHandshake)
 								return;
 
-							if (m_pGssLayer || m_pSslLayer)
+							if (m_pSslLayer)
 								if (!ShutDown() && GetLastError() == WSAEWOULDBLOCK)
 									return;
 							EndTransfer(0);
@@ -568,7 +564,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 			return;
 		}
 
-		if (m_pGssLayer || m_pSslLayer)
+		if (m_pSslLayer)
 		{
 			if (!ShutDown() && GetLastError() == WSAEWOULDBLOCK)
 				return;
@@ -602,8 +598,6 @@ void CTransferSocket::OnConnect(int nErrorCode)
 			SetSockOpt(SO_SNDBUF, &size, sizeof(int));
 	}
 
-	if (m_pGssLayer)
-		VERIFY(AddLayer(m_pGssLayer));
 	if (m_sslContext)
 	{
 		if (!m_pSslLayer)
@@ -686,8 +680,6 @@ void CTransferSocket::OnAccept(int nErrorCode)
 			SetSockOpt(SO_SNDBUF, &size, sizeof(int));
 	}
 
-	if (m_pGssLayer)
-		VERIFY(AddLayer(m_pGssLayer));
 	if (m_sslContext)
 	{
 		if (!m_pSslLayer)
@@ -1054,12 +1046,6 @@ int CTransferSocket::GetMode() const
 	return m_nMode;
 }
 
-void CTransferSocket::UseGSS(CAsyncGssSocketLayer *pGssLayer)
-{
-	m_pGssLayer = new CAsyncGssSocketLayer;
-	m_pGssLayer->InitTransferChannel(pGssLayer);
-}
-
 bool CTransferSocket::UseSSL(void* sslContext)
 {
 	if (m_pSslLayer)
@@ -1074,24 +1060,7 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 {
 	for (std::list<t_callbackMsg>::iterator iter = callbacks.begin(); iter != callbacks.end(); iter++)
 	{
-		if (m_pGssLayer && iter->pLayer == m_pGssLayer)
-		{
-			if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == GSS_SHUTDOWN_COMPLETE)
-			{
-				Sleep(0); //Give the system the possibility to relay the data
-				//If not using Sleep(0), GetRight for example can't receive the last chunk.
-				EndTransfer(0);
-
-				do
-				{
-					delete [] iter->str;
-					iter++;
-				} while (iter != callbacks.end());
-
-				return 0;
-			}
-		}
-		else if (m_pSslLayer && iter->pLayer == m_pSslLayer)
+		if (m_pSslLayer && iter->pLayer == m_pSslLayer)
 		{
 			if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO && iter->nParam2 == SSL_INFO_SHUTDOWNCOMPLETE)
 			{

@@ -185,8 +185,6 @@ Section "FileZilla Server (Service)" SecFileZillaServer
   Rename $R1 "$INSTDIR\FileZilla Server.exe"
  copy_main_done:
 
-  ; Put file there
-  File "..\GFtp\Release\FzGss.dll"
 SectionEnd
 
 Section "Administration interface" SecFileZillaServerInterface
@@ -560,7 +558,6 @@ Section "Uninstall"
   Delete "$INSTDIR\FileZilla Server Interface.exe"
   Delete "$INSTDIR\ssleay32.dll"
   Delete "$INSTDIR\libeay32.dll"
-  Delete $INSTDIR\FzGss.dll
   Delete $INSTDIR\license.txt
   Delete $INSTDIR\readme.htm
   Delete $INSTDIR\legal.htm

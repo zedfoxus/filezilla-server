@@ -1006,39 +1006,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="OptionsGSSPage.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="1"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Memcheck|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\OptionsIpFilterPage.cpp"
 				>
 			</File>
@@ -2030,10 +1997,6 @@
 			</File>
 			<File
 				RelativePath="OptionsGeneralWelcomemessagePage.h"
-				>
-			</File>
-			<File
-				RelativePath="OptionsGSSPage.h"
 				>
 			</File>
 			<File

@@ -618,49 +618,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="AsyncGssSocketLayer.cpp"
-				>
-				<FileConfiguration
-					Name="Compat Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Memcheck|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="AsyncSocketEx.cpp"
 				>
 				<FileConfiguration
@@ -1633,10 +1590,6 @@
 			</File>
 			<File
 				RelativePath="AdminSocket.h"
-				>
-			</File>
-			<File
-				RelativePath="AsyncGssSocketLayer.h"
 				>
 			</File>
 			<File

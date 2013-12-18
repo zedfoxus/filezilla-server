@@ -48,8 +48,8 @@
 #define OPTION_LOGLIMITSIZE 22
 #define OPTION_LOGTYPE 23
 #define OPTION_LOGDELETETIME 24
-#define OPTION_USEGSS 25
-#define OPTION_GSSPROMPTPASSWORD 26
+#define OPTION_DISABLE_IPV6 25
+#define OPTION_ENABLE_HASH 26
 #define OPTION_DOWNLOADSPEEDLIMITTYPE 27
 #define OPTION_UPLOADSPEEDLIMITTYPE 28
 #define OPTION_DOWNLOADSPEEDLIMIT 29
@@ -84,10 +84,8 @@
 #define OPTION_AUTOBAN_BANTIME 58
 #define OPTION_SERVICE_NAME 59
 #define OPTION_SERVICE_DISPLAY_NAME 60
-#define OPTION_ENABLE_HASH 61
-#define OPTION_DISABLE_IPV6 62
 
-#define OPTIONS_NUM 62
+#define OPTIONS_NUM 60
 
 #define CONST_WELCOMEMESSAGE_LINESIZE 75
 
@@ -99,7 +97,7 @@ struct t_Option
 };
 
 const DWORD SERVER_VERSION = 0x00094200;
-const DWORD PROTOCOL_VERSION = 0x00010E00;
+const DWORD PROTOCOL_VERSION = 0x00010F00;
 
 //												Name					Type		Not remotely
 //																(0=str, 1=numeric)   changeable
@@ -127,8 +125,8 @@ static const t_Option m_Options[OPTIONS_NUM]={	_T("Serverports"),				0,	FALSE,
 												_T("Logsize limit"),			1,	FALSE,
 												_T("Logfile type"),				1,	FALSE,
 												_T("Logfile delete time"),		1,	FALSE, 
-												_T("Use GSS Support"),			1,	FALSE, 
-												_T("GSS Prompt for Password"),	1,	FALSE,
+												_T("Disable IPv6"),				1,  FALSE,
+												_T("Enable HASH"),				1,  FALSE,
 												_T("Download Speedlimit Type"),	1,	FALSE,
 												_T("Upload Speedlimit Type"),	1,	FALSE,
 												_T("Download Speedlimit"),		1,	FALSE,
@@ -162,9 +160,7 @@ static const t_Option m_Options[OPTIONS_NUM]={	_T("Serverports"),				0,	FALSE,
 												_T("Autoban type"),				1,	FALSE,
 												_T("Autoban time"),				1,	FALSE,
 												_T("Service name"),				0,	TRUE,
-												_T("Service display name"),		0,	TRUE,
-												_T("Enable HASH"),				1,  FALSE,
-												_T("Disable IPv6"),				1,  FALSE
+												_T("Service display name"),		0,	TRUE
 											};
 
 #endif // OPTION_TYPES_INCLUDED

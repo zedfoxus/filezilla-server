@@ -64,8 +64,7 @@ BEGIN
     EDITTEXT        IDC_USERS_GENERAL_COMMENTS,6,170,200,44,ES_MULTILINE | ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL
     LTEXT           "You can enter some comments about the user above",IDC_STATIC,6,218,168,8
     CONTROL         "&Force SSL for user login",IDC_FORCESSL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,126,91,10
-    CONTROL         "Use 8+3 filenames",IDC_8PLUS3,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,6,137,75,10
+    CONTROL         "Use 8+3 filenames",IDC_8PLUS3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,137,75,10
 END
 
 IDD_USERS_SPEEDLIMIT DIALOG  0, 0, 306, 235
@@ -1235,7 +1234,6 @@ BEGIN
     IDS_OPTIONSPAGE_ADMININTERFACE "Admin Interface settings"
     IDS_OPTIONSPAGE_GENERAL "General settings"
     IDS_OPTIONSPAGE_GENERAL_WELCOMEMESSAGE "Welcome message"
-    IDS_OPTIONSPAGE_GSS     "GSS Settings"
     IDS_OPTIONSPAGE_LOGGING "Logging"
     IDS_OPTIONSPAGE_MISC    "Miscellaneous"
     IDS_OPTIONSPAGE_SECURITY "Security settings"
@@ -1363,17 +1361,6 @@ BEGIN
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDFRAME,4,161,91,66
 END
 
-IDD_OPTIONS_GSS DIALOGEX 0, 0, 286, 208
-STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
-FONT 8, "MS Shell Dlg", 0, 0, 0x0
-BEGIN
-    CONTROL         "Enable Kerberos GSS support",IDC_USEGSS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,14,110,10
-    CONTROL         "Prompt for password if necessary",IDC_PROMPTPASSWORD,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,31,119,10
-    LTEXT           "It's recommended to use Kerberos for Windows 2.2 beta 2 or later.",IDC_STATIC,7,48,221,8
-    LTEXT           "If used with Kerberos for Windows 2.1, it is very likely that FileZilla Server will crash if a user authenticates.",IDC_STATIC,7,63,272,19
-END
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1389,14 +1376,6 @@ BEGIN
         RIGHTMARGIN, 392
         TOPMARGIN, 5
         BOTTOMMARGIN, 227
-    END
-
-    IDD_OPTIONS_GSS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 279
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 201
     END
 END
 #endif    // APSTUDIO_INVOKED

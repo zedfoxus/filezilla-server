@@ -40,7 +40,6 @@ static char THIS_FILE[] = __FILE__;
 #include "OptionsMiscPage.h"
 #include "OptionsAdminInterfacePage.h"
 #include "OptionsLoggingPage.h"
-#include "OptionsGSSPage.h"
 #include "OptionsSpeedLimitPage.h"
 #include "OptionsCompressionPage.h"
 #include "OptionsGeneralIpbindingsPage.h"
@@ -94,10 +93,6 @@ COptionsDlg::COptionsDlg(COptions *pInterfaceOptions, bool localConnection)
 
 	page = new COptionsLoggingPage(this);
 	AddPage(*page, IDS_OPTIONSPAGE_LOGGING);
-	m_PageList.push_back(page);
-
-	page = new COptionsGSSPage(this);
-	AddPage(*page, IDS_OPTIONSPAGE_GSS);
 	m_PageList.push_back(page);
 
 	m_pOptionsSpeedLimitPage = new COptionsSpeedLimitPage(this);

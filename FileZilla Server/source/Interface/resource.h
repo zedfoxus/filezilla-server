@@ -16,7 +16,6 @@
 #define IDD_OPTIONS_ADMININTERFACE      110
 #define IDD_OPTIONS_GENERAL             112
 #define IDD_OPTIONS_GENERAL_WELCOMEMESSAGE 113
-#define IDD_OPTIONS_GSS                 114
 #define IDD_OPTIONS_LOGGING             115
 #define IDD_OPTIONS_MISC                116
 #define IDD_OPTIONS_SECURITY            117
@@ -60,7 +59,6 @@
 #define IDS_OPTIONSPAGE_ADMININTERFACE  147
 #define IDS_OPTIONSPAGE_GENERAL         148
 #define IDS_OPTIONSPAGE_GENERAL_WELCOMEMESSAGE 149
-#define IDS_OPTIONSPAGE_GSS             150
 #define IDS_OPTIONSPAGE_LOGGING         151
 #define IDS_OPTIONSPAGE_MISC            152
 #define IDS_OPTIONSPAGE_SECURITY        153
@@ -72,7 +70,7 @@
 #define IDB_TRANSFERINFO                157
 #define IDS_OPTIONSPAGE_GENERAL_IPFILTER 158
 #define IDS_OPTIONSPAGE_SSL             159
-#define IDS_OPTIONSPAGE_AUTOBAN           160
+#define IDS_OPTIONSPAGE_AUTOBAN         160
 #define IDI_DOWN                        161
 #define IDI_UP                          162
 #define IDR_SORTMENU                    163
@@ -163,7 +161,6 @@
 #define IDC_PASS                        1083
 #define IDC_PHELP                       1084
 #define IDC_PORT                        1085
-#define IDC_PROMPTPASSWORD              1086
 #define IDC_RADIO1                      1087
 #define IDC_RADIO2                      1088
 #define IDC_RADIO3                      1089
@@ -194,7 +191,6 @@
 #define IDC_TO_CHECK                    1115
 #define IDC_TO_TIME                     1116
 #define IDC_TRANSFERTIMEOUT             1117
-#define IDC_USEGSS                      1118
 #define IDC_USERADD                     1119
 #define IDC_USERCOPY                    1120
 #define IDC_USERLIST                    1121
