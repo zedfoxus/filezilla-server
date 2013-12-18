@@ -2628,11 +2628,13 @@ void CControlSocket::ProcessTransferMsg()
 	_int64 zlibBytesOut = 0;
 	if (m_transferMode == mode_zlib)
 		m_transferstatus.socket->GetZlibStats(zlibBytesIn, zlibBytesOut);
+
+	CStdString resource = m_transferstatus.resource;
 	ResetTransferstatus();
 
 	if (!status)
 	{
-		CStdString msg = _T("226 Successfully transferred \"") + m_transferstatus.resource + _T("\"");
+		CStdString msg = _T("226 Successfully transferred \"") + resource + _T("\"");
 
 		if ((mode == TRANSFERMODE_LIST || mode == TRANSFERMODE_NLST || mode == TRANSFERMODE_SEND) && zlibBytesIn && zlibBytesOut)
 		{
@@ -2667,19 +2669,19 @@ void CControlSocket::ProcessTransferMsg()
 		Send(msg);
 	}
 	else if (status==1)
-		Send(_T("426 Connection closed; aborted transfer of \"") + m_transferstatus.resource + _T("\""));
+		Send(_T("426 Connection closed; aborted transfer of \"") + resource + _T("\""));
 	else if (status==2)
-		Send(_T("425 Can't open data connection for transfer of \"") + m_transferstatus.resource + _T("\""));
+		Send(_T("425 Can't open data connection for transfer of \"") + resource + _T("\""));
 	else if (status==3)
 		Send(_T("550 can't access file."));
 	else if (status==4)
 	{
-		Send(_T("426 Connection timed out, aborting transfer of \"") + m_transferstatus.resource + _T("\""));
+		Send(_T("426 Connection timed out, aborting transfer of \"") + resource + _T("\""));
 		ForceClose(1);
 		return;
 	}
 	else if (status==5)
-		Send(_T("425 Can't open data connection for transfer of \"") + m_transferstatus.resource + _T("\""));
+		Send(_T("425 Can't open data connection for transfer of \"") + resource + _T("\""));
 	else if (status==6)
 		Send(_T("450 zlib error"));
 	if (status>=0 && m_bWaitGoOffline)
