@@ -44,7 +44,7 @@ Valid notification IDs are:
   There are two possible values for param2:
 	SSL_INFO_ESTABLISHED 0 - You'll get this notification if the SSL negotiation was successful
 	SSL_INFO_SHUTDOWNCOMPLETE 1 - You'll get this notification if the SSL connection has been shut 
-                                  down sucessfully. See below for details.
+                                  down successfully. See below for details.
 - SSL_FAILURE 1
   This notification is sent if the SSL connection could not be established or if an existing 
   connection failed. Valid values for param2 are:

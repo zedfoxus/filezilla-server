@@ -2632,7 +2632,7 @@ void CControlSocket::ProcessTransferMsg()
 
 	if (!status)
 	{
-		CStdString msg = _T("226 Sucessfully transferred \"") + m_transferstatus.resource + _T("\"");
+		CStdString msg = _T("226 Successfully transferred \"") + m_transferstatus.resource + _T("\"");
 
 		if ((mode == TRANSFERMODE_LIST || mode == TRANSFERMODE_NLST || mode == TRANSFERMODE_SEND) && zlibBytesIn && zlibBytesOut)
 		{
