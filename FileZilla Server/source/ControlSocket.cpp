@@ -87,8 +87,6 @@ CControlSocket::CControlSocket(CServerThread *pOwner)
 	m_antiHammeringWaitTime = 0;
 	m_bProtP = false;
 
-	m_useUTF8 = true;
-
 	for (int i = 0; i < 3; i++)
 		m_facts[i] = true;
 	m_facts[fact_perm] = false;
@@ -231,11 +229,7 @@ BOOL CControlSocket::GetCommand(CStdString &command, CStdString &args)
 	m_RecvLineBuffer.pop_front();
 
 	//Output command in status window
-	CStdString str2;
-	if (m_useUTF8)
-		str2 = ConvFromNetwork(str);
-	else
-		str2 = ConvFromLocal(str);
+	CStdString str2 = ConvFromNetwork(str);
 	
 	//Hide passwords if the server admin wants to.
 	if (!str2.Left(5).CompareNoCase(_T("PASS ")))
@@ -309,7 +303,6 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 
 	char* buffer;
 	int len;
-	if (m_useUTF8)
 	{
 		char* utf8 = ConvToNetwork(str);
 		if (!utf8)
@@ -327,24 +320,6 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 		len = strlen(buffer);
 		delete [] utf8;
 	}
-	else
-	{
-		CStdStringA local = ConvToLocal(str);
-		if (local == "")
-		{
-			Close();
-			SendStatus(_T("Failed to convert reply to local charset"), 1);
-			m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
-
-			return false;
-		}
-
-		buffer = new char[strlen(local) + 3];
-		strcpy(buffer, local);
-		strcat(buffer, "\r\n");
-		len = strlen(buffer);
-	}
-
 
 	//Add line to back of send buffer if it's not empty
 	if (m_pSendBuffer)
@@ -1018,7 +993,7 @@ void CControlSocket::ParseCommand()
 
 			t_dirlisting *pResult;
 			CStdString physicalDir, logicalDir;
-			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, dirToList, pResult, physicalDir, logicalDir, CPermissions::AddLongListingEntry, m_useUTF8);
+			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, dirToList, pResult, physicalDir, logicalDir, CPermissions::AddLongListingEntry);
 			if (error & PERMISSION_DENIED)
 			{
 				Send(_T("550 Permission denied."));
@@ -1084,7 +1059,7 @@ void CControlSocket::ParseCommand()
 					}
 				}
 
-				SendTransferinfoNotification(TRANSFERMODE_LIST, ConvToLocal(physicalDir), ConvToLocal(logicalDir));
+				SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
 				m_transferstatus.socket->PasvTransfer();
 			}
 		}
@@ -1775,7 +1750,7 @@ void CControlSocket::ParseCommand()
 
 			t_dirlisting *pResult;
 			CStdString physicalDir, logicalDir;
-			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, pResult, physicalDir, logicalDir, CPermissions::AddShortListingEntry, m_useUTF8);
+			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, pResult, physicalDir, logicalDir, CPermissions::AddShortListingEntry);
 			if (error & PERMISSION_DENIED)
 			{
 				Send(_T("550 Permission denied"));
@@ -2333,15 +2308,9 @@ void CControlSocket::ParseCommand()
 				Send(_T("501 can't change MODE Z LEVEL do desired value"));
 		}
 		else if (args == _T("UTF8 ON"))
-		{
-			m_useUTF8 = true;
-			Send(_T("200 UTF8 mode enabled"));
-		}
+			Send(_T("202 UTF8 mode is always enabled. No need to send this command."));
 		else if (args == _T("UTF8 OFF"))
-		{
-			m_useUTF8 = false;
-			Send(_T("200 UTF8 mode disabled"));
-		}
+			Send(_T("504 UTF8 mode cannot be disabled."));
 		else if (args.Left(4) == _T("MLST"))
 			ParseMlstOpts(args.Mid(4));
 		else if (args.Left(4) == _T("HASH"))
@@ -2455,7 +2424,7 @@ void CControlSocket::ParseCommand()
 
 			t_dirlisting *pResult;
 			CStdString physicalDir, logicalDir;
-			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, pResult, physicalDir, logicalDir, CPermissions::AddFactsListingEntry, m_useUTF8, m_facts);
+			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, pResult, physicalDir, logicalDir, CPermissions::AddFactsListingEntry, m_facts);
 			if (error & PERMISSION_DENIED)
 			{
 				Send(_T("550 Permission denied"));

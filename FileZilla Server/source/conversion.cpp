@@ -37,7 +37,10 @@ char* ConvToNetwork(const CStdStringW& str)
 
 	char* output = new char[len + 2];
 	if (!WideCharToMultiByte(CP_UTF8, 0, str, -1, output, len + 1, 0, 0))
-		return "";
+	{
+		delete [] output;
+		return 0;
+	}
 
 	return output;
 }

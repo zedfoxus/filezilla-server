@@ -144,9 +144,6 @@ protected:
 
 	bool m_bProtP;
 
-	bool m_useUTF8; // Enabled by default, can be turned off using
-					// OPTS UF8 OFF
-
 	void ParseMlstOpts(CStdString args);
 	void ParseHashOpts(CStdString args);
 

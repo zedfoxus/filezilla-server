@@ -119,9 +119,7 @@ public:
 							 t_dirlisting *&pResult, CStdString& physicalDir, 
 							 CStdString& logicalDir,
 							 void (*addFunc)(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts),
-							 bool useUTF8, bool *enabledFacts = 0);
-
-	char* ConvertFilename(const CStdString& filename, bool useUTF8);
+							 bool *enabledFacts = 0);
 
 	// Full direcoty listing with all details. Used by LIST command
 	static void AddLongListingEntry(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *);

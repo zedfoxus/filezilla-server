@@ -415,7 +415,7 @@ bool is8dot3(const CStdString& file)
 int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, CStdString dirToDisplay,
 									  t_dirlisting *&pResult, CStdString& physicalDir, 
 									  CStdString& logicalDir, void (*addFunc)(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts),
-									  bool useUTF8, bool *enabledFacts /*=0*/)
+									  bool *enabledFacts /*=0*/)
 {
 	// Get user
 	CUser user;
@@ -479,7 +479,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 	pDir->pNext = NULL;
 	pResult = pDir;
 
-	char* dirToDisplayUTF8 = ConvertFilename(dirToDisplay, useUTF8);
+	char* dirToDisplayUTF8 = ConvToNetwork(dirToDisplay);
 	if (!dirToDisplayUTF8)
 		return PERMISSION_DENIED;
 		
@@ -504,7 +504,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 				continue;
 		}
 
-		char* name = ConvertFilename(iter->second.name, useUTF8);
+		char* name = ConvToNetwork(iter->second.name);
 		if (name)
 		{
 			addFunc(pDir, true, name, directory, 0, 0, dirToDisplayUTF8, enabledFacts);
@@ -532,7 +532,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 				continue;
 		}
 
-		char* name = ConvertFilename(iter->second, useUTF8);
+		char* name = ConvToNetwork(iter->second);
 		if (name)
 		{
 			addFunc(pDir, true, name, directory, 0, 0, dirToDisplayUTF8, enabledFacts);
@@ -586,7 +586,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 
 			if (subDir.bDirList)
 			{
-				char* utf8 = ConvertFilename(fn, useUTF8);
+				char* utf8 = ConvToNetwork(fn);
 				if (!utf8)
 					continue;
 				addFunc(pDir, true, utf8, subDir, 0, &FindFileData.ftLastWriteTime, dirToDisplayUTF8, enabledFacts);
@@ -595,7 +595,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 		}
 		else
 		{
-			char* utf8 = ConvertFilename(fn, useUTF8);
+			char* utf8 = ConvToNetwork(fn);
 			if (!utf8)
 				continue;
 			addFunc(pDir, false, utf8, directory, FindFileData.nFileSizeLow + ((_int64)FindFileData.nFileSizeHigh<<32), &FindFileData.ftLastWriteTime, dirToDisplayUTF8, enabledFacts);
@@ -2259,18 +2259,6 @@ bool CPermissions::WildcardMatch(CStdString string, CStdString pattern) const
 		}
 	}
 	return true;
-}
-
-char* CPermissions::ConvertFilename(const CStdString& filename, bool useUTF8)
-{
-	if (useUTF8)
-		return ConvToNetwork(filename);
-	
-	const CStdStringA& tmp = ConvToLocal(filename);
-    
-	char* str = new char[strlen(tmp) + 1];
-	strcpy(str, tmp);
-	return str;
 }
 
 void CPermissions::DestroyDirlisting(struct t_dirlisting* pListing)
