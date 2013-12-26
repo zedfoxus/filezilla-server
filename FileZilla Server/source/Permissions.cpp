@@ -744,6 +744,8 @@ int CPermissions::CheckFilePermissions(LPCTSTR username, CStdString filename, CS
 		res |= PERMISSION_DENIED;
 	if ((!directory.bDirList || (!directory.bDirSubdirs && !truematch)) && op&FOP_LIST)
 		res |= PERMISSION_DENIED;
+	if (op&FOP_DELETE && user.GetAliasTarget(directory.dir, logicalFile + _T("/"), filename) != _T(""))
+		res |= PERMISSION_DENIED;
 
 	physicalFile = directory.dir + "\\" + filename;
 	DWORD nAttributes = GetFileAttributes(physicalFile);
