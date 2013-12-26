@@ -1282,7 +1282,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		SetKey(pGroup, _T("Enabled"), groupiter->nEnabled);
 		SetKey(pGroup, _T("Comments"), groupiter->comment);
 		SetKey(pGroup, _T("ForceSsl"), groupiter->forceSsl);
-		SetKey(pXML, _T("8plus3"), groupiter->b8plus3 ? 1 : 0);
+		SetKey(pGroup, _T("8plus3"), groupiter->b8plus3 ? 1 : 0);
 
 		SaveIpFilter(pGroup, *groupiter);		
 		SavePermissions(pGroup, *groupiter);
@@ -1311,7 +1311,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		SetKey(pUser, _T("Enabled"), iter->nEnabled);
 		SetKey(pUser, _T("Comments"), iter->comment);
 		SetKey(pUser, _T("ForceSsl"), iter->forceSsl);
-		SetKey(pXML, _T("8plus3"), iter->b8plus3 ? 1 : 0);
+		SetKey(pUser, _T("8plus3"), iter->b8plus3 ? 1 : 0);
 
 		SaveIpFilter(pUser, *iter);
 		SavePermissions(pUser, *iter);
