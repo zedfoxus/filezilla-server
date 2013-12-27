@@ -786,7 +786,7 @@ void CControlSocket::ParseCommand()
 			m_transferstatus.family = AF_INET;
 			m_transferstatus.socket = new CTransferSocket(this);
 
-			unsigned int retries = 3;
+			unsigned int retries = 10;
 			unsigned int port = 0;
 
 			CStdString pasvIP = GetPassiveIP();
