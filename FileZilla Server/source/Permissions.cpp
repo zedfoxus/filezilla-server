@@ -479,8 +479,8 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 	pDir->pNext = NULL;
 	pResult = pDir;
 
-	char* dirToDisplayUTF8 = ConvToNetwork(dirToDisplay);
-	if (!dirToDisplayUTF8)
+	auto dirToDisplayUTF8 = ConvToNetwork(dirToDisplay);
+	if (dirToDisplayUTF8.empty() && !dirToDisplay.empty())
 		return PERMISSION_DENIED;
 		
 	// List aliases in current directory
@@ -504,12 +504,9 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 				continue;
 		}
 
-		char* name = ConvToNetwork(iter->second.name);
-		if (name)
-		{
-			addFunc(pDir, true, name, directory, 0, 0, dirToDisplayUTF8, enabledFacts);
-			delete [] name;
-		}
+		auto name = ConvToNetwork(iter->second.name);
+		if (!name.empty())
+			addFunc(pDir, true, name.c_str(), directory, 0, 0, dirToDisplayUTF8.c_str(), enabledFacts);
 	}
 
 	for (std::multimap<CStdString, CStdString>::const_iterator iter = user.virtualAliasNames.begin(); iter != user.virtualAliasNames.end(); iter++)
@@ -532,12 +529,9 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 				continue;
 		}
 
-		char* name = ConvToNetwork(iter->second);
-		if (name)
-		{
-			addFunc(pDir, true, name, directory, 0, 0, dirToDisplayUTF8, enabledFacts);
-			delete [] name;
-		}
+		auto name = ConvToNetwork(iter->second);
+		if (!name.empty())
+			addFunc(pDir, true, name.c_str(), directory, 0, 0, dirToDisplayUTF8.c_str(), enabledFacts);
 	}
 
 	physicalDir = directory.dir;
@@ -586,24 +580,20 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 
 			if (subDir.bDirList)
 			{
-				char* utf8 = ConvToNetwork(fn);
-				if (!utf8)
+				auto utf8 = ConvToNetwork(fn);
+				if (utf8.empty() && !fn.empty())
 					continue;
-				addFunc(pDir, true, utf8, subDir, 0, &FindFileData.ftLastWriteTime, dirToDisplayUTF8, enabledFacts);
-				delete [] utf8;
+				addFunc(pDir, true, utf8.c_str(), subDir, 0, &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
 			}
 		}
 		else
 		{
-			char* utf8 = ConvToNetwork(fn);
-			if (!utf8)
+			auto utf8 = ConvToNetwork(fn);
+			if (utf8.empty() && !fn.empty())
 				continue;
-			addFunc(pDir, false, utf8, directory, FindFileData.nFileSizeLow + ((_int64)FindFileData.nFileSizeHigh<<32), &FindFileData.ftLastWriteTime, dirToDisplayUTF8, enabledFacts);
-			delete [] utf8;
+			addFunc(pDir, false, utf8.c_str(), directory, FindFileData.nFileSizeLow + ((_int64)FindFileData.nFileSizeHigh<<32), &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
 		}
 	}
-
-	delete [] dirToDisplayUTF8;
 
 	return 0;
 }
@@ -986,17 +976,19 @@ BOOL CPermissions::GetUser(CStdString username, CUser &userdata) const
 
 BOOL CPermissions::CheckUserLogin(LPCTSTR username, LPCTSTR pass, CUser &userdata, BOOL noPasswordCheck /*=FALSE*/)
 {
-	const char *tmp = ConvToNetwork(pass);
-	if (!tmp)
+	if (!pass)
+		return FALSE;
+
+	auto tmp = ConvToNetwork(pass);
+	if (tmp.empty() && *pass)
 		return FALSE;
 
 	MD5 md5;
-	md5.update((unsigned char *)tmp, strlen(tmp));
+	md5.update((unsigned char const*)tmp.c_str(), tmp.size());
 	md5.finalize();
 	char *res = md5.hex_digest();
 	CStdString hash = res;
 	delete [] res;
-	delete [] tmp;
 
 	CUser user;
 	if (!GetUser(username, user))
@@ -1029,7 +1021,7 @@ void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, LPCTSTR value)
 {
 	ASSERT(pXML);
 	TiXmlElement* pOption = new TiXmlElement("Option");
-	pOption->SetAttribute("Name", ConvToNetwork(name));
+	pOption->SetAttribute("Name", ConvToNetwork(name).c_str());
 	XML::SetText(pOption, value);
 	pXML->LinkEndChild(pOption);
 }
@@ -1052,7 +1044,7 @@ void CPermissions::SavePermissions(TiXmlElement *pXML, const t_group &user)
 		TiXmlElement* pPermission = new TiXmlElement("Permission");
 		pPermissions->LinkEndChild(pPermission);
 
-		pPermission->SetAttribute("Dir", ConvToNetwork(user.permissions[i].dir));
+		pPermission->SetAttribute("Dir", ConvToNetwork(user.permissions[i].dir).c_str());
 		if (!user.permissions[i].aliases.empty())
 		{
 			TiXmlElement* pAliases = new TiXmlElement("Aliases");
@@ -1276,7 +1268,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		TiXmlElement* pGroup = new TiXmlElement("Group");
 		pGroups->LinkEndChild(pGroup);
 		
-		pGroup->SetAttribute("Name", ConvToNetwork(groupiter->group));
+		pGroup->SetAttribute("Name", ConvToNetwork(groupiter->group).c_str());
 
 		SetKey(pGroup, _T("Bypass server userlimit"), groupiter->nBypassUserLimit);
 		SetKey(pGroup, _T("User Limit"), groupiter->nUserLimit);
@@ -1303,7 +1295,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		TiXmlElement* pUser = new TiXmlElement("User");
 		pUsers->LinkEndChild(pUser);
 		
-		pUser->SetAttribute("Name", ConvToNetwork(iter->user));
+		pUser->SetAttribute("Name", ConvToNetwork(iter->user).c_str());
 
 		SetKey(pUser, _T("Pass"), iter->password);
 		SetKey(pUser, _T("Group"), iter->group);
@@ -1514,11 +1506,11 @@ void CPermissions::ReadSpeedLimits(TiXmlElement *pXML, t_group &group)
 
 		for (int i = 0; i < 2; i++)
 		{
-			str = pSpeedLimits->Attribute(ConvToNetwork(prefixes[i] + _T("Type")));
+			str = pSpeedLimits->Attribute(ConvToNetwork(prefixes[i] + _T("Type")).c_str());
 			n = _ttoi(str);
 			if (n >= 0 && n < 4)
 				group.nSpeedLimitType[i] = n;
-			str = pSpeedLimits->Attribute(ConvToNetwork(prefixes[i] + _T("Limit")));
+			str = pSpeedLimits->Attribute(ConvToNetwork(prefixes[i] + _T("Limit")).c_str());
 			n = _ttoi(str);
 			if (n < 0)
 				group.nSpeedLimit[i] = 0;
@@ -1527,7 +1519,7 @@ void CPermissions::ReadSpeedLimits(TiXmlElement *pXML, t_group &group)
 			else
 				group.nSpeedLimit[i] = n;
 
-			str = pSpeedLimits->Attribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")));
+			str = pSpeedLimits->Attribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")).c_str());
 			n = _ttoi(str);
 			if (n >= 0 && n < 4)
 				group.nBypassServerSpeedLimit[i] = n;
@@ -1559,9 +1551,9 @@ void CPermissions::SaveSpeedLimits(TiXmlElement *pXML, const t_group &group)
 
 	for (int i = 0; i < 2; i++)
 	{
-		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Type")), group.nSpeedLimitType[i]);
-		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Limit")), group.nSpeedLimit[i]);
-		pSpeedLimits->SetAttribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")), group.nBypassServerSpeedLimit[i]);
+		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Type")).c_str(), group.nSpeedLimitType[i]);
+		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Limit")).c_str(), group.nSpeedLimit[i]);
+		pSpeedLimits->SetAttribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")).c_str(), group.nBypassServerSpeedLimit[i]);
 	
 		TiXmlElement* pSpeedLimit = new TiXmlElement(names[i]);
 		pSpeedLimits->LinkEndChild(pSpeedLimit);
@@ -2083,21 +2075,15 @@ void CPermissions::ReadSettings()
 				// If provided password is not a MD5 has, convert it into a MD5 hash
 				if (value != _T("") && value.GetLength() != 32)
 				{
-					char *tmp = ConvToNetwork(value);
-					if (!tmp)
-					{
-						tmp = new char[1];
-						tmp[0] = 0;
-					}
+					auto tmp = ConvToNetwork(value);
 					MD5 md5;
-					md5.update((unsigned char *)tmp, strlen(tmp));
+					md5.update((unsigned char const*)tmp.c_str(), tmp.size());
 					md5.finalize();
 					char *res = md5.hex_digest();
 
 					pOption->Clear();
 					XML::SetText(pOption, res);
 					user.password = res;
-					delete [] tmp;
 					delete [] res;
 				}
 				else

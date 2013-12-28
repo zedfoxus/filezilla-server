@@ -269,37 +269,20 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 
 int t_group::GetRequiredStringBufferLen(const CStdString& str) const
 {
-	char* utf8 = ConvToNetwork(str);
-
-	if (!utf8)
-		return 2;
-
-	int len = strlen(utf8);
-
-	delete [] utf8;
-
-	return len + 2;
+	auto utf8 = ConvToNetwork(str);
+	return utf8.size() + 2;
 }
 
 void t_group::FillString(char *& p, const CStdString& str) const
 {
-	char* utf8 = ConvToNetwork(str);
+	auto utf8 = ConvToNetwork(str);
 
-	if (!utf8)
-	{
-		*p++ = 0;
-		*p++ = 0;
-		return;
-	}
-
-	int len = strlen(utf8);
+	int len = utf8.size();
 	*p++ = (char)(len >> 8);
 	*p++ = (char)(len & 0xff);
 
-	memcpy(p, utf8, len);
+	memcpy(p, utf8.c_str(), len);
 	p += len;
-
-	delete [] utf8;
 }
 
 char * t_group::FillBuffer(char *p) const

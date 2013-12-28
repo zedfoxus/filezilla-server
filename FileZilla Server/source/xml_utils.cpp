@@ -18,7 +18,7 @@ CStdString ReadText(TiXmlElement* pElement)
 void SetText(TiXmlElement* pElement, const CStdString& text)
 {
 	pElement->Clear();
-	pElement->LinkEndChild(new TiXmlText(ConvToNetwork(text)));
+	pElement->LinkEndChild(new TiXmlText(ConvToNetwork(text).c_str()));
 }
 
 }

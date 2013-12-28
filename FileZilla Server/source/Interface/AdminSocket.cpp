@@ -289,15 +289,14 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				MD5 md5;
 				if (noncelen1)
 					md5.update(p+2, noncelen1);
-				char* utf8 = ConvToNetwork(m_Password);
-				if (!utf8)
+				auto utf8 = ConvToNetwork(m_Password);
+				if (utf8.empty() && !m_Password.IsEmpty())
 				{
 					m_pMainFrame->ShowStatus(_T("Can't convert password to UTF-8"), 1);
 					Close();
 					return FALSE;
 				}
-				md5.update((const unsigned char *)utf8, strlen(utf8));
-				delete [] utf8;
+				md5.update((const unsigned char *)utf8.c_str(), utf8.size());
 				if (noncelen2)
 					md5.update(p+noncelen1+4, noncelen2);
 				md5.finalize();

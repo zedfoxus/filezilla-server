@@ -326,17 +326,10 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 		len+=1;
 		if (!m_Options[i].nType)
 		{
-			char* utf8 = ConvToNetwork(GetOption(i+1));
-			if (utf8)
-			{
-				int l = strlen(utf8);
-				delete [] utf8;
-
-				if (l > 0xFFFFFF)
-					return FALSE;
-
-				len += l;
-			}
+			int l = ConvToNetwork(GetOption(i+1)).size();
+			if (l > 0xFFFFFF)
+				return FALSE;
+			len += l;
 			len += 3;
 		}
 		else
@@ -359,22 +352,13 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 		switch(m_Options[i].nType) {
 		case 0:
 			{
-				char* utf8 = ConvToNetwork(GetOption(i+1));
-				if (utf8)
-				{
-					int slen = strlen(utf8);
-					*p++ = (slen / 256) / 256;
-					*p++ = slen / 256;
-					*p++ = slen % 256;
-					memcpy(p, utf8, slen);
-					p += slen;
-					delete [] utf8;
-				}
-				else
-				{
-					*p++ = 0;
-					*p++ = 0;
-				}
+				auto utf8 = ConvToNetwork(GetOption(i+1));
+				int slen = utf8.size();
+				*p++ = (slen / 256) / 256;
+				*p++ = slen / 256;
+				*p++ = slen % 256;
+				memcpy(p, utf8.c_str(), slen);
+				p += slen;
 			}
 			break;
 		case 1:

@@ -283,15 +283,9 @@ BOOL CUsersDlgGeneral::SaveUser(t_user *pUser)
 		pUser->password = _T("");
 	else if (m_cPass.GetModify() && m_Pass != _T(""))
 	{
-		char *tmp = ConvToNetwork(pUser->password);
-		if (!tmp)
-		{
-			tmp = new char[1];
-			*tmp = 0;
-		}
+		auto tmp = ConvToNetwork(pUser->password);
 		MD5 md5;
-		md5.update((unsigned char *)tmp, strlen(tmp));
-		delete [] tmp;
+		md5.update((unsigned char *)tmp.c_str(), tmp.size());
 		md5.finalize();
 		char *res = md5.hex_digest();
 		CString hash = res;

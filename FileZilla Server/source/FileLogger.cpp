@@ -47,19 +47,17 @@ BOOL CFileLogger::Log(LPCTSTR msg)
 	if (m_hLogFile==INVALID_HANDLE_VALUE)
 		return TRUE;
 
-	char* utf8 = ConvToNetwork(msg);
-	if (!utf8)
+	auto utf8 = ConvToNetwork(msg);
+	if (utf8.empty())
 		return FALSE;
 
 	DWORD numwritten;
-	if (!WriteFile(m_hLogFile, utf8, strlen(utf8), &numwritten, 0) || !WriteFile(m_hLogFile, "\r\n", 2, &numwritten, 0))
+	if (!WriteFile(m_hLogFile, utf8.c_str(), utf8.size(), &numwritten, 0) || !WriteFile(m_hLogFile, "\r\n", 2, &numwritten, 0))
 	{
-		delete [] utf8;
 		CloseHandle(m_hLogFile);
 		m_hLogFile = INVALID_HANDLE_VALUE;
 		return FALSE;
 	}
-	delete [] utf8;
 
 	return TRUE;
 }

@@ -290,15 +290,13 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 
 				m_UsersList[pConnOp->userid] = data;
 
-				char* utf8 = ConvToNetwork(pData->ip);
-				int iplen = strlen(utf8);
-				len = 2 + 4 + 2 + iplen + 4;
+				auto utf8 = ConvToNetwork(pData->ip);
+				len = 2 + 4 + 2 + utf8.size() + 4;
 				buffer = new unsigned char[len];
-				buffer[2 + 4] = iplen / 256;
-				buffer[2 + 4 + 1] = iplen % 256;		
-				memcpy(buffer + 2 + 4 + 2, utf8, iplen);
-				delete [] utf8;
-				memcpy(buffer + 2 + 4 + 2 + iplen, &pData->port, 4);
+				buffer[2 + 4] = utf8.size() / 256;
+				buffer[2 + 4 + 1] = utf8.size() % 256;
+				memcpy(buffer + 2 + 4 + 2, utf8.c_str(), utf8.size());
+				memcpy(buffer + 2 + 4 + 2 + utf8.size(), &pData->port, 4);
 
 				delete pData;
 			}
@@ -308,24 +306,12 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				t_connectiondata_changeuser* pData = (t_connectiondata_changeuser*)pConnOp->data;
 				m_UsersList[pConnOp->userid].user = pData->user;
 			
-				char* utf8 = ConvToNetwork(pData->user);
-				if (!utf8)
-				{
-					buffer = new unsigned char[2 + 2 + 4 + 2];
-					buffer[2 + 4] = 0;
-					buffer[2 + 4 + 1] = 0;
-					len = 8;
-				}
-				else
-				{
-					int userlen = strlen(utf8);
-					len = 2 + 4 + 2 + userlen;
-					buffer = new unsigned char[len];
-					buffer[2 + 4] = userlen / 256;
-					buffer[2 + 4 + 1] = userlen % 256;		
-					memcpy(buffer + 2 + 4 + 2, utf8, userlen);
-					delete [] utf8;
-				}
+				auto utf8 = ConvToNetwork(pData->user);
+				len = 2 + 4 + 2 + utf8.size();
+				buffer = new unsigned char[len];
+				buffer[2 + 4] = utf8.size() / 256;
+				buffer[2 + 4 + 1] = utf8.size() % 256;
+				memcpy(buffer + 2 + 4 + 2, utf8.c_str(), utf8.size());
 
 				delete pData;
 			}
@@ -352,11 +338,9 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 
 				if (data.transferMode)
 				{
-					char* physicalFile = ConvToNetwork(pData->physicalFile);
-					int physicalFileLen = physicalFile ? strlen(physicalFile) : 0;
-					char* logicalFile = ConvToNetwork(pData->logicalFile);
-					int logicalFileLen = logicalFile ? strlen(logicalFile) : 0;
-					len = 2 + 4 + 1 + 2 + physicalFileLen + 2 + logicalFileLen;
+					auto physicalFile = ConvToNetwork(pData->physicalFile);
+					auto logicalFile = ConvToNetwork(pData->logicalFile);
+					len = 2 + 4 + 1 + 2 + physicalFile.size() + 2 + logicalFile.size();
 					if (data.currentOffset != 0)
 						len += 8;
 					if (data.totalSize != -1)
@@ -373,23 +357,15 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 						*p |= 0x40;
 					p++;
 					
-					*p++ = physicalFileLen / 256;
-					*p++ = physicalFileLen % 256;		
-					if (physicalFile)
-					{
-						memcpy(p, physicalFile, physicalFileLen);
-						delete [] physicalFile;
-					}
-					p += physicalFileLen;
+					*p++ = physicalFile.size() / 256;
+					*p++ = physicalFile.size() % 256;		
+					memcpy(p, physicalFile.c_str(), physicalFile.size());
+					p += physicalFile.size();
 
-                    *p++ = logicalFileLen / 256;
-					*p++ = logicalFileLen % 256;		
-					if (logicalFile)
-					{
-						memcpy(p, logicalFile, logicalFileLen);
-						delete [] logicalFile;
-					}
-					p += logicalFileLen;
+                    *p++ = logicalFile.size() / 256;
+					*p++ = logicalFile.size() % 256;		
+					memcpy(p, logicalFile.c_str(), logicalFile.size());
+					p += logicalFile.size();
 
 					if (data.currentOffset != 0)
 					{
@@ -584,19 +560,14 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			for (iter = m_UsersList.begin(); iter != m_UsersList.end(); iter++)
 			{
 				const t_connectiondata& data = iter->second;
-				char* ip = ConvToNetwork(data.ip);
-				char* user = ConvToNetwork(data.user);
-				len += 4 + (ip ? strlen(ip) : 0) + 2 + 4 + (user ? strlen(user) : 0) + 2 + 
-					   1;
-				delete [] ip;
-				delete [] user;
+				auto ip = ConvToNetwork(data.ip);
+				auto user = ConvToNetwork(data.user);
+				len += 4 + ip.size() + 2 + 4 + user.size() + 2 + 1;
 				if (data.transferMode)
 				{
-					char* physicalFile = ConvToNetwork(data.physicalFile);
-					char* logicalFile = ConvToNetwork(data.logicalFile);
-					len += 2 + (physicalFile ? strlen(physicalFile) : 0) + 2 + (logicalFile ? strlen(logicalFile) : 0);
-					delete [] physicalFile;
-					delete [] logicalFile;
+					auto physicalFile = ConvToNetwork(data.physicalFile);
+					auto logicalFile = ConvToNetwork(data.logicalFile);
+					len += 2 + physicalFile.size() + 2 + logicalFile.size();
 
 					if (data.currentOffset != 0)
 						len += 8;
@@ -612,33 +583,23 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			for (iter = m_UsersList.begin(); iter != m_UsersList.end(); iter++)
 			{
 				const t_connectiondata& data = iter->second;
-				char* ip = ConvToNetwork(data.ip);
-				char* user = ConvToNetwork(data.user);
-				int ipLen = ip ? strlen(ip) : 0;
-				int userLen = user ? strlen(user) : 0;
+				auto ip = ConvToNetwork(data.ip);
+				auto user = ConvToNetwork(data.user);
 
 				memcpy(p, &data.userid, 4);
 				p+=4;
-				*p++ = ipLen / 256;
-				*p++ = ipLen % 256;
-				if (ip)
-				{
-					memcpy(p, ip, ipLen);
-					p += ipLen;
-					delete [] ip;
-				}
+				*p++ = ip.size() / 256;
+				*p++ = ip.size() % 256;
+				memcpy(p, ip.c_str(), ip.size());
+				p += ip.size();
 
 				memcpy(p, &data.port, 4);
 				p += 4;
 
-				*p++ = userLen / 256;
-				*p++ = userLen % 256;
-				if (user)
-				{
-					memcpy(p, user, userLen);
-					p += userLen;
-					delete [] user;
-				}
+				*p++ = user.size() / 256;
+				*p++ = user.size() % 256;
+				memcpy(p, user.c_str(), user.size());
+				p += user.size();
 
 				*p = data.transferMode;
 				if (data.transferMode)
@@ -650,38 +611,17 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 						*p |= 0x40;
 					p++;
 
-					char* physicalFile = ConvToNetwork(data.physicalFile);
-					if (physicalFile)
-					{
-						int physicalLen = strlen(physicalFile);
-						*p++ = physicalLen / 256;
-						*p++ = physicalLen % 256;
-						memcpy(p, physicalFile, physicalLen);
-						delete [] physicalFile;
-						p += physicalLen;
-					}
-					else
-					{
-						*p++ = 0;
-						*p++ = 0;
-					}
-
+					auto physicalFile = ConvToNetwork(data.physicalFile);
+					*p++ = physicalFile.size() / 256;
+					*p++ = physicalFile.size() % 256;
+					memcpy(p, physicalFile.c_str(), physicalFile.size());
+					p += physicalFile.size();
 					
-					char* logicalFile = ConvToNetwork(data.logicalFile);
-					if (logicalFile)
-					{
-						int logicalLen = strlen(logicalFile);
-						*p++ = logicalLen / 256;
-						*p++ = logicalLen % 256;
-						memcpy(p, logicalFile, logicalLen);
-						delete [] logicalFile;
-						p += logicalLen;
-					}
-					else
-					{
-						*p++ = 0;
-						*p++ = 0;
-					}
+					auto logicalFile = ConvToNetwork(data.logicalFile);
+					*p++ = logicalFile.size() / 256;
+					*p++ = logicalFile.size() % 256;
+					memcpy(p, logicalFile.c_str(), logicalFile.size());
+					p += logicalFile.size();
 
 					if (data.currentOffset != 0)
 					{
@@ -1113,17 +1053,19 @@ BOOL CServer::ToggleActive(int nServerState)
 
 void CServer::ShowStatus(LPCTSTR msg, int nType)
 {
-	char* utf8 = ConvToNetwork(msg);
-	if (!utf8)
+	if (!msg)
 		return;
 
-	char *pBuffer = new char[strlen(utf8) + 1];
+	auto utf8 = ConvToNetwork(msg);
+	if (utf8.empty())
+		return;
+
+	char *pBuffer = new char[utf8.size() + 1];
 	*pBuffer = nType;
-	memcpy(pBuffer + 1, utf8, strlen(utf8));
+	memcpy(pBuffer + 1, utf8.c_str(), utf8.size());
 	if (m_pAdminInterface)
-		m_pAdminInterface->SendCommand(2, 1, pBuffer, strlen(utf8) + 1);
+		m_pAdminInterface->SendCommand(2, 1, pBuffer, utf8.size() + 1);
 	delete [] pBuffer;
-	delete [] utf8;
 
 	if (m_pFileLogger)
 		m_pFileLogger->Log(msg);
@@ -1131,25 +1073,18 @@ void CServer::ShowStatus(LPCTSTR msg, int nType)
 
 void CServer::ShowStatus(DWORD eventDateHigh, DWORD eventDateLow, LPCTSTR msg, int nType)
 {
-	char* utf8 = ConvToNetwork(msg);
-	if (!utf8)
+	auto utf8 = ConvToNetwork(msg);
+	if (utf8.empty())
 		return;
-	if (!*utf8)
-	{
-		delete [] utf8;
-		return;
-	}
 
-	unsigned int utf8len = strlen(utf8);
-	char *pBuffer = new char[utf8len + 1 + 8];
+	char *pBuffer = new char[utf8.size() + 1 + 8];
 	*pBuffer = nType;
 	memcpy(pBuffer + 1, &eventDateHigh, 8);
 	memcpy(pBuffer + 5, &eventDateLow, 4);
-	memcpy(pBuffer + 1 + 8, utf8, utf8len);
+	memcpy(pBuffer + 1 + 8, utf8.c_str(), utf8.size());
 	if (m_pAdminInterface)
-		m_pAdminInterface->SendCommand(2, 4, pBuffer, utf8len + 1 + 8);
+		m_pAdminInterface->SendCommand(2, 4, pBuffer, utf8.size() + 1 + 8);
 	delete [] pBuffer;
-	delete [] utf8;
 
 	//Log string
 	if (m_pFileLogger)

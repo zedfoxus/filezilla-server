@@ -39,6 +39,26 @@ BOOL COptions::m_bInitialized=FALSE;
 
 SPEEDLIMITSLIST COptions::m_sSpeedLimits[2];
 
+// Backslash-terminated
+CStdString GetExecutableDirectory()
+{
+	CStdString ret;
+
+	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
+	if (GetModuleFileName(0, buffer, MAX_PATH) > 0)
+	{
+		LPTSTR pos = _tcsrchr(buffer, '\\');
+		if (pos)
+		{
+			*++pos = 0;
+			ret = buffer;
+		}
+	}
+
+	return ret;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // COptionsHelperWindow
 
@@ -269,15 +289,9 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 	CStdString valuestr;
 	valuestr.Format( _T("%I64d"), value);
 
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server.xml"));
-
 	USES_CONVERSION;
-	char* bufferA = T2A(buffer);
+	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	char* bufferA = T2A(xmlFileName);
 	if (!bufferA)
 		return;
 
@@ -309,9 +323,9 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 	if (!pItem)
 		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
 	pItem->Clear();
-	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name));
+	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name).c_str());
 	pItem->SetAttribute("type", "numeric");
-	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr)));
+	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr).c_str()));
 	
 	document.SaveFile(bufferA);
 }
@@ -529,15 +543,9 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 	if (!save)
 		return;
 
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server.xml"));
-
-USES_CONVERSION;
-	char* bufferA = T2A(buffer);
+	USES_CONVERSION;
+	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	char* bufferA = T2A(xmlFileName);
 	if (!bufferA)
 		return;
 
@@ -569,9 +577,9 @@ USES_CONVERSION;
 	if (!pItem)
 		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
 	pItem->Clear();
-	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name));
+	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID - 1].name).c_str());
 	pItem->SetAttribute("type", "string");
-	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value)));
+	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value).c_str()));
 	
 	document.SaveFile(bufferA);
 }
@@ -721,18 +729,13 @@ void COptions::Init()
 		return;
 	EnterCritSection(m_Sync);
 	m_bInitialized = TRUE;
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server.xml"));
-
+	
 	for (int i = 0; i < OPTIONS_NUM; i++)
 		m_sOptionsCache[i].bCached = FALSE;
 
 	USES_CONVERSION;
-	char* bufferA = T2A(buffer);
+	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	char* bufferA = T2A(xmlFileName);
 	if (!bufferA)
 	{
 		LeaveCritSection(m_Sync);
@@ -742,7 +745,7 @@ void COptions::Init()
 	TiXmlDocument document;
 
 	CFileStatus64 status;
-	if (!GetStatus64(buffer, status) )
+	if (!GetStatus64(xmlFileName, status) )
 	{
 		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
 		document.SaveFile(bufferA);
@@ -841,15 +844,10 @@ bool COptions::IsNumeric(LPCTSTR str)
 TiXmlElement *COptions::GetXML()
 {
 	EnterCritSection(m_Sync);
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server.xml"));
-
+	
 	USES_CONVERSION;
-	char* bufferA = T2A(buffer);
+	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	char* bufferA = T2A(xmlFileName);
 	if (!bufferA)
 	{
 		LeaveCritSection(m_Sync);
@@ -889,15 +887,9 @@ BOOL COptions::FreeXML(TiXmlElement *pXML, bool save)
 		return FALSE;
 	}
 
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server.xml"));
-
 	USES_CONVERSION;
-	char* bufferA = T2A(buffer);
+	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	char* bufferA = T2A(xmlFileName);
 	if (!bufferA)
 	{
 		delete pXML->GetDocument();
@@ -929,21 +921,18 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 		if (!m_Options[i].nType)
 		{
 			len += 3;
-			char* utf8 = ConvToNetwork(GetOption(i + 1));
-			if (utf8)
+			auto utf8 = ConvToNetwork(GetOption(i + 1));
+
+			if ((i + 1) != OPTION_ADMINPASS)
+				len += utf8.size();
+			else
 			{
-				if ((i+1) != OPTION_ADMINPASS)
-					len += strlen(utf8);
-				else
-				{
-					if (GetOption(i+1).GetLength() < 6 && *utf8)
-						len++;
-				}
-				delete [] utf8;
+				if (GetOption(i+1).GetLength() < 6 && utf8.size() > 0)
+					len++;
 			}
 		}
 		else
-			len+=8;
+			len += 8;
 	}
 
 	len += 4;
@@ -973,23 +962,14 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 						str = _T("*");
 				}
 
-				char* utf8 = ConvToNetwork(str);
-				if (!utf8)
-				{
-					*p++ = 0;
-					*p++ = 0;
-					*p++ = 0;
-				}
-				else
-				{
-					int len = strlen(utf8);
-					*p++ = (len / 256) / 256;
-					*p++ = len / 256;
-					*p++ = len % 256;
-					memcpy(p, utf8, len);
-					p += len;
-					delete [] utf8;
-				}
+				auto utf8 = ConvToNetwork(str);
+
+				int len = utf8.size();
+				*p++ = (len / 256) / 256;
+				*p++ = len / 256;
+				*p++ = len % 256;
+				memcpy(p, utf8.c_str(), len);
+				p += len;
 			}
 			break;
 		case 1:
@@ -1115,7 +1095,7 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 static void SetText(TiXmlElement* pElement, const CStdString& text)
 {
 	pElement->Clear();
-	pElement->LinkEndChild(new TiXmlText(ConvToNetwork(text)));
+	pElement->LinkEndChild(new TiXmlText(ConvToNetwork(text).c_str()));
 }
 
 BOOL COptions::SaveSpeedLimits(TiXmlElement* pSettings)
@@ -1211,18 +1191,13 @@ void COptions::ReloadConfig()
 	EnterCritSection(m_Sync);
 
 	m_bInitialized = TRUE;
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos = _tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos = 0;
-	_tcscat(buffer, _T("FileZilla Server.xml"));
-
+	
 	for (int i = 0; i < OPTIONS_NUM; i++)
 		m_sOptionsCache[i].bCached = FALSE;
 
 	USES_CONVERSION;
-	char* bufferA = T2A(buffer);
+	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	char* bufferA = T2A(xmlFileName);
 	if (!bufferA)
 	{
 		LeaveCritSection(m_Sync);
@@ -1232,7 +1207,7 @@ void COptions::ReloadConfig()
 	TiXmlDocument document;
 
 	CFileStatus64 status;
-	if (!GetStatus64(buffer, status) )
+	if (!GetStatus64(xmlFileName, status) )
 	{
 		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
 		document.SaveFile(bufferA);
@@ -1310,15 +1285,9 @@ void COptions::ReloadConfig()
 
 void COptions::SaveOptions()
 {
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server.xml"));
-
 	USES_CONVERSION;
-	char* bufferA = T2A(buffer);
+	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	char* bufferA = T2A(xmlFileName);
 	if (!bufferA)
 		return;
 
@@ -1347,12 +1316,12 @@ void COptions::SaveOptions()
 			valuestr.Format( _T("%I64d"), m_OptionsCache[i].value);
 
 		TiXmlElement* pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
-		pItem->SetAttribute("name", ConvToNetwork(m_Options[i].name));
+		pItem->SetAttribute("name", ConvToNetwork(m_Options[i].name).c_str());
 		if (!m_OptionsCache[i].nType)
 			pItem->SetAttribute("type", "string");
 		else
 			pItem->SetAttribute("type", "numeric");
-		pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr)));
+		pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr).c_str()));
 	}
 
 	SaveSpeedLimits(pSettings);

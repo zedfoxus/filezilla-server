@@ -112,9 +112,9 @@ void COptions::SetOption(int nOptionID, __int64 value)
 	if (!pItem)
 		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
 	pItem->Clear();
-	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name));
+	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name).c_str());
 	pItem->SetAttribute("type", "numeric");
-	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr)));
+	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr).c_str()));
 	
 	document.SaveFile(bufferA);
 }
@@ -167,9 +167,9 @@ void COptions::SetOption(int nOptionID, CString value)
 	if (!pItem)
 		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
 	pItem->Clear();
-	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name));
+	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID - 1].name).c_str());
 	pItem->SetAttribute("type", "string");
-	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value)));
+	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value).c_str()));
 	
 	document.SaveFile(bufferA);
 }

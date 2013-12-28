@@ -323,16 +323,15 @@ int CAdminSocket::ParseRecvBuffer()
 					m_pAdminInterface->Remove(this);
 					return -1;
 				}
-				char* utf8 = ConvToNetwork(pass);
-				if (!utf8)
+				auto utf8 = ConvToNetwork(pass);
+				if (utf8.empty() && !pass.empty())
 				{
 					SendCommand(_T("Failed to convert password to UTF-8"), 1);
 					Close();
 					m_pAdminInterface->Remove(this);
 					return -1;
 				}
-				md5.update((unsigned char *)utf8, strlen(utf8));
-				delete [] utf8;
+				md5.update((unsigned char *)utf8.c_str(), utf8.size());
 				md5.update(m_Nonce2, 8);
 				md5.finalize();
 				unsigned char *digest = md5.raw_digest();
@@ -360,15 +359,12 @@ int CAdminSocket::ParseRecvBuffer()
 BOOL CAdminSocket::SendCommand(LPCTSTR pszCommand, int nTextType)
 {
 	DWORD nDataLength;
-	const char *utf8 = 0;
+	std::string utf8;
 
-	if (!pszCommand)
-		nDataLength = 0;
-	else
-	{
+	if (pszCommand)
 		utf8 = ConvToNetwork(pszCommand);
-		nDataLength = strlen(utf8) + 1;
-	}
+	nDataLength = utf8.size() + 1;
+
 
 	t_data data;
 	data.pData = new unsigned char[nDataLength + 5];
@@ -377,9 +373,7 @@ BOOL CAdminSocket::SendCommand(LPCTSTR pszCommand, int nTextType)
 	data.dwOffset = 0;
 	memcpy(data.pData + 1, &nDataLength, 4);
 	*(data.pData+5) = nTextType;
-	if (utf8)
-		memcpy(reinterpret_cast<char *>(data.pData+6), utf8, nDataLength - 1);
-	delete [] utf8;
+	memcpy(reinterpret_cast<char *>(data.pData+6), utf8.c_str(), nDataLength - 1);
 
 	data.dwLength = nDataLength + 5;
 

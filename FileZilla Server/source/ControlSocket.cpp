@@ -295,14 +295,17 @@ void CControlSocket::SendStatus(LPCTSTR status, int type)
 
 BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 {
+	if (!*str)
+		return false;
+
 	if (sendStatus)
 		SendStatus(str, 3);
 
 	char* buffer;
 	int len;
 	{
-		char* utf8 = ConvToNetwork(str);
-		if (!utf8)
+		auto utf8 = ConvToNetwork(str);
+		if (utf8.empty())
 		{
 			Close();
 			SendStatus(_T("Failed to convert reply to UTF-8"), 1);
@@ -311,11 +314,10 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 			return false;
 		}
 
-		buffer = new char[strlen(utf8) + 3];
-		strcpy(buffer, utf8);
-		strcat(buffer, "\r\n");
-		len = strlen(buffer);
-		delete [] utf8;
+		buffer = new char[utf8.size() + 3];
+		strcpy(buffer, utf8.c_str());
+		strcpy(buffer + utf8.size(), "\r\n");
+		len = utf8.size() + 2;
 	}
 
 	//Add line to back of send buffer if it's not empty

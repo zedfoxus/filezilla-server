@@ -29,20 +29,18 @@ CStdStringW ConvFromNetwork(const char* buffer)
 	return L"";
 }
 
-char* ConvToNetwork(const CStdStringW& str)
+std::string ConvToNetwork(const CStdStringW& str)
 {
+	std::string ret;
 	int len = WideCharToMultiByte(CP_UTF8, 0, str, -1, 0, 0, 0, 0);
-	if (!len)
-		return 0;
-
-	char* output = new char[len + 2];
-	if (!WideCharToMultiByte(CP_UTF8, 0, str, -1, output, len + 1, 0, 0))
-	{
+	if (len > 0) {
+		char* output = new char[len + 2];
+		if (WideCharToMultiByte(CP_UTF8, 0, str, -1, output, len + 1, 0, 0) > 0)
+			ret = output;
 		delete [] output;
-		return 0;
 	}
 
-	return output;
+	return ret;
 }
 
 CStdStringA ConvToLocal(const CStdStringW& str)
