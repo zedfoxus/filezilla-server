@@ -722,29 +722,27 @@ void CControlSocket::ParseCommand()
 			port += 256 * _ttoi(args.Right(args.GetLength() - (i + 1))); // add ms byte to server socket
 			ip = args.Left(i);
 
-			int res = inet_addr(ConvToLocal(ip));
-			if (res == INADDR_NONE)
+			// Fix: Convert IP in PORT command to int and back to string (strips
+			// leading zeros) because some FTP clients prepend zeros to it.
+			// inet_addr() thinks this is an octal number and will return INADDR_NONE
+			// if 8 or 9 are encountered.
+			//
+			// As per RFC 959: "the	value of each field is transmitted as a decimal number"
+			CStdString decIP;
+			ip += _T(".");
+			pos = ip.Find('.');
+			while (pos != -1)
 			{
-				// Fix: Convert IP in PORT command to int and back to string (strips
-				// leading zeros) because some FTP clients prepend zeros to it.
-				// inet_addr() thinks this is an octal number and will return INADDR_NONE
-				// if 8 or 9 are encountered.
-				CStdString decIP;
-				ip += _T(".");
-				int pos = ip.Find('.');
-				while (pos != -1)
-				{
-					CStdString tmp;
-					tmp.Format(_T("%d."), _ttoi(ip.Left(pos)));
-					decIP += tmp;
+				CStdString tmp;
+				tmp.Format(_T("%d."), _ttoi(ip.Left(pos)));
+				decIP += tmp;
 
-					ip = ip.Mid(pos + 1);
-					pos = ip.Find('.');
-				}
-
-				ip = decIP.Left(decIP.GetLength() - 1);
-				res = inet_addr(ConvToLocal(ip));
+				ip = ip.Mid(pos + 1);
+				pos = ip.Find('.');
 			}
+
+			ip = decIP.Left(decIP.GetLength() - 1);
+			int res = inet_addr(ConvToLocal(ip));
 
 			if (res == INADDR_NONE || port < 1 || port > 65535)
  			{
