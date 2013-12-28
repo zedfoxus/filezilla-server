@@ -2874,8 +2874,6 @@ void CControlSocket::ResetTransferstatus()
 
 BOOL CControlSocket::UnquoteArgs(CStdString &args)
 {
-	args.TrimLeft( _T(" ") );
-	args.TrimRight( _T(" ") );
 	int pos1 = args.Find('"');
 	int pos2 = args.ReverseFind('"');
 	if (pos1 == -1 && pos2 == -1)
