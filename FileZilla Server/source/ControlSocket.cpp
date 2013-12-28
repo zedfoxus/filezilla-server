@@ -2220,9 +2220,9 @@ void CControlSocket::ParseCommand()
 			else
 				Send(_T("501 can't change MODE Z LEVEL do desired value"));
 		}
-		else if (args == _T("UTF8 ON"))
+		else if (args == _T("UTF8 ON") || args == _T("UTF-8 ON"))
 			Send(_T("202 UTF8 mode is always enabled. No need to send this command."));
-		else if (args == _T("UTF8 OFF"))
+		else if (args == _T("UTF8 OFF") || args == _T("UTF-8 OFF"))
 			Send(_T("504 UTF8 mode cannot be disabled."));
 		else if (args.Left(4) == _T("MLST"))
 			ParseMlstOpts(args.Mid(4));
