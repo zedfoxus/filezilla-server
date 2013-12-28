@@ -163,7 +163,8 @@ public:
 
 		m_hWnd=CreateWindow(_T("CAsyncSocketEx Helper Window"), _T("CAsyncSocketEx Helper Window"), 0, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(0));
 		ASSERT(m_hWnd);
-		SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR)this);
+		if (m_hWnd)
+			SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR)this);
 	};
 
 	virtual ~CAsyncSocketExHelperWindow()
@@ -186,6 +187,8 @@ public:
 	BOOL AddSocket(CAsyncSocketEx *pSocket, int &nSocketIndex)
 	{
 		ASSERT(pSocket);
+		if (!pSocket)
+			return FALSE;
 		if (!m_nWindowDataSize)
 		{
 			ASSERT(!m_nSocketCount);
@@ -200,6 +203,8 @@ public:
 			ASSERT(m_nWindowDataSize>nSocketIndex);
 			ASSERT(m_pAsyncSocketExWindowData[nSocketIndex].m_pSocket==pSocket);
 			ASSERT(m_nSocketCount);
+			if (!m_pAsyncSocketExWindowData)
+				return FALSE;
 			return TRUE;
 		}
 
@@ -239,6 +244,8 @@ public:
 	BOOL RemoveSocket(CAsyncSocketEx *pSocket, int &nSocketIndex)
 	{
 		ASSERT(pSocket);
+		if (!pSocket)
+			return FALSE;
 		if (nSocketIndex==-1)
 			return TRUE;
 
