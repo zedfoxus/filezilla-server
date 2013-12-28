@@ -33,7 +33,7 @@ CGenerateCertificateDlg::CGenerateCertificateDlg(CWnd* pParent /*=NULL*/)
 	, m_organization(_T(""))
 	, m_state(_T(""))
 	, m_unit(_T(""))
-	, m_keysize(0)
+	, m_keysize(1)
 {
 }
 
