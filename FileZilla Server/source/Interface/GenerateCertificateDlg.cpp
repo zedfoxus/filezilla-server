@@ -33,7 +33,7 @@ CGenerateCertificateDlg::CGenerateCertificateDlg(CWnd* pParent /*=NULL*/)
 	, m_organization(_T(""))
 	, m_state(_T(""))
 	, m_unit(_T(""))
-	, m_keysize(1)
+	, m_keysize(0)
 {
 }
 
@@ -79,7 +79,7 @@ void CGenerateCertificateDlg::OnOK()
 
 	m_country.MakeUpper();
 
-	int bits = 1024;
+	int bits = 1280;
 	if (m_keysize == 1)
 		bits = 2048;
 	else if (m_keysize == 2)

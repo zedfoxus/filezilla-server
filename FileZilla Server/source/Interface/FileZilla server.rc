@@ -757,7 +757,7 @@ BEGIN
     LTEXT           "This dialog will help you to create a new private key and a self-signed certificate, needed by FileZilla Server to accept SSL/TLS connections.",IDC_STATIC,38,7,212,25
     LTEXT           "Please fill out the required information. Wrong or missing information may confuse clients.",IDC_STATIC,7,32,243,16
     LTEXT           "&Key size:",IDC_STATIC,7,51,30,8
-    CONTROL         "1024 bit",IDC_KEYSIZE1,"Button",BS_AUTORADIOBUTTON | WS_GROUP,43,51,45,10
+    CONTROL         "1280 bit",IDC_KEYSIZE1,"Button",BS_AUTORADIOBUTTON | WS_GROUP,43,51,45,10
     CONTROL         "2048 bit",IDC_KEYSIZE2,"Button",BS_AUTORADIOBUTTON,103,51,42,10
     CONTROL         "4096 bit",IDC_KEYSIZE3,"Button",BS_AUTORADIOBUTTON,163,51,42,10
     LTEXT           "2-&Digit country code:",IDC_STATIC,7,67,68,8
