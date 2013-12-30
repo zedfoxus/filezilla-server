@@ -1,10 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Compat Debug|Win32">
-      <Configuration>Compat Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -26,25 +22,19 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v120_xp</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v120_xp</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v120_xp</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -55,15 +45,11 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
@@ -71,9 +57,9 @@
   <PropertyGroup>
     <_ProjectFileVersion>12.0.21005.1</_ProjectFileVersion>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">
-    <OutDir>.\Compat_Debug\</OutDir>
-    <IntDir>.\Compat_Debug\</IntDir>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\Debug\</OutDir>
+    <IntDir>.\Debug\</IntDir>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
     <LinkIncremental>false</LinkIncremental>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
@@ -83,23 +69,18 @@
     <IntDir>.\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>.\Debug\</OutDir>
-    <IntDir>.\Debug\</IntDir>
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
     <OutDir>$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Compat_Debug/FileZilla server.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Debug/FileZilla server.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -114,10 +95,10 @@
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>.\Compat_Debug/FileZilla server.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\Compat_Debug/</AssemblerListingLocation>
-      <ObjectFileName>.\Compat_Debug/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Compat_Debug/</ProgramDataBaseFileName>
+      <PrecompiledHeaderOutputFile>.\Debug/FileZilla server.pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
+      <ObjectFileName>.\Debug/</ObjectFileName>
+      <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -135,13 +116,13 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>zlibd.lib;version.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>.\Compat_Debug/FileZilla server.exe</OutputFile>
+      <OutputFile>.\Debug/FileZilla server.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>.\Compat_Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Compat_Debug/FileZilla server.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Debug/FileZilla server.pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
-      <MapFileName>.\Compat_Debug/FileZilla server.map</MapFileName>
+      <MapFileName>.\Debug/FileZilla server.map</MapFileName>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
@@ -207,7 +188,7 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
     <Midl>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MkTypLibCompatible>true</MkTypLibCompatible>
@@ -219,75 +200,15 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(ProjectDir)includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>.\Debug/FileZilla server.pch</PrecompiledHeaderOutputFile>
-      <AssemblerOutput>All</AssemblerOutput>
-      <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
-      <ObjectFileName>.\Debug/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0407</Culture>
-    </ResourceCompile>
-    <PreLinkEvent>
-      <Message>Terminate service...</Message>
-      <Command>if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /stop
-if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninstall
-</Command>
-    </PreLinkEvent>
-    <Link>
-      <AdditionalDependencies>zlibd.lib;version.lib;ws2_32.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>.\Debug/FileZilla server.exe</OutputFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Debug/FileZilla server.pdb</ProgramDatabaseFile>
-      <GenerateMapFile>true</GenerateMapFile>
-      <MapFileName>.\Debug/FileZilla server.map</MapFileName>
-      <SubSystem>Windows</SubSystem>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention />
-      <TargetMachine>MachineX86</TargetMachine>
-    </Link>
-    <PostBuildEvent>
-      <Message>Install Service...</Message>
-      <Command>"$(OutDir)FileZilla Server.exe" /stop
-"$(OutDir)FileZilla Server.exe" /uninstall
-"$(OutDir)FileZilla Server.exe" /install auto
-"$(OutDir)FileZilla Server.exe" /start
-</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
-    <Midl>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Compat_Debug/FileZilla server.tlb</TypeLibraryName>
-      <HeaderFileName />
-    </Midl>
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;MMGR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>.\Compat_Debug/FileZilla server.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\Compat_Debug/</AssemblerListingLocation>
-      <ObjectFileName>.\Compat_Debug/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Compat_Debug/</ProgramDataBaseFileName>
+      <PrecompiledHeaderOutputFile>.\Debug/FileZilla server.pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
+      <ObjectFileName>.\Debug/</ObjectFileName>
+      <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -308,9 +229,9 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <OutputFile>.\memcheck/FileZilla server.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Compat_Debug/FileZilla server.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Debug/FileZilla server.pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
-      <MapFileName>.\Compat_Debug/FileZilla server.map</MapFileName>
+      <MapFileName>.\Debug/FileZilla server.map</MapFileName>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
@@ -324,8 +245,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Accounts.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -333,8 +252,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="AdminInterface.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -342,8 +259,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="AdminListenSocket.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -351,8 +266,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="AdminSocket.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -360,8 +273,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="AsyncSocketEx.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -369,8 +280,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="AsyncSocketExLayer.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -380,8 +289,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
     <ClCompile Include="AsyncSslSocketLayer.cpp" />
     <ClCompile Include="autobanmanager.cpp" />
     <ClCompile Include="ControlSocket.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -390,8 +297,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
     </ClCompile>
     <ClCompile Include="conversion.cpp" />
     <ClCompile Include="ExternalIpCheck.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -399,8 +304,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="FileLogger.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -410,8 +313,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
     <ClCompile Include="hash_thread.cpp" />
     <ClCompile Include="iputils.cpp" />
     <ClCompile Include="ListenSocket.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -419,8 +320,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="misc\md5.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -428,8 +327,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="MFC64bitFix.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -438,8 +335,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
     </ClCompile>
     <ClCompile Include="misc\mmgr.cpp" />
     <ClCompile Include="Options.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -447,8 +342,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="Permissions.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -456,8 +349,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="Server.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -465,8 +356,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="ServerThread.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -474,8 +363,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="Service.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -483,8 +370,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="SpeedLimit.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -492,9 +377,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="StdAfx.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Create</PrecompiledHeader>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -505,8 +387,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Thread.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -514,8 +394,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="tinyxml\tinystr.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">
-      </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
@@ -524,8 +402,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="tinyxml\tinyxml.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">
-      </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
@@ -534,8 +410,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="tinyxml\tinyxmlerror.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">
-      </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
@@ -544,8 +418,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="tinyxml\tinyxmlparser.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">
-      </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
@@ -554,8 +426,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TransferSocket.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
@@ -563,8 +433,6 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
     <ClCompile Include="version.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Compat Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
