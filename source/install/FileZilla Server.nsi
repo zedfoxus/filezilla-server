@@ -118,8 +118,8 @@ Section "-default files"
   SetOutPath $INSTDIR
 
   ; Put file there
-  File "libeay32.dll"
-  File "ssleay32.dll"
+  File "..\Release\libeay32.dll"
+  File "..\Release\ssleay32.dll"
   File "..\..\readme.htm"
   File "..\..\legal.htm"
   File "..\..\license.txt"
@@ -208,8 +208,9 @@ SectionIn 2
   File "..\*.cpp"
   File "..\*.h"
   File "..\FileZilla Server.sln"
-  File "..\FileZilla Server.vcproj"
+  File "..\FileZilla Server.vcxproj"
   File "..\FileZilla Server.rc"
+  File "..\Dependencies.props.example"
   SetOutPath "$INSTDIR\source\res"
   File "..\res\*.ico"
   SetOutPath "$INSTDIR\source\misc"
@@ -221,7 +222,7 @@ SectionIn 2
   SetOutPath "$INSTDIR\source\interface"
   File "..\interface\*.cpp"
   File "..\interface\*.h"
-  File "..\interface\FileZilla Server Interface.vcproj"
+  File "..\interface\FileZilla Server Interface.vcxproj"
   File "..\interface\FileZilla Server.rc"
   SetOutPath "$INSTDIR\source\interface\res"
   File "..\interface\res\*.bmp"
@@ -236,8 +237,6 @@ SectionIn 2
   File "StartupOptions.ini"
   File "InterfaceOptions.ini"
   File "uninstall.ico"
-  SetOutPath "$INSTDIR\source\includes\openssl"
-  File "..\includes\openssl\*.h"
   SetOutPath "$INSTDIR\source\tinyxml"
   File "..\tinyxml\*.h"
   File "..\tinyxml\*.cpp"
@@ -564,8 +563,9 @@ Section "Uninstall"
   Delete $INSTDIR\source\*.cpp
   Delete $INSTDIR\source\*.h
   Delete "$INSTDIR\source\FileZilla Server.sln"
-  Delete "$INSTDIR\source\FileZilla Server.vcproj"
+  Delete "$INSTDIR\source\FileZilla Server.vcxproj"
   Delete "$INSTDIR\source\FileZilla Server.rc"
+  Delete "$INSTDIR\source\Dependencies.props.example"
   Delete $INSTDIR\source\res\*.ico
   Delete $INSTDIR\source\res\*.bmp
   Delete $INSTDIR\source\res\*.rc2
@@ -575,7 +575,7 @@ Section "Uninstall"
   Delete $INSTDIR\source\hash_algorithms\*.c
   Delete $INSTDIR\source\interface\*.cpp
   Delete $INSTDIR\source\interface\*.h
-  Delete "$INSTDIR\source\interface\FileZilla Server Interface.vcproj"
+  Delete "$INSTDIR\source\interface\FileZilla Server Interface.vcxproj"
   Delete "$INSTDIR\source\interface\FileZilla Server.rc"
   Delete $INSTDIR\source\interface\res\*.ico
   Delete $INSTDIR\source\interface\res\*.bmp
@@ -587,7 +587,6 @@ Section "Uninstall"
   Delete "$INSTDIR\source\install\FileZilla Server.nsi"
   Delete "$INSTDIR\source\install\StartupOptions.ini"
   Delete "$INSTDIR\source\install\InterfaceOptions.ini"
-  Delete "$INSTDIR\source\includes\openssl\*.h"
   Delete "$INSTDIR\source\tinyxml\*.h"
   Delete "$INSTDIR\source\tinyxml\*.cpp"
 
@@ -608,7 +607,6 @@ Section "Uninstall"
   RMDir "$INSTDIR\source\interface\misc"
   RMDir "$INSTDIR\source\interface"
   RMDir "$INSTDIR\source\install"
-  RMDir "$INSTDIR\source\includes\openssl"
   RMDir "$INSTDIR\source\includes"
   RMDir "$INSTDIR\source\tinyxml"
   RMDir "$INSTDIR\source"

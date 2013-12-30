@@ -15,7 +15,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>FZS Interface</ProjectName>
+    <ProjectName>FileZilla Server Interface</ProjectName>
     <ProjectGuid>{516E796E-D29F-4340-9327-FACC9E45C828}</ProjectGuid>
     <RootNamespace>FZS Interface</RootNamespace>
     <Keyword>MFCProj</Keyword>
