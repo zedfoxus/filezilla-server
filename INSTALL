@@ -1,0 +1,19 @@
+1. Prerequesites
+
+To build FileZilla Server you'll need the following:
+
+- Visual Studio 2013 Professional
+- OpenSSL
+- Zlib
+
+Note: Express editions of Visual Studio won't do the trick as FileZilla Server depends on MFC.
+
+2. Preparation
+
+- Compile Zlib and OpenSSL, see their respective documentation for instructions
+- Copy source\Dependencies.props.example to source\Dependencies.props
+- Open source\Dependencies.props in a text editor and change the 5 paths in it
+
+3. Building FileZilla
+
+- Open "source\FileZilla Server.sln" in Visual Studio and hit F5.

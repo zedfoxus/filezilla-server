@@ -198,7 +198,7 @@ Section "Administration interface" SecFileZillaServerInterface
   Push "FileZilla Server Main Window"
   Call CloseWindowByName
 
-  File "..\Interface\Release\FileZilla Server Interface.exe"
+  File "..\Release\FileZilla Server Interface.exe"
 
 SectionEnd
 

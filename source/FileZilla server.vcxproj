@@ -99,6 +99,29 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
 "$(OutDir)FileZilla Server.exe" /uninstall
 </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>rem Copy ssleay32.dll and libeay32.dll from openssl lib directory to output directory
+
+CALL:copyChanged "$(openssl_lib)\ssleay32.dll" "$(OUTDIR)\ssleay32.dll"
+CALL:copyChanged "$(openssl_lib)\libeay32.dll" "$(OUTDIR)\libeay32.dll"
+
+GOTO :EOF
+
+:copyChanged
+
+SET SOURCE=%1
+SET TARGET=%2
+
+FOR %%i IN (%SOURCE%) DO SET SOURCEDATE=%%~ti
+FOR %%i IN (%TARGET%) DO SET TARGETDATE=%%~ti
+
+IF "%SOURCEDATE%"=="%TARGETDATE%" GOTO:EOF
+
+copy /B /Y %SOURCE% %TARGET%
+
+GOTO:EOF
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -136,6 +159,29 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <GenerateMapFile>true</GenerateMapFile>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
+    <PreBuildEvent>
+      <Command>rem Copy ssleay32.dll and libeay32.dll from openssl lib directory to output directory
+
+CALL:copyChanged "$(openssl_lib)\ssleay32.dll" "$(OUTDIR)\ssleay32.dll"
+CALL:copyChanged "$(openssl_lib)\libeay32.dll" "$(OUTDIR)\libeay32.dll"
+
+GOTO :EOF
+
+:copyChanged
+
+SET SOURCE=%1
+SET TARGET=%2
+
+FOR %%i IN (%SOURCE%) DO SET SOURCEDATE=%%~ti
+FOR %%i IN (%TARGET%) DO SET TARGETDATE=%%~ti
+
+IF "%SOURCEDATE%"=="%TARGETDATE%" GOTO:EOF
+
+copy /B /Y %SOURCE% %TARGET%
+
+GOTO:EOF
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
     <Midl>
@@ -178,6 +224,29 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
 "$(OutDir)FileZilla Server.exe" /uninstall
 </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>rem Copy ssleay32.dll and libeay32.dll from openssl lib directory to output directory
+
+CALL:copyChanged "$(openssl_lib)\ssleay32.dll" "$(OUTDIR)\ssleay32.dll"
+CALL:copyChanged "$(openssl_lib)\libeay32.dll" "$(OUTDIR)\libeay32.dll"
+
+GOTO :EOF
+
+:copyChanged
+
+SET SOURCE=%1
+SET TARGET=%2
+
+FOR %%i IN (%SOURCE%) DO SET SOURCEDATE=%%~ti
+FOR %%i IN (%TARGET%) DO SET TARGETDATE=%%~ti
+
+IF "%SOURCEDATE%"=="%TARGETDATE%" GOTO:EOF
+
+copy /B /Y %SOURCE% %TARGET%
+
+GOTO:EOF
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Accounts.cpp" />
