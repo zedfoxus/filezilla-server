@@ -36,13 +36,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'" Label="PropertySheets">
-    <Import Project="Dependencies.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
-    <Import Project="Dependencies.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets">
     <Import Project="Dependencies.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -74,7 +68,7 @@
       <HeaderFileName />
     </Midl>
     <ClCompile>
-      <PreprocessorDefinitions>ZLIB_WINAPI;WIN32;_DEBUG;_WINDOWS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -121,7 +115,7 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <PreprocessorDefinitions>ZLIB_WINAPI;WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>
@@ -154,7 +148,7 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>ZLIB_WINAPI;WIN32;_DEBUG;_WINDOWS;MMGR;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZLIB_WINAPI;WIN32;_DEBUG;_WINDOWS;MMGR;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -211,30 +205,20 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
     <ClCompile Include="Service.cpp" />
     <ClCompile Include="SpeedLimit.cpp" />
     <ClCompile Include="StdAfx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="tinyxml\tinystr.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="tinyxml\tinyxml.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="tinyxml\tinyxmlerror.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="tinyxml\tinyxmlparser.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TransferSocket.cpp" />
     <ClCompile Include="version.cpp" />

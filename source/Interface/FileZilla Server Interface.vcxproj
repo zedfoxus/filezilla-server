@@ -22,19 +22,17 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v120_xp</PlatformToolset>
     <UseOfMfc>Static</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v120_xp</PlatformToolset>
     <UseOfMfc>Static</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v120_xp</PlatformToolset>
     <UseOfMfc>Static</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
@@ -42,13 +40,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'" Label="PropertySheets">
-    <Import Project="..\Dependencies.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
-    <Import Project="..\Dependencies.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets">
     <Import Project="..\Dependencies.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -56,17 +48,16 @@
     <_ProjectFileVersion>12.0.21005.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>false</LinkIncremental>
+    <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(openssl_include);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <GenerateManifest>false</GenerateManifest>
     <IncludePath>$(openssl_include);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
-    <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(openssl_include);$(IncludePath)</IncludePath>
+    <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -79,37 +70,23 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>.\Debug/FileZilla Server Interface.pch</PrecompiledHeaderOutputFile>
-      <AssemblerOutput>All</AssemblerOutput>
-      <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
-      <ObjectFileName>.\Debug/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0407</Culture>
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>Shlwapi.lib;version.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>.\Debug/FileZilla Server Interface.exe</OutputFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Debug/FileZilla Server Interface.pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
-      <MapFileName>.\Debug/FileZilla Server Interface.map</MapFileName>
       <SubSystem>Windows</SubSystem>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
-      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -122,40 +99,30 @@
       <HeaderFileName />
     </Midl>
     <ClCompile>
-      <Optimization>MinSpace</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>.\Release/FileZilla Server Interface.pch</PrecompiledHeaderOutputFile>
-      <AssemblerOutput>All</AssemblerOutput>
-      <AssemblerListingLocation>.\Release/</AssemblerListingLocation>
-      <ObjectFileName>.\Release/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0407</Culture>
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>Shlwapi.lib;version.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>.\Release/FileZilla Server Interface.exe</OutputFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Release/FileZilla Server Interface.pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
-      <MapFileName>.\Release/FileZilla Server Interface.map</MapFileName>
-      <SubSystem>Windows</SubSystem>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
-      <TargetMachine>MachineX86</TargetMachine>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
@@ -169,381 +136,101 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;MMGR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;MMGR;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>.\Debug/FileZilla Server Interface.pch</PrecompiledHeaderOutputFile>
-      <AssemblerOutput>All</AssemblerOutput>
-      <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
-      <ObjectFileName>.\Debug/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x0407</Culture>
     </ResourceCompile>
     <Link>
       <AdditionalOptions>/FORCE %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>Shlwapi.lib;version.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>.\memcheck/FileZilla Server Interface.exe</OutputFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Debug/FileZilla Server Interface.pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
-      <MapFileName>.\Debug/FileZilla Server Interface.map</MapFileName>
       <SubSystem>Windows</SubSystem>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
-      <TargetMachine>MachineX86</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Accounts.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="AdminSocket.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="..\Accounts.cpp" />
+    <ClCompile Include="AdminSocket.cpp" />
     <ClCompile Include="..\AsyncSocketEx.cpp" />
     <ClCompile Include="..\AsyncSocketExLayer.cpp" />
     <ClCompile Include="..\AsyncSslSocketLayer.cpp" />
-    <ClCompile Include="misc\BrowseForFolder.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="ConnectDialog.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="misc\BrowseForFolder.cpp" />
+    <ClCompile Include="ConnectDialog.cpp" />
     <ClCompile Include="..\conversion.cpp" />
     <ClCompile Include="DeleteGroupInUseDlg.cpp" />
-    <ClCompile Include="EnterSomething.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="FileZilla server.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="EnterSomething.cpp" />
+    <ClCompile Include="FileZilla server.cpp" />
     <ClCompile Include="GenerateCertificateDlg.cpp" />
-    <ClCompile Include="GroupsDlg.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="GroupsDlgGeneral.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="GroupsDlg.cpp" />
+    <ClCompile Include="GroupsDlgGeneral.cpp" />
     <ClCompile Include="GroupsDlgIpFilter.cpp" />
     <ClCompile Include="GroupsDlgSharedFolders.cpp" />
-    <ClCompile Include="GroupsDlgSpeedLimit.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="misc\HyperLink.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="GroupsDlgSpeedLimit.cpp" />
+    <ClCompile Include="misc\HyperLink.cpp" />
     <ClCompile Include="..\iputils.cpp" />
-    <ClCompile Include="misc\Led.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="MainFrm.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="misc\Led.cpp" />
+    <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="..\misc\md5.cpp" />
     <ClCompile Include="..\misc\mmgr.cpp" />
-    <ClCompile Include="NewUserDlg.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="OfflineAskDlg.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="Options.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="OptionsAdminInterfacePage.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="NewUserDlg.cpp" />
+    <ClCompile Include="OfflineAskDlg.cpp" />
+    <ClCompile Include="Options.cpp" />
+    <ClCompile Include="OptionsAdminInterfacePage.cpp" />
     <ClCompile Include="OptionsAutobanPage.cpp" />
     <ClCompile Include="OptionsCompressionPage.cpp" />
-    <ClCompile Include="OptionsDlg.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="OptionsDlg.cpp" />
     <ClCompile Include="OptionsGeneralIpbindingsPage.cpp" />
-    <ClCompile Include="OptionsGeneralPage.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="OptionsGeneralWelcomemessagePage.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="OptionsGeneralPage.cpp" />
+    <ClCompile Include="OptionsGeneralWelcomemessagePage.cpp" />
     <ClCompile Include="OptionsIpFilterPage.cpp" />
-    <ClCompile Include="OptionsLoggingPage.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="OptionsMiscPage.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="OptionsPage.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="OptionsPasvPage.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="OptionsSecurityPage.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="OptionsSpeedLimitPage.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="OptionsLoggingPage.cpp" />
+    <ClCompile Include="OptionsMiscPage.cpp" />
+    <ClCompile Include="OptionsPage.cpp" />
+    <ClCompile Include="OptionsPasvPage.cpp" />
+    <ClCompile Include="OptionsSecurityPage.cpp" />
+    <ClCompile Include="OptionsSpeedLimitPage.cpp" />
     <ClCompile Include="OptionsSslPage.cpp" />
     <ClCompile Include="OutputFormat.cpp" />
-    <ClCompile Include="misc\SAPrefsDialog.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="misc\SAPrefsStatic.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="misc\SAPrefsSubDlg.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="misc\SBDestination.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="..\SpeedLimit.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="SpeedLimitRuleDlg.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="splitex.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="StatusCtrl.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="StatusView.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="misc\SAPrefsDialog.cpp" />
+    <ClCompile Include="misc\SAPrefsStatic.cpp" />
+    <ClCompile Include="misc\SAPrefsSubDlg.cpp" />
+    <ClCompile Include="misc\SBDestination.cpp" />
+    <ClCompile Include="..\SpeedLimit.cpp" />
+    <ClCompile Include="SpeedLimitRuleDlg.cpp" />
+    <ClCompile Include="splitex.cpp" />
+    <ClCompile Include="StatusCtrl.cpp" />
+    <ClCompile Include="StatusView.cpp" />
     <ClCompile Include="StdAfx.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Create</PrecompiledHeader>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="misc\SystemTray.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="misc\SystemTray.cpp" />
     <ClCompile Include="..\tinyxml\tinystr.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\tinyxml\tinyxml.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\tinyxml\tinyxmlerror.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\tinyxml\tinyxmlparser.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="UsersDlg.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="UsersDlgGeneral.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="UsersDlg.cpp" />
+    <ClCompile Include="UsersDlgGeneral.cpp" />
     <ClCompile Include="UsersDlgIpFilter.cpp" />
     <ClCompile Include="UsersDlgSharedFolders.cpp" />
-    <ClCompile Include="UsersDlgSpeedLimit.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="UsersListCtrl.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile Include="UsersView.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
+    <ClCompile Include="UsersDlgSpeedLimit.cpp" />
+    <ClCompile Include="UsersListCtrl.cpp" />
+    <ClCompile Include="UsersView.cpp" />
     <ClCompile Include="..\version.cpp" />
     <ClCompile Include="..\xml_utils.cpp" />
   </ItemGroup>
