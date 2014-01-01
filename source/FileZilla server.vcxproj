@@ -44,9 +44,7 @@
     <_ProjectFileVersion>12.0.21005.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
     <LinkIncremental>true</LinkIncremental>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
     <LibraryPath>$(zlib_lib_debug);$(LibraryPath)</LibraryPath>
     <IncludePath>$(zlib_include);$(openssl_include);$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -80,13 +78,7 @@
       <MinimalRebuild>true</MinimalRebuild>
     </ClCompile>
     <ResourceCompile />
-    <PreLinkEvent>
-      <Message>Terminate service...</Message>
-      <Command>if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /stop
-if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /compat /stop
-if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninstall
-</Command>
-    </PreLinkEvent>
+    <PreLinkEvent />
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
@@ -94,34 +86,52 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
       <DataExecutionPrevention />
       <AdditionalDependencies>zlibstat.lib;version.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>"$(OutDir)FileZilla Server.exe" /stop
-"$(OutDir)FileZilla Server.exe" /uninstall
-</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
+    <PreBuildEvent />
     <PreBuildEvent>
       <Command>rem Copy ssleay32.dll and libeay32.dll from openssl lib directory to output directory
 
 CALL:copyChanged "$(openssl_lib)\ssleay32.dll" "$(OUTDIR)\ssleay32.dll"
 CALL:copyChanged "$(openssl_lib)\libeay32.dll" "$(OUTDIR)\libeay32.dll"
+CALL:copyChanged "$(openssl_lib)\ssleay32.pdb" "$(OUTDIR)\ssleay32.pdb" 1
+CALL:copyChanged "$(openssl_lib)\libeay32.pdb" "$(OUTDIR)\libeay32.pdb" 1
 
-GOTO :EOF
+GOTO:EOF
 
 :copyChanged
 
 SET SOURCE=%1
 SET TARGET=%2
 
+IF "%3" == "1" IF NOT EXIST %SOURCE% GOTO:EOF
+
 FOR %%i IN (%SOURCE%) DO SET SOURCEDATE=%%~ti
 FOR %%i IN (%TARGET%) DO SET TARGETDATE=%%~ti
 
 IF "%SOURCEDATE%"=="%TARGETDATE%" GOTO:EOF
-
 copy /B /Y %SOURCE% %TARGET%
+IF ERRORLEVEL 1 (
+  echo Could not copy %SOURCE% to %TARGET%
+  EXIT 1
+)
 
 GOTO:EOF
 </Command>
     </PreBuildEvent>
+    <PreLinkEvent>
+      <Command>if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /stop
+if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /compat /stop
+if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninstall
+EXIT 0</Command>
+    </PreLinkEvent>
+    <PreLinkEvent>
+      <Message>Terminate service...</Message>
+    </PreLinkEvent>
+    <PostBuildEvent>
+      <Command>"$(OutDir)FileZilla Server.exe" /stop
+"$(OutDir)FileZilla Server.exe" /uninstall
+EXIT 0</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -164,20 +174,27 @@ GOTO:EOF
 
 CALL:copyChanged "$(openssl_lib)\ssleay32.dll" "$(OUTDIR)\ssleay32.dll"
 CALL:copyChanged "$(openssl_lib)\libeay32.dll" "$(OUTDIR)\libeay32.dll"
+CALL:copyChanged "$(openssl_lib)\ssleay32.pdb" "$(OUTDIR)\ssleay32.pdb" 1
+CALL:copyChanged "$(openssl_lib)\libeay32.pdb" "$(OUTDIR)\libeay32.pdb" 1
 
-GOTO :EOF
+GOTO:EOF
 
 :copyChanged
 
 SET SOURCE=%1
 SET TARGET=%2
 
+IF "%3" == "1" IF NOT EXIST %SOURCE% GOTO:EOF
+
 FOR %%i IN (%SOURCE%) DO SET SOURCEDATE=%%~ti
 FOR %%i IN (%TARGET%) DO SET TARGETDATE=%%~ti
 
 IF "%SOURCEDATE%"=="%TARGETDATE%" GOTO:EOF
-
 copy /B /Y %SOURCE% %TARGET%
+IF ERRORLEVEL 1 (
+  echo Could not copy %SOURCE% to %TARGET%
+  EXIT 1
+)
 
 GOTO:EOF
 </Command>
@@ -210,7 +227,7 @@ GOTO:EOF
       <Command>if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /stop
 if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /compat /stop
 if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninstall
-</Command>
+EXIT 0</Command>
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>zlibstat.lib;version.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -222,27 +239,34 @@ if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninst
     <PostBuildEvent>
       <Command>"$(OutDir)FileZilla Server.exe" /stop
 "$(OutDir)FileZilla Server.exe" /uninstall
-</Command>
+EXIT 0</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>rem Copy ssleay32.dll and libeay32.dll from openssl lib directory to output directory
 
 CALL:copyChanged "$(openssl_lib)\ssleay32.dll" "$(OUTDIR)\ssleay32.dll"
 CALL:copyChanged "$(openssl_lib)\libeay32.dll" "$(OUTDIR)\libeay32.dll"
+CALL:copyChanged "$(openssl_lib)\ssleay32.pdb" "$(OUTDIR)\ssleay32.pdb" 1
+CALL:copyChanged "$(openssl_lib)\libeay32.pdb" "$(OUTDIR)\libeay32.pdb" 1
 
-GOTO :EOF
+GOTO:EOF
 
 :copyChanged
 
 SET SOURCE=%1
 SET TARGET=%2
 
+IF "%3" == "1" IF NOT EXIST %SOURCE% GOTO:EOF
+
 FOR %%i IN (%SOURCE%) DO SET SOURCEDATE=%%~ti
 FOR %%i IN (%TARGET%) DO SET TARGETDATE=%%~ti
 
 IF "%SOURCEDATE%"=="%TARGETDATE%" GOTO:EOF
-
 copy /B /Y %SOURCE% %TARGET%
+IF ERRORLEVEL 1 (
+  echo Could not copy %SOURCE% to %TARGET%
+  EXIT 1
+)
 
 GOTO:EOF
 </Command>
