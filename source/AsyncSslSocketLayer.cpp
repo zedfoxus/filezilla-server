@@ -842,7 +842,7 @@ int CAsyncSslSocketLayer::Receive(void* lpBuf, int nBufLen, int nFlags)
 		}
 		if (m_nNetworkError)
 		{
-			if (pBIO_ctrl(m_sslbio, BIO_CTRL_PENDING, 0, NULL) && !m_nShutDown)
+			if ((!m_bSslEstablished || pBIO_ctrl(m_sslbio, BIO_CTRL_PENDING, 0, NULL)) && !m_nShutDown)
 			{
 				m_mayTriggerReadUp = true;
 				TriggerEvents();
@@ -858,7 +858,7 @@ int CAsyncSslSocketLayer::Receive(void* lpBuf, int nBufLen, int nFlags)
 		}
 		if (!nBufLen)
 			return 0;
-		if (!pBIO_ctrl(m_sslbio, BIO_CTRL_PENDING, 0, NULL))
+		if (!m_bSslEstablished || !pBIO_ctrl(m_sslbio, BIO_CTRL_PENDING, 0, NULL))
 		{
 			if (GetLayerState() == closed)
 				return 0;
@@ -1915,6 +1915,9 @@ void CAsyncSslSocketLayer::OnClose(int nErrorCode)
 
 bool CAsyncSslSocketLayer::PrintLastErrorMsg()
 {
+	if (!pERR_get_error)
+		return false;
+
 	bool fatal = false;
 	int err = pERR_get_error();
 	while (err)
