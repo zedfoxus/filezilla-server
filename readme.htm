@@ -1,6 +1,6 @@
-<p align="center"><b><u>FileZilla Server version 0.9.42 beta</u></b></p>
-<p align="center">Copyright 2001-2013<br>
-by <a href="mailto:tim.kosse@filezilla-project.org">Tim Kosse</a><a href="http://filezilla-project.org/"><br>
+<p align="center"><b><u>FileZilla Server version 0.9.43 beta</u></b></p>
+<p align="center">Copyright 2001-2014<br>
+by <a href="mailto:tim.kosse@filezilla-project.org">Tim Kosse</a><a href="https://filezilla-project.org/"><br>
 https://filezilla-project.org/</a></p>
 <p align="left"><u><b>Features:</b></u></p>
 <ul>
@@ -66,10 +66,36 @@ as restoring it to normal size.</p>
   </tr>
 </table>
 <p align="left"><b><u>Version History:</u></b></p>
-<p>For a more detailed list of changes, please have a look at the SVN changelog located at <a href="https://filezilla-project.org/changelog.php?type=2">http://filezilla-project.org/changelog.php?type=2</a>.</p>
+<p>For a more detailed list of changes, please have a look at the SVN changelog located at <a href="https://filezilla-project.org/changelog.php?type=2">https://filezilla-project.org/changelog.php?type=2</a>.</p>
+<p><b>Version 0.9.43</b></p>
+<blockquote>
+  <u>New features and important changes:</u>
+  <ul>
+    <li>Security fix: Disallow renaming and deleting of aliases through FTP commands</li>
+    <li>Removed outdated and untested Kerberos GSSAPI support</li>
+    <li>Removed support for the nonstandard OPTS UTF8 OFF command which is not part of the FTP specifications</li>
+    <li>Added TLS 1.2 support</li>
+    <li>Minimum RSA key size for generated certificates is now 1280 bit</li>
+  </ul>
+  <u>Bug fixes:</u>
+  <ul>
+    <li>Fix handling of leading/trailing whitespace in filenames</li>
+    <li>Fix display of file name at the end of a transfer</li>
+    <li>The 8+3 account setting is now stored in the correct XML element</li>
+    <li>Increase number of tries searching for a free port after the PASV/EPSV command</li>
+    <li>Fix text clipping on the miscellaneous page in the settings dialig</li>
+    <li>Fixed memory leaks when changing settings</li>
+    <li>The numbers to the PORT command are now always treated as decimal numbers as per the FTP specifications even if they have leading zeroes</li>
+  </ul>
+  <u>Build system:</u>
+  <ul>
+    <li>Modernized and cleaned up workspace files for Visual Studio 2013</li>
+    <li>Removed all non-Unicode configurations</li>
+  </ul>
+</blockquote>
 <p><b>Version 0.9.42</b></p>
 <blockquote>
-  <u>New features</u>
+  <u>New features:</u>
   <ul>
     <li>Last version ever to support Windows XP</li>
     <li>More verbose replies to the transfer commands</li>
@@ -239,7 +265,7 @@ as restoring it to normal size.</p>
     <li>Disallow no-transfer timeouts smaller than 600 seconds</li>
   </ul>
 </blockquote>
-<p>For a more detailed list of changes, please have a look at the CVS changelog located at <a href="http://filezilla-project.org/changelog.php?type=2">http://filezilla-project.org/changelog.php?type=2</a>.</p>
+<p>For a more detailed list of changes, please have a look at the CVS changelog located at <a href="https://filezilla-project.org/changelog.php?type=2">https://filezilla-project.org/changelog.php?type=2</a>.</p>
 <p><b>Version 0.9.26</b></p>
 <blockquote>
   <u>Fixed bugs:</u>
