@@ -28,6 +28,7 @@
 #endif // _MSC_VER > 1000
 
 #include "AsyncSocketEx.h"
+#include <memory>
 
 class CAdminInterface;
 class CAdminSocket : public CAsyncSocketEx  
@@ -40,6 +41,8 @@ public:
 	virtual ~CAdminSocket();
 
 protected:
+	bool SendPendingData();
+
 	BOOL FinishLogon();
 	BOOL SendCommand(LPCTSTR pszCommand, int nTextType);
 	CAdminInterface *m_pAdminInterface;
@@ -48,9 +51,22 @@ protected:
 	virtual void OnSend(int nErrorCode);
 	struct t_data
 	{
-		unsigned char *pData;
+		t_data()
+			: pData()
+			, dwOffset()
+			, dwLength()
+		{}
+
+		explicit t_data( DWORD len ) 
+			: pData(new unsigned char[len]) 
+			, dwOffset()
+			, dwLength(len)
+		{
+		}
+
+		std::shared_ptr<unsigned char> pData;
 		DWORD dwOffset;
-		DWORD dwLength;
+		DWORD const dwLength;
 	};
 	std::list<t_data> m_SendBuffer;
 
