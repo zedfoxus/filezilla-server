@@ -150,15 +150,15 @@ bool CAdminSocket::SendPendingData()
 		if (nSent == SOCKET_ERROR) {
 			return WSAGetLastError() == WSAEWOULDBLOCK;
 		}
-		
-		if ((unsigned int)nSent < (data.dwLength - data.dwOffset)) {
-			data.dwOffset += nSent;
-			break;
-		}
 
 		SYSTEMTIME sTime;
 		GetSystemTime(&sTime);
 		VERIFY(SystemTimeToFileTime(&sTime, &m_LastRecvTime));
+
+		if ((unsigned int)nSent < (data.dwLength - data.dwOffset)) {
+			data.dwOffset += nSent;
+			break;
+		}
 	}
 
 	return true;
