@@ -47,10 +47,9 @@ CAdminSocket::CAdminSocket(CMainFrame *pMainFrame)
 
 CAdminSocket::~CAdminSocket()
 {
+	Close();
+
 	delete [] m_pRecvBuffer;
-	
-	for (std::list<t_data>::iterator iter=m_SendBuffer.begin(); iter!=m_SendBuffer.end(); iter++)
-		delete [] iter->pData;
 }
 
 void CAdminSocket::OnConnect(int nErrorCode)
@@ -125,29 +124,8 @@ void CAdminSocket::OnSend(int nErrorCode)
 	if (!m_nConnectionState)
 		return;
 
-	while (!m_SendBuffer.empty())
-	{
-		t_data data = m_SendBuffer.front();
-		int nSent = Send(data.pData + data.dwOffset, data.dwLength - data.dwOffset);
-		if (!nSent)
-		{
-			Close();
-			return;
-		}
-		if (nSent == SOCKET_ERROR)
-		{
-			if (WSAGetLastError()!=WSAEWOULDBLOCK)
-				Close();
-			return;
-		}
-		
-		if ((DWORD)nSent < (data.dwLength - data.dwOffset))
-			data.dwOffset += nSent;
-		else
-		{
-			m_SendBuffer.pop_front();
-			delete [] data.pData;
-		}
+	if( !SendPendingData()) {
+		Close();
 	}
 }
 
@@ -377,93 +355,56 @@ BOOL CAdminSocket::ParseRecvBuffer()
 
 BOOL CAdminSocket::SendCommand(int nType)
 {
-	t_data data;
-	data.pData = new unsigned char[5];
-	data.pData[0] = nType << 2;
-	data.dwOffset = 0;
+	t_data data(5);
+	*data.pData = nType << 2;
 	DWORD dwDataLength = 0;
-	memcpy(data.pData + 1, &dwDataLength, 4);
-
-	data.dwLength = 5;
-
+	memcpy(&*data.pData + 1, &dwDataLength, 4);
 	m_SendBuffer.push_back(data);
-	
-	do 
-	{
-		data=m_SendBuffer.front();
-		int nSent = Send(data.pData+data.dwOffset, data.dwLength-data.dwOffset);
-		if (!nSent)
-		{
-			Close();
-			return FALSE;
-		}
-		if (nSent == SOCKET_ERROR)
-		{
-			if (WSAGetLastError()!=WSAEWOULDBLOCK)
-			{
-				Close();
-				return FALSE;
-			}
-			return TRUE;
-		}
-		
-		if ((DWORD)nSent < (data.dwLength-data.dwOffset))
-			data.dwOffset+=nSent;
-		else
-		{
-			m_SendBuffer.pop_front();
-			delete [] data.pData;
-		}
-	} while (!m_SendBuffer.empty());
 
-	return TRUE;
+	bool res = SendPendingData();
+	if (!res)
+		Close();
+
+	return res;
 }
 
 BOOL CAdminSocket::SendCommand(int nType, void *pData, int nDataLength)
 {
 	ASSERT((pData && nDataLength) || (!pData && !nDataLength));
 	
-	t_data data;
-	data.pData = new unsigned char[nDataLength+5];
-	data.pData[0] = nType << 2;
-	data.dwOffset = 0;
-	memcpy(data.pData + 1, &nDataLength, 4);
+	t_data data(nDataLength + 5);
+	*data.pData = nType << 2;
+	memcpy(&*data.pData + 1, &nDataLength, 4);
 	if (pData)
-		memcpy(data.pData+5, pData, nDataLength);
-
-	data.dwLength = nDataLength + 5;
+		memcpy(&*data.pData + 5, pData, nDataLength);
 
 	m_SendBuffer.push_back(data);
 	
-	do 
-	{
-		data=m_SendBuffer.front();
-		int nSent = Send(data.pData+data.dwOffset, data.dwLength-data.dwOffset);
-		if (!nSent)
-		{
-			Close();
-			return FALSE;
-		}
-		if (nSent == SOCKET_ERROR)
-		{
-			if (WSAGetLastError()!=WSAEWOULDBLOCK)
-			{
-				Close();
-				return FALSE;
-			}
-			return TRUE;
-		}
-		
-		if ((DWORD)nSent < (data.dwLength-data.dwOffset))
-			data.dwOffset += nSent;
-		else
-		{
-			m_SendBuffer.pop_front();
-			delete [] data.pData;
-		}
-	} while (!m_SendBuffer.empty());
+	bool res = SendPendingData();
+	if (!res)
+		Close();
 
-	return TRUE;
+	return res;
+}
+
+bool CAdminSocket::SendPendingData()
+{
+	for( auto it = m_SendBuffer.begin(); it != m_SendBuffer.end(); it = m_SendBuffer.erase(it) ) {
+		auto& data = *it;
+		int nSent = Send(&*data.pData + data.dwOffset, data.dwLength - data.dwOffset);
+		if (!nSent)
+			return false;
+		if (nSent == SOCKET_ERROR) {
+			return WSAGetLastError() == WSAEWOULDBLOCK;
+		}
+
+		if ((unsigned int)nSent < (data.dwLength - data.dwOffset)) {
+			data.dwOffset += nSent;
+			break;
+		}
+	}
+
+	return true;
 }
 
 BOOL CAdminSocket::IsConnected()
