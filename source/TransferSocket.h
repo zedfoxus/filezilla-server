@@ -31,7 +31,6 @@ class CControlSocket;
 #define TRANSFERMODE_LIST 1
 #define TRANSFERMODE_RECEIVE 2
 #define TRANSFERMODE_SEND 3
-#define TRANSFERMODE_NLST 4
 
 struct t_dirlisting;
 

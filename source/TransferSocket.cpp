@@ -80,7 +80,7 @@ CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 
 void CTransferSocket::Init(t_dirlisting *pDir, int nMode)
 {
-	ASSERT(nMode==TRANSFERMODE_LIST || nMode==TRANSFERMODE_NLST);
+	ASSERT(nMode == TRANSFERMODE_LIST);
 	ASSERT(pDir);
 	m_bReady = TRUE;
 	m_status = 0;
@@ -157,7 +157,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 		return;
 	}
 
-	if (m_nMode == TRANSFERMODE_LIST || m_nMode == TRANSFERMODE_NLST)
+	if (m_nMode == TRANSFERMODE_LIST)
 	{ //Send directory listing
 		if (!m_bStarted)
 			if (!InitTransfer(TRUE))

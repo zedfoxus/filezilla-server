@@ -629,8 +629,7 @@ void CControlSocket::ParseCommand()
 	case COMMAND_CWD:
 		{
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send(_T("501 Syntax error"));
 				break;
 			}
@@ -821,145 +820,140 @@ void CControlSocket::ParseCommand()
 		}
 		break;
 	case COMMAND_LIST:
-		if (m_transferstatus.pasv == -1)
-		{
+	case COMMAND_MLSD:
+	case COMMAND_NLST:
+		if (m_transferstatus.pasv == -1) {
 			Send(_T("503 Bad sequence of commands."));
-			break;
 		}
-		if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1))
-		{
+		else if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1)) {
 			Send(_T("503 Bad sequence of commands."));
-			break;
 		}
-		if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
-		{
+		else if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP) {
 			Send(_T("521 PROT P required"));
-			break;
 		}
-		else
-		{
-			//Check args, currently only supported argument is the directory which will be listed.
-			CStdString dirToList;
-			args.TrimLeft(_T(" "));
-			args.TrimRight(_T(" "));
-			if (args != _T(""))
-			{
-				BOOL bBreak = FALSE;
-				while (args[0] == '-') //No parameters supported
+		else {
+			if( nCommandID != COMMAND_MLSD ) {
+				//Check args, currently only supported argument is the directory which will be listed.
+				args.TrimLeft(_T(" "));
+				args.TrimRight(_T(" "));
+				if (args != _T(""))
 				{
-					if (args.GetLength() < 2)
-					{ //Dash without param
-						Send(_T("501 Syntax error"));
-						bBreak = TRUE;
-						break;
-					}
-
-					int pos = args.Find(' ');
-					CStdString params;
-					if (pos != -1)
+					BOOL bBreak = FALSE;
+					while (args[0] == '-') //No parameters supported
 					{
-						params = args.Left(1);
-						params = params.Left(pos - 1);
-						args = args.Mid(pos + 1);
-						args.TrimLeft(_T(" "));
-					}
-					else
-						args = _T("");
-					while (params != _T(""))
-					{
-						//Some parameters are not support
-						if (params[0] == 'R')
-						{
-							Send(_T("504 Command not implemented for that parameter"));
+						if (args.GetLength() < 2)
+						{ //Dash without param
+							Send(_T("501 Syntax error"));
 							bBreak = TRUE;
 							break;
 						}
-						//Ignore other parameters
-						params = params.Mid(1);
-					}
 
-					if (args == _T(""))
+						int pos = args.Find(' ');
+						CStdString params;
+						if (pos != -1)
+						{
+							params = args.Left(1);
+							params = params.Left(pos - 1);
+							args = args.Mid(pos + 1);
+							args.TrimLeft(_T(" "));
+						}
+						else
+							args = _T("");
+						while (params != _T(""))
+						{
+							//Some parameters are not support
+							if (params[0] == 'R')
+							{
+								Send(_T("504 Command not implemented for that parameter"));
+								bBreak = TRUE;
+								break;
+							}
+							//Ignore other parameters
+							params = params.Mid(1);
+						}
+
+						if (args == _T(""))
+							break;
+					}
+					if (bBreak)
 						break;
 				}
-				if (bBreak)
-					break;
-				if (args != _T(""))
-				{
-					//Unquote args
-					if (!UnquoteArgs(args))
-					{
-						Send(_T("501 Syntax error"));
-						break;
-					}
+			}
 
-					dirToList = args;
-				}
+			//Unquote args
+			if (!UnquoteArgs(args)) {
+				Send(_T("501 Syntax error"));
+				break;
+			}
+
+			CPermissions::addFunc_t addFunc = CPermissions::AddFactsListingEntry;
+			if( nCommandID == COMMAND_LIST ) {
+				addFunc = CPermissions::AddLongListingEntry;
+			}
+			else if( nCommandID == COMMAND_NLST ) {
+				addFunc = CPermissions::AddShortListingEntry;
 			}
 
 			t_dirlisting *pResult;
 			CStdString physicalDir, logicalDir;
-			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, dirToList, pResult, physicalDir, logicalDir, CPermissions::AddLongListingEntry);
-			if (error & PERMISSION_DENIED)
-			{
+			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, pResult, physicalDir, logicalDir
+				, addFunc, m_facts);
+			if (error & PERMISSION_DENIED) {
 				Send(_T("550 Permission denied."));
 				ResetTransferstatus();
-				break;
 			}
-			else if (error & PERMISSION_INVALIDNAME)
-			{
+			else if (error & PERMISSION_INVALIDNAME) {
 				Send(_T("550 Filename invalid."));
 				ResetTransferstatus();
-				break;
 			}
-			else if (error)
-			{
+			else if (error) {
 				Send(_T("550 Directory not found."));
 				ResetTransferstatus();
-				break;
 			}
+			else {
+				m_transferstatus.resource = logicalDir;
 
-			m_transferstatus.resource = logicalDir;
-			if (!m_transferstatus.pasv) {
-				ResetTransferSocket();
+				if (!m_transferstatus.pasv) {
+					ResetTransferSocket();
 
-				CTransferSocket *transfersocket = new CTransferSocket(this);
-				m_transferstatus.socket = transfersocket;
-				transfersocket->Init(pResult, TRANSFERMODE_LIST);
-				if (m_transferMode == mode_zlib)
-				{
-					if (!transfersocket->InitZLib(m_zlibLevel))
+					CTransferSocket *transfersocket = new CTransferSocket(this);
+					m_transferstatus.socket = transfersocket;
+					transfersocket->Init(pResult, TRANSFERMODE_LIST);
+					if (m_transferMode == mode_zlib)
 					{
-						Send(_T("550 could not initialize zlib, please use MODE S instead"));
-						ResetTransferstatus();
+						if (!transfersocket->InitZLib(m_zlibLevel))
+						{
+							Send(_T("550 could not initialize zlib, please use MODE S instead"));
+							ResetTransferstatus();
+							break;
+						}
+					}
+
+					if (!CreateTransferSocket(transfersocket))
+						break;
+				}
+				else {
+					if (!m_transferstatus.socket)
+					{
+						CPermissions::DestroyDirlisting(pResult);
+						Send(_T("503 Bad sequence of commands."));
 						break;
 					}
-				}
-
-				if (!CreateTransferSocket(transfersocket))
-					break;
-			}
-			else
-			{
-				if (!m_transferstatus.socket)
-				{
-					CPermissions::DestroyDirlisting(pResult);
-					Send(_T("503 Bad sequence of commands."));
-					break;
-				}
-				m_transferstatus.socket->Init(pResult, TRANSFERMODE_LIST);
-				if (m_transferMode == mode_zlib)
-				{
-					if (!m_transferstatus.socket->InitZLib(m_zlibLevel))
+					m_transferstatus.socket->Init(pResult, TRANSFERMODE_LIST);
+					if (m_transferMode == mode_zlib)
 					{
-						Send(_T("550 could not initialize zlib, please use MODE S instead"));
-						ResetTransferstatus();
-						break;
+						if (!m_transferstatus.socket->InitZLib(m_zlibLevel))
+						{
+							Send(_T("550 could not initialize zlib, please use MODE S instead"));
+							ResetTransferstatus();
+							break;
+						}
 					}
-				}
 
-				m_transferstatus.socket->PasvTransfer();
+					m_transferstatus.socket->PasvTransfer();
+				}
+				SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
 			}
-			SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
 		}
 		break;
 	case COMMAND_REST:
@@ -1021,8 +1015,7 @@ void CControlSocket::ParseCommand()
 			//Much more checks
 
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -1115,8 +1108,7 @@ void CControlSocket::ParseCommand()
 			//Much more checks
 
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -1187,8 +1179,7 @@ void CControlSocket::ParseCommand()
 	case COMMAND_SIZE:
 		{
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -1216,8 +1207,7 @@ void CControlSocket::ParseCommand()
 	case COMMAND_DELE:
 		{
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send(_T("501 Syntax error"));
 				break;
 			}
@@ -1255,8 +1245,7 @@ void CControlSocket::ParseCommand()
 	case COMMAND_XRMD:
 		{
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -1287,8 +1276,7 @@ void CControlSocket::ParseCommand()
 	case COMMAND_XMKD:
 		{
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -1341,8 +1329,7 @@ void CControlSocket::ParseCommand()
 	case COMMAND_RNFR:
 		{
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -1390,8 +1377,7 @@ void CControlSocket::ParseCommand()
 			}
 
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -1480,8 +1466,7 @@ void CControlSocket::ParseCommand()
 			//Much more checks
 
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -1553,145 +1538,10 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_NLST:
-		if (m_transferstatus.pasv == -1)
-		{
-			Send(_T("503 Bad sequence of commands."));
-			break;
-		}
-		if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1))
-		{
-			Send(_T("503 Bad sequence of commands."));
-			break;
-		}
-		if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
-		{
-			Send(_T("521 PROT P required"));
-			break;
-		}
-		//Much more checks
-		else
-		{
-			//Check args, currently only supported argument is the directory which will be listed.
-			if (args != _T(""))
-			{
-				BOOL bBreak = FALSE;
-				while (args[0] == '-') //No parameters supported
-				{
-					if (args.GetLength() < 2)
-					{ //Dash without param
-						Send(_T("501 Syntax error"));
-						bBreak = TRUE;
-						break;
-					}
-
-					int pos = args.Find(' ');
-					CStdString params;
-					if (pos != -1)
-					{
-						params = args.Left(1);
-						params = params.Left(pos-1);
-						args = args.Mid(pos+1);
-						args.TrimLeft(_T(" "));
-					}
-					else
-						args = _T("");
-					while (params != _T(""))
-					{
-						//Some parameters are not support
-						if (params[0] == 'R')
-						{
-							Send(_T("504 Command not implemented for that parameter"));
-							bBreak = TRUE;
-							break;
-						}
-						//Ignore other parameters
-						params = params.Mid(1);
-					}
-
-					if (args == _T(""))
-						break;
-				}
-				if (bBreak)
-					break;
-				if (args != _T(""))
-				{
-					//Unquote args
-					if (!UnquoteArgs(args))
-					{
-						Send( _T("501 Syntax error") );
-						break;
-					}
-				}
-			}
-
-			t_dirlisting *pResult;
-			CStdString physicalDir, logicalDir;
-			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, pResult, physicalDir, logicalDir, CPermissions::AddShortListingEntry);
-			if (error & PERMISSION_DENIED)
-			{
-				Send(_T("550 Permission denied"));
-				ResetTransferstatus();
-			}
-			else if (error & PERMISSION_INVALIDNAME)
-			{
-				Send(_T("550 Filename invalid."));
-				ResetTransferstatus();
-			}
-			else if (error)
-			{
-				Send(_T("550 Directory not found"));
-				ResetTransferstatus();
-			}
-			else
-			{
-				if (!m_transferstatus.pasv)
-				{
-					CTransferSocket *transfersocket = new CTransferSocket(this);
-					m_transferstatus.socket = transfersocket;
-					transfersocket->Init(pResult, TRANSFERMODE_NLST);
-					if (m_transferMode == mode_zlib)
-					{
-						if (!transfersocket->InitZLib(m_zlibLevel))
-						{
-							Send(_T("550 could not initialize zlib, please use MODE S instead"));
-							ResetTransferstatus();
-							break;
-						}
-					}
-
-					if (!CreateTransferSocket(transfersocket))
-						break;
-				}
-				else
-				{
-					if (!m_transferstatus.socket)
-					{
-						CPermissions::DestroyDirlisting(pResult);
-						Send(_T("503 Bad sequence of commands."));
-						break;
-					}
-					m_transferstatus.socket->Init(pResult, TRANSFERMODE_NLST );
-					if (m_transferMode == mode_zlib)
-					{
-						if (!m_transferstatus.socket->InitZLib(m_zlibLevel))
-						{
-							Send(_T("550 could not initialize zlib, please use MODE S instead"));
-							ResetTransferstatus();
-							break;
-						}
-					}
-					m_transferstatus.socket->PasvTransfer();
-				}
-				SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir); // Use TRANSFERMODE_LIST instead of TRANSFERMODE_NLST.
-			}
-		}
-		break;
 	case COMMAND_MDTM:
 		{
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -2162,97 +2012,6 @@ void CControlSocket::ParseCommand()
 			Send(_T("250 End"));
 		}
 		break;
-	case COMMAND_MLSD:
-		if (m_transferstatus.pasv == -1)
-		{
-			Send(_T("503 Bad sequence of commands."));
-			break;
-		}
-		if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1))
-			Send(_T("503 Bad sequence of commands."));
-		//Much more checks
-		else
-		{
-			if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
-			{
-				Send(_T("521 PROT P required"));
-				break;
-			}
-			if (args != _T(""))
-			{
-				//Unquote args
-				if (!UnquoteArgs(args))
-				{
-					Send(_T("501 Syntax error"));
-					break;
-				}
-			}
-
-			t_dirlisting *pResult;
-			CStdString physicalDir, logicalDir;
-			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, pResult, physicalDir, logicalDir, CPermissions::AddFactsListingEntry, m_facts);
-			if (error & PERMISSION_DENIED)
-			{
-				Send(_T("550 Permission denied"));
-				ResetTransferstatus();
-			}
-			else if (error & PERMISSION_INVALIDNAME)
-			{
-				Send(_T("550 Filename invalid."));
-				ResetTransferstatus();
-			}
-			else if (error)
-			{
-				Send(_T("550 Directory not found"));
-				ResetTransferstatus();
-			}
-			else
-			{
-				m_transferstatus.resource = logicalDir;
-
-				if (!m_transferstatus.pasv) {
-					ResetTransferSocket();
-
-					CTransferSocket *transfersocket = new CTransferSocket(this);
-					m_transferstatus.socket = transfersocket;
-					transfersocket->Init(pResult, TRANSFERMODE_LIST);
-					if (m_transferMode == mode_zlib)
-					{
-						if (!transfersocket->InitZLib(m_zlibLevel))
-						{
-							Send(_T("550 could not initialize zlib, please use MODE S instead"));
-							ResetTransferstatus();
-							break;
-						}
-					}
-
-					if (!CreateTransferSocket(transfersocket))
-						break;
-				}
-				else {
-					if (!m_transferstatus.socket)
-					{
-						CPermissions::DestroyDirlisting(pResult);
-						Send(_T("503 Bad sequence of commands."));
-						break;
-					}
-					m_transferstatus.socket->Init(pResult, TRANSFERMODE_LIST );
-					if (m_transferMode == mode_zlib)
-					{
-						if (!m_transferstatus.socket->InitZLib(m_zlibLevel))
-						{
-							Send(_T("550 could not initialize zlib, please use MODE S instead"));
-							ResetTransferstatus();
-							break;
-						}
-					}
-
-					m_transferstatus.socket->PasvTransfer();
-				}
-				SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
-			}
-		}
-		break;
 	case COMMAND_SITE:
 		{
 			CStdString cmd;
@@ -2364,14 +2123,12 @@ void CControlSocket::ParseCommand()
 			}
 
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
 
-			if (args == _T(""))
-			{
+			if (args == _T("")) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -2410,8 +2167,7 @@ void CControlSocket::ParseCommand()
 			}
 
 			//Unquote args
-			if (!UnquoteArgs(args))
-			{
+			if (!UnquoteArgs(args)) {
 				Send( _T("501 Syntax error") );
 				break;
 			}
@@ -2480,7 +2236,7 @@ void CControlSocket::ProcessTransferMsg()
 	{
 		CStdString msg = _T("226 Successfully transferred \"") + resource + _T("\"");
 
-		if ((mode == TRANSFERMODE_LIST || mode == TRANSFERMODE_NLST || mode == TRANSFERMODE_SEND) && zlibBytesIn && zlibBytesOut)
+		if ((mode == TRANSFERMODE_LIST || mode == TRANSFERMODE_SEND) && zlibBytesIn && zlibBytesOut)
 		{
 			CStdString str;
 			if (zlibBytesIn >= zlibBytesOut)

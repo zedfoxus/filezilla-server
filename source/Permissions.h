@@ -100,6 +100,7 @@ public:
 	CPermissions();
 	virtual ~CPermissions();
 
+	typedef void (*addFunc_t)(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
 protected:
 	/*
 	 * CanonifyPath takes the current and the new server dir as parameter,
@@ -118,7 +119,7 @@ public:
 	int GetDirectoryListing(LPCTSTR username, CStdString currentDir, CStdString dirToDisplay,
 							 t_dirlisting *&pResult, CStdString& physicalDir, 
 							 CStdString& logicalDir,
-							 void (*addFunc)(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts),
+							 addFunc_t addFunc,
 							 bool *enabledFacts = 0);
 
 	// Full direcoty listing with all details. Used by LIST command
