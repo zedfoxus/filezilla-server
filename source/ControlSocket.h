@@ -82,12 +82,14 @@ protected:
 	static int GetUserCount(const CStdString &user);
 	static void IncUserCount(const CStdString &user);
 	static void DecUserCount(const CStdString &user);
-	void ResetTransferstatus();
+	void ResetTransferstatus( bool send_info = true );
+	void ResetTransferSocket( bool send_info = true );
 	BOOL CreateTransferSocket(CTransferSocket *pTransferSocket);
 	bool CheckIpForZlib();
 	void SendTransferinfoNotification(const char transfermode = TRANSFERMODE_NOTSET, const CStdString& physicalFile = "", const CStdString& logicalFile = "", __int64 startOffset = 0, __int64 totalSize = -1);
 	bool CanQuit();
 	CStdString GetPassiveIP();
+	bool CreatePassiveTransferSocket();
 
 	virtual int OnLayerCallback(std::list<t_callbackMsg>& callbacks);
 

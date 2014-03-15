@@ -109,9 +109,7 @@ CControlSocket::~CControlSocket()
 	op->op = USERCONTROL_CONNOP_REMOVE;
 	op->userid = m_userid;
 	m_pOwner->SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
-	if (m_transferstatus.socket)
-		delete m_transferstatus.socket;
-	m_transferstatus.socket=0;
+	ResetTransferstatus(false);
 
 	delete [] m_pSendBuffer;
 	m_nSendBufferLen = 0;
@@ -688,12 +686,8 @@ void CControlSocket::ParseCommand()
 				break;
 			}
 
-			if (m_transferstatus.socket)
-			{
-				SendTransferinfoNotification();
-				delete m_transferstatus.socket;
-				m_transferstatus.socket = 0;
-			}
+			ResetTransferstatus();
+
 			int count = 0;
 			int pos = 0;
 			//Convert commas to dots
@@ -772,82 +766,28 @@ void CControlSocket::ParseCommand()
 	case COMMAND_PASV:
 	case COMMAND_PASVSMC:
 		{
-			if (GetFamily() != AF_INET)
-			{
+			if (GetFamily() != AF_INET) {
 				Send(_T("500 You are connected using IPv6. PASV is only for IPv4. You have to use the EPSV command instead."));
 				break;
 			}
 
-			if (m_transferstatus.socket)
-			{
-				SendTransferinfoNotification();
-				delete m_transferstatus.socket;
-			}
-			m_transferstatus.family = AF_INET;
-			m_transferstatus.socket = new CTransferSocket(this);
-
-			unsigned int retries = 10;
-			unsigned int port = 0;
+			ResetTransferstatus();
 
 			CStdString pasvIP = GetPassiveIP();
-			if (pasvIP == _T(""))
-			{
-				delete m_transferstatus.socket;
-				m_transferstatus.socket = NULL;
+			if (pasvIP == _T("")) {
 				Send(_T("421 Could not create socket, no usable IP address found."));
 				m_transferstatus.pasv = -1;
 				break;
 			}
 
-			while (retries > 0)
-			{
-				if (m_pOwner->m_pOptions->GetOptionVal(OPTION_USECUSTOMPASVPORT))
-				{
-					static UINT customPort = 0;
-					unsigned int minPort = (unsigned int)m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMINPORT);
-					unsigned int maxPort = (unsigned int)m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMAXPORT);
-					if (minPort > maxPort) {
-						unsigned int temp = minPort;
-						minPort = maxPort;
-						maxPort = temp;
-					}
-					if (customPort < minPort || customPort > maxPort) {
-						customPort = minPort;
-					}
-					port = customPort;
-
-					++customPort;
-				} else {
-					port = 0;
-				}
-				if (m_transferstatus.socket->Create(port, SOCK_STREAM, FD_ACCEPT))
-					break;
-				--retries;
-			}
-			if (retries <= 0) {
-				delete m_transferstatus.socket;
-				m_transferstatus.socket = NULL;
-				Send(_T("421 Could not create socket."));
-				m_transferstatus.pasv = -1;
-				break;
-			}
-
-			if (m_pSslLayer && m_bProtP)
-				m_transferstatus.socket->UseSSL(m_pSslLayer->GetContext());
-
-			if (!m_transferstatus.socket->Listen())
-			{
-				delete m_transferstatus.socket;
-				m_transferstatus.socket = NULL;
-				Send(_T("421 Could not create socket, listening failed."));
-				m_transferstatus.pasv = -1;
+			if( !CreatePassiveTransferSocket() ) {
 				break;
 			}
 
 			//Now retrieve the port
 			CStdString dummy;
-			if (m_transferstatus.socket->GetSockName(dummy, port))
-			{
+			UINT port = 0;
+			if (m_transferstatus.socket->GetSockName(dummy, port)) {
 				//Reformat the ip
 				pasvIP.Replace(_T("."), _T(","));
 				//Put the answer together
@@ -857,14 +797,10 @@ void CControlSocket::ParseCommand()
 				else
 					str.Format(_T("227 Entering Passive Mode (%s,%d,%d)"), pasvIP, port / 256, port % 256);
 				Send(str);
-				m_transferstatus.pasv = 1;
 			}
-			else
-			{
-				delete m_transferstatus.socket;
-				m_transferstatus.socket = NULL;
+			else {
+				ResetTransferstatus(false);
 				Send(_T("421 Could not create socket, unable to query socket for used port."));
-				m_transferstatus.pasv = -1;
 				break;
 			}
 			
@@ -983,13 +919,9 @@ void CControlSocket::ParseCommand()
 			}
 
 			m_transferstatus.resource = logicalDir;
-			if (!m_transferstatus.pasv)
-			{
-				if (m_transferstatus.socket)
-				{
-					SendTransferinfoNotification();
-					delete m_transferstatus.socket;
-				}
+			if (!m_transferstatus.pasv) {
+				ResetTransferSocket();
+
 				CTransferSocket *transfersocket = new CTransferSocket(this);
 				m_transferstatus.socket = transfersocket;
 				transfersocket->Init(pResult, TRANSFERMODE_LIST);
@@ -1005,9 +937,6 @@ void CControlSocket::ParseCommand()
 
 				if (!CreateTransferSocket(transfersocket))
 					break;
-
-				SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
-				SendTransferPreliminary();
 			}
 			else
 			{
@@ -1028,9 +957,9 @@ void CControlSocket::ParseCommand()
 					}
 				}
 
-				SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
 				m_transferstatus.socket->PasvTransfer();
 			}
+			SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
 		}
 		break;
 	case COMMAND_REST:
@@ -1119,13 +1048,9 @@ void CControlSocket::ParseCommand()
 			else
 			{
 				m_transferstatus.resource = logicalFile;
-				if (!m_transferstatus.pasv)
-				{
-					if (m_transferstatus.socket)
-					{
-						SendTransferinfoNotification();
-						delete m_transferstatus.socket;
-					}
+				if (!m_transferstatus.pasv) {
+					ResetTransferSocket();
+
 					CTransferSocket *transfersocket = new CTransferSocket(this);
 					m_transferstatus.socket = transfersocket;
 					transfersocket->Init(physicalFile, TRANSFERMODE_SEND, m_transferstatus.rest);
@@ -1141,12 +1066,6 @@ void CControlSocket::ParseCommand()
 
 					if (!CreateTransferSocket(transfersocket))
 						break;
-
-					__int64 totalSize;
-					if (!GetLength64(physicalFile, totalSize))
-						totalSize = -1;
-					SendTransferinfoNotification(TRANSFERMODE_SEND, physicalFile, logicalFile, m_transferstatus.rest, totalSize);
-					SendTransferPreliminary();
 				}
 				else
 				{
@@ -1167,26 +1086,24 @@ void CControlSocket::ParseCommand()
 						}
 					}
 
-					__int64 totalSize;
-					if (!GetLength64(physicalFile, totalSize))
-						totalSize = -1;
-					SendTransferinfoNotification(TRANSFERMODE_SEND, physicalFile, logicalFile, m_transferstatus.rest, totalSize);
-
 					m_transferstatus.socket->PasvTransfer();
 				}
+				
+				__int64 totalSize;
+				if (!GetLength64(physicalFile, totalSize))
+					totalSize = -1;
+				SendTransferinfoNotification(TRANSFERMODE_SEND, physicalFile, logicalFile, m_transferstatus.rest, totalSize);
 				GetSystemTime(&m_LastTransferTime);
 			}
 			break;
 		}
 	case COMMAND_STOR:
 		{
-			if (m_transferstatus.pasv == -1)
-			{
+			if (m_transferstatus.pasv == -1) {
 				Send(_T("503 Bad sequence of commands."));
 				break;
 			}
-			if(!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1))
-			{
+			if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1)) {
 				Send(_T("503 Bad sequence of commands."));
 				break;
 			}
@@ -1241,9 +1158,6 @@ void CControlSocket::ParseCommand()
 
 					if (!CreateTransferSocket(transfersocket))
 						break;
-
-					SendTransferinfoNotification(TRANSFERMODE_RECEIVE, physicalFile, logicalFile, m_transferstatus.rest);
-					SendTransferPreliminary();
 				}
 				else
 				{
@@ -1263,9 +1177,9 @@ void CControlSocket::ParseCommand()
 							break;
 						}
 					}
-					SendTransferinfoNotification(TRANSFERMODE_RECEIVE, physicalFile, logicalFile, m_transferstatus.rest);
 					m_transferstatus.socket->PasvTransfer();
 				}
+				SendTransferinfoNotification(TRANSFERMODE_RECEIVE, physicalFile, logicalFile, m_transferstatus.rest);
 				GetSystemTime(&m_LastTransferTime);
 			}
 		}
@@ -1614,12 +1528,6 @@ void CControlSocket::ParseCommand()
 
 					if (!CreateTransferSocket(transfersocket))
 						break;
-
-					SendTransferinfoNotification(TRANSFERMODE_RECEIVE, physicalFile, logicalFile, m_transferstatus.rest);
-
-					CStdString str;
-					str.Format(_T("150 Opening data channel for file transfer, restarting at offset %I64d"), size);
-					Send(str);
 				}
 				else
 				{
@@ -1638,9 +1546,9 @@ void CControlSocket::ParseCommand()
 							break;
 						}
 					}
-					SendTransferinfoNotification(TRANSFERMODE_RECEIVE, physicalFile, logicalFile, m_transferstatus.rest);
 					m_transferstatus.socket->PasvTransfer();
 				}
+				SendTransferinfoNotification(TRANSFERMODE_RECEIVE, physicalFile, logicalFile, m_transferstatus.rest);
 				GetSystemTime(&m_LastTransferTime);
 			}
 		}
@@ -1754,9 +1662,6 @@ void CControlSocket::ParseCommand()
 
 					if (!CreateTransferSocket(transfersocket))
 						break;
-
-					SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir); // Use TRANSFERMODE_LIST instead of TRANSFERMODE_NLST.
-					Send(_T("150 Opening data channel for directory list."));
 				}
 				else
 				{
@@ -1776,9 +1681,9 @@ void CControlSocket::ParseCommand()
 							break;
 						}
 					}
-					SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir); // Use TRANSFERMODE_LIST instead of TRANSFERMODE_NLST.
 					m_transferstatus.socket->PasvTransfer();
 				}
+				SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir); // Use TRANSFERMODE_LIST instead of TRANSFERMODE_NLST.
 			}
 		}
 		break;
@@ -1819,84 +1724,32 @@ void CControlSocket::ParseCommand()
 		break;
 	case COMMAND_EPSV:
 		{
-			if (m_transferstatus.socket)
-			{
-				SendTransferinfoNotification();
-				delete m_transferstatus.socket;
-			}
-			m_transferstatus.family = (GetFamily() == AF_INET) ? 1 : 2;
-			m_transferstatus.socket = new CTransferSocket(this);
+			ResetTransferstatus();
 
-			unsigned int port = 0;
-			unsigned int retries = 3;
-			while (retries > 0) {
-				if (m_pOwner->m_pOptions->GetOptionVal(OPTION_USECUSTOMPASVPORT)) {
-					static UINT customPort = 0;
-					unsigned int minPort = (unsigned int)m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMINPORT);
-					unsigned int maxPort = (unsigned int)m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMAXPORT);
-					if (minPort > maxPort) {
-						unsigned int temp = minPort;
-						minPort = maxPort;
-						maxPort = temp;
-					}
-					if (customPort < minPort || customPort > maxPort) {
-						customPort = minPort;
-					}
-					port = customPort;
-					++customPort;
-				}
-				if (m_transferstatus.socket->Create(port, SOCK_STREAM, FD_ACCEPT, 0, GetFamily()))
-				{
-					break;
-				}
-				--retries;
-			}
-			if (retries <= 0) {
-				delete m_transferstatus.socket;
-				m_transferstatus.socket=0;
-				Send(_T("421 Could not create socket."));
+			if( !CreatePassiveTransferSocket() ) {
 				break;
 			}
-
-			if (m_pSslLayer && m_bProtP)
-				m_transferstatus.socket->UseSSL(m_pSslLayer->GetContext());
-
-			if (!m_transferstatus.socket->Listen())
-			{
-				delete m_transferstatus.socket;
-				m_transferstatus.socket=0;
-				Send(_T("421 Could not create socket, listening failed."));
-				m_transferstatus.pasv = -1;
-				break;
-			}
-
+			
 			//Now retrieve the port
 			CStdString dummy;
+			UINT port = 0;
 			if (m_transferstatus.socket->GetSockName(dummy, port))
 			{
 				//Put the answer together
 				CStdString str;
 				str.Format(_T("229 Entering Extended Passive Mode (|||%d|)"), port);
 				Send(str);
-				m_transferstatus.pasv=1;
 			}
 			else
 			{
-				delete m_transferstatus.socket;
-				m_transferstatus.socket=0;
+				ResetTransferstatus(false);
 				Send(_T("421 Could not create socket, unable to query socket for used port."));
-				m_transferstatus.pasv = -1;
 			}
 			break;
 		}
 	case COMMAND_EPRT:
 		{
-			if (m_transferstatus.socket)
-			{
-				SendTransferinfoNotification();
-				delete m_transferstatus.socket;
-				m_transferstatus.socket=0;
-			}
+			ResetTransferstatus();
 
 			if (args[0] != '|')
 			{
@@ -2357,13 +2210,9 @@ void CControlSocket::ParseCommand()
 			{
 				m_transferstatus.resource = logicalDir;
 
-				if (!m_transferstatus.pasv)
-				{
-					if (m_transferstatus.socket)
-					{
-						SendTransferinfoNotification();
-						delete m_transferstatus.socket;
-					}
+				if (!m_transferstatus.pasv) {
+					ResetTransferSocket();
+
 					CTransferSocket *transfersocket = new CTransferSocket(this);
 					m_transferstatus.socket = transfersocket;
 					transfersocket->Init(pResult, TRANSFERMODE_LIST);
@@ -2379,12 +2228,8 @@ void CControlSocket::ParseCommand()
 
 					if (!CreateTransferSocket(transfersocket))
 						break;
-
-					SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
-					SendTransferPreliminary();
 				}
-				else
-				{
+				else {
 					if (!m_transferstatus.socket)
 					{
 						CPermissions::DestroyDirlisting(pResult);
@@ -2402,11 +2247,10 @@ void CControlSocket::ParseCommand()
 						}
 					}
 
-					SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
 					m_transferstatus.socket->PasvTransfer();
 				}
+				SendTransferinfoNotification(TRANSFERMODE_LIST, physicalDir, logicalDir);
 			}
-
 		}
 		break;
 	case COMMAND_SITE:
@@ -2701,16 +2545,11 @@ CTransferSocket* CControlSocket::GetTransferSocket()
 
 void CControlSocket::ForceClose(int nReason)
 {
-	if (m_transferstatus.socket)
-	{
-		// Don't call SendTransferInfoNotification, since connection
-		// does get removed real soon.
-		m_transferstatus.socket->Close();
-		delete m_transferstatus.socket;
-		m_transferstatus.socket = 0;
-	}
-	if (m_shutdown && nReason == 1)
-	{
+	// Don't call SendTransferInfoNotification, since connection
+	// does get removed real soon.
+	ResetTransferstatus(false);
+
+	if (m_shutdown && nReason == 1) {
 		Close();
 		m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 		return;
@@ -2857,14 +2696,18 @@ void CControlSocket::WaitGoOffline(bool wait /*=true*/)
 
 }
 
-void CControlSocket::ResetTransferstatus()
+void CControlSocket::ResetTransferSocket( bool send_info )
 {
-	if (m_transferstatus.socket)
-	{
+	if (m_transferstatus.socket && send_info ) {
 		SendTransferinfoNotification();
-		delete m_transferstatus.socket;
 	}
+	delete m_transferstatus.socket;
 	m_transferstatus.socket = 0;
+}
+
+void CControlSocket::ResetTransferstatus( bool send_info )
+{
+	ResetTransferSocket( send_info );
 	m_transferstatus.ip = _T("");
 	m_transferstatus.port = -1;
 	m_transferstatus.pasv = -1;
@@ -3169,6 +3012,8 @@ creation_fallback:
 
 	if (m_pSslLayer && m_bProtP)
 		pTransferSocket->UseSSL(m_pSslLayer->GetContext());
+
+	SendTransferPreliminary();
 
 	return TRUE;
 }
@@ -3570,4 +3415,54 @@ void CControlSocket::SendTransferPreliminary()
 	}
 	
 	Send(msg);
+}
+
+bool CControlSocket::CreatePassiveTransferSocket()
+{
+	m_transferstatus.socket = new CTransferSocket(this);
+
+	unsigned int retries = 10;
+	unsigned int port = 0;
+	while (retries > 0) {
+		unsigned int port = 0;
+		if (m_pOwner->m_pOptions->GetOptionVal(OPTION_USECUSTOMPASVPORT)) {
+			unsigned int minPort = (unsigned int)m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMINPORT);
+			unsigned int maxPort = (unsigned int)m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMAXPORT);
+			if (minPort > maxPort) {
+				std::swap(minPort, maxPort);
+			}
+			EnterCritSection(m_Sync);
+			static unsigned int customPort = 0;
+			if (customPort < minPort || customPort > maxPort) {
+				customPort = minPort;
+			}
+			port = customPort;
+			++customPort;
+			LeaveCritSection(m_Sync);
+		}
+		else {
+			port = 0;
+		}
+		if (m_transferstatus.socket->Create(port, SOCK_STREAM, FD_ACCEPT, 0, GetFamily()))
+			break;
+		--retries;
+	}
+	if (retries <= 0) {
+		ResetTransferstatus(false);
+		Send(_T("421 Could not create socket."));
+		return false;
+	}
+
+	if (m_pSslLayer && m_bProtP)
+		m_transferstatus.socket->UseSSL(m_pSslLayer->GetContext());
+
+	if (!m_transferstatus.socket->Listen()) {
+		ResetTransferstatus(false);
+		Send(_T("421 Could not create socket, listening failed."));
+		return false;
+	}
+
+	m_transferstatus.pasv = 1;
+
+	return true;
 }
