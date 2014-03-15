@@ -894,9 +894,9 @@ void CControlSocket::ParseCommand()
 				addFunc = CPermissions::AddShortListingEntry;
 			}
 
-			t_dirlisting *pResult;
+			std::list<t_dirlisting> result;
 			CStdString physicalDir, logicalDir;
-			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, pResult, physicalDir, logicalDir
+			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, result, physicalDir, logicalDir
 				, addFunc, m_facts);
 			if (error & PERMISSION_DENIED) {
 				Send(_T("550 Permission denied."));
@@ -918,9 +918,8 @@ void CControlSocket::ParseCommand()
 
 					CTransferSocket *transfersocket = new CTransferSocket(this);
 					m_transferstatus.socket = transfersocket;
-					transfersocket->Init(pResult, TRANSFERMODE_LIST);
-					if (m_transferMode == mode_zlib)
-					{
+					transfersocket->Init(result, TRANSFERMODE_LIST);
+					if (m_transferMode == mode_zlib) {
 						if (!transfersocket->InitZLib(m_zlibLevel))
 						{
 							Send(_T("550 could not initialize zlib, please use MODE S instead"));
@@ -933,13 +932,11 @@ void CControlSocket::ParseCommand()
 						break;
 				}
 				else {
-					if (!m_transferstatus.socket)
-					{
-						CPermissions::DestroyDirlisting(pResult);
+					if (!m_transferstatus.socket) {
 						Send(_T("503 Bad sequence of commands."));
 						break;
 					}
-					m_transferstatus.socket->Init(pResult, TRANSFERMODE_LIST);
+					m_transferstatus.socket->Init(result, TRANSFERMODE_LIST);
 					if (m_transferMode == mode_zlib)
 					{
 						if (!m_transferstatus.socket->InitZLib(m_zlibLevel))

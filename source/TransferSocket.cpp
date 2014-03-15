@@ -78,10 +78,9 @@ CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 	m_on_connect_called = false;
 }
 
-void CTransferSocket::Init(t_dirlisting *pDir, int nMode)
+void CTransferSocket::Init(std::list<t_dirlisting> &dir, int nMode)
 {
 	ASSERT(nMode == TRANSFERMODE_LIST);
-	ASSERT(pDir);
 	m_bReady = TRUE;
 	m_status = 0;
 	if (m_pBuffer)
@@ -91,7 +90,7 @@ void CTransferSocket::Init(t_dirlisting *pDir, int nMode)
 		delete [] m_pBuffer2;
 	m_pBuffer2 = 0;
 	
-	m_pDirListing = pDir;
+	std::swap( directory_listing_, dir );
 
 	m_nMode = nMode;
 
@@ -125,10 +124,7 @@ CTransferSocket::~CTransferSocket()
 	RemoveAllLayers();
 	delete m_pSslLayer;
 
-	CPermissions::DestroyDirlisting(m_pDirListing);
-
-	if (m_useZlib)
-	{
+	if (m_useZlib) {
 		if (m_nMode == TRANSFERMODE_RECEIVE)
 			inflateEnd(&m_zlibStream);
 		else
@@ -151,8 +147,7 @@ END_MESSAGE_MAP()
 void CTransferSocket::OnSend(int nErrorCode)
 {
 	CAsyncSocketEx::OnSend(nErrorCode);
-	if (nErrorCode)
-	{
+	if (nErrorCode) {
 		EndTransfer(1);
 		return;
 	}
@@ -176,15 +171,13 @@ void CTransferSocket::OnSend(int nErrorCode)
 				m_zlibStream.avail_out = m_nBufSize;
 			}
 
-			while (true)
-			{
+			while (true) {
 				int numsend;
 				if (!m_zlibStream.avail_in)
 				{
-					if (m_pDirListing)
-					{
-						m_zlibStream.next_in = (Bytef *)m_pDirListing->buffer;
-						m_zlibStream.avail_in = m_pDirListing->len;
+					if (!directory_listing_.empty()) {
+						m_zlibStream.next_in = (Bytef *)directory_listing_.front().buffer;
+						m_zlibStream.avail_in = directory_listing_.front().len;
 					}
 				}
 				if (!m_zlibStream.avail_out)
@@ -198,18 +191,16 @@ void CTransferSocket::OnSend(int nErrorCode)
 				}
 
 				int res = Z_OK;
-				if (m_zlibStream.avail_out)
-				{
+				if (m_zlibStream.avail_out) {
 					m_zlibStream.total_in = 0;
 					m_zlibStream.total_out = 0;
-					res = deflate(&m_zlibStream, (m_pDirListing && m_pDirListing->pNext) ? 0 : Z_FINISH);
+					res = deflate(&m_zlibStream, directory_listing_.size() > 1 ? 0 : Z_FINISH);
 					m_currentFileOffset += m_zlibStream.total_in;
 					m_zlibBytesIn += m_zlibStream.total_in;
 					m_zlibBytesOut += m_zlibStream.total_out;
 					if (res == Z_STREAM_END)
 					{
-						if (m_pDirListing && m_pDirListing->pNext)
-						{
+						if (directory_listing_.size() > 1 ) {
 							ShutDown();
 							EndTransfer(6);
 							return;
@@ -223,11 +214,8 @@ void CTransferSocket::OnSend(int nErrorCode)
 						EndTransfer(6);
 						return;
 					}
-					if (!m_zlibStream.avail_in && m_pDirListing)
-					{
-						t_dirlisting *pPrev = m_pDirListing;
-						m_pDirListing = m_pDirListing->pNext;
-						delete pPrev;
+					if (!m_zlibStream.avail_in && !directory_listing_.empty()) {
+						directory_listing_.pop_front();
 					}
 				}
 				
@@ -278,11 +266,10 @@ void CTransferSocket::OnSend(int nErrorCode)
 		}
 		else
 		{
-			while (m_pDirListing && m_pDirListing->len)
-			{
+			while (!directory_listing_.empty()) {
 				int numsend = m_nBufSize;
-				if ((m_pDirListing->len - m_nBufferPos) < m_nBufSize)
-					numsend = m_pDirListing->len - m_nBufferPos;
+				if ((directory_listing_.front().len - m_nBufferPos) < m_nBufSize)
+					numsend = directory_listing_.front().len - m_nBufferPos;
 
 				long long nLimit = m_pOwner->GetSpeedLimit(download);
 				if (nLimit != -1 && GetState() != aborted && numsend > nLimit)
@@ -291,7 +278,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				if (!numsend)
 					return;
 
-				int numsent = Send(m_pDirListing->buffer + m_nBufferPos, numsend);
+				int numsent = Send(directory_listing_.front().buffer + m_nBufferPos, numsend);
 				if (numsent == SOCKET_ERROR)
 				{
 					int error = GetLastError();
@@ -312,22 +299,19 @@ void CTransferSocket::OnSend(int nErrorCode)
 				
 				m_currentFileOffset += numsent;
 
-				ASSERT(m_nBufferPos <= m_pDirListing->len);
-				if (m_nBufferPos == m_pDirListing->len)
-				{
-					t_dirlisting *pPrev = m_pDirListing;
-					m_pDirListing = m_pDirListing->pNext;
-					delete pPrev;
+				ASSERT(m_nBufferPos <= directory_listing_.front().len);
+				if (m_nBufferPos == directory_listing_.front().len) {
+					directory_listing_.pop_front();
 					m_nBufferPos = 0;
 	
-					if (!m_pDirListing)
+					if( directory_listing_.empty() ) {
 						break;
+					}
 				}
 
 				//Check if there are other commands in the command queue.
 				MSG msg;
-				if (PeekMessage(&msg,0, 0, 0, PM_NOREMOVE))
-				{
+				if (PeekMessage(&msg,0, 0, 0, PM_NOREMOVE)) {
 					TriggerEvent(FD_WRITE);
 					return;
 				}

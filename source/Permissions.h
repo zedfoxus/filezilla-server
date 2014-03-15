@@ -81,10 +81,13 @@ public:
 
 struct t_dirlisting
 {
+	t_dirlisting()
+		: len()
+	{
+	}
+
 	char buffer[8192];
 	unsigned int len;
-
-	t_dirlisting *pNext;
 };
 
 enum _facts {
@@ -100,7 +103,7 @@ public:
 	CPermissions();
 	virtual ~CPermissions();
 
-	typedef void (*addFunc_t)(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
+	typedef void (*addFunc_t)(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
 protected:
 	/*
 	 * CanonifyPath takes the current and the new server dir as parameter,
@@ -117,19 +120,19 @@ public:
 
 	// Retrieve a directory listing. Pass the actual formatting function as last parameter.
 	int GetDirectoryListing(LPCTSTR username, CStdString currentDir, CStdString dirToDisplay,
-							 t_dirlisting *&pResult, CStdString& physicalDir, 
+							 std::list<t_dirlisting> &result, CStdString& physicalDir, 
 							 CStdString& logicalDir,
 							 addFunc_t addFunc,
 							 bool *enabledFacts = 0);
 
 	// Full direcoty listing with all details. Used by LIST command
-	static void AddLongListingEntry(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *);
+	static void AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *);
 
 	// Directory listing with just the filenames. Used by NLST command
-	static void AddShortListingEntry(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *);
+	static void AddShortListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *);
 
 	// Directory listing format used by MLSD
-	static void AddFactsListingEntry(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
+	static void AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
 
 	CStdString GetHomeDir(LPCTSTR username, bool physicalPath = false) const;
 	CStdString GetHomeDir(const CUser &user, bool physicalPath = false) const;
@@ -146,8 +149,6 @@ public:
 	void ReloadConfig();
 
 	int GetFact(LPCTSTR username, CStdString currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3]);
-
-	static void DestroyDirlisting(struct t_dirlisting* pListing);
 
 protected:
 	bool Init();

@@ -47,7 +47,7 @@ public:
 // Operationen
 public:
 	CTransferSocket(CControlSocket *pOwner);
-	void Init(t_dirlisting *pDir, int nMode);
+	void Init(std::list<t_dirlisting> &dir, int nMode);
 	void Init(const CStdString& filename, int nMode, _int64 rest);
 	inline bool InitCalled() { return m_bReady; }
 	bool UseSSL(void* sslContext);
@@ -81,6 +81,7 @@ protected:
 
 	void EndTransfer(int status);
 
+	std::list<t_dirlisting> directory_listing_;
 	t_dirlisting *m_pDirListing;
 	BOOL m_bSentClose;
 	CStdString m_Filename;

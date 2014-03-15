@@ -166,7 +166,7 @@ CPermissions::~CPermissions()
 		delete m_pPermissionsHelperWindow;
 }
 
-void CPermissions::AddLongListingEntry(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *)
+void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *)
 {
 	CFileStatus64 status;
 	if (!pTime && GetStatus64(directory.dir, status))
@@ -178,24 +178,20 @@ void CPermissions::AddLongListingEntry(t_dirlisting *&pResult, bool isDir, const
 	unsigned int nameLen = strlen(name);
 
 	// This wastes some memory but keeps the whole thing fast
-	if ((8192 - pResult->len) < (60 + nameLen))
-	{
-		pResult->pNext = new t_dirlisting;
-		pResult = pResult->pNext;
-		pResult->len = 0;
-		pResult->pNext = NULL;
+	if (result.empty() || (8192 - result.back().len) < (60 + nameLen)) {
+		result.push_back(t_dirlisting());
 	}
 
 	if (isDir)
 	{
-		memcpy(pResult->buffer + pResult->len, "drwxr-xr-x", 10);
-		pResult->len += 10;
+		memcpy(result.back().buffer + result.back().len, "drwxr-xr-x", 10);
+		result.back().len += 10;
 	}
 	else
 	{
-		pResult->buffer[pResult->len++] = '-';
-		pResult->buffer[pResult->len++] = directory.bFileRead ? 'r' : '-';
-		pResult->buffer[pResult->len++] = directory.bFileWrite ? 'w' : '-';
+		result.back().buffer[result.back().len++] = '-';
+		result.back().buffer[result.back().len++] = directory.bFileRead ? 'r' : '-';
+		result.back().buffer[result.back().len++] = directory.bFileWrite ? 'w' : '-';
 
 		BOOL isexe = FALSE;
 		if (nameLen > 4)
@@ -212,19 +208,19 @@ void CPermissions::AddLongListingEntry(t_dirlisting *&pResult, bool isDir, const
 					isexe = TRUE;
 			}
 		}
-		pResult->buffer[pResult->len++] = isexe ? 'x' : '-';
-		pResult->buffer[pResult->len++] = directory.bFileRead ? 'r' : '-';
-		pResult->buffer[pResult->len++] = '-';
-		pResult->buffer[pResult->len++] = isexe ? 'x' : '-';
-		pResult->buffer[pResult->len++] = directory.bFileRead ? 'r' : '-';
-		pResult->buffer[pResult->len++] = '-';
-		pResult->buffer[pResult->len++] = isexe ? 'x' : '-';
+		result.back().buffer[result.back().len++] = isexe ? 'x' : '-';
+		result.back().buffer[result.back().len++] = directory.bFileRead ? 'r' : '-';
+		result.back().buffer[result.back().len++] = '-';
+		result.back().buffer[result.back().len++] = isexe ? 'x' : '-';
+		result.back().buffer[result.back().len++] = directory.bFileRead ? 'r' : '-';
+		result.back().buffer[result.back().len++] = '-';
+		result.back().buffer[result.back().len++] = isexe ? 'x' : '-';
 	}
 
-	memcpy(pResult->buffer + pResult->len, " 1 ftp ftp ", 11);
-	pResult->len += 11;
+	memcpy(result.back().buffer + result.back().len, " 1 ftp ftp ", 11);
+	result.back().len += 11;
 
-	pResult->len += sprintf(pResult->buffer + pResult->len, "% 14I64d", size);
+	result.back().len += sprintf(result.back().buffer + result.back().len, "% 14I64d", size);
 
 	// Adjust time zone info and output file date/time
 	SYSTEMTIME sLocalTime;
@@ -253,19 +249,19 @@ void CPermissions::AddLongListingEntry(t_dirlisting *&pResult, bool isDir, const
 
 	_int64 t2 = ((_int64)fTime.dwHighDateTime<<32) + fTime.dwLowDateTime;
 	const char months[][4]={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-	pResult->len += sprintf(pResult->buffer + pResult->len, " %s %02d ", months[sFileTime.wMonth-1], sFileTime.wDay);
+	result.back().len += sprintf(result.back().buffer + result.back().len, " %s %02d ", months[sFileTime.wMonth-1], sFileTime.wDay);
 	if (t1 > t2 || (t2-t1) > ((_int64)1000000*60*60*24*350))
-		pResult->len += sprintf(pResult->buffer + pResult->len, " %d ", sFileTime.wYear);
+		result.back().len += sprintf(result.back().buffer + result.back().len, " %d ", sFileTime.wYear);
 	else
-		pResult->len += sprintf(pResult->buffer + pResult->len, "%02d:%02d ", sFileTime.wHour, sFileTime.wMinute);
+		result.back().len += sprintf(result.back().buffer + result.back().len, "%02d:%02d ", sFileTime.wHour, sFileTime.wMinute);
 
-	memcpy(pResult->buffer + pResult->len, name, nameLen);
-	pResult->len += nameLen;
-	pResult->buffer[pResult->len++] = '\r';
-	pResult->buffer[pResult->len++] = '\n';
+	memcpy(result.back().buffer + result.back().len, name, nameLen);
+	result.back().len += nameLen;
+	result.back().buffer[result.back().len++] = '\r';
+	result.back().buffer[result.back().len++] = '\n';
 }
 
-void CPermissions::AddFactsListingEntry(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts)
+void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts)
 {
 	CFileStatus64 status;
 	if (!pTime && GetStatus64(directory.dir, status))
@@ -277,25 +273,21 @@ void CPermissions::AddFactsListingEntry(t_dirlisting *&pResult, bool isDir, cons
 	unsigned int nameLen = strlen(name);
 
 	// This wastes some memory but keeps the whole thing fast
-	if ((8192 - pResult->len) < (76 + nameLen))
-	{
-		pResult->pNext = new t_dirlisting;
-		pResult = pResult->pNext;
-		pResult->len = 0;
-		pResult->pNext = NULL;
+	if (result.empty() || (8192 - result.back().len) < (76 + nameLen)) {
+		result.push_back(t_dirlisting());
 	}
 
 	if (!enabledFacts || enabledFacts[0])
 	{
 		if (isDir)
 		{
-			memcpy(pResult->buffer + pResult->len, "type=dir;", 9);
-			pResult->len += 9;
+			memcpy(result.back().buffer + result.back().len, "type=dir;", 9);
+			result.back().len += 9;
 		}
 		else
 		{
-			memcpy(pResult->buffer + pResult->len, "type=file;", 10);
-			pResult->len += 10;
+			memcpy(result.back().buffer + result.back().len, "type=file;", 10);
+			result.back().len += 10;
 		}
 	}
 
@@ -326,60 +318,56 @@ void CPermissions::AddFactsListingEntry(t_dirlisting *&pResult, bool isDir, cons
 				time.wMinute,
 				time.wSecond);
 
-			memcpy(pResult->buffer + pResult->len, str.c_str(), str.GetLength());
-			pResult->len += str.GetLength();
+			memcpy(result.back().buffer + result.back().len, str.c_str(), str.GetLength());
+			result.back().len += str.GetLength();
 		}
 	}
 
 	if (!enabledFacts || enabledFacts[1])
 	{
 		if (!isDir)
-			pResult->len += sprintf(pResult->buffer + pResult->len, "size=%I64d;", size);
+			result.back().len += sprintf(result.back().buffer + result.back().len, "size=%I64d;", size);
 	}
 
 	if (enabledFacts && enabledFacts[fact_perm])
 	{
 		// TODO: a, d,f,p,r,w
-		memcpy(pResult->buffer + pResult->len, "perm=", 5);
-		pResult->len += 5;
+		memcpy(result.back().buffer + result.back().len, "perm=", 5);
+		result.back().len += 5;
 		if (isDir)
 		{
 			if (directory.bFileWrite)
-				pResult->buffer[pResult->len++] = 'c';
-			pResult->buffer[pResult->len++] = 'e';
+				result.back().buffer[result.back().len++] = 'c';
+			result.back().buffer[result.back().len++] = 'e';
 			if (directory.bDirList)
-				pResult->buffer[pResult->len++] = 'l';
+				result.back().buffer[result.back().len++] = 'l';
 			if (directory.bFileDelete || directory.bDirDelete)
-				pResult->buffer[pResult->len++] = 'p';
+				result.back().buffer[result.back().len++] = 'p';
 		}
 		else
 		{
 		}	
 	}
 
-	pResult->len += sprintf(pResult->buffer + pResult->len, " %s\r\n", name);
+	result.back().len += sprintf(result.back().buffer + result.back().len, " %s\r\n", name);
 }
 
-void CPermissions::AddShortListingEntry(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *)
+void CPermissions::AddShortListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *)
 {
 	unsigned int nameLen = strlen(name);
 	unsigned int dirToDisplayLen = strlen(dirToDisplay);
 
 	// This wastes some memory but keeps the whole thing fast
-	if ((8192 - pResult->len) < (10 + nameLen + dirToDisplayLen))
-	{
-		pResult->pNext = new t_dirlisting;
-		pResult = pResult->pNext;
-		pResult->len = 0;
-		pResult->pNext = NULL;
+	if (result.empty() || (8192 - result.back().len) < (10 + nameLen + dirToDisplayLen)) {
+		result.push_back(t_dirlisting());
 	}
 
-	memcpy(pResult->buffer + pResult->len, dirToDisplay, dirToDisplayLen);
-	pResult->len += dirToDisplayLen;
-	memcpy(pResult->buffer + pResult->len, name, nameLen);
-	pResult->len += nameLen;
-	pResult->buffer[pResult->len++] = '\r';
-	pResult->buffer[pResult->len++] = '\n';
+	memcpy(result.back().buffer + result.back().len, dirToDisplay, dirToDisplayLen);
+	result.back().len += dirToDisplayLen;
+	memcpy(result.back().buffer + result.back().len, name, nameLen);
+	result.back().len += nameLen;
+	result.back().buffer[result.back().len++] = '\r';
+	result.back().buffer[result.back().len++] = '\n';
 }
 
 bool is8dot3(const CStdString& file)
@@ -413,8 +401,8 @@ bool is8dot3(const CStdString& file)
 }
 
 int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, CStdString dirToDisplay,
-									  t_dirlisting *&pResult, CStdString& physicalDir, 
-									  CStdString& logicalDir, void (*addFunc)(t_dirlisting *&pResult, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts),
+									  std::list<t_dirlisting> &result, CStdString& physicalDir, 
+									  CStdString& logicalDir, void (*addFunc)(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts),
 									  bool *enabledFacts /*=0*/)
 {
 	// Get user
@@ -474,11 +462,6 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 	if (dirToDisplay != _T("") && dirToDisplay.Right(1) != _T("/"))
 		dirToDisplay += _T("/");
 
-	t_dirlisting *pDir = new t_dirlisting;
-	pDir->len = 0;
-	pDir->pNext = NULL;
-	pResult = pDir;
-
 	auto dirToDisplayUTF8 = ConvToNetwork(dirToDisplay);
 	if (dirToDisplayUTF8.empty() && !dirToDisplay.empty())
 		return PERMISSION_DENIED;
@@ -506,7 +489,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 
 		auto name = ConvToNetwork(iter->second.name);
 		if (!name.empty())
-			addFunc(pDir, true, name.c_str(), directory, 0, 0, dirToDisplayUTF8.c_str(), enabledFacts);
+			addFunc(result, true, name.c_str(), directory, 0, 0, dirToDisplayUTF8.c_str(), enabledFacts);
 	}
 
 	for (std::multimap<CStdString, CStdString>::const_iterator iter = user.virtualAliasNames.begin(); iter != user.virtualAliasNames.end(); iter++)
@@ -531,7 +514,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 
 		auto name = ConvToNetwork(iter->second);
 		if (!name.empty())
-			addFunc(pDir, true, name.c_str(), directory, 0, 0, dirToDisplayUTF8.c_str(), enabledFacts);
+			addFunc(result, true, name.c_str(), directory, 0, 0, dirToDisplayUTF8.c_str(), enabledFacts);
 	}
 
 	physicalDir = directory.dir;
@@ -583,7 +566,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 				auto utf8 = ConvToNetwork(fn);
 				if (utf8.empty() && !fn.empty())
 					continue;
-				addFunc(pDir, true, utf8.c_str(), subDir, 0, &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
+				addFunc(result, true, utf8.c_str(), subDir, 0, &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
 			}
 		}
 		else
@@ -591,7 +574,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 			auto utf8 = ConvToNetwork(fn);
 			if (utf8.empty() && !fn.empty())
 				continue;
-			addFunc(pDir, false, utf8.c_str(), directory, FindFileData.nFileSizeLow + ((_int64)FindFileData.nFileSizeHigh<<32), &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
+			addFunc(result, false, utf8.c_str(), directory, FindFileData.nFileSizeLow + ((_int64)FindFileData.nFileSizeHigh<<32), &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
 		}
 	}
 
@@ -2247,14 +2230,4 @@ bool CPermissions::WildcardMatch(CStdString string, CStdString pattern) const
 		}
 	}
 	return true;
-}
-
-void CPermissions::DestroyDirlisting(struct t_dirlisting* pListing)
-{
-	while (pListing)
-	{
-		t_dirlisting *pPrev = pListing;
-		pListing = pListing->pNext;
-		delete pPrev;
-	}
 }
