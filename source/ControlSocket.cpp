@@ -993,50 +993,34 @@ void CControlSocket::ParseCommand()
 		}
 		break;
 	case COMMAND_RETR:
-		{
-			if (m_transferstatus.pasv == -1)
-			{
-				Send(_T("503 Bad sequence of commands."));
-				break;
-			}
-			if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1))
-			{
-				Send(_T("503 Bad sequence of commands."));
-				break;
-			}
-			if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
-			{
-				Send(_T("521 PROT P required"));
-				break;
-			}
-			//Much more checks
-
-			//Unquote args
-			if (!UnquoteArgs(args)) {
-				Send( _T("501 Syntax error") );
-				break;
-			}
-
-
+		if (m_transferstatus.pasv == -1) {
+			Send(_T("503 Bad sequence of commands."));
+		}
+		else if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1)) {
+			Send(_T("503 Bad sequence of commands."));
+		}
+		else if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP) {
+			Send(_T("521 PROT P required"));
+		}
+		else if (!UnquoteArgs(args)) {
+			Send( _T("501 Syntax error") );
+		}
+		else {
 			CStdString physicalFile, logicalFile;
 			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_READ, physicalFile, logicalFile);
-			if (error & PERMISSION_DENIED)
-			{
+			if (error & PERMISSION_DENIED) {
 				Send(_T("550 Permission denied"));
 				ResetTransferstatus();
 			}
-			else if (error & PERMISSION_INVALIDNAME)
-			{
+			else if (error & PERMISSION_INVALIDNAME) {
 				Send(_T("550 Filename invalid."));
 				ResetTransferstatus();
 			}
-			else if (error)
-			{
+			else if (error) {
 				Send(_T("550 File not found"));
 				ResetTransferstatus();
 			}
-			else
-			{
+			else {
 				m_transferstatus.resource = logicalFile;
 				if (!m_transferstatus.pasv) {
 					ResetTransferSocket();
@@ -1044,10 +1028,8 @@ void CControlSocket::ParseCommand()
 					CTransferSocket *transfersocket = new CTransferSocket(this);
 					m_transferstatus.socket = transfersocket;
 					transfersocket->Init(physicalFile, TRANSFERMODE_SEND, m_transferstatus.rest);
-					if (m_transferMode == mode_zlib)
-					{
-						if (!transfersocket->InitZLib(m_zlibLevel))
-						{
+					if (m_transferMode == mode_zlib) {
+						if (!transfersocket->InitZLib(m_zlibLevel)) {
 							Send(_T("550 could not initialize zlib, please use MODE S instead"));
 							ResetTransferstatus();
 							break;
@@ -1057,19 +1039,15 @@ void CControlSocket::ParseCommand()
 					if (!CreateTransferSocket(transfersocket))
 						break;
 				}
-				else
-				{
-					if (!m_transferstatus.socket)
-					{
+				else {
+					if (!m_transferstatus.socket) {
 						Send(_T("503 Bad sequence of commands."));
 						break;
 					}
 
 					m_transferstatus.socket->Init(physicalFile, TRANSFERMODE_SEND, m_transferstatus.rest);
-					if (m_transferMode == mode_zlib)
-					{
-						if (!m_transferstatus.socket->InitZLib(m_zlibLevel))
-						{
+					if (m_transferMode == mode_zlib) {
+						if (!m_transferstatus.socket->InitZLib(m_zlibLevel)) {
 							Send(_T("550 could not initialize zlib, please use MODE S instead"));
 							ResetTransferstatus();
 							break;
@@ -1085,60 +1063,52 @@ void CControlSocket::ParseCommand()
 				SendTransferinfoNotification(TRANSFERMODE_SEND, physicalFile, logicalFile, m_transferstatus.rest, totalSize);
 				GetSystemTime(&m_LastTransferTime);
 			}
-			break;
 		}
+		break;
 	case COMMAND_STOR:
-		{
-			if (m_transferstatus.pasv == -1) {
-				Send(_T("503 Bad sequence of commands."));
-				break;
-			}
-			if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1)) {
-				Send(_T("503 Bad sequence of commands."));
-				break;
-			}
-			if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
-			{
-				Send(_T("521 PROT P required"));
-				break;
-			}
-			//Much more checks
-
-			//Unquote args
-			if (!UnquoteArgs(args)) {
-				Send( _T("501 Syntax error") );
-				break;
-			}
-
+	case COMMAND_APPE:
+		if (m_transferstatus.pasv == -1) {
+			Send(_T("503 Bad sequence of commands."));
+		}
+		else if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1)) {
+			Send(_T("503 Bad sequence of commands."));
+		}
+		else if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP) {
+			Send(_T("521 PROT P required"));
+		}
+		else if (!UnquoteArgs(args)) {
+			Send( _T("501 Syntax error") );
+		}
+		else {
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, m_transferstatus.rest ? FOP_APPEND : FOP_WRITE, physicalFile, logicalFile);
-			if (error & PERMISSION_DENIED)
-			{
+			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, (m_transferstatus.rest || nCommandID == COMMAND_APPE) ? FOP_APPEND : FOP_WRITE, physicalFile, logicalFile);
+			if (error & PERMISSION_DENIED) {
 				Send(_T("550 Permission denied"));
 				ResetTransferstatus();
 			}
-			else if (error & PERMISSION_INVALIDNAME)
-			{
+			else if (error & PERMISSION_INVALIDNAME) {
 				Send(_T("550 Filename invalid."));
 				ResetTransferstatus();
 			}
-			else if (error)
-			{
+			else if (error) {
 				Send(_T("550 Filename invalid"));
 				ResetTransferstatus();
 			}
-			else
-			{
+			else {
+				if( nCommandID == COMMAND_APPE ) {
+					m_transferstatus.rest = 0;
+					if (!GetLength64(physicalFile, m_transferstatus.rest)) {
+						m_transferstatus.rest = 0;
+					}
+				}
+
 				m_transferstatus.resource = logicalFile;
-				if (!m_transferstatus.pasv)
-				{
+				if (!m_transferstatus.pasv) {
 					CTransferSocket *transfersocket = new CTransferSocket(this);
 					transfersocket->Init(physicalFile, TRANSFERMODE_RECEIVE, m_transferstatus.rest);
 					m_transferstatus.socket = transfersocket;
-					if (m_transferMode == mode_zlib)
-					{
-						if (!transfersocket->InitZLib(m_zlibLevel))
-						{
+					if (m_transferMode == mode_zlib) {
+						if (!transfersocket->InitZLib(m_zlibLevel)) {
 							Send(_T("550 could not initialize zlib, please use MODE S instead"));
 							ResetTransferstatus();
 							break;
@@ -1148,19 +1118,15 @@ void CControlSocket::ParseCommand()
 					if (!CreateTransferSocket(transfersocket))
 						break;
 				}
-				else
-				{
-					if (!m_transferstatus.socket)
-					{
+				else {
+					if (!m_transferstatus.socket) {
 						Send(_T("503 Bad sequence of commands."));
 						break;
 					}
 
 					m_transferstatus.socket->Init(physicalFile, TRANSFERMODE_RECEIVE, m_transferstatus.rest);
-                    if (m_transferMode == mode_zlib)
-					{
-						if (!m_transferstatus.socket->InitZLib(m_zlibLevel))
-						{
+					if (m_transferMode == mode_zlib) {
+						if (!m_transferstatus.socket->InitZLib(m_zlibLevel)) {
 							Send(_T("550 could not initialize zlib, please use MODE S instead"));
 							ResetTransferstatus();
 							break;
@@ -1442,98 +1408,6 @@ void CControlSocket::ParseCommand()
 	case COMMAND_NOOP:
 	case COMMAND_NOP:
 		Send(_T("200 OK"));
-		break;
-	case COMMAND_APPE:
-		{
-			if (m_transferstatus.pasv == -1)
-			{
-				Send(_T("503 Bad sequence of commands."));
-				break;
-			}
-			if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1))
-			{
-				Send(_T("503 Bad sequence of commands."));
-				break;
-			}
-			if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP)
-			{
-				Send(_T("521 PROT P required"));
-				break;
-			}
-			//Much more checks
-
-			//Unquote args
-			if (!UnquoteArgs(args)) {
-				Send( _T("501 Syntax error") );
-				break;
-			}
-
-			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_APPEND, physicalFile, logicalFile);
-			if (error & PERMISSION_DENIED)
-			{
-				Send(_T("550 Permission denied"));
-				ResetTransferstatus();
-			}
-			else if (error & PERMISSION_INVALIDNAME)
-			{
-				Send(_T("550 Filename invalid."));
-				ResetTransferstatus();
-			}
-			else if (error)
-			{
-				Send(_T("550 Filename invalid"));
-				ResetTransferstatus();
-			}
-			else
-			{
-				_int64 size = 0;
-				if (!GetLength64(physicalFile, size))
-					size = 0;
-
-				m_transferstatus.rest = size;
-
-				if (!m_transferstatus.pasv)
-				{
-					CTransferSocket *transfersocket = new CTransferSocket(this);
-					transfersocket->Init(physicalFile, TRANSFERMODE_RECEIVE, m_transferstatus.rest);
-					m_transferstatus.socket = transfersocket;
-					if (m_transferMode == mode_zlib)
-					{
-						if (!transfersocket->InitZLib(m_zlibLevel))
-						{
-							Send(_T("550 could not initialize zlib, please use MODE S instead"));
-							ResetTransferstatus();
-							break;
-						}
-					}
-
-					if (!CreateTransferSocket(transfersocket))
-						break;
-				}
-				else
-				{
-					if (!m_transferstatus.socket)
-					{
-						Send(_T("503 Bad sequence of commands."));
-						break;
-					}
-					m_transferstatus.socket->Init(physicalFile, TRANSFERMODE_RECEIVE, m_transferstatus.rest);
-					if (m_transferMode == mode_zlib)
-					{
-						if (!m_transferstatus.socket->InitZLib(m_zlibLevel))
-						{
-							Send(_T("550 could not initialize zlib, please use MODE S instead"));
-							ResetTransferstatus();
-							break;
-						}
-					}
-					m_transferstatus.socket->PasvTransfer();
-				}
-				SendTransferinfoNotification(TRANSFERMODE_RECEIVE, physicalFile, logicalFile, m_transferstatus.rest);
-				GetSystemTime(&m_LastTransferTime);
-			}
-		}
 		break;
 	case COMMAND_MDTM:
 		{
