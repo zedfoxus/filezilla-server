@@ -74,7 +74,6 @@ public:
 	// path and name or returns an empty string if the alias can't be found.
 	CStdString GetAliasTarget(const CStdString& path, const CStdString& virtualPath, const CStdString& name) const;
 
-	std::multimap<CStdString, t_alias> aliasMap;
 	std::map<CStdString, CStdString> virtualAliases;
 	std::multimap<CStdString, CStdString> virtualAliasNames;
 };

@@ -23,6 +23,8 @@
 #include "entersomething.h"
 #include "UsersDlg.h"
 
+#include <set>
+
 #if defined(_DEBUG) && !defined(MMGR)
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -129,6 +131,13 @@ BOOL CUsersDlgSharedFolders::OnInitDialog()
 	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
+struct cmp
+{
+	bool operator()(CString const& lhs, CString const& rhs) {
+		return lhs.CompareNoCase(rhs) < 0;
+	}
+};
+
 CString CUsersDlgSharedFolders::Validate()
 {
 	UpdateData(TRUE);
@@ -137,32 +146,53 @@ CString CUsersDlgSharedFolders::Validate()
 	if (!pUser)
 		return _T("");
 
-	if (pUser->group == _T("") && pUser->permissions.empty())
-	{
+	if (pUser->group == _T("") && pUser->permissions.empty()) {
 		m_cDirs.SetFocus();
 		return _T("You need to share at least one directory and set it as home directory.");
 	}
 
-	bool hasHome = false;
-	for (std::vector<t_directory>::iterator iter = pUser->permissions.begin(); iter != pUser->permissions.end(); iter++)
-	{
-		if (iter->dir == _T("") || iter->dir == _T("/") || iter->dir == _T("\\"))
-		{
+	CString home;
+	for( auto & perm : pUser->permissions ) {
+		if (perm.dir == _T("") || perm.dir == _T("/") || perm.dir == _T("\\")) {
 			m_cDirs.SetFocus();
 			return _T("At least one shared directory is not a valid local path.");
 		}
 
-		if (iter->bIsHome)
-		{
-			hasHome = true;
-			iter->aliases.clear();
+		if (perm.bIsHome) {
+			home = perm.dir;
+			perm.aliases.clear();
 		}
 	}
 
-	if (!hasHome && pUser->group == _T(""))
-	{
+	if (home.IsEmpty() && pUser->group == _T("")) {
 		m_cDirs.SetFocus();
 		return _T("You need to set a home directory");
+	}
+
+	std::list<CString> prefixes;
+	for( auto & perm : pUser->permissions ) {
+		if (!perm.aliases.empty() || perm.bIsHome ) {
+			prefixes.push_back(perm.dir + _T("\\"));
+		}
+	}
+	for( auto const& perm : pUser->permissions ) {
+		if( !perm.aliases.empty() || perm.bIsHome ) {
+			continue;
+		}
+
+		CString dir = perm.dir + _T("\\");
+		bool out_of_home = true;
+		for( auto const& prefix : prefixes ) {
+			if( !dir.Left(prefix.GetLength()).CompareNoCase(prefix) ) {
+				out_of_home = false;
+				break;
+			}
+		}
+
+		if( out_of_home && pUser->group == _T("")) {
+			m_cDirs.SetFocus();
+			return _T("You have shared multiple unrelated directories. You need to assign aliases to link them together.\nDouble-click the alias column next to the unlinked directory.\n\nUnlinked directory: " + perm.dir);
+		}
 	}
 
 	return _T("");
@@ -386,6 +416,10 @@ void CUsersDlgSharedFolders::OnDirmenuRename()
 	
 	m_cDirs.SetFocus();
 	m_cDirs.EditLabel(nItem);
+	CString dir = m_cDirs.GetItemText(nItem, 0);
+	dir.Replace('/', '\\');
+	dir.TrimRight('\\');
+	m_cDirs.SetItemText(nItem, 0, dir);
 }
 
 void CUsersDlgSharedFolders::OnDirmenuSetashomedir() 
@@ -486,6 +520,10 @@ void CUsersDlgSharedFolders::OnDblclkDirs(NMHDR* pNMHDR, LRESULT* pResult)
 			m_cDirs.SetFocus();
 			m_cDirs.EditLabel(nItem);
 		}
+		CString dir = m_cDirs.GetItemText(nItem, 0);
+		dir.Replace('/', '\\');
+		dir.TrimRight('\\');
+		m_cDirs.SetItemText(nItem, 0, dir);
 	}
 	else
 		OnDirmenuEditAliases();
@@ -617,25 +655,36 @@ void CUsersDlgSharedFolders::OnDirmenuEditAliases()
 	CEnterSomething dlg(IDS_SHAREDFOLDERS_ENTERALIASES, IDD_ENTERSOMETHING_LARGE);
 	dlg.m_String = m_cDirs.GetItemText(nItem, 1);
 	dlg.allowEmpty = true;
-	if (dlg.DoModal() == IDOK)
-	{
+	if (dlg.DoModal() == IDOK) {
 		CString aliases = dlg.m_String;
+		aliases.Replace('\\', '/');
+		while (aliases.Replace('//', '/'));
 		while (aliases.Replace(_T("||"), _T("|")));
 		aliases.TrimLeft(_T("|"));
 		aliases.TrimRight(_T("|"));
-		m_cDirs.SetItemText(nItem, 1, aliases);
 		
 		pUser->permissions[index].aliases.clear();
 		aliases += _T("|");
 		int pos;
-		do 
-		{
+
+		std::set<CString> seen;
+		do {
 			pos = aliases.Find(_T("|"));
 
 			CString alias = aliases.Left(pos);
-			if (alias != _T(""))
+			alias.TrimRight('/');
+
+			if (alias != _T("") && seen.insert(alias).second ) {
 				pUser->permissions[index].aliases.push_back(alias);
+			}
 			aliases = aliases.Mid(pos + 1);
 		} while (pos != -1);
+
+		aliases.Empty();
+		for( auto const& alias : pUser->permissions[index].aliases ) {
+			aliases += alias + _T("|");
+		}
+		aliases.TrimRight(_T("|"));
+		m_cDirs.SetItemText(nItem, 1, aliases);
 	}
 }

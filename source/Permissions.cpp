@@ -465,35 +465,8 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 	auto dirToDisplayUTF8 = ConvToNetwork(dirToDisplay);
 	if (dirToDisplayUTF8.empty() && !dirToDisplay.empty())
 		return PERMISSION_DENIED;
-		
-	// List aliases in current directory
-	for (std::multimap<CStdString, CUser::t_alias>::const_iterator iter = user.aliasMap.begin(); iter != user.aliasMap.end(); iter++)
-	{
-		if (iter->first.CompareNoCase(directory.dir))
-			continue;
 
-		t_directory directory;
-		BOOL truematch = false;
-		if (GetRealDirectory(dir + _T("/") + iter->second.name, user, directory, truematch))
-			continue;
-		if (!directory.bDirList)
-			continue;
-		if (!truematch && !directory.bDirSubdirs)
-			continue;
-
-		if (sFileSpec != _T("*.*") && sFileSpec != _T("*"))
-		{
-			if (!WildcardMatch(iter->second.name, sFileSpec))
-				continue;
-		}
-
-		auto name = ConvToNetwork(iter->second.name);
-		if (!name.empty())
-			addFunc(result, true, name.c_str(), directory, 0, 0, dirToDisplayUTF8.c_str(), enabledFacts);
-	}
-
-	for (std::multimap<CStdString, CStdString>::const_iterator iter = user.virtualAliasNames.begin(); iter != user.virtualAliasNames.end(); iter++)
-	{
+	for (std::multimap<CStdString, CStdString>::const_iterator iter = user.virtualAliasNames.begin(); iter != user.virtualAliasNames.end(); iter++) {
 		if (iter->first.CompareNoCase(dir))
 			continue;
 
@@ -506,8 +479,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 		if (!truematch && !directory.bDirSubdirs)
 			continue;
 
-		if (sFileSpec != _T("*.*") && sFileSpec != _T("*"))
-		{
+		if (sFileSpec != _T("*.*") && sFileSpec != _T("*")) {
 			if (!WildcardMatch(iter->second, sFileSpec))
 				continue;
 		}
@@ -1032,8 +1004,7 @@ void CPermissions::SavePermissions(TiXmlElement *pXML, const t_group &user)
 		{
 			TiXmlElement* pAliases = new TiXmlElement("Aliases");
 			pPermission->LinkEndChild(pAliases);
-			for (std::list<CStdString>::const_iterator iter = user.permissions[i].aliases.begin(); iter != user.permissions[i].aliases.end(); iter++)
-			{
+			for (std::list<CStdString>::const_iterator iter = user.permissions[i].aliases.begin(); iter != user.permissions[i].aliases.end(); iter++) {
 				TiXmlElement *pAlias = new TiXmlElement("Alias");
 				XML::SetText(pAlias, *iter);
 				pAliases->LinkEndChild(pAlias);
@@ -1360,40 +1331,20 @@ void CPermissions::ReadPermissions(TiXmlElement *pXML, t_group &user, BOOL &bGot
 			if (dir.dir == _T(""))
 				continue;
 
-			for (TiXmlElement* pAliases = pPermission->FirstChildElement("Aliases"); pAliases; pAliases = pAliases->NextSiblingElement("Aliases"))
-			{
-				for (TiXmlElement* pAlias = pAliases->FirstChildElement("Alias"); pAlias; pAlias = pAlias->NextSiblingElement("Alias"))
-				{
+			for (TiXmlElement* pAliases = pPermission->FirstChildElement("Aliases"); pAliases; pAliases = pAliases->NextSiblingElement("Aliases")) {
+				for (TiXmlElement* pAlias = pAliases->FirstChildElement("Alias"); pAlias; pAlias = pAlias->NextSiblingElement("Alias"))	{
 					CStdString alias = XML::ReadText(pAlias);
-					if (alias == _T(""))
+					if (alias == _T("") || alias[0] != '/')
 						continue;
 
-					if (alias[0] != '/')
-					{
-						alias.Replace(_T("/"), _T("\\"));
-						bool uncPath = false;
-						if (alias.Left(2) == _T("\\\\"))
-							uncPath = true;
-						while (alias.Replace(_T("\\\\"), _T("\\")));
-						if (uncPath)
-							alias = _T("\\") + alias;
-
-						alias.TrimRight('\\');
-						if (alias != _T(""))
-							dir.aliases.push_back(alias);
-					}
-					else
-					{
-						alias.Replace(_T("\\"), _T("/"));
-						while (alias.Replace(_T("//"), _T("/")));
-						alias.TrimRight('/');
-						if (alias != _T("") && alias != _T("/"))
-							dir.aliases.push_back(alias);
-					}
+					alias.Replace(_T("\\"), _T("/"));
+					while (alias.Replace(_T("//"), _T("/")));
+					alias.TrimRight('/');
+					if (alias != _T("") && alias != _T("/"))
+						dir.aliases.push_back(alias);
 				}
 			}
-			for (TiXmlElement* pOption = pPermission->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option"))
-			{
+			for (TiXmlElement* pOption = pPermission->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option")) {
 				CStdString name = ConvFromNetwork(pOption->Attribute("Name"));
 				CStdString value = XML::ReadText(pOption);
 
@@ -1873,84 +1824,51 @@ void CUser::PrepareAliasMap()
 	 * The value is a structure containing the name of the alias
 	 * and the target folder.
 	 * Example:
-	 * Shared folder c:\myfolder, alias d:\myotherfolder\myalias
-	 * Key: d:\myotherfolder, Value = myalias, c:\myfolder
+	 * Shared folder c:\myfolder, alias /myotherfolder/myalias
+	 * Key: /myotherfolder, Value = myalias, c:\myfolder
 	 */
 
-	aliasMap.clear();
 	virtualAliases.clear();
 	std::vector<t_directory>::const_iterator permIter;
 	std::list<CStdString>::const_iterator aliasIter;
-	for (permIter = permissions.begin(); permIter != permissions.end(); permIter++)
-	{
-		for (aliasIter = permIter->aliases.begin(); aliasIter != permIter->aliases.end(); aliasIter++)
-		{
+	for (permIter = permissions.begin(); permIter != permissions.end(); permIter++) {
+		for (aliasIter = permIter->aliases.begin(); aliasIter != permIter->aliases.end(); aliasIter++) {
 			CStdString alias = *aliasIter;
 			DoReplacements(alias);
 
-			if (alias[0] == '/')
-			{
-				int pos = alias.ReverseFind('/');
-				CStdString dir = alias.Left(pos);
-				if (dir == _T(""))
-					dir = _T("/");
-				virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.Mid(pos + 1)));
-				virtualAliases[alias + _T("/")] = permIter->dir;
-				DoReplacements(virtualAliases[alias + _T("/")]);
+			if (alias[0] != '/') {
 				continue;
 			}
 
-			int pos = alias.ReverseFind('\\');
-			if (pos == -1)
-				continue;
-			t_alias aliasStruct;
-			aliasStruct.name = alias.Mid(pos + 1);
-			if (aliasStruct.name == _T(""))
-				continue;
-			alias = alias.Left(pos);
-
-			aliasStruct.targetFolder = permIter->dir;
-			DoReplacements(aliasStruct.targetFolder);
-
-			aliasMap.insert(std::pair<CStdString, t_alias>(alias, aliasStruct));
+			int pos = alias.ReverseFind('/');
+			CStdString dir = alias.Left(pos);
+			if (dir == _T(""))
+				dir = _T("/");
+			virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.Mid(pos + 1)));
+			virtualAliases[alias + _T("/")] = permIter->dir;
+			DoReplacements(virtualAliases[alias + _T("/")]);
 		}
 	}
 
 	if (!pOwner)
 		return;
 
-	for (permIter = pOwner->permissions.begin(); permIter != pOwner->permissions.end(); permIter++)
-	{
-		for (aliasIter = permIter->aliases.begin(); aliasIter != permIter->aliases.end(); aliasIter++)
-		{
+	for (permIter = pOwner->permissions.begin(); permIter != pOwner->permissions.end(); permIter++) {
+		for (aliasIter = permIter->aliases.begin(); aliasIter != permIter->aliases.end(); aliasIter++) {
 			CStdString alias = *aliasIter;
 			DoReplacements(alias);
 
-			if (alias[0] == '/')
-			{
-				int pos = alias.ReverseFind('/');
-				CStdString dir = alias.Left(pos);
-				if (dir == _T(""))
-					dir = _T("/");
-				virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.Mid(pos + 1)));
-				virtualAliases[alias + _T("/")] = permIter->dir;
-				DoReplacements(virtualAliases[alias + _T("/")]);
+			if (alias[0] != '/') {
 				continue;
 			}
 
-			int pos = alias.ReverseFind('\\');
-			if (pos == -1)
-				continue;
-			t_alias aliasStruct;
-			aliasStruct.name = alias.Mid(pos + 1);
-			if (aliasStruct.name == _T(""))
-				continue;
-			alias = alias.Left(pos);
-			
-			aliasStruct.targetFolder = permIter->dir;
-			DoReplacements(aliasStruct.targetFolder);
-		
-			aliasMap.insert(std::pair<CStdString, t_alias>(alias, aliasStruct));
+			int pos = alias.ReverseFind('/');
+			CStdString dir = alias.Left(pos);
+			if (dir == _T(""))
+				dir = _T("/");
+			virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.Mid(pos + 1)));
+			virtualAliases[alias + _T("/")] = permIter->dir;
+			DoReplacements(virtualAliases[alias + _T("/")]);
 		}
 	}
 }
@@ -1958,18 +1876,7 @@ void CUser::PrepareAliasMap()
 CStdString CUser::GetAliasTarget(const CStdString& path, const CStdString& virtualPath, const CStdString& name) const
 {
 	// Find the target for the alias with the specified path and name
-
-	for (std::multimap<CStdString, CUser::t_alias>::const_iterator iter = aliasMap.begin(); iter != aliasMap.end(); iter++)
-	{
-		if (iter->first.CompareNoCase(path))
-			continue;
-
-		if (!iter->second.name.CompareNoCase(name))
-			return iter->second.targetFolder;
-	}
-
-	for (std::map<CStdString, CStdString>::const_iterator iter2 = virtualAliases.begin(); iter2 != virtualAliases.end(); iter2++)
-	{
+	for (std::map<CStdString, CStdString>::const_iterator iter2 = virtualAliases.begin(); iter2 != virtualAliases.end(); iter2++) {
 		if (!iter2->first.CompareNoCase(virtualPath))
 			return iter2->second;
 	}
