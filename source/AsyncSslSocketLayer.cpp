@@ -1913,6 +1913,21 @@ void CAsyncSslSocketLayer::OnClose(int nErrorCode)
 		TriggerEvent(FD_CLOSE, nErrorCode, TRUE);
 }
 
+int CAsyncSslSocketLayer::GetLastSslError(CString& e)
+{
+	int err = 0;
+	if( pERR_get_error && pERR_error_string ) {
+		USES_CONVERSION;
+
+		int err = pERR_get_error();
+		char *buffer = new char[512];
+		pERR_error_string(err, buffer);
+		e = A2CT(buffer);
+	}
+
+	return err;
+}
+
 bool CAsyncSslSocketLayer::PrintLastErrorMsg()
 {
 	if (!pERR_get_error)
@@ -2099,27 +2114,34 @@ int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, cons
 	}
 
 	ClearErrors();
-	if (pSSL_CTX_use_certificate_chain_file(m_ssl_ctx, cert) <= 0)
-	//if (pSSL_CTX_use_certificate_file(m_ssl_ctx, cert, SSL_FILETYPE_PEM) <= 0)
-	{
-		if (error)
-			*error = _T("Could not load certificate file.");
+	if (pSSL_CTX_use_certificate_chain_file(m_ssl_ctx, cert) <= 0) {
+	//if (pSSL_CTX_use_certificate_file(m_ssl_ctx, cert, SSL_FILETYPE_PEM) <= 0) {
+		if (error) {
+			CStdString e;
+			int err = GetLastSslError(e);
+			error->Format(_T("Could not load certificate file: %s (%d)"), e, err );
+		}
 		m_sCriticalSection.Unlock();
 		return SSL_FAILURE_VERIFYCERT;
 	}
 
-	if (pSSL_CTX_use_PrivateKey_file(m_ssl_ctx, key, SSL_FILETYPE_PEM) <= 0)
-	{
-		if (error)
-			*error = _T("Could not load key file.");
+	if (pSSL_CTX_use_PrivateKey_file(m_ssl_ctx, key, SSL_FILETYPE_PEM) <= 0) {
+		if (error) {
+			CStdString e;
+			int err = GetLastSslError(e);
+			error->Format(_T("Could not load key file: %s (%d)"), e, err );
+		}
 		m_sCriticalSection.Unlock();
 		return SSL_FAILURE_VERIFYCERT;
 	}
 
 	if (!pSSL_CTX_check_private_key(m_ssl_ctx))
 	{
-		if (error)
-			*error = _T("Private key does not match the certificate public key.");
+		if (error) {
+			CStdString e;
+			int err = GetLastSslError(e);
+			error->Format(_T("Private key does not match the certificate public key: %s (%d)"), e, err );
+		}
 		m_sCriticalSection.Unlock();
 		return SSL_FAILURE_VERIFYCERT;
 	}

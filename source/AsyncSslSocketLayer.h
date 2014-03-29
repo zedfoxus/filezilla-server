@@ -172,6 +172,7 @@ private:
 	BOOL ShutDownComplete();
 	int InitSSL();
 	void UnloadSSL();
+	int GetLastSslError(CStdString& e);
 	bool PrintLastErrorMsg();
 	void ClearErrors();
 
