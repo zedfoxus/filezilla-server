@@ -381,7 +381,7 @@ SectionEnd
 Function .onInit
 
   ${Unless} ${AtLeastWinVista}
-    MessageBox MB_YESNO|MB_ICONSTOP "Unsupported operating system.$\nFileZilla Server requires at least Windows Vista and will not work correctly on your system.$\nDo you really want to continue with the installation?" /SD IDNO IDYES installonoldwindows
+    MessageBox MB_YESNO|MB_ICONSTOP "Unsupported operating system.$\nFileZilla Server requires at least Windows Vista and will not work on your system.$\nDo you really want to continue with the installation?" /SD IDNO IDYES installonoldwindows
     Abort
 installonoldwindows:
   ${EndUnless}
