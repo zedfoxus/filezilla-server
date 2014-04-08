@@ -9,9 +9,10 @@
 SetCompressor /SOLID LZMA
 
 ;--------------------------------
-;Include Modern UI
+;Include Modern UI and functions
 
   !include "MUI.nsh"
+  !include "WinVer.nsh"
 
 ;--------------------------------
 ;Product Info
@@ -19,7 +20,7 @@ SetCompressor /SOLID LZMA
   !define PRODUCT_NAME    "FileZilla Server"
   !define VERSION_MAJOR   "0"
   !define VERSION_MINOR   "9"
-  !define VERSION_MICRO   "43"
+  !define VERSION_MICRO   "44"
   !define VERSION_NANO    "0"
   !define PRODUCT_VERSION "beta ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}"
   !define VERSION_FULL    "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}.${VERSION_NANO}"
@@ -379,16 +380,11 @@ SectionEnd
 
 Function .onInit
 
-  ;Detect Windows type (NT or 9x)
-
-  ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-  StrCmp $R0 "" 0 detection_NT
-
-  ; we are not NT.
-  MessageBox MB_OK|MB_ICONSTOP "FileZilla Server does not support Windows 95/98/ME"
-  Abort
-  
- detection_NT:
+  ${Unless} ${AtLeastWinVista}
+    MessageBox MB_YESNO|MB_ICONSTOP "Unsupported operating system.$\nFileZilla Server requires at least Windows Vista and will not work correctly on your system.$\nDo you really want to continue with the installation?" /SD IDNO IDYES installonoldwindows
+    Abort
+installonoldwindows:
+  ${EndUnless}
 
   ;Extract InstallOptions INI Files
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "StartupOptions.ini"
