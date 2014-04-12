@@ -405,114 +405,142 @@ void CControlSocket::OnClose(int nErrorCode)
 	CAsyncSocketEx::OnClose(nErrorCode);
 }
 
-#define COMMAND_USER	0
-#define COMMAND_PASS	1
-#define COMMAND_QUIT	2
-#define COMMAND_CWD		3
-#define COMMAND_PWD		4
-#define COMMAND_PORT	5
-#define COMMAND_PASV	6
-#define COMMAND_TYPE	7
-#define COMMAND_LIST	8
-#define COMMAND_REST	9
-#define COMMAND_CDUP	10
-#define COMMAND_RETR	11
-#define COMMAND_STOR	12
-#define COMMAND_SIZE	13
-#define COMMAND_DELE	14
-#define COMMAND_RMD		15
-#define COMMAND_MKD		16
-#define COMMAND_RNFR	17
-#define COMMAND_RNTO	18
-#define COMMAND_ABOR	19
-#define COMMAND_SYST	20
-#define COMMAND_NOOP	21
-#define COMMAND_APPE	22
-#define COMMAND_NLST	23
-#define COMMAND_MDTM	24
-#define COMMAND_XPWD	25
-#define COMMAND_XCUP	26
-#define COMMAND_XMKD	27
-#define COMMAND_XRMD	28
-#define COMMAND_NOP		29
-#define COMMAND_EPSV	30
-#define COMMAND_EPRT	31
-#define COMMAND_AUTH	32
-#define COMMAND_ADAT	33
-#define COMMAND_PBSZ	34
-#define COMMAND_PROT	35
-#define COMMAND_FEAT	36
-#define COMMAND_MODE	37
-#define COMMAND_OPTS	38
-#define COMMAND_HELP	39
-#define COMMAND_ALLO	40
-#define COMMAND_MLST	41
-#define COMMAND_MLSD	42
-#define COMMAND_SITE	43
-#define COMMAND_PASVSMC	44 // some bugged SMC routers convert incoming PASV into P@SW
-#define COMMAND_STRU	45
-#define COMMAND_CLNT	46
-#define COMMAND_MFMT	47
-#define COMMAND_HASH	48
+enum class commands {
+	invalid = -1,
+	USER,
+	PASS,
+	QUIT,
+	CWD,
+	PWD,
+	PORT,
+	PASV,
+	TYPE,
+	LIST,
+	REST,
+	CDUP,
+	RETR,
+	STOR,
+	SIZE,
+	DELE,
+	RMD,
+	MKD,
+	RNFR,
+	RNTO,
+	ABOR,
+	SYST,
+	NOOP,
+	APPE,
+	NLST,
+	MDTM,
+	NOP,
+	EPSV,
+	EPRT,
+	AUTH,
+	ADAT,
+	PBSZ,
+	PROT,
+	FEAT,
+	MODE,
+	OPTS,
+	HELP,
+	ALLO,
+	MLST,
+	MLSD,
+	SITE,
+	PASVSMC, // some bugged SMC routers convert incoming PASV into P@SW
+	STRU,
+	CLNT,
+	MFMT,
+	HASH
+};
 
-typedef struct
+std::map<CStdString, t_command> const command_map = {
+	{_T("USER"), {commands::USER, true,  true}},
+	{_T("PASS"), {commands::PASS, false, true}},
+	{_T("QUIT"), {commands::QUIT, false, true}},
+	{_T("CWD"),  {commands::CWD,  false, false}},
+	{_T("PWD"),  {commands::PWD,  false, false}},
+	{_T("PORT"), {commands::PORT, true,  false}},
+	{_T("PASV"), {commands::PASV, false, false}},
+	{_T("TYPE"), {commands::TYPE, true,  false}},
+	{_T("LIST"), {commands::LIST, false, false}},
+	{_T("REST"), {commands::REST, true,  false}},
+	{_T("CDUP"), {commands::CDUP, false, false}},
+	{_T("RETR"), {commands::RETR, true,  false}},
+	{_T("STOR"), {commands::STOR, true,  false}},
+	{_T("SIZE"), {commands::SIZE, true,  false}},
+	{_T("DELE"), {commands::DELE, true,  false}},
+	{_T("RMD"),  {commands::RMD,  true,  false}},
+	{_T("MKD"),  {commands::MKD,  true,  false}},
+	{_T("RNFR"), {commands::RNFR, true,  false}},
+	{_T("RNTO"), {commands::RNTO, true,  false}},
+	{_T("ABOR"), {commands::ABOR, false, false}},
+	{_T("SYST"), {commands::SYST, false, true}},
+	{_T("NOOP"), {commands::NOOP, false, false}},
+	{_T("APPE"), {commands::APPE, true,  false}},
+	{_T("NLST"), {commands::NLST, false, false}},
+	{_T("MDTM"), {commands::MDTM, true,  false}},
+	{_T("XPWD"), {commands::PWD,  false, false}},
+	{_T("XCUP"), {commands::CDUP, false, false}},
+	{_T("XMKD"), {commands::MKD,  true,  false}},
+	{_T("XRMD"), {commands::RMD,  true,  false}},
+	{_T("XCWD"), {commands::CWD,  true,  false}},
+	{_T("NOP"),  {commands::NOP,  false, false}},
+	{_T("EPSV"), {commands::EPSV, false, false}},
+	{_T("EPRT"), {commands::EPRT, true,  false}},
+	{_T("AUTH"), {commands::AUTH, true,  true}},
+	{_T("ADAT"), {commands::ADAT, true,  true}},
+	{_T("PBSZ"), {commands::PBSZ, true,  true}},
+	{_T("PROT"), {commands::PROT, true,  true}},
+	{_T("FEAT"), {commands::FEAT, false, true}},
+	{_T("MODE"), {commands::MODE, true,  false}},
+	{_T("OPTS"), {commands::OPTS, true,  false}},
+	{_T("HELP"), {commands::HELP, false, true}},
+	{_T("ALLO"), {commands::ALLO, false, false}},
+	{_T("MLST"), {commands::MLST, false, false}},
+	{_T("MLSD"), {commands::MLSD, false, false}},
+	{_T("SITE"), {commands::SITE, true,  true}},
+	{_T("P@SW"), {commands::PASVSMC, false, false}},
+	{_T("STRU"), {commands::STRU, true, false}},
+	{_T("CLNT"), {commands::CLNT, true, true}},
+	{_T("MFMT"), {commands::MFMT, true, false}},
+	{_T("HASH"), {commands::HASH, true, false}}
+};
+
+t_command CControlSocket::MapCommand(CStdString const& command, CStdString const& args)
 {
-	int nID;
-	TCHAR command[5];
-	BOOL bHasargs;
-	BOOL bValidBeforeLogon;
-} t_command;
+	t_command ret = {commands::invalid, false, false};
 
-static const t_command commands[]={	COMMAND_USER, _T("USER"), TRUE,	 TRUE,
-									COMMAND_PASS, _T("PASS"), FALSE, TRUE,
-									COMMAND_QUIT, _T("QUIT"), FALSE, TRUE,
-									COMMAND_CWD,  _T("CWD"),  FALSE, FALSE,
-									COMMAND_PWD,  _T("PWD"),  FALSE, FALSE,
-									COMMAND_PORT, _T("PORT"), TRUE,  FALSE,
-									COMMAND_PASV, _T("PASV"), FALSE, FALSE,
-									COMMAND_TYPE, _T("TYPE"), TRUE,  FALSE,
-									COMMAND_LIST, _T("LIST"), FALSE, FALSE,
-									COMMAND_REST, _T("REST"), TRUE,  FALSE,
-									COMMAND_CDUP, _T("CDUP"), FALSE, FALSE,
-									COMMAND_RETR, _T("RETR"), TRUE,  FALSE,
-									COMMAND_STOR, _T("STOR"), TRUE,  FALSE,
-									COMMAND_SIZE, _T("SIZE"), TRUE,  FALSE,
-									COMMAND_DELE, _T("DELE"), TRUE,  FALSE,
-									COMMAND_RMD,  _T("RMD"),  TRUE,  FALSE,
-									COMMAND_MKD,  _T("MKD"),  TRUE,  FALSE,
-									COMMAND_RNFR, _T("RNFR"), TRUE,  FALSE,
-									COMMAND_RNTO, _T("RNTO"), TRUE,  FALSE,
-									COMMAND_ABOR, _T("ABOR"), FALSE, FALSE,
-									COMMAND_SYST, _T("SYST"), FALSE, TRUE,
-									COMMAND_NOOP, _T("NOOP"), FALSE, FALSE,
-									COMMAND_APPE, _T("APPE"), TRUE,  FALSE,
-									COMMAND_NLST, _T("NLST"), FALSE, FALSE,
-									COMMAND_MDTM, _T("MDTM"), TRUE,  FALSE,
-									COMMAND_XPWD, _T("XPWD"), FALSE, FALSE,
-									COMMAND_XCUP, _T("XCUP"), FALSE, FALSE,
-									COMMAND_XMKD, _T("XMKD"), TRUE,  FALSE,
-									COMMAND_XRMD, _T("XRMD"), TRUE,  FALSE,
-									COMMAND_NOP,  _T("NOP"),  FALSE, FALSE,
-									COMMAND_EPSV, _T("EPSV"), FALSE, FALSE,
-									COMMAND_EPRT, _T("EPRT"), TRUE,  FALSE,
-									COMMAND_AUTH, _T("AUTH"), TRUE,  TRUE,
-									COMMAND_ADAT, _T("ADAT"), TRUE,  TRUE,
-									COMMAND_PBSZ, _T("PBSZ"), TRUE,  TRUE,
-									COMMAND_PROT, _T("PROT"), TRUE,  TRUE,
-									COMMAND_FEAT, _T("FEAT"), FALSE, TRUE,
-									COMMAND_MODE, _T("MODE"), TRUE,  FALSE,
-									COMMAND_OPTS, _T("OPTS"), TRUE,  FALSE,
-									COMMAND_HELP, _T("HELP"), FALSE, TRUE,
-									COMMAND_ALLO, _T("ALLO"), FALSE, FALSE,
-									COMMAND_MLST, _T("MLST"), FALSE, FALSE,
-									COMMAND_MLSD, _T("MLSD"), FALSE, FALSE,
-									COMMAND_SITE, _T("SITE"), TRUE,  TRUE,
-									COMMAND_PASVSMC, _T("P@SW"), FALSE, FALSE,
-									COMMAND_STRU, _T("STRU"), TRUE, FALSE,
-									COMMAND_CLNT, _T("CLNT"), TRUE, TRUE,
-									COMMAND_MFMT, _T("MFMT"), TRUE, FALSE,
-									COMMAND_HASH, _T("HASH"), TRUE, FALSE
-						};
+	auto const& it = command_map.find(command);
+	if( it != command_map.end() ) {
+		//Does the command needs an argument?
+		if( it->second.bHasargs && args.empty() ) {
+			Send(_T("501 Syntax error"));
+			if (!m_RecvLineBuffer.empty()) {
+				m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
+			}
+		}
+		//Can it be issued before logon?
+		else if( !m_status.loggedon && !it->second.bValidBeforeLogon) {
+			Send(_T("530 Please log in with USER and PASS first."));
+			if (!m_RecvLineBuffer.empty()) {
+				m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
+			}
+		}
+		else {
+			// Valid command!
+			ret = it->second;
+		}
+	}
+	else {
+		//Command not recognized
+		Send(_T("500 Syntax error, command unrecognized."));
+		if (!m_RecvLineBuffer.empty())
+			m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
+	}
+
+	return ret;
+}
 
 void CControlSocket::ParseCommand()
 {
@@ -525,45 +553,15 @@ void CControlSocket::ParseCommand()
 	if (!GetCommand(command, args))
 		return;
 
-	//Check if command is valid
-	int nCommandID = -1;
-	for (int i = 0; i < (sizeof(commands)/sizeof(t_command)); i++)
-	{
-		if (command == commands[i].command)
-		{
-			//Does the command needs an argument?
-			if (commands[i].bHasargs && (args == _T("")))
-			{
-				Send(_T("501 Syntax error"));
-				if (!m_RecvLineBuffer.empty())
-					m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
-				return;
-			}
-			//Can it be issued before logon?
-			else if (!m_status.loggedon && !commands[i].bValidBeforeLogon)
-			{
-				Send(_T("530 Please log in with USER and PASS first."));
-				if (!m_RecvLineBuffer.empty())
-					m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
-				return;
-			}
-			nCommandID = commands[i].nID;
-			break;
-		}
-	}
-	//Command not recognized
-	if (nCommandID == -1)
-	{
-		Send(_T("500 Syntax error, command unrecognized."));
-		if (!m_RecvLineBuffer.empty())
-			m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
+	t_command cmd = MapCommand(command, args);
+	if (cmd.id == commands::invalid) {
 		return;
 	}
 
 	//Now process the commands
-	switch (nCommandID)
+	switch (cmd.id)
 	{
-	case COMMAND_USER:
+	case commands::USER:
 		{
 			AntiHammerIncrease();
 
@@ -604,7 +602,7 @@ void CControlSocket::ParseCommand()
 			Send(_T("331 Password required for ") + args);
 		}
 		break;
-	case COMMAND_PASS:
+	case commands::PASS:
 		AntiHammerIncrease();
 
 		if (m_status.loggedon)
@@ -612,7 +610,7 @@ void CControlSocket::ParseCommand()
 		else if (DoUserLogin(args))
 			Send(_T("230 Logged on"));
 		break;
-	case COMMAND_QUIT:
+	case commands::QUIT:
 		m_bQuitCommand = TRUE;
 		if (!m_transferstatus.socket || !m_transferstatus.socket->InitCalled())
 		{
@@ -626,7 +624,7 @@ void CControlSocket::ParseCommand()
 				ForceClose(5);
 		}
 		break;
-	case COMMAND_CWD:
+	case commands::CWD:
 		{
 			//Unquote args
 			if (!UnquoteArgs(args)) {
@@ -669,15 +667,14 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_PWD:
-	case COMMAND_XPWD:
+	case commands::PWD:
 		{
 			CStdString str;
 			str.Format(_T("257 \"%s\" is current directory."), m_CurrentServerDir);
 			Send(str);
 		}
 		break;
-	case COMMAND_PORT:
+	case commands::PORT:
 		{
 			if (GetFamily() != AF_INET)
 			{
@@ -762,8 +759,8 @@ void CControlSocket::ParseCommand()
 			Send(_T("200 Port command successful"));
 			break;
 		}
-	case COMMAND_PASV:
-	case COMMAND_PASVSMC:
+	case commands::PASV:
+	case commands::PASVSMC:
 		{
 			if (GetFamily() != AF_INET) {
 				Send(_T("500 You are connected using IPv6. PASV is only for IPv4. You have to use the EPSV command instead."));
@@ -791,7 +788,7 @@ void CControlSocket::ParseCommand()
 				pasvIP.Replace(_T("."), _T(","));
 				//Put the answer together
 				CStdString str;
-				if (nCommandID == COMMAND_PASVSMC)
+				if (cmd.id == commands::PASVSMC)
 					str.Format(_T("227 Warning: Router with P@SW bug detected. Entering Passive Mode (%s,%d,%d)"), pasvIP, port / 256, port % 256);
 				else
 					str.Format(_T("227 Entering Passive Mode (%s,%d,%d)"), pasvIP, port / 256, port % 256);
@@ -805,7 +802,7 @@ void CControlSocket::ParseCommand()
 			
 			break;
 		}
-	case COMMAND_TYPE:
+	case commands::TYPE:
 		{
 			args.MakeUpper();
 			if (args[0] != 'I' && args[0] != 'A' && args != _T("L 8"))
@@ -819,9 +816,9 @@ void CControlSocket::ParseCommand()
 			Send(str);
 		}
 		break;
-	case COMMAND_LIST:
-	case COMMAND_MLSD:
-	case COMMAND_NLST:
+	case commands::LIST:
+	case commands::MLSD:
+	case commands::NLST:
 		if (m_transferstatus.pasv == -1) {
 			Send(_T("503 Bad sequence of commands."));
 		}
@@ -832,7 +829,7 @@ void CControlSocket::ParseCommand()
 			Send(_T("521 PROT P required"));
 		}
 		else {
-			if( nCommandID != COMMAND_MLSD ) {
+			if( cmd.id != commands::MLSD ) {
 				//Check args, currently only supported argument is the directory which will be listed.
 				args.TrimLeft(_T(" "));
 				args.TrimRight(_T(" "));
@@ -887,10 +884,10 @@ void CControlSocket::ParseCommand()
 			}
 
 			CPermissions::addFunc_t addFunc = CPermissions::AddFactsListingEntry;
-			if( nCommandID == COMMAND_LIST ) {
+			if( cmd.id == commands::LIST ) {
 				addFunc = CPermissions::AddLongListingEntry;
 			}
-			else if( nCommandID == COMMAND_NLST ) {
+			else if( cmd.id == commands::NLST ) {
 				addFunc = CPermissions::AddShortListingEntry;
 			}
 
@@ -953,7 +950,7 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_REST:
+	case commands::REST:
 		{
 			BOOL error = FALSE;
 			for (int i = 0; i < args.GetLength(); i++)
@@ -973,8 +970,7 @@ void CControlSocket::ParseCommand()
 			Send(str);
 		}
 		break;
-	case COMMAND_CDUP:
-	case COMMAND_XCUP:
+	case commands::CDUP:
 		{
 			CStdString dir = _T("..");
 			int res = m_pOwner->m_pPermissions->ChangeCurrentDir(m_status.user, m_CurrentServerDir, dir);
@@ -992,7 +988,7 @@ void CControlSocket::ParseCommand()
 				Send(_T("550 CDUP failed, directory not found."));
 		}
 		break;
-	case COMMAND_RETR:
+	case commands::RETR:
 		if (m_transferstatus.pasv == -1) {
 			Send(_T("503 Bad sequence of commands."));
 		}
@@ -1065,8 +1061,8 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_STOR:
-	case COMMAND_APPE:
+	case commands::STOR:
+	case commands::APPE:
 		if (m_transferstatus.pasv == -1) {
 			Send(_T("503 Bad sequence of commands."));
 		}
@@ -1081,7 +1077,7 @@ void CControlSocket::ParseCommand()
 		}
 		else {
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, (m_transferstatus.rest || nCommandID == COMMAND_APPE) ? FOP_APPEND : FOP_WRITE, physicalFile, logicalFile);
+			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, (m_transferstatus.rest || cmd.id == commands::APPE) ? FOP_APPEND : FOP_WRITE, physicalFile, logicalFile);
 			if (error & PERMISSION_DENIED) {
 				Send(_T("550 Permission denied"));
 				ResetTransferstatus();
@@ -1095,7 +1091,7 @@ void CControlSocket::ParseCommand()
 				ResetTransferstatus();
 			}
 			else {
-				if( nCommandID == COMMAND_APPE ) {
+				if( cmd.id == commands::APPE ) {
 					m_transferstatus.rest = 0;
 					if (!GetLength64(physicalFile, m_transferstatus.rest)) {
 						m_transferstatus.rest = 0;
@@ -1139,7 +1135,7 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_SIZE:
+	case commands::SIZE:
 		{
 			//Unquote args
 			if (!UnquoteArgs(args)) {
@@ -1167,7 +1163,7 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_DELE:
+	case commands::DELE:
 		{
 			//Unquote args
 			if (!UnquoteArgs(args)) {
@@ -1204,8 +1200,7 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_RMD:
-	case COMMAND_XRMD:
+	case commands::RMD:
 		{
 			//Unquote args
 			if (!UnquoteArgs(args)) {
@@ -1235,8 +1230,7 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_MKD:
-	case COMMAND_XMKD:
+	case commands::MKD:
 		{
 			//Unquote args
 			if (!UnquoteArgs(args)) {
@@ -1289,7 +1283,7 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_RNFR:
+	case commands::RNFR:
 		{
 			//Unquote args
 			if (!UnquoteArgs(args)) {
@@ -1331,7 +1325,7 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_RNTO:
+	case commands::RNTO:
 		{
 			if (RenName == _T(""))
 			{
@@ -1391,7 +1385,7 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_ABOR:
+	case commands::ABOR:
 		{
 			if (m_transferstatus.socket)
 			{
@@ -1402,14 +1396,14 @@ void CControlSocket::ParseCommand()
 			ResetTransferstatus();
 		break;
 		}
-	case COMMAND_SYST:
+	case commands::SYST:
 		Send(_T("215 UNIX emulated by FileZilla"));
 		break;
-	case COMMAND_NOOP:
-	case COMMAND_NOP:
+	case commands::NOOP:
+	case commands::NOP:
 		Send(_T("200 OK"));
 		break;
-	case COMMAND_MDTM:
+	case commands::MDTM:
 		{
 			//Unquote args
 			if (!UnquoteArgs(args)) {
@@ -1443,7 +1437,7 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_EPSV:
+	case commands::EPSV:
 		{
 			ResetTransferstatus();
 
@@ -1468,7 +1462,7 @@ void CControlSocket::ParseCommand()
 			}
 			break;
 		}
-	case COMMAND_EPRT:
+	case commands::EPRT:
 		{
 			ResetTransferstatus();
 
@@ -1553,7 +1547,7 @@ void CControlSocket::ParseCommand()
 			Send(_T("200 Port command successful"));
 			break;
 		}
-	case COMMAND_AUTH:
+	case commands::AUTH:
 		{
 			if (m_nRecvBufferPos || m_RecvLineBuffer.size() ) {
 				Send(_T("503 Bad sequence of commands. Received additional data after the AUTH command before this reply could be sent."));
@@ -1656,16 +1650,16 @@ void CControlSocket::ParseCommand()
 
 			break;
 		}
-	case COMMAND_ADAT:
+	case commands::ADAT:
 		Send(_T("502 Command not implemented for this authentication type"));
 		break;
-	case COMMAND_PBSZ:
+	case commands::PBSZ:
 		if (m_pSslLayer)
 			Send(_T("200 PBSZ=0"));
 		else
 			Send(_T("502 Command not implemented for this authentication type"));
 		break;
-	case COMMAND_PROT:
+	case commands::PROT:
 		if (m_pSslLayer)
 		{
 			args.MakeUpper();
@@ -1698,7 +1692,7 @@ void CControlSocket::ParseCommand()
 		else
 			Send(_T("502 Command not implemented for this authentication type"));
 		break;
-	case COMMAND_FEAT:
+	case commands::FEAT:
 		{
 		if (!Send(_T("211-Features:")))
 			break;
@@ -1753,7 +1747,7 @@ void CControlSocket::ParseCommand()
 			break;
 		break;
 		}
-	case COMMAND_MODE:
+	case commands::MODE:
 		if (args == _T("S") || args == _T("s"))
 		{
 			m_transferMode = mode_stream;
@@ -1779,7 +1773,7 @@ void CControlSocket::ParseCommand()
 		else
 			Send(_T("504 Unknown MODE type"));
 		break;
-	case COMMAND_OPTS:
+	case commands::OPTS:
 		args.MakeUpper();
 		if (args.Left(13) == _T("MODE Z LEVEL "))
 		{
@@ -1805,19 +1799,18 @@ void CControlSocket::ParseCommand()
 		else
 			Send(_T("501 Option not understood"));
 		break;
-	case COMMAND_HELP:
+	case commands::HELP:
 		if (args == _T(""))
 		{
 			Send(_T("214-The following commands are recognized:"));
 			CString str;
-			for (int i = 0; i < (sizeof(commands)/sizeof(t_command)); i++)
-			{
-				CString cmd = commands[i].command;
+			int i = 0;
+			for( auto const& it : command_map ) {
+				CString cmd = it.first;
 				while (cmd.GetLength() < 4)
 					cmd += _T(" ");
 				str += _T("   ") + cmd;
-				if (!((i + 1) % 8))
-				{
+				if (!(++i % 8)) {
 					Send(str);
 					str = _T("");
 				}
@@ -1830,29 +1823,24 @@ void CControlSocket::ParseCommand()
 		{
 			args.MakeUpper();
 
-			int i;
-			for (i = 0; i < (sizeof(commands)/sizeof(t_command)); i++)
-			{
-				if (args == commands[i].command)
-				{
-					CStdString str;
-					str.Format(_T("214 Command %s is supported by FileZilla Server"), args);
-					Send(str);
-					break;
-				}
+			auto const& it = command_map.find(args);
+			if( it != command_map.end() ) {
+				CStdString str;
+				str.Format(_T("214 Command %s is supported by FileZilla Server"), args);
+				Send(str);
+				break;
 			}
-			if (i == (sizeof(commands)/sizeof(t_command)))
-			{
+			else {
 				CStdString str;
 				str.Format(_T("502 Command %s is not recognized or supported by FileZilla Server"), args);
 				Send(str);
 			}
 		}
 		break;
-	case COMMAND_ALLO:
+	case commands::ALLO:
 		Send(_T("202 No storage allocation neccessary."));
 		break;
-	case COMMAND_MLST:
+	case commands::MLST:
 		{
 			CStdString fact;
 			CStdString logicalName;
@@ -1883,7 +1871,7 @@ void CControlSocket::ParseCommand()
 			Send(_T("250 End"));
 		}
 		break;
-	case COMMAND_SITE:
+	case commands::SITE:
 		{
 			CStdString cmd;
 
@@ -1917,17 +1905,17 @@ void CControlSocket::ParseCommand()
 			}
 			break;
 		}
-	case COMMAND_STRU:
+	case commands::STRU:
 		args.MakeUpper();
 		if (args == _T("F"))
 			Send(_T("200 Using file structure 'File'"));
 		else
 			Send(_T("504 Command not implemented for that parameter"));
 		break;
-	case COMMAND_CLNT:
+	case commands::CLNT:
 		Send(_T("200 Don't care"));
 		break;
-	case COMMAND_MFMT:
+	case commands::MFMT:
 		{
 			int pos = args.find(' ');
 			if (pos < 1)
@@ -2029,7 +2017,7 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
-	case COMMAND_HASH:
+	case commands::HASH:
 		{
 			if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_ENABLE_HASH))
 			{

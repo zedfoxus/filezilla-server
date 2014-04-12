@@ -37,6 +37,14 @@ class CTransferSocket;
 /////////////////////////////////////////////////////////////////////////////
 // Befehlsziel CControlSocket
 
+enum class commands;
+struct t_command
+{
+	commands id;
+	bool bHasargs;
+	bool bValidBeforeLogon;
+};
+
 class CControlSocket : public CAsyncSocketEx
 {
 // Attribute
@@ -58,6 +66,7 @@ public:
 	CTransferSocket* GetTransferSocket();
 	void ProcessTransferMsg();
 	void ParseCommand();
+	t_command MapCommand(CStdString const& command, CStdString const& args);
 	int m_userid;
 	BOOL Send(LPCTSTR str, bool sendStatus = true);
 	void SendStatus(LPCTSTR status,int type);
@@ -72,7 +81,6 @@ public:
 	void Continue();
 
 	void ProcessHashResult(int hash_id, int res, CHashThread::_algorithm alg, const CStdString& hash, const CStdString& file);
-
 
 	void SendTransferPreliminary();
 
