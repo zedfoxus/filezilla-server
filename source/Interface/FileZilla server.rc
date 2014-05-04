@@ -210,7 +210,7 @@ BEGIN
     PUSHBUTTON      "Remo&ve",IDC_DIRREMOVE,55,130,44,14
     PUSHBUTTON      "Rena&me",IDC_DIRRENAME,103,130,44,14
     PUSHBUTTON      "Set as &home dir",IDC_DIRSETASHOME,152,130,55,14
-    LTEXT           "A directory alias will also appear at the specified location. Aliases must contain the full local path. Separate multiple aliases for one directory with the pipe character ( | )",IDC_STATIC,0,153,291,18
+    LTEXT           "A directory alias will also appear at the specified location. Aliases must contain the full virtual path. Separate multiple aliases for one directory with the pipe character ( | )",IDC_STATIC,0,153,291,18
     LTEXT           "If using aliases, please avoid cyclic directory structures, it will only confuse FTP clients.",IDC_STATIC,0,172,272,8
 END
 
@@ -829,7 +829,7 @@ BEGIN
     PUSHBUTTON      "Rena&me",IDC_DIRRENAME,104,145,44,14
     PUSHBUTTON      "Set as &home dir",IDC_DIRSETASHOME,152,145,55,14
     LTEXT           "You can use :u in foldernames as a placeholder for the username.",IDC_STATIC,0,169,207,8
-    LTEXT           "If specified an alias for a directory, it will also appear at that location. Aliases must contain the full local path. Separate multiple aliases with the pipe character ( | )",IDC_STATIC,0,178,291,18
+    LTEXT           "If specified an alias for a directory, it will also appear at that location. Aliases must contain the full virtual path. Separate multiple aliases with the pipe character ( | )",IDC_STATIC,0,178,291,18
     LTEXT           "If using aliases, please avoid cyclic directory structures, it will only confuse FTP clients.",IDC_STATIC,0,196,272,8
 END
 
