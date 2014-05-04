@@ -652,20 +652,30 @@ void CUsersDlgSharedFolders::OnDirmenuEditAliases()
 		return;
 	}
 
-	CEnterSomething dlg(IDS_SHAREDFOLDERS_ENTERALIASES, IDD_ENTERSOMETHING_LARGE);
-	dlg.m_String = m_cDirs.GetItemText(nItem, 1);
-	dlg.allowEmpty = true;
-	if (dlg.DoModal() == IDOK) {
-		CString aliases = dlg.m_String;
+	CString aliases = m_cDirs.GetItemText(nItem, 1);
+	bool valid = false;
+	while( !valid ) {
+		CEnterSomething dlg(IDS_SHAREDFOLDERS_ENTERALIASES, IDD_ENTERSOMETHING_LARGE);
+		dlg.m_String = aliases;
+		dlg.allowEmpty = true;
+
+		if( dlg.DoModal() != IDOK) {
+			return;
+		}
+		
+		aliases = dlg.m_String;
 		aliases.Replace('\\', '/');
 		while (aliases.Replace('//', '/'));
 		while (aliases.Replace(_T("||"), _T("|")));
 		aliases.TrimLeft(_T("|"));
 		aliases.TrimRight(_T("|"));
 		
-		pUser->permissions[index].aliases.clear();
+		std::list<CString> aliasList;
 		aliases += _T("|");
 		int pos;
+
+		CString error;
+		valid = true;
 
 		std::set<CString> seen;
 		do {
@@ -675,16 +685,29 @@ void CUsersDlgSharedFolders::OnDirmenuEditAliases()
 			alias.TrimRight('/');
 
 			if (alias != _T("") && seen.insert(alias).second ) {
-				pUser->permissions[index].aliases.push_back(alias);
+
+				aliasList.push_back(alias);
+
+				if( alias.GetLength() < 2 || alias[0] != '/' ) {
+					valid = false;
+					error = alias;
+				}
 			}
 			aliases = aliases.Mid(pos + 1);
 		} while (pos != -1);
 
 		aliases.Empty();
-		for( auto const& alias : pUser->permissions[index].aliases ) {
+		for( auto const& alias : aliasList ) {
 			aliases += alias + _T("|");
 		}
 		aliases.TrimRight(_T("|"));
-		m_cDirs.SetItemText(nItem, 1, aliases);
+
+		if( valid ) {
+			pUser->permissions[index].aliases = aliasList;
+			m_cDirs.SetItemText(nItem, 1, aliases);
+		}
+		else {
+			AfxMessageBox(_T("At least one alias is not a full virtual path: ") + error);
+		}
 	}
 }

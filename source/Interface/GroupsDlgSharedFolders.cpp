@@ -26,6 +26,8 @@
 #include "misc\sbdestination.h"
 #include "entersomething.h"
 
+#include <set>
+
 #if defined(_DEBUG) && !defined(MMGR)
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -614,28 +616,62 @@ void CGroupsDlgSharedFolders::OnDirmenuEditAliases()
 		return;
 	}
 
-	CEnterSomething dlg(IDS_SHAREDFOLDERS_ENTERALIASES, IDD_ENTERSOMETHING_LARGE);
-	dlg.m_String = m_cDirs.GetItemText(nItem, 1);
-	dlg.allowEmpty = true;
-	if (dlg.DoModal() == IDOK)
-	{
-		CString aliases = dlg.m_String;
+	CString aliases = m_cDirs.GetItemText(nItem, 1);
+	bool valid = false;
+	while( !valid ) {
+		CEnterSomething dlg(IDS_SHAREDFOLDERS_ENTERALIASES, IDD_ENTERSOMETHING_LARGE);
+		dlg.m_String = aliases;
+		dlg.allowEmpty = true;
+
+		if( dlg.DoModal() != IDOK) {
+			return;
+		}
+		
+		aliases = dlg.m_String;
+		aliases.Replace('\\', '/');
+		while (aliases.Replace('//', '/'));
 		while (aliases.Replace(_T("||"), _T("|")));
 		aliases.TrimLeft(_T("|"));
 		aliases.TrimRight(_T("|"));
-		m_cDirs.SetItemText(nItem, 1, aliases);
 		
-		pGroup->permissions[index].aliases.clear();
+		std::list<CString> aliasList;
 		aliases += _T("|");
 		int pos;
-		do 
-		{
+
+		CString error;
+		valid = true;
+
+		std::set<CString> seen;
+		do {
 			pos = aliases.Find(_T("|"));
 
 			CString alias = aliases.Left(pos);
-			if (alias != _T(""))
-				pGroup->permissions[index].aliases.push_back(alias);
+			alias.TrimRight('/');
+
+			if (alias != _T("") && seen.insert(alias).second ) {
+
+				aliasList.push_back(alias);
+
+				if( alias.GetLength() < 2 || alias[0] != '/' ) {
+					valid = false;
+					error = alias;
+				}
+			}
 			aliases = aliases.Mid(pos + 1);
 		} while (pos != -1);
+
+		aliases.Empty();
+		for( auto const& alias : aliasList ) {
+			aliases += alias + _T("|");
+		}
+		aliases.TrimRight(_T("|"));
+
+		if( valid ) {
+			pGroup->permissions[index].aliases = aliasList;
+			m_cDirs.SetItemText(nItem, 1, aliases);
+		}
+		else {
+			AfxMessageBox(_T("At least one alias is not a full virtual path: ") + error);
+		}
 	}
 }
