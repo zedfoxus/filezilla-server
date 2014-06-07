@@ -632,8 +632,11 @@ int CPermissions::CheckDirectoryPermissions(LPCTSTR username, CStdString dirname
 	
 	if (!res2 && op&DOP_CREATE)
 		res |= PERMISSION_DOESALREADYEXIST;
-	else if (!(res2 & PERMISSION_NOTFOUND))
+	else if (!(res2 & PERMISSION_NOTFOUND)) {
+		if (op&DOP_DELETE && user.GetAliasTarget(directory.dir, logicalDir + _T("/"), realDirname) != _T(""))
+			res |= PERMISSION_DENIED;
 		return res | res2;
+	}
 
 	// check dir attributes
 	DWORD nAttributes = GetFileAttributes(physicalDir);
