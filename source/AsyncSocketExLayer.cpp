@@ -918,7 +918,7 @@ BOOL CAsyncSocketExLayer::ShutDownNext(int nHow /*=sends*/)
 	if (!m_pNextLayer)
 	{
 		ASSERT(m_pOwnerSocket);
-		return shutdown(m_pOwnerSocket->GetSocketHandle(), nHow);
+		return shutdown(m_pOwnerSocket->GetSocketHandle(), nHow) == 0;
 	}
 	else
 		return m_pNextLayer->ShutDownNext(nHow);
