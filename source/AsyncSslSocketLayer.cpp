@@ -721,6 +721,11 @@ void CAsyncSslSocketLayer::OnSend(int nErrorCode)
 		{
 			//Send shutdown notification if all pending data has been sent
 			TriggerEvent(FD_WRITE, 0, 0);
+			if( !ShutDownNext() ) {
+				if( GetLastError() == WSAEWOULDBLOCK ) {
+					return;
+				}
+			}
 			DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_INFO, SSL_INFO_SHUTDOWNCOMPLETE);
 			m_nShutDown++;
 		}
@@ -1209,7 +1214,7 @@ BOOL CAsyncSslSocketLayer::ShutDown(int nHow /*=sends*/)
 			WSASetLastError(WSAEWOULDBLOCK);
 			return false;
 		}
-		if (m_nShutDown != 2)
+		if (m_nShutDown < 2)
 			m_nShutDown = 2;
 		else
 		{
