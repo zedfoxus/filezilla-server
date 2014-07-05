@@ -249,7 +249,17 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 		return;
 
 	socket->AsyncSelect(FD_READ|FD_WRITE|FD_CLOSE);
-	socket->SendStatus(_T("Connected, sending welcome message..."), 0);
+
+	UINT localPort = 0;
+	CStdString localHost;
+	if( socket->GetSockName(localHost, localPort) ) {
+		CStdString msg;
+		msg.Format(_T("Connected on port %u, sending welcome message..."), localPort);
+		socket->SendStatus(msg, 0);
+	}
+	else {
+		socket->SendStatus(_T("Connected, sending welcome message..."), 0);
+	}
 
 	CStdString msg;
 	if (m_pOptions->GetOptionVal(OPTION_ENABLE_HASH))
