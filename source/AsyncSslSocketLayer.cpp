@@ -1063,7 +1063,7 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /
 	}
 
 	// Disable DES and other weak and export ciphers
-	pSSL_set_cipher_list(m_ssl, "DEFAULT:!DES:!WEAK:!EXP");
+	pSSL_set_cipher_list(m_ssl, "DEFAULT:!eNULL:!aNULL:!DES:!3DES:!WEAK:!EXP:!LOW:!MD5");
 	
 	//Add current instance to list of active instances
 	t_SslLayerList *tmp = m_pSslLayerList;
