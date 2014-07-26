@@ -2211,6 +2211,19 @@ void CAsyncSslSocketLayer::TriggerEvents()
 		m_mayTriggerWriteUp = false;
 		TriggerEvent(FD_WRITE, 0, TRUE);
 	}
+	else if (!m_nNetworkSendBufferLen && !m_bSslEstablished && !m_pRetrySendBuffer && pBIO_ctrl_get_write_guarantee(m_sslbio) > 0) {
+		if (!m_bFailureSent && !m_nShutDown && !m_onCloseCalled) {
+			// Continue handshake.
+			char dummy;
+			pBIO_write(m_sslbio, &dummy, 0);
+			if (pBIO_ctrl_pending(m_nbio) > 0) {
+				if (m_mayTriggerWrite) {
+					m_mayTriggerWrite = false;
+					TriggerEvent(FD_WRITE, 0);
+				}
+			}
+		}
+	}
 
 	if (m_bSslEstablished && pBIO_ctrl_pending(m_sslbio) > 0)
 	{
