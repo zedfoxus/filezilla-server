@@ -1042,18 +1042,12 @@ bool CTransferSocket::UseSSL(void* sslContext)
 
 int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 {
-	for (std::list<t_callbackMsg>::iterator iter = callbacks.begin(); iter != callbacks.end(); iter++)
-	{
-		if (m_pSslLayer && iter->pLayer == m_pSslLayer)
-		{
-			if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO && iter->nParam2 == SSL_INFO_SHUTDOWNCOMPLETE)
-			{
-				Sleep(0); //Give the system the possibility to relay the data
-				//If not using Sleep(0), GetRight for example can't receive the last chunk.
+	for (std::list<t_callbackMsg>::iterator iter = callbacks.begin(); iter != callbacks.end(); iter++) {
+		if (m_pSslLayer && iter->pLayer == m_pSslLayer) {
+			if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO && iter->nParam2 == SSL_INFO_SHUTDOWNCOMPLETE) {
 				EndTransfer(0);
 
-				do
-				{
+				do {
 					delete [] iter->str;
 					iter++;
 				} while (iter != callbacks.end());
@@ -1070,7 +1064,8 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 					m_pOwner->SendStatus(str, 1);
 				}
 			}
-			/* Verbose info for debugging
+#if SSL_VERBOSE_INFO
+			// Verbose info for debugging
 			else if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_VERBOSE_INFO)
 			{
 				if (iter->str)
@@ -1080,7 +1075,8 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 
 					m_pOwner->SendStatus(str, 0);
 				}
-			}*/
+			}
+#endif
 			else if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO_ESTABLISHED)
 			{
 				delete [] iter->str;

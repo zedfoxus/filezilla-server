@@ -192,7 +192,6 @@ private:
 	// Status variables
 	static int m_nSslRefCount;
 	BOOL m_bSslInitialized;
-	int m_nShutDown;
 	BOOL m_nNetworkError;
 	int m_nSslAsyncNotifyId;
 	BOOL m_bBlocking;
@@ -243,7 +242,7 @@ private:
 #define SSL_FAILURE 1
 #define SSL_VERIFY_CERT 2
 #define SSL_VERBOSE_WARNING 3
-#define SSL_VERBOSE_INFO 4
+//#define SSL_VERBOSE_INFO 4
 
 #define SSL_INFO_ESTABLISHED 0
 #define SSL_INFO_SHUTDOWNCOMPLETE 1
