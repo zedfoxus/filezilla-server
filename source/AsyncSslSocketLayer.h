@@ -129,6 +129,13 @@ struct t_SslCertData
 	int priv_data; //Internal data, do not modify
 };
 
+enum class ShutDownState
+{
+	none,
+	shuttingDown,
+	shutDown
+};
+
 class CCriticalSectionWrapper;
 class CAsyncSslSocketLayer : public CAsyncSocketExLayer
 {
@@ -166,10 +173,10 @@ private:
 	virtual int Receive(void* lpBuf, int nBufLen, int nFlags = 0);
 	virtual int Send(const void* lpBuf, int nBufLen, int nFlags = 0);
 	virtual BOOL ShutDown( int nHow = sends );
+	BOOL DoShutDown();
 	
 	void ResetSslSession();
 	void PrintSessionInfo();
-	BOOL ShutDownComplete();
 	int InitSSL();
 	void UnloadSSL();
 	int GetLastSslError(CStdString& e);
@@ -236,6 +243,8 @@ private:
 	bool m_onCloseCalled;
 
 	char* m_pKeyPassword;
+
+	ShutDownState shutDownState = ShutDownState::none;
 };
 
 #define SSL_INFO 0
