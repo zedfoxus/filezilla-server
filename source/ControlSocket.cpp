@@ -589,11 +589,9 @@ void CControlSocket::ParseCommand()
 			RenName = _T("");
 			args.MakeLower();
 			m_status.user = args;
-			if (!m_pSslLayer)
-			{
-				CUser user;
-				if (m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, _T(""), user, true) && user.ForceSsl())
-				{
+			if (!m_pSslLayer) {
+				CUser const* user = m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, _T(""), true);
+				if ( user && user->ForceSsl()) {
 					m_status.user = _T("");
 					Send(_T("530 SSL required"));
 					break;
@@ -2395,9 +2393,8 @@ void CControlSocket::OnSend(int nErrorCode)
 
 BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 {
-	CUser user;
-	if (!m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, password, user, skipPass))
-	{
+	CUser const* user = m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, password, skipPass);
+	if (!user) {
 		AntiHammerIncrease(2);
 		m_pOwner->AntiHammerIncrease(m_RemoteIP);
 
@@ -2412,31 +2409,27 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 		return FALSE;
 	}
 
-	if (!user.IsEnabled())
-	{
+	if (!user->IsEnabled()) {
 		Send(_T("530 Not logged in, user account has been disabled"));
 		ForceClose(-1);
 		return FALSE;
 	}
-	if (!user.BypassUserLimit())
-	{
+	if (!user->BypassUserLimit()) {
 		int nMaxUsers = (int)m_pOwner->m_pOptions->GetOptionVal(OPTION_MAXUSERS);
-		if (m_pOwner->GetGlobalNumConnections()>nMaxUsers&&nMaxUsers)
-		{
+		if (m_pOwner->GetGlobalNumConnections() > nMaxUsers&&nMaxUsers) {
 			SendStatus(_T("Refusing connection. Reason: Max. connection count reached."), 1);
 			Send(_T("421 Too many users are connected, please try again later."));
 			ForceClose(-1);
 			return FALSE;
 		}
 	}
-	if (user.GetUserLimit() && GetUserCount(m_status.user)>=user.GetUserLimit())
-	{
-			CStdString str;
-			str.Format(_T("Refusing connection. Reason: Max. connection count reached for the user \"%s\"."), m_status.user);
-			SendStatus(str,1);
-			Send(_T("421 Too many users logged in for this account. Try again later."));
-			ForceClose(-1);
-			return FALSE;
+	if (user->GetUserLimit() && GetUserCount(m_status.user) >= user->GetUserLimit()) {
+		CStdString str;
+		str.Format(_T("Refusing connection. Reason: Max. connection count reached for the user \"%s\"."), m_status.user);
+		SendStatus(str,1);
+		Send(_T("421 Too many users logged in for this account. Try again later."));
+		ForceClose(-1);
+		return FALSE;
 	}
 
 	CStdString peerIP;
@@ -2445,7 +2438,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 	BOOL bResult = GetPeerName(peerIP, port);
 	if (bResult)
 	{
-		if (!user.AccessAllowed(peerIP))
+		if (!user->AccessAllowed(peerIP))
 		{
 			Send(_T("521 This user is not allowed to connect from this IP"));
 			ForceClose(-1);
@@ -2461,8 +2454,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 	}
 
 	int count = m_pOwner->GetIpCount(peerIP);
-	if (user.GetIpLimit() && count >= user.GetIpLimit())
-	{
+	if (user->GetIpLimit() && count >= user->GetIpLimit()) {
 		CStdString str;
 		if (count==1)
 			str.Format(_T("Refusing connection. Reason: No more connections allowed from this IP. (%s already connected once)"), peerIP.c_str());
@@ -2475,8 +2467,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 	}
 
 	m_CurrentServerDir = m_pOwner->m_pPermissions->GetHomeDir(m_status.user);
-	if (m_CurrentServerDir == _T(""))
-	{
+	if (m_CurrentServerDir == _T("")) {
 		Send(_T("550 Could not get home dir!"));
 		ForceClose(-1);
 		return FALSE;
@@ -2484,13 +2475,12 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 
 	m_status.ip = peerIP;
 
-	count = GetUserCount(user.user);
-	if (user.GetUserLimit() && count >= user.GetUserLimit())
-	{
+	count = GetUserCount(user->user);
+	if (user->GetUserLimit() && count >= user->GetUserLimit()) {
 		CStdString str;
-		str.Format(_T("Refusing connection. Reason: Maximum connection count (%d) reached for this user"), user.GetUserLimit());
+		str.Format(_T("Refusing connection. Reason: Maximum connection count (%d) reached for this user"), user->GetUserLimit());
 		SendStatus(str, 1);
-		str.Format(_T("421 Refusing connection. Maximum connection count reached for the user '%s'"), user.user);
+		str.Format(_T("421 Refusing connection. Maximum connection count reached for the user '%s'"), user->user);
 		Send(str);
 		ForceClose(-1);
 		return FALSE;
@@ -2537,10 +2527,10 @@ void CControlSocket::Continue()
 
 long long CControlSocket::GetSpeedLimit(sltype mode)
 {
-	CUser user;
+	CUser const* user = 0;
 	long long nLimit = -1;
-	if (m_status.loggedon && m_pOwner->m_pPermissions->GetUser(m_status.user, user)) {
-		nLimit = user.GetCurrentSpeedLimit(mode);
+	if (m_status.loggedon && (user = m_pOwner->m_pPermissions->GetUser(m_status.user)) ) {
+		nLimit = user->GetCurrentSpeedLimit(mode);
 	}
 	if (nLimit > 0) {
 		nLimit *= 100;
@@ -2553,7 +2543,7 @@ long long CControlSocket::GetSpeedLimit(sltype mode)
 	}
 	else
 		nLimit = -1;
-	if (user.BypassServerSpeedLimit(mode))
+	if (user && user->BypassServerSpeedLimit(mode))
 		m_SlQuotas[mode].bBypassed = TRUE;
 	else if (m_SlQuotas[mode].nBytesAllowedToTransfer != -1)
 	{

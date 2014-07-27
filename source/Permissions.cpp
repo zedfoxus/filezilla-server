@@ -405,8 +405,8 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 									  bool *enabledFacts /*=0*/)
 {
 	// Get user
-	CUser user;
-	if (!GetUser(username, user))
+	CUser const* user = GetUser(username);
+	if (!user)
 		return PERMISSION_DENIED;
 
 	CStdString dir = CanonifyServerDir(currentDir, dirToDisplay);
@@ -417,7 +417,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 	// Get directory from directory name
 	t_directory directory;
 	BOOL bTruematch;
-	int res = GetRealDirectory(dir, user, directory, bTruematch);
+	int res = GetRealDirectory(dir, *user, directory, bTruematch);
 	CStdString sFileSpec = _T("*"); // Which files to list in the directory
 	if (res == PERMISSION_FILENOTDIR || res == PERMISSION_NOTFOUND) // Try listing using a direct wildcard filespec instead?
 	{
@@ -444,7 +444,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 		if (sFileSpec.Find(_T("*")) == -1 && res != PERMISSION_FILENOTDIR)
 			return res;
 
-		res = GetRealDirectory(dir, user, directory, bTruematch);
+		res = GetRealDirectory(dir, *user, directory, bTruematch);
 	}
 	if (res)
 		return res;
@@ -465,13 +465,13 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 	if (dirToDisplayUTF8.empty() && !dirToDisplay.empty())
 		return PERMISSION_DENIED;
 
-	for (std::multimap<CStdString, CStdString>::const_iterator iter = user.virtualAliasNames.begin(); iter != user.virtualAliasNames.end(); iter++) {
-		if (iter->first.CompareNoCase(dir))
+	for (auto const& virtualAliasName : user->virtualAliasNames) {
+		if (virtualAliasName.first.CompareNoCase(dir))
 			continue;
 
 		t_directory directory;
 		BOOL truematch = false;
-		if (GetRealDirectory(dir + _T("/") + iter->second, user, directory, truematch))
+		if (GetRealDirectory(dir + _T("/") + virtualAliasName.second, *user, directory, truematch))
 			continue;
 		if (!directory.bDirList)
 			continue;
@@ -479,11 +479,11 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 			continue;
 
 		if (sFileSpec != _T("*.*") && sFileSpec != _T("*")) {
-			if (!WildcardMatch(iter->second, sFileSpec))
+			if (!WildcardMatch(virtualAliasName.second, sFileSpec))
 				continue;
 		}
 
-		auto name = ConvToNetwork(iter->second);
+		auto name = ConvToNetwork(virtualAliasName.second);
 		if (!name.empty())
 			addFunc(result, true, name.c_str(), directory, 0, 0, dirToDisplayUTF8.c_str(), enabledFacts);
 	}
@@ -509,7 +509,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 			continue;
 
 		CStdString fn;
-		if (user.b8plus3)
+		if (user->b8plus3)
 		{
 			if (FindFileData.cAlternateFileName[0])
 				fn = FindFileData.cAlternateFileName;
@@ -529,7 +529,7 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 			// don't display the subdir.
 			BOOL truematch;
 			t_directory subDir;
-			if (GetRealDirectory(dir + _T("/") + fn, user, subDir, truematch))
+			if (GetRealDirectory(dir + _T("/") + fn, *user, subDir, truematch))
 				continue;
 
 			if (subDir.bDirList)
@@ -555,9 +555,10 @@ int CPermissions::GetDirectoryListing(LPCTSTR username, CStdString currentDir, C
 int CPermissions::CheckDirectoryPermissions(LPCTSTR username, CStdString dirname, CStdString currentdir, int op, CStdString& physicalDir, CStdString& logicalDir)
 {
 	//Get user from username
-	CUser user;
-	if (!GetUser(username, user))
+	CUser const* user = GetUser(username);
+	if (user) {
 		return PERMISSION_DENIED; // No user found
+	}
 
 	CStdString dir = CanonifyServerDir(currentdir, dirname);
 	if (dir == _T(""))
@@ -590,7 +591,7 @@ int CPermissions::CheckDirectoryPermissions(LPCTSTR username, CStdString dirname
 	CStdString dirname2 = dirname;
 	do
 	{
-		res = GetRealDirectory(dir2, user, directory, truematch);
+		res = GetRealDirectory(dir2, *user, directory, truematch);
 		if (res & PERMISSION_NOTFOUND && op == DOP_CREATE)
 		{ //that path could not be found. Maybe more than one directory level has to be created, check that
 			if (dir2 == _T("/"))
@@ -624,7 +625,7 @@ int CPermissions::CheckDirectoryPermissions(LPCTSTR username, CStdString dirname
 	physicalDir = realDir + _T("\\") + realDirname;
 
 	//Check if dir + dirname is a valid path
-	int res2 = GetRealDirectory(dir + _T("/") + dirname, user, directory, truematch);
+	int res2 = GetRealDirectory(dir + _T("/") + dirname, *user, directory, truematch);
 
 	if (!res2)
 		physicalDir = directory.dir;
@@ -632,7 +633,7 @@ int CPermissions::CheckDirectoryPermissions(LPCTSTR username, CStdString dirname
 	if (!res2 && op&DOP_CREATE)
 		res |= PERMISSION_DOESALREADYEXIST;
 	else if (!(res2 & PERMISSION_NOTFOUND)) {
-		if (op&DOP_DELETE && user.GetAliasTarget(directory.dir, logicalDir + _T("/"), realDirname) != _T(""))
+		if (op&DOP_DELETE && user->GetAliasTarget(directory.dir, logicalDir + _T("/"), realDirname) != _T(""))
 			res |= PERMISSION_DENIED;
 		return res | res2;
 	}
@@ -651,9 +652,10 @@ int CPermissions::CheckDirectoryPermissions(LPCTSTR username, CStdString dirname
 int CPermissions::CheckFilePermissions(LPCTSTR username, CStdString filename, CStdString currentdir, int op, CStdString& physicalFile, CStdString& logicalFile)
 {
 	//Get user from username
-	CUser user;
-	if (!GetUser(username, user))
+	CUser const* user = GetUser(username);
+	if (!user) {
 		return PERMISSION_DENIED; // No user found
+	}
 
 	CStdString dir = CanonifyServerDir(currentdir, filename);
 	if (dir == _T(""))
@@ -679,7 +681,7 @@ int CPermissions::CheckFilePermissions(LPCTSTR username, CStdString filename, CS
 	//Get the physical path
 	t_directory directory;
 	BOOL truematch;
-	int res = GetRealDirectory(dir, user, directory, truematch);
+	int res = GetRealDirectory(dir, *user, directory, truematch);
 
 	if (res)
 		return res;
@@ -691,7 +693,7 @@ int CPermissions::CheckFilePermissions(LPCTSTR username, CStdString filename, CS
 		res |= PERMISSION_DENIED;
 	if ((!directory.bDirList || (!directory.bDirSubdirs && !truematch)) && op&FOP_LIST)
 		res |= PERMISSION_DENIED;
-	if (op&FOP_DELETE && user.GetAliasTarget(directory.dir, logicalFile + _T("/"), filename) != _T(""))
+	if (op&FOP_DELETE && user->GetAliasTarget(directory.dir, logicalFile + _T("/"), filename) != _T(""))
 		res |= PERMISSION_DENIED;
 
 	physicalFile = directory.dir + "\\" + filename;
@@ -735,11 +737,12 @@ CStdString CPermissions::GetHomeDir(const CUser &user, bool physicalPath /*=fals
 
 CStdString CPermissions::GetHomeDir(LPCTSTR username, bool physicalPath /*=false*/) const
 {
-	CUser user;
-	if (!GetUser(username, user))
-		return _T("");
+	CStdString ret;
+	CUser const* user = GetUser(username);
+	if (user) 
+		ret = GetHomeDir(*user, physicalPath);
 
-	return GetHomeDir(user, physicalPath);
+	return ret;
 }
 
 int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_directory &ret, BOOL &truematch)
@@ -890,8 +893,8 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 int CPermissions::ChangeCurrentDir(LPCTSTR username, CStdString &currentdir, CStdString &dir)
 {
 	//Get user from username
-	CUser user;
-	if (!GetUser(username, user))
+	CUser const* user = GetUser(username);
+	if (!user)
 		return PERMISSION_DENIED; // No user found
 
 	CStdString canonifiedDir = CanonifyServerDir(currentdir, dir);
@@ -902,7 +905,7 @@ int CPermissions::ChangeCurrentDir(LPCTSTR username, CStdString &currentdir, CSt
 	//Get the physical path
 	t_directory directory;
 	BOOL truematch;
-	int res = GetRealDirectory(dir, user, directory, truematch);
+	int res = GetRealDirectory(dir, *user, directory, truematch);
 	if (res)
 		return res;
 	if (!directory.bDirList)
@@ -917,28 +920,25 @@ int CPermissions::ChangeCurrentDir(LPCTSTR username, CStdString &currentdir, CSt
 	return 0;
 }
 
-BOOL CPermissions::GetUser(CStdString const& username, CUser &userdata) const
+CUser const* CPermissions::GetUser(CStdString const& username) const
 {
 	// Get user from username
-	for (unsigned int i = 0; i < m_UsersList.size(); i++)
-	{
-		if (!username.CompareNoCase(m_UsersList[i].user))
-		{
-			userdata = m_UsersList[i];
-			return TRUE;
+	for (unsigned int i = 0; i < m_UsersList.size(); i++) {
+		if (!username.CompareNoCase(m_UsersList[i].user)) {
+			return &m_UsersList[i];
 		}
 	}
-	return FALSE;
+	return 0;
 }
 
-BOOL CPermissions::CheckUserLogin(LPCTSTR username, LPCTSTR pass, CUser &userdata, BOOL noPasswordCheck /*=FALSE*/)
+CUser const* CPermissions::CheckUserLogin(LPCTSTR username, LPCTSTR pass, BOOL noPasswordCheck /*=FALSE*/)
 {
 	if (!pass)
-		return FALSE;
+		return 0;
 
 	auto tmp = ConvToNetwork(pass);
 	if (tmp.empty() && *pass)
-		return FALSE;
+		return 0;
 
 	MD5 md5;
 	md5.update((unsigned char const*)tmp.c_str(), tmp.size());
@@ -947,17 +947,15 @@ BOOL CPermissions::CheckUserLogin(LPCTSTR username, LPCTSTR pass, CUser &userdat
 	CStdString hash = res;
 	delete [] res;
 
-	CUser user;
-	if (!GetUser(username, user))
-		return FALSE;
+	CUser const* user = GetUser(username);
+	if (!user)
+		return 0;
 
-	if (noPasswordCheck || user.password == hash || user.password == _T(""))
-	{
-		userdata = user;
-		return TRUE;
+	if (noPasswordCheck || user->password == hash || user->password == _T("")) {
+		return user;
 	}
 
-	return FALSE;
+	return 0;
 }
 
 void CPermissions::UpdateInstances()
@@ -1388,19 +1386,18 @@ void CPermissions::ReadPermissions(TiXmlElement *pXML, t_group &user, BOOL &bGot
 void CPermissions::AutoCreateDirs(LPCTSTR username)
 {
 	// Create missing directores after a user has logged on
-	CUser user;
-	if (!GetUser(username, user))
+	CUser const* user = GetUser(username);
+	if (!user)
 		return;
-	for (std::vector<t_directory>::iterator permissioniter = user.permissions.begin(); permissioniter != user.permissions.end(); permissioniter++)
-		if (permissioniter->bAutoCreate)
-		{
-			CStdString dir = permissioniter->dir;
-			user.DoReplacements(dir);
+
+	for (auto const& permission : user->permissions) {
+		if (permission.bAutoCreate) {
+			CStdString dir = permission.dir;
+			user->DoReplacements(dir);
 			
 			dir += _T("\\");
 			CStdString str;
-			while (dir != _T(""))
-			{
+			while (dir != _T("")) {
 				int pos = dir.Find(_T("\\"));
 				CStdString piece = dir.Left(pos + 1);
 				dir = dir.Mid(pos + 1);
@@ -1409,17 +1406,17 @@ void CPermissions::AutoCreateDirs(LPCTSTR username)
 				CreateDirectory(str, 0);
 			}
 		}
-	if (user.pOwner)
-		for (std::vector<t_directory>::iterator permissioniter = user.pOwner->permissions.begin(); permissioniter != user.pOwner->permissions.end(); permissioniter++)
-			if (permissioniter->bAutoCreate)
+	}
+	if (user->pOwner) {
+		for (auto const& permission : user->pOwner->permissions) {
+			if (permission.bAutoCreate)
 			{
-				CStdString dir = permissioniter->dir;
-				user.DoReplacements(dir);
+				CStdString dir = permission.dir;
+				user->DoReplacements(dir);
 
 				dir += _T("\\");
 				CStdString str;
-				while (dir != _T(""))
-				{
+				while (dir != _T("")) {
 					int pos = dir.Find(_T("\\"));
 					CStdString piece = dir.Left(pos + 1);
 					dir = dir.Mid(pos + 1);
@@ -1428,6 +1425,8 @@ void CPermissions::AutoCreateDirs(LPCTSTR username)
 					CreateDirectory(str, 0);
 				}
 			}
+		}
+	}
 }
 
 void CPermissions::ReadSpeedLimits(TiXmlElement *pXML, t_group &group)
@@ -1718,9 +1717,10 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 int CPermissions::GetFact(LPCTSTR username, CStdString const& currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3])
 {
 	// Get user from username
-	CUser user;
-	if (!GetUser(username, user))
+	CUser const* user = GetUser(username);
+	if (!user) {
 		return PERMISSION_DENIED; // No user found
+	}
 
 	CStdString dir = CanonifyServerDir(currentDir, file);
 	if (dir == _T(""))
@@ -1729,7 +1729,7 @@ int CPermissions::GetFact(LPCTSTR username, CStdString const& currentDir, CStdSt
 
 	t_directory directory;
 	BOOL bTruematch;
-	int res = GetRealDirectory(dir, user, directory, bTruematch);
+	int res = GetRealDirectory(dir, *user, directory, bTruematch);
 	if (res == PERMISSION_FILENOTDIR)
 	{
 		if (dir == _T("/"))
@@ -1746,7 +1746,7 @@ int CPermissions::GetFact(LPCTSTR username, CStdString const& currentDir, CStdSt
 			dir2 = _T("/");
 
 		CStdString fn = dir.Mid(pos + 1);
-		int res = GetRealDirectory(dir2, user, directory, bTruematch);
+		int res = GetRealDirectory(dir2, *user, directory, bTruematch);
 		if (res)
 			return res | PERMISSION_FILENOTDIR;
 

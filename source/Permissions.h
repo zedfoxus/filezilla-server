@@ -139,8 +139,8 @@ public:
 	int CheckDirectoryPermissions(LPCTSTR username, CStdString dirname, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
 	int CheckFilePermissions(LPCTSTR username, CStdString filename, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
 
-	BOOL GetUser(CStdString const& username, CUser &userdata) const;
-	BOOL CheckUserLogin(LPCTSTR username, LPCTSTR pass, CUser &userdata, BOOL noPasswordCheck = FALSE);
+	CUser const* GetUser(CStdString const& username) const;
+	CUser const* CheckUserLogin(LPCTSTR username, LPCTSTR pass, BOOL noPasswordCheck = FALSE);
 
 	BOOL GetAsCommand(char **pBuffer, DWORD *nBufferLength);
 	BOOL ParseUsersCommand(unsigned char *pData, DWORD dwDataLength);
