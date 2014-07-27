@@ -353,8 +353,7 @@ public:
 							if (nErrorCode)
 								pSocket->SetState(aborted);
 #endif //NOSOCKETSTATES
-							if (nBytes != 0 || nErrorCode != 0)
-								pSocket->OnReceive(nErrorCode);
+							pSocket->OnReceive(nErrorCode);
 						}
 						break;
 					case FD_FORCEREAD: //Forceread does not check if there's data waiting
@@ -474,7 +473,7 @@ public:
 						DWORD nBytes;
 						if (!pSocket->IOCtl(FIONREAD, &nBytes))
 							nErrorCode = WSAGetLastError();
-						if (nBytes != 0 || nErrorCode != 0 && pSocket->m_pLastLayer)
+						if (pSocket->m_pLastLayer)
 							pSocket->m_pLastLayer->CallEvent(nEvent, nErrorCode);
 					}
 					else if (nEvent == FD_CLOSE)
