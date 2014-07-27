@@ -45,7 +45,7 @@ struct t_command
 	bool bValidBeforeLogon;
 };
 
-class CControlSocket : public CAsyncSocketEx
+class CControlSocket final : public CAsyncSocketEx
 {
 // Attribute
 public:

@@ -39,7 +39,7 @@ struct t_dirlisting;
 /////////////////////////////////////////////////////////////////////////////
 // Befehlsziel CTransferSocket 
 class CAsyncSslSocketLayer;
-class CTransferSocket : public CAsyncSocketEx
+class CTransferSocket final : public CAsyncSocketEx
 {
 // Attribute
 public:

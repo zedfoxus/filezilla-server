@@ -137,7 +137,7 @@ enum class ShutDownState
 };
 
 class CCriticalSectionWrapper;
-class CAsyncSslSocketLayer : public CAsyncSocketExLayer
+class CAsyncSslSocketLayer final : public CAsyncSocketExLayer
 {
 public:
 	BOOL SetCertStorage(CString file);
