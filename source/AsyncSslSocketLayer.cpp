@@ -322,7 +322,6 @@ int CAsyncSslSocketLayer::InitSSL()
 
 		bool bError = false;
 		load(m_hSslDll2, BIO_ctrl_pending);
-		load(m_hSslDll2, BIO_ctrl_pending);
 		load(m_hSslDll2, BIO_read);
 		load(m_hSslDll2, BIO_ctrl);
 		load(m_hSslDll2, BIO_write);
@@ -1288,6 +1287,9 @@ BOOL CAsyncSslSocketLayer::ShutDownComplete()
 	{
 		numread = pBIO_read(m_sslbio, buffer, 1000);
 	} while (numread > 0);
+
+	// Make sure to flush alert
+	pSSL_shutdown(m_ssl);
 
 	if (pBIO_ctrl_pending(m_nbio))
 		return FALSE;
