@@ -101,24 +101,24 @@ protected:
 	
 			// Clear old group data and copy over the new data
 			pWnd->m_pPermissions->m_GroupsList.clear();
-			for (CPermissions::t_GroupsList::iterator groupiter=pWnd->m_pPermissions->m_sGroupsList.begin(); groupiter!=pWnd->m_pPermissions->m_sGroupsList.end(); groupiter++)
-				pWnd->m_pPermissions->m_GroupsList.push_back(*groupiter);
+			for (auto const& group : pWnd->m_pPermissions->m_sGroupsList ) {
+				pWnd->m_pPermissions->m_GroupsList.push_back(group);
+			}
 	
 			// Clear old user data and copy over the new data
 			pWnd->m_pPermissions->m_UsersList.clear();
-			for (CPermissions::t_UsersList::iterator iter=pWnd->m_pPermissions->m_sUsersList.begin(); iter!=pWnd->m_pPermissions->m_sUsersList.end(); iter++)
-			{
-				CUser user = *iter;
+			for (auto const& it : pWnd->m_pPermissions->m_sUsersList ) {
+				CUser user = it.second;
 				user.pOwner = NULL;
 				if (user.group != _T("")) {	// Set owner
-					for (CPermissions::t_GroupsList::iterator groupiter=pWnd->m_pPermissions->m_GroupsList.begin(); groupiter!=pWnd->m_pPermissions->m_GroupsList.end(); groupiter++)
-						if (groupiter->group == user.group)
-						{
-							user.pOwner = &(*groupiter);
+					for (auto const& group : pWnd->m_pPermissions->m_GroupsList ) {
+						if (group.group == user.group) {
+							user.pOwner = &group;
 							break;
 						}
+					}
 				}
-				pWnd->m_pPermissions->m_UsersList.push_back(user);
+				pWnd->m_pPermissions->m_UsersList[it.first] = user;
 			}
 	
 			LeaveCritSection(pWnd->m_pPermissions->m_sync);
@@ -923,10 +923,9 @@ int CPermissions::ChangeCurrentDir(LPCTSTR username, CStdString &currentdir, CSt
 CUser const* CPermissions::GetUser(CStdString const& username) const
 {
 	// Get user from username
-	for (unsigned int i = 0; i < m_UsersList.size(); i++) {
-		if (!username.CompareNoCase(m_UsersList[i].user)) {
-			return &m_UsersList[i];
-		}
+	auto const& it = m_UsersList.find(username);
+	if( it != m_UsersList.end() ) {
+		return &it->second;
 	}
 	return 0;
 }
@@ -1038,9 +1037,9 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	for (groupiter = m_sGroupsList.begin(); groupiter != m_sGroupsList.end(); groupiter++)
 		len += groupiter->GetRequiredBufferLen();
 
-	t_UsersList::iterator iter;
-	for (iter = m_sUsersList.begin(); iter != m_sUsersList.end(); iter++)
-		len += iter->GetRequiredBufferLen();
+	for (auto const& iter : m_sUsersList ) {
+		len += iter.second.GetRequiredBufferLen();
+	}
 
 	// Allocate memory
 	*pBuffer = new char[len];
@@ -1064,9 +1063,8 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	// Write users to buffer
 	*p++ = m_sUsersList.size()/256;
 	*p++ = m_sUsersList.size()%256;
-	for (iter = m_sUsersList.begin(); iter != m_sUsersList.end(); iter++)
-	{
-		p = iter->FillBuffer(p);
+	for (auto const& iter : m_sUsersList ) {
+		p = iter.second.FillBuffer(p);
 		if (!p)
 		{
 			delete [] *pBuffer;
@@ -1172,20 +1170,20 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 					break;
 				}
 			}
-			if (user.homedir == _T("") && user.pOwner)
-			{
-				for (iter = user.pOwner->permissions.begin(); iter != user.pOwner->permissions.end(); iter++)
-				{
-					if (iter->bIsHome)
-					{
-						user.homedir = iter->dir;
+			if (user.homedir == _T("") && user.pOwner) {
+				for (auto const& perm : user.pOwner->permissions ) {
+					if (perm.bIsHome) {
+						user.homedir = perm.dir;
 						break;
 					}
 				}
 			}
 
 			user.PrepareAliasMap();
-			m_UsersList.push_back(user);
+
+			CStdString name = user.user;
+			name.ToLower();
+			m_UsersList[name] = user;
 		}
 	}
 
@@ -1197,8 +1195,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		m_sGroupsList.push_back(*groupiter);
 
 	m_sUsersList.clear();
-	for (t_UsersList::const_iterator iter=m_UsersList.begin(); iter!=m_UsersList.end(); iter++)
-		m_sUsersList.push_back(*iter);
+	m_sUsersList.insert(m_UsersList.begin(), m_UsersList.end());
 
 	UpdateInstances();
 
@@ -1244,26 +1241,26 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	pXML->LinkEndChild(pUsers);
 
 	//Save the changed user details
-	for (t_UsersList::const_iterator iter=m_UsersList.begin(); iter!=m_UsersList.end(); iter++)
-	{
+	for (auto const& iter : m_UsersList ) {
+		CUser const& user = iter.second;
 		TiXmlElement* pUser = new TiXmlElement("User");
 		pUsers->LinkEndChild(pUser);
 		
-		pUser->SetAttribute("Name", ConvToNetwork(iter->user).c_str());
+		pUser->SetAttribute("Name", ConvToNetwork(user.user).c_str());
 
-		SetKey(pUser, _T("Pass"), iter->password);
-		SetKey(pUser, _T("Group"), iter->group);
-		SetKey(pUser, _T("Bypass server userlimit"), iter->nBypassUserLimit);
-		SetKey(pUser, _T("User Limit"), iter->nUserLimit);
-		SetKey(pUser, _T("IP Limit"), iter->nIpLimit);
-		SetKey(pUser, _T("Enabled"), iter->nEnabled);
-		SetKey(pUser, _T("Comments"), iter->comment);
-		SetKey(pUser, _T("ForceSsl"), iter->forceSsl);
-		SetKey(pUser, _T("8plus3"), iter->b8plus3 ? 1 : 0);
+		SetKey(pUser, _T("Pass"), user.password);
+		SetKey(pUser, _T("Group"), user.group);
+		SetKey(pUser, _T("Bypass server userlimit"), user.nBypassUserLimit);
+		SetKey(pUser, _T("User Limit"), user.nUserLimit);
+		SetKey(pUser, _T("IP Limit"), user.nIpLimit);
+		SetKey(pUser, _T("Enabled"), user.nEnabled);
+		SetKey(pUser, _T("Comments"), user.comment);
+		SetKey(pUser, _T("ForceSsl"), user.forceSsl);
+		SetKey(pUser, _T("8plus3"), user.b8plus3 ? 1 : 0);
 
-		SaveIpFilter(pUser, *iter);
-		SavePermissions(pUser, *iter);
-		SaveSpeedLimits(pUser, *iter);
+		SaveIpFilter(pUser, user);
+		SavePermissions(pUser, user);
+		SaveSpeedLimits(pUser, user);
 	}
 	if (!COptions::FreeXML(pXML, true))
 		return FALSE;
@@ -1285,24 +1282,23 @@ bool CPermissions::Init()
 	else
 	{
 		m_GroupsList.clear();
-		for (t_GroupsList::iterator groupiter = m_sGroupsList.begin(); groupiter != m_sGroupsList.end(); groupiter++)
-			m_GroupsList.push_back(*groupiter);
+		for (auto const& group : m_sGroupsList ) {
+			m_GroupsList.push_back(group);
+		}
 
 		m_UsersList.clear();
-		for (t_UsersList::iterator iter = m_sUsersList.begin(); iter != m_sUsersList.end(); iter++)
-		{
-			CUser user = *iter;
+		for (auto const& it : m_sUsersList) {
+			CUser user = it.second;
 			user.pOwner = NULL;
-			if (user.group != _T(""))
-			{
-				for (t_GroupsList::iterator groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++)
-					if (groupiter->group == user.group)
-					{
-						user.pOwner = &(*groupiter);
+			if (user.group != _T("")) {
+				for (auto const& group : m_GroupsList ) {
+					if (group.group == user.group) {
+						user.pOwner = &group;
 						break;
 					}
+				}
 			}
-			m_UsersList.push_back(user);
+			m_UsersList[it.first] = user;
 		}
 	}
 
@@ -2038,13 +2034,10 @@ void CPermissions::ReadSettings()
 				break;
 			}
 		}
-		if (user.homedir == _T("") && user.pOwner)
-		{
-			for (iter = user.pOwner->permissions.begin(); iter != user.pOwner->permissions.end(); iter++)
-			{
-				if (iter->bIsHome)
-				{
-					user.homedir = iter->dir;
+		if (user.homedir == _T("") && user.pOwner) {
+			for (auto const& perm : user.pOwner->permissions ) {
+				if (perm.bIsHome) {
+					user.homedir = perm.dir;
 					break;
 				}
 			}
@@ -2052,32 +2045,34 @@ void CPermissions::ReadSettings()
 			
 		ReadSpeedLimits(pUser, user);
 
-		if (m_UsersList.size() < 200000)
-			m_UsersList.push_back(user);
+		if (m_UsersList.size() < 200000) {
+			CStdString name = user.user;
+			name.ToLower();
+			m_UsersList[name] = user;
+		}
 	}
 	COptions::FreeXML(pXML, false);
 
 	EnterCritSection(m_sync);
 
 	m_sGroupsList.clear();
-	for (t_GroupsList::iterator groupiter = m_GroupsList.begin(); groupiter != m_GroupsList.end(); groupiter++)
-		m_sGroupsList.push_back(*groupiter);
+	for (auto const& group : m_GroupsList) {
+		m_sGroupsList.push_back(group);
+	}
 
 	m_sUsersList.clear();
-	for (t_UsersList::iterator iter = m_UsersList.begin(); iter != m_UsersList.end(); iter++)
-	{
-		CUser user = *iter;
+	for (auto const& it : m_UsersList) {
+		CUser user = it.second;
 		user.pOwner = NULL;
-		if (user.group != _T(""))
-		{
-			for (t_GroupsList::iterator groupiter = m_GroupsList.begin(); groupiter != m_GroupsList.end(); groupiter++)
-				if (groupiter->group == user.group)
-				{
-					user.pOwner = &(*groupiter);
+		if (user.group != _T("")) {
+			for (auto const& group : m_GroupsList) {
+				if (group.group == user.group) {
+					user.pOwner = &group;
 					break;
 				}
+			}
 		}
-		m_sUsersList.push_back(user);
+		m_sUsersList[it.first] = user;
 	}
 
 	LeaveCritSection(m_sync);

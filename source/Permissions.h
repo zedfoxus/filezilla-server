@@ -173,7 +173,7 @@ protected:
 
 	bool WildcardMatch(CStdString string, CStdString pattern) const;
 	
-	typedef std::vector<CUser> t_UsersList; 
+	typedef std::map<CStdString, CUser> t_UsersList; 
 	typedef std::vector<t_group> t_GroupsList; 
 	static t_UsersList m_sUsersList;
 	static t_GroupsList m_sGroupsList;

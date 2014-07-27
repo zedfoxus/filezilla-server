@@ -69,7 +69,7 @@ public:
 
 	CStdString comment;
 
-	t_group *pOwner;
+	t_group const* pOwner;
 
 	bool b8plus3;
 
