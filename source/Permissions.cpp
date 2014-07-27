@@ -110,8 +110,7 @@ protected:
 			{
 				CUser user = *iter;
 				user.pOwner = NULL;
-				if (user.group != _T(""))
-				{	// Set owner
+				if (user.group != _T("")) {	// Set owner
 					for (CPermissions::t_GroupsList::iterator groupiter=pWnd->m_pPermissions->m_GroupsList.begin(); groupiter!=pWnd->m_pPermissions->m_GroupsList.end(); groupiter++)
 						if (groupiter->group == user.group)
 						{
@@ -918,7 +917,7 @@ int CPermissions::ChangeCurrentDir(LPCTSTR username, CStdString &currentdir, CSt
 	return 0;
 }
 
-BOOL CPermissions::GetUser(CStdString username, CUser &userdata) const
+BOOL CPermissions::GetUser(CStdString const& username, CUser &userdata) const
 {
 	// Get user from username
 	for (unsigned int i = 0; i < m_UsersList.size(); i++)
@@ -1716,7 +1715,7 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 	return result;
 }
 
-int CPermissions::GetFact(LPCTSTR username, CStdString currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3])
+int CPermissions::GetFact(LPCTSTR username, CStdString const& currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3])
 {
 	// Get user from username
 	CUser user;

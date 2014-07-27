@@ -2539,15 +2539,12 @@ long long CControlSocket::GetSpeedLimit(sltype mode)
 {
 	CUser user;
 	long long nLimit = -1;
-	if (m_status.loggedon && m_pOwner->m_pPermissions->GetUser(m_status.user, user))
-	{
+	if (m_status.loggedon && m_pOwner->m_pPermissions->GetUser(m_status.user, user)) {
 		nLimit = user.GetCurrentSpeedLimit(mode);
 	}
-	if (nLimit > 0)
-	{
+	if (nLimit > 0) {
 		nLimit *= 100;
-		if (m_SlQuotas[mode].nTransferred >= nLimit)
-		{
+		if (m_SlQuotas[mode].nTransferred >= nLimit) {
 			m_SlQuotas[mode].bContinue = TRUE;
 			return 0;
 		}

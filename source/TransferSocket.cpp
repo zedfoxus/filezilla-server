@@ -146,7 +146,6 @@ END_MESSAGE_MAP()
 
 void CTransferSocket::OnSend(int nErrorCode)
 {
-	CAsyncSocketEx::OnSend(nErrorCode);
 	if (nErrorCode) {
 		EndTransfer(1);
 		return;
@@ -607,7 +606,6 @@ void CTransferSocket::OnConnect(int nErrorCode)
 	if (!m_bStarted)
 		InitTransfer(FALSE);
 
-	CAsyncSocketEx::OnConnect(nErrorCode);
 }
 
 void CTransferSocket::OnClose(int nErrorCode)
@@ -637,8 +635,6 @@ void CTransferSocket::OnClose(int nErrorCode)
 		else
 			EndTransfer((m_nMode == TRANSFERMODE_RECEIVE) ? 0 : 1);
 	}
-
-	CAsyncSocketEx::OnClose(nErrorCode);
 }
 
 int CTransferSocket::GetStatus()
@@ -687,14 +683,10 @@ void CTransferSocket::OnAccept(int nErrorCode)
 	if (m_bReady)
 		if (!m_bStarted)
 			InitTransfer(FALSE);
-
-	CAsyncSocketEx::OnAccept(nErrorCode);
 }
 
 void CTransferSocket::OnReceive(int nErrorCode)
 {
-	CAsyncSocketEx::OnReceive(nErrorCode);
-
 	bool obeySpeedLimit = true;
 	if (nErrorCode == WSAESHUTDOWN)
 		obeySpeedLimit = false;
@@ -716,8 +708,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 
 		int len = m_nBufSize;
 		long long nLimit = -1;
-		if (obeySpeedLimit)
-		{
+		if (obeySpeedLimit) {
 			nLimit = m_pOwner->GetSpeedLimit(upload);
 			if (nLimit != -1 && GetState() != aborted && len > nLimit)
 				len = static_cast<int>(nLimit);
@@ -728,8 +719,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 
 		int numread = Receive(m_pBuffer, len);
 
-		if (numread == SOCKET_ERROR)
-		{
+		if (numread == SOCKET_ERROR) {
 			const int error = GetLastError();
 			if (m_pSslLayer && error == WSAESHUTDOWN)
 			{

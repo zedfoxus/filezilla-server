@@ -53,8 +53,6 @@ public:
 
 	bool AccessAllowed(const CStdString& ip) const;
 
-	virtual t_group& t_group::operator=(const t_group &a);
-
 	CStdString group;
 	std::vector<t_directory> permissions;
 	int nBypassUserLimit;
@@ -87,8 +85,6 @@ public:
 	virtual int GetRequiredBufferLen() const;
 	virtual char * FillBuffer(char *p) const;
 	virtual unsigned char * ParseBuffer(unsigned char *pBuffer, int length);
-
-	virtual t_user& t_user::operator=(const t_user &a);
 
 	CStdString user;
 	CStdString password;

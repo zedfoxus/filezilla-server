@@ -49,7 +49,7 @@ class TiXmlElement;
 class CPermissionsHelperWindow;
 class COptions;
 
-class CUser : public t_user
+class CUser final : public t_user
 {
 public:
 	CStdString homedir;
@@ -139,7 +139,7 @@ public:
 	int CheckDirectoryPermissions(LPCTSTR username, CStdString dirname, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
 	int CheckFilePermissions(LPCTSTR username, CStdString filename, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
 
-	BOOL GetUser(CStdString username, CUser &userdata) const;
+	BOOL GetUser(CStdString const& username, CUser &userdata) const;
 	BOOL CheckUserLogin(LPCTSTR username, LPCTSTR pass, CUser &userdata, BOOL noPasswordCheck = FALSE);
 
 	BOOL GetAsCommand(char **pBuffer, DWORD *nBufferLength);
@@ -147,7 +147,7 @@ public:
 	void AutoCreateDirs(LPCTSTR username);
 	void ReloadConfig();
 
-	int GetFact(LPCTSTR username, CStdString currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3]);
+	int GetFact(LPCTSTR username, CStdString const& currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3]);
 
 protected:
 	bool Init();

@@ -1007,7 +1007,7 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /
 
 	//Create bios
 	m_sslbio = pBIO_new(pBIO_f_ssl());
-	pBIO_new_bio_pair(&m_ibio, 4096, &m_nbio, 4096);
+	pBIO_new_bio_pair(&m_ibio, 8192, &m_nbio, 8192);
 
 	if (!m_sslbio || !m_nbio || !m_ibio)
 	{

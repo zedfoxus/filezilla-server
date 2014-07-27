@@ -11,8 +11,7 @@ t_group::t_group()
 {
 	pOwner = NULL;
 
-	for (int i = 0; i < 2; i++)
-	{
+	for (int i = 0; i < 2; ++i) {
 		nSpeedLimitType[i] = 0;
 		nSpeedLimit[i] = 10;
 		nBypassServerSpeedLimit[i] = 0;
@@ -20,31 +19,6 @@ t_group::t_group()
 	nEnabled = 1;
 	forceSsl = 0;
 	b8plus3 = false;
-}
-
-t_group& t_group::operator=(const t_group &a)
-{
-	group = a.group;
-	nBypassUserLimit = a.nBypassUserLimit;
-	nUserLimit = a.nUserLimit;
-	nIpLimit = a.nIpLimit;
-	permissions = a.permissions;
-	nEnabled = a.nEnabled;
-	disallowedIPs = a.disallowedIPs;
-	allowedIPs = a.allowedIPs;
-	comment = a.comment;
-	forceSsl = a.forceSsl;
-	b8plus3 = a.b8plus3;
-
-	for (int i = 0; i < 2; i++)
-	{
-		nBypassServerSpeedLimit[i] = a.nBypassServerSpeedLimit[i];
-		nSpeedLimit[i] = a.nSpeedLimit[i];
-		nSpeedLimitType[i] = a.nSpeedLimitType[i];
-		SpeedLimits[i] = a.SpeedLimits[i];
-	}
-
-	return *this;
 }
 
 bool t_group::BypassUserLimit() const
@@ -76,34 +50,6 @@ int t_group::GetUserLimit() const
 
 t_user::t_user()
 {
-}
-
-t_user& t_user::operator=(const t_user &a)
-{
-	group = a.group;
-	pOwner = a.pOwner;
-	user=a.user;
-	password=a.password;
-	nBypassUserLimit = a.nBypassUserLimit;
-	nUserLimit = a.nUserLimit;
-	nIpLimit = a.nIpLimit;
-	permissions = a.permissions;
-	nEnabled = a.nEnabled;
-	disallowedIPs = a.disallowedIPs;
-	allowedIPs = a.allowedIPs;
-	comment = a.comment;
-	forceSsl = a.forceSsl;
-	b8plus3 = a.b8plus3;
-
-	for (int i = 0; i < 2; i++)
-	{
-		nBypassServerSpeedLimit[i] = a.nBypassServerSpeedLimit[i];
-		nSpeedLimit[i] = a.nSpeedLimit[i];
-		nSpeedLimitType[i] = a.nSpeedLimitType[i];
-		SpeedLimits[i] = a.SpeedLimits[i];
-	}
-
-	return *this;
 }
 
 unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
@@ -420,7 +366,7 @@ int t_group::GetCurrentSpeedLimit(sltype type) const
 	case 2:
 		return nSpeedLimit[type];
 	case 3:
-		{
+		if( !SpeedLimits[type].empty() )	{
 			SYSTEMTIME st;
 			GetLocalTime(&st);
 			for (SPEEDLIMITSLIST::const_iterator iter = SpeedLimits[type].begin(); iter != SpeedLimits[type].end(); iter++)
