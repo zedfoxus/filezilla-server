@@ -32,6 +32,8 @@
 
 #pragma warning (disable : 4786)
 
+#define NOMINMAX
+
 #include <afxwin.h>         // MFC-Kern- und -Standardkomponenten
 #include <afxext.h>         // MFC-Erweiterungen
 #include <afxdisp.h>        // MFC Automatisierungsklassen

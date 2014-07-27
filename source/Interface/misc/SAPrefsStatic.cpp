@@ -31,6 +31,7 @@
 //
 
 #include "stdafx.h"
+#include <algorithm>
 #include "../resource.h"
 #include "SAPrefsStatic.h"
 
@@ -206,7 +207,7 @@ void CSAPrefsStatic::MakeCaptionBitmap()
 
    int NCOLORSHADES = 128;		// this many shades in gradient
 
-	int xDelta= max( w / NCOLORSHADES , 1);	// width of one shade band
+	int xDelta= std::max( w / NCOLORSHADES , 1);	// width of one shade band
 
 	PaintRect(dc, x, 0, cr.right-x, h, clrBG);
 

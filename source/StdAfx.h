@@ -32,6 +32,8 @@
 
 #pragma warning (disable : 4786)
 
+#define NOMINMAX
+
 #include <windows.h>
 #include <crtdbg.h>
 #include <stddef.h>
