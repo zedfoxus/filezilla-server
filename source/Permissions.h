@@ -152,6 +152,7 @@ public:
 protected:
 	bool Init();
 	void UpdateInstances();
+	void UpdatePermissions();	
 
 	void ReadSettings();
 
@@ -172,7 +173,7 @@ protected:
 	static CCriticalSectionWrapper m_sync;
 
 	bool WildcardMatch(CStdString string, CStdString pattern) const;
-	
+
 	typedef std::map<CStdString, CUser> t_UsersList; 
 	typedef std::vector<t_group> t_GroupsList; 
 	static t_UsersList m_sUsersList;

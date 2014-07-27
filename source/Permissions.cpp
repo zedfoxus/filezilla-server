@@ -97,31 +97,7 @@ protected:
 			if (!pWnd->m_pPermissions)
 				return 0;
 	
-			EnterCritSection(pWnd->m_pPermissions->m_sync);
-	
-			// Clear old group data and copy over the new data
-			pWnd->m_pPermissions->m_GroupsList.clear();
-			for (auto const& group : pWnd->m_pPermissions->m_sGroupsList ) {
-				pWnd->m_pPermissions->m_GroupsList.push_back(group);
-			}
-	
-			// Clear old user data and copy over the new data
-			pWnd->m_pPermissions->m_UsersList.clear();
-			for (auto const& it : pWnd->m_pPermissions->m_sUsersList ) {
-				CUser user = it.second;
-				user.pOwner = NULL;
-				if (user.group != _T("")) {	// Set owner
-					for (auto const& group : pWnd->m_pPermissions->m_GroupsList ) {
-						if (group.group == user.group) {
-							user.pOwner = &group;
-							break;
-						}
-					}
-				}
-				pWnd->m_pPermissions->m_UsersList[it.first] = user;
-			}
-	
-			LeaveCritSection(pWnd->m_pPermissions->m_sync);
+			pWnd->m_pPermissions->UpdatePermissions();
 		}
 		return ::DefWindowProc(hWnd, message, wParam, lParam);
 	}
@@ -1082,8 +1058,9 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 {
-	m_GroupsList.clear();
-	m_UsersList.clear();
+	t_GroupsList groupsList;
+	t_UsersList usersList;
+
 	unsigned char *p = pData;
 	unsigned char* endMarker = pData + dwDataLength;
 
@@ -1114,7 +1091,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 			if (!bGotHome && !group.permissions.empty())
 				group.permissions.begin()->bIsHome = TRUE;
 
-			m_GroupsList.push_back(group);
+			groupsList.push_back(group);
 		}
 	}
 
@@ -1123,31 +1100,27 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 
 	num = *p * 256 + p[1];
 	p+=2;
-	for (i = 0; i < num; i++)
-	{
+	for (i = 0; i < num; i++) {
 		CUser user;
 	
 		p = user.ParseBuffer(p, endMarker - p);
 		if (!p)
 			return FALSE;
 	
-		if (user.user != _T(""))
-		{
+		if (user.user != _T("")) {
 			user.pOwner = NULL;
-			if (user.group != _T(""))
-			{
-				for (t_GroupsList::iterator groupiter = m_GroupsList.begin(); groupiter != m_GroupsList.end(); groupiter++)
-					if (groupiter->group == user.group)
-					{
-						user.pOwner = &(*groupiter);
+			if (user.group != _T("")) {
+				for (auto const& group : groupsList) {
+					if (group.group == user.group) {
+						user.pOwner = &group;
 						break;
 					}
+				}
 				if (!user.pOwner)
 					user.group = _T("");
 			}
 
-			if (!user.pOwner)
-			{
+			if (!user.pOwner) {
 				//Set a home dir if no home dir could be read
 				BOOL bGotHome = FALSE;
 				for (unsigned int dir = 0; dir < user.permissions.size(); dir++)
@@ -1183,23 +1156,17 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 
 			CStdString name = user.user;
 			name.ToLower();
-			m_UsersList[name] = user;
+			usersList[name] = user;
 		}
 	}
 
 	// Update the account list
 	EnterCritSection(m_sync);
-
-	m_sGroupsList.clear();
-	for (t_GroupsList::const_iterator groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++)
-		m_sGroupsList.push_back(*groupiter);
-
-	m_sUsersList.clear();
-	m_sUsersList.insert(m_UsersList.begin(), m_UsersList.end());
-
-	UpdateInstances();
-
+	m_sGroupsList = groupsList;
+	m_sUsersList = usersList;
 	LeaveCritSection(m_sync);
+	UpdatePermissions();
+	UpdateInstances();
 
 	// Write the new account data into xml file
 
@@ -1214,8 +1181,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	pXML->LinkEndChild(pGroups);
 
 	//Save the changed user details
-	for (t_GroupsList::const_iterator groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++)
-	{
+	for (t_GroupsList::const_iterator groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++) {
 		TiXmlElement* pGroup = new TiXmlElement("Group");
 		pGroups->LinkEndChild(pGroup);
 		
@@ -1272,35 +1238,12 @@ bool CPermissions::Init()
 {
 	EnterCritSection(m_sync);
 	m_pPermissionsHelperWindow = new CPermissionsHelperWindow(this);
-	if (m_sInstanceList.empty() && m_sUsersList.empty() && m_sGroupsList.empty())
-	{
+	if (m_sInstanceList.empty() && m_sUsersList.empty() && m_sGroupsList.empty()) {
 		// It's the first time Init gets called after application start, read
 		// permissions from xml file.
-
 		ReadSettings();
 	}
-	else
-	{
-		m_GroupsList.clear();
-		for (auto const& group : m_sGroupsList ) {
-			m_GroupsList.push_back(group);
-		}
-
-		m_UsersList.clear();
-		for (auto const& it : m_sUsersList) {
-			CUser user = it.second;
-			user.pOwner = NULL;
-			if (user.group != _T("")) {
-				for (auto const& group : m_GroupsList ) {
-					if (group.group == user.group) {
-						user.pOwner = &group;
-						break;
-					}
-				}
-			}
-			m_UsersList[it.first] = user;
-		}
-	}
+	UpdatePermissions();
 
 	std::list<CPermissions *>::iterator instanceIter;
 	for (instanceIter = m_sInstanceList.begin(); instanceIter != m_sInstanceList.end(); instanceIter++)
@@ -1502,18 +1445,9 @@ void CPermissions::SaveSpeedLimits(TiXmlElement *pXML, const t_group &group)
 
 void CPermissions::ReloadConfig()
 {
-	m_UsersList.clear();
-	m_GroupsList.clear();
-
-	EnterCritSection(m_sync);
-
 	ReadSettings();
-
+	UpdatePermissions();
 	UpdateInstances();
-
-	LeaveCritSection(m_sync);
-
-	return;
 }
 
 void CPermissions::ReadIpFilter(TiXmlElement *pXML, t_group &group)
@@ -1888,12 +1822,15 @@ void CPermissions::ReadSettings()
 	if (!pXML)
 		return;
     
+	EnterCritSection(m_sync);
+	m_sGroupsList.clear();
+	m_sUsersList.clear();
+
 	TiXmlElement* pGroups = pXML->FirstChildElement("Groups");
 	if (!pGroups)
 		pGroups = pXML->LinkEndChild(new TiXmlElement("Groups"))->ToElement();
 
-	for (TiXmlElement* pGroup = pGroups->FirstChildElement("Group"); pGroup; pGroup = pGroup->NextSiblingElement("Group"))
-	{
+	for (TiXmlElement* pGroup = pGroups->FirstChildElement("Group"); pGroup; pGroup = pGroup->NextSiblingElement("Group")) {
 		t_group group;
 		group.nIpLimit = group.nIpLimit = group.nUserLimit = 0;
 		group.nBypassUserLimit = 2;
@@ -1901,8 +1838,7 @@ void CPermissions::ReadSettings()
 		if (group.group == _T(""))
 			continue;
 
-		for (TiXmlElement* pOption = pGroup->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option"))
-		{
+		for (TiXmlElement* pOption = pGroup->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option")) {
 			CStdString name = ConvFromNetwork(pOption->Attribute("Name"));
 			CStdString value = XML::ReadText(pOption);
 
@@ -1936,16 +1872,15 @@ void CPermissions::ReadSettings()
 
 		ReadSpeedLimits(pGroup, group);
 
-		if (m_GroupsList.size() < 200000)
-			m_GroupsList.push_back(group);
+		if (m_sGroupsList.size() < 200000)
+			m_sGroupsList.push_back(group);
 	}
 		
 	TiXmlElement* pUsers = pXML->FirstChildElement("Users");
 	if (!pUsers)
 		pUsers = pXML->LinkEndChild(new TiXmlElement("Users"))->ToElement();
 
-	for (TiXmlElement* pUser = pUsers->FirstChildElement("User"); pUser; pUser = pUser->NextSiblingElement("User"))
-	{
+	for (TiXmlElement* pUser = pUsers->FirstChildElement("User"); pUser; pUser = pUser->NextSiblingElement("User")) {
 		CUser user;
 		user.nIpLimit = user.nIpLimit = user.nUserLimit = 0;
 		user.nBypassUserLimit = 2;
@@ -1999,14 +1934,13 @@ void CPermissions::ReadSettings()
 		if (user.nIpLimit < 0 || user.nIpLimit > 999999999)
 			user.nIpLimit = 0;
 
-		if (user.group != _T(""))
-		{
-			for (t_GroupsList::iterator groupiter = m_GroupsList.begin(); groupiter != m_GroupsList.end(); groupiter++)
-				if (groupiter->group == user.group)
-				{
-					user.pOwner = &(*groupiter);
+		if (user.group != _T("")) {
+			for (auto const& group : m_sGroupsList) {
+				if (group.group == user.group) {
+					user.pOwner = &group;
 					break;
 				}
+			}
 		
 			if (!user.pOwner)
 				user.group = _T("");
@@ -2019,17 +1953,14 @@ void CPermissions::ReadSettings()
 		user.PrepareAliasMap();
 				
 		//Set a home dir if no home dir could be read
-		if (!bGotHome && !user.pOwner)
-		{
+		if (!bGotHome && !user.pOwner) {
 			if (!user.permissions.empty())
 				user.permissions.begin()->bIsHome = TRUE;
 		}
 			
 		std::vector<t_directory>::iterator iter;
-		for (iter = user.permissions.begin(); iter != user.permissions.end(); iter++)
-		{
-			if (iter->bIsHome)
-			{
+		for (iter = user.permissions.begin(); iter != user.permissions.end(); iter++) {
+			if (iter->bIsHome) {
 				user.homedir = iter->dir;
 				break;
 			}
@@ -2045,35 +1976,13 @@ void CPermissions::ReadSettings()
 			
 		ReadSpeedLimits(pUser, user);
 
-		if (m_UsersList.size() < 200000) {
+		if (m_sUsersList.size() < 200000) {
 			CStdString name = user.user;
 			name.ToLower();
-			m_UsersList[name] = user;
+			m_sUsersList[name] = user;
 		}
 	}
 	COptions::FreeXML(pXML, false);
-
-	EnterCritSection(m_sync);
-
-	m_sGroupsList.clear();
-	for (auto const& group : m_GroupsList) {
-		m_sGroupsList.push_back(group);
-	}
-
-	m_sUsersList.clear();
-	for (auto const& it : m_UsersList) {
-		CUser user = it.second;
-		user.pOwner = NULL;
-		if (user.group != _T("")) {
-			for (auto const& group : m_GroupsList) {
-				if (group.group == user.group) {
-					user.pOwner = &group;
-					break;
-				}
-			}
-		}
-		m_sUsersList[it.first] = user;
-	}
 
 	LeaveCritSection(m_sync);
 }
@@ -2134,4 +2043,33 @@ bool CPermissions::WildcardMatch(CStdString string, CStdString pattern) const
 		}
 	}
 	return true;
+}
+
+void CPermissions::UpdatePermissions()
+{
+	EnterCritSection(m_sync);
+	
+	// Clear old group data and copy over the new data
+	m_GroupsList.clear();
+	for (auto const& group : m_sGroupsList ) {
+		m_GroupsList.push_back(group);
+	}
+	
+	// Clear old user data and copy over the new data
+	m_UsersList.clear();
+	for (auto const& it : m_sUsersList ) {
+		CUser user = it.second;
+		user.pOwner = NULL;
+		if (user.group != _T("")) {	// Set owner
+			for (auto const& group : m_GroupsList ) {
+				if (group.group == user.group) {
+					user.pOwner = &group;
+					break;
+				}
+			}
+		}
+		m_UsersList[it.first] = user;
+	}
+	
+	LeaveCritSection(m_sync);
 }
