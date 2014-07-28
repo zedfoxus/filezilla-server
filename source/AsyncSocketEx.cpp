@@ -343,16 +343,11 @@ public:
 							break;
 #endif //NOSOCKETSTATES
 						
-						if (pSocket->m_lEvent & FD_READ)
-						{
-							DWORD nBytes = 0;
-							if (!nErrorCode)
-								if (!pSocket->IOCtl(FIONREAD, &nBytes))
-									nErrorCode = WSAGetLastError();
 #ifndef NOSOCKETSTATES
-							if (nErrorCode)
-								pSocket->SetState(aborted);
+						if (nErrorCode)
+							pSocket->SetState(aborted);
 #endif //NOSOCKETSTATES
+						if (pSocket->m_lEvent & FD_READ) {
 							pSocket->OnReceive(nErrorCode);
 						}
 						break;
