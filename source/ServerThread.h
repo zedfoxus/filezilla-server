@@ -90,6 +90,8 @@ protected:
 	virtual BOOL InitInstance();
 	virtual DWORD ExitInstance();
 
+	void OnPermissionsUpdated();
+
 	virtual int OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam);
 	void OnTimer(WPARAM wParam, LPARAM lParam);	
 	

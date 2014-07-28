@@ -100,7 +100,7 @@ CControlSocket::~CControlSocket()
 {
 	if (m_status.loggedon)
 	{
-		DecUserCount(m_status.user);
+		DecUserCount(m_status.username);
 		m_pOwner->DecIpCount(m_status.ip);
 		m_status.loggedon = FALSE;
 	}
@@ -281,8 +281,8 @@ void CControlSocket::SendStatus(LPCTSTR status, int type)
 	}
 	else
 	{
-		msg->user = new TCHAR[_tcslen(m_status.user) + 1];
-		_tcscpy(msg->user, m_status.user);
+		msg->user = new TCHAR[_tcslen(m_status.username) + 1];
+		_tcscpy(msg->user, m_status.username);
 	}
 	msg->userid = m_userid;
 	msg->type = type;
@@ -568,7 +568,7 @@ void CControlSocket::ParseCommand()
 			if (m_status.loggedon)
 			{
 				GetSystemTime(&m_LoginTime);
-				DecUserCount(m_status.user);
+				DecUserCount(m_status.username);
 				m_pOwner->DecIpCount(m_status.ip);
 				t_connop *op = new t_connop;
 				op->op = USERCONTROL_CONNOP_CHANGEUSER;
@@ -588,11 +588,12 @@ void CControlSocket::ParseCommand()
 			}
 			RenName = _T("");
 			args.MakeLower();
-			m_status.user = args;
+			m_status.username = args;
+			UpdateUser();
 			if (!m_pSslLayer) {
-				CUser const* user = m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, _T(""), true);
-				if ( user && user->ForceSsl()) {
-					m_status.user = _T("");
+				if ( m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, _T(""), true) && m_status.user.ForceSsl()) {
+					m_status.username = _T("");
+					UpdateUser();
 					Send(_T("530 SSL required"));
 					break;
 				}
@@ -972,8 +973,7 @@ void CControlSocket::ParseCommand()
 		{
 			CStdString dir = _T("..");
 			int res = m_pOwner->m_pPermissions->ChangeCurrentDir(m_status.user, m_CurrentServerDir, dir);
-			if (!res)
-			{
+			if (!res) {
 				CStdString str;
 				str.Format(_T("200 CDUP successful. \"%s\" is current directory."), m_CurrentServerDir);
 				Send(str);
@@ -2393,13 +2393,11 @@ void CControlSocket::OnSend(int nErrorCode)
 
 BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 {
-	CUser const* user = m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, password, skipPass);
-	if (!user) {
+	if (!m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, password, skipPass)) {
 		AntiHammerIncrease(2);
 		m_pOwner->AntiHammerIncrease(m_RemoteIP);
 
-		if (m_pOwner->m_pAutoBanManager->RegisterAttempt(m_RemoteIP))
-		{
+		if (m_pOwner->m_pAutoBanManager->RegisterAttempt(m_RemoteIP)) {
 			Send(_T("421 Temporarily banned for too many failed login attempts"));
 			ForceClose(-1);
 			return FALSE;
@@ -2409,12 +2407,12 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 		return FALSE;
 	}
 
-	if (!user->IsEnabled()) {
+	if (!m_status.user.IsEnabled()) {
 		Send(_T("530 Not logged in, user account has been disabled"));
 		ForceClose(-1);
 		return FALSE;
 	}
-	if (!user->BypassUserLimit()) {
+	if (!m_status.user.BypassUserLimit()) {
 		int nMaxUsers = (int)m_pOwner->m_pOptions->GetOptionVal(OPTION_MAXUSERS);
 		if (m_pOwner->GetGlobalNumConnections() > nMaxUsers&&nMaxUsers) {
 			SendStatus(_T("Refusing connection. Reason: Max. connection count reached."), 1);
@@ -2423,9 +2421,9 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 			return FALSE;
 		}
 	}
-	if (user->GetUserLimit() && GetUserCount(m_status.user) >= user->GetUserLimit()) {
+	if (m_status.user.GetUserLimit() && GetUserCount(m_status.username) >= m_status.user.GetUserLimit()) {
 		CStdString str;
-		str.Format(_T("Refusing connection. Reason: Max. connection count reached for the user \"%s\"."), m_status.user);
+		str.Format(_T("Refusing connection. Reason: Max. connection count reached for the user \"%s\"."), m_status.username);
 		SendStatus(str,1);
 		Send(_T("421 Too many users logged in for this account. Try again later."));
 		ForceClose(-1);
@@ -2438,7 +2436,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 	BOOL bResult = GetPeerName(peerIP, port);
 	if (bResult)
 	{
-		if (!user->AccessAllowed(peerIP))
+		if (!m_status.user.AccessAllowed(peerIP))
 		{
 			Send(_T("521 This user is not allowed to connect from this IP"));
 			ForceClose(-1);
@@ -2454,7 +2452,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 	}
 
 	int count = m_pOwner->GetIpCount(peerIP);
-	if (user->GetIpLimit() && count >= user->GetIpLimit()) {
+	if (m_status.user.GetIpLimit() && count >= m_status.user.GetIpLimit()) {
 		CStdString str;
 		if (count==1)
 			str.Format(_T("Refusing connection. Reason: No more connections allowed from this IP. (%s already connected once)"), peerIP.c_str());
@@ -2475,19 +2473,19 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 
 	m_status.ip = peerIP;
 
-	count = GetUserCount(user->user);
-	if (user->GetUserLimit() && count >= user->GetUserLimit()) {
+	count = GetUserCount(m_status.user.user);
+	if (m_status.user.GetUserLimit() && count >= m_status.user.GetUserLimit()) {
 		CStdString str;
-		str.Format(_T("Refusing connection. Reason: Maximum connection count (%d) reached for this user"), user->GetUserLimit());
+		str.Format(_T("Refusing connection. Reason: Maximum connection count (%d) reached for this user"), m_status.user.GetUserLimit());
 		SendStatus(str, 1);
-		str.Format(_T("421 Refusing connection. Maximum connection count reached for the user '%s'"), user->user);
+		str.Format(_T("421 Refusing connection. Maximum connection count reached for the user '%s'"), m_status.user.user);
 		Send(str);
 		ForceClose(-1);
 		return FALSE;
 	}
 
 	m_pOwner->IncIpCount(peerIP);
-	IncUserCount(m_status.user);
+	IncUserCount(m_status.username);
 	m_status.loggedon = TRUE;
 
 	GetSystemTime(&m_LastTransferTime);
@@ -2499,7 +2497,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 	op->data = conndata;
 	op->op = USERCONTROL_CONNOP_CHANGEUSER;
 	op->userid = m_userid;
-	conndata->user = m_status.user;
+	conndata->user = m_status.username;
 
 	m_pOwner->SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
 
@@ -2527,10 +2525,9 @@ void CControlSocket::Continue()
 
 long long CControlSocket::GetSpeedLimit(sltype mode)
 {
-	CUser const* user = 0;
 	long long nLimit = -1;
-	if (m_status.loggedon && (user = m_pOwner->m_pPermissions->GetUser(m_status.user)) ) {
-		nLimit = user->GetCurrentSpeedLimit(mode);
+	if (m_status.loggedon ) {
+		nLimit = m_status.user.GetCurrentSpeedLimit(mode);
 	}
 	if (nLimit > 0) {
 		nLimit *= 100;
@@ -2543,7 +2540,7 @@ long long CControlSocket::GetSpeedLimit(sltype mode)
 	}
 	else
 		nLimit = -1;
-	if (user && user->BypassServerSpeedLimit(mode))
+	if (m_status.user.BypassServerSpeedLimit(mode))
 		m_SlQuotas[mode].bBypassed = TRUE;
 	else if (m_SlQuotas[mode].nBytesAllowedToTransfer != -1)
 	{
@@ -3067,4 +3064,9 @@ bool CControlSocket::CreatePassiveTransferSocket()
 	m_transferstatus.pasv = 1;
 
 	return true;
+}
+
+void CControlSocket::UpdateUser()
+{
+	m_status.user = m_pOwner->m_pPermissions->GetUser(m_status.username);
 }

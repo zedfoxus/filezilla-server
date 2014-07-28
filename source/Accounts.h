@@ -55,10 +55,10 @@ public:
 
 	CStdString group;
 	std::vector<t_directory> permissions;
-	int nBypassUserLimit;
-	int nUserLimit, nIpLimit;
-	int nEnabled;
-	int forceSsl;
+	int nBypassUserLimit{};
+	int nUserLimit{}, nIpLimit{};
+	int nEnabled{};
+	int forceSsl{};
 
 	int nSpeedLimitType[2];
 	int nSpeedLimit[2];
@@ -69,9 +69,9 @@ public:
 
 	CStdString comment;
 
-	t_group const* pOwner;
+	t_group const* pOwner{};
 
-	bool b8plus3;
+	bool b8plus3{};
 
 protected:
 	bool ParseString(const unsigned char* endMarker, unsigned char *&p, CStdString &string);

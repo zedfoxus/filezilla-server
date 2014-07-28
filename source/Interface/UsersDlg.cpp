@@ -256,6 +256,7 @@ void CUsersDlg::OnUsermenuAdd()
 		}
 
 		t_user user;
+		user.nEnabled = true;
 		user.user = dlg.m_Name;
 		if (dlg.m_Group != _T(""))
 		{

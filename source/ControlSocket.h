@@ -26,6 +26,7 @@
 //
 
 #include "hash_thread.h"
+#include "Permissions.h"
 
 class CAsyncSslSocketLayer;
 class CTransferSocket;
@@ -84,6 +85,8 @@ public:
 
 	void SendTransferPreliminary();
 
+	void UpdateUser();
+
 protected:
 	BOOL DoUserLogin(LPCTSTR password, bool skipPass = false);
 	BOOL UnquoteArgs(CStdString &args);
@@ -118,7 +121,8 @@ protected:
 	struct t_status
 	{
 		BOOL loggedon;
-		CStdString user;
+		CStdString username;
+		CUser user;
 		CStdString ip;
 
 		int hammerValue;

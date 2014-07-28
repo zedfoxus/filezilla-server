@@ -249,6 +249,7 @@ void CGroupsDlg::OnGroupAdd()
 		}
 
 		t_group group;
+		group.nEnabled = true;
 		group.group = dlg.m_String;
 		group.nBypassUserLimit = 0;
 		group.nIpLimit = 0;

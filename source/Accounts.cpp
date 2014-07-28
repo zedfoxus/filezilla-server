@@ -9,16 +9,11 @@ t_directory::t_directory()
 
 t_group::t_group()
 {
-	pOwner = NULL;
-
 	for (int i = 0; i < 2; ++i) {
 		nSpeedLimitType[i] = 0;
 		nSpeedLimit[i] = 10;
 		nBypassServerSpeedLimit[i] = 0;
 	}
-	nEnabled = 1;
-	forceSsl = 0;
-	b8plus3 = false;
 }
 
 bool t_group::BypassUserLimit() const

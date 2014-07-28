@@ -29,6 +29,8 @@
 
 #include "Accounts.h"
 
+#include <functional>
+
 #define FOP_READ		0x01
 #define FOP_WRITE		0x02
 #define FOP_DELETE		0x04
@@ -99,7 +101,7 @@ enum _facts {
 class CPermissions  
 {
 public:
-	CPermissions();
+	CPermissions(std::function<void()> const& updateCallback);
 	virtual ~CPermissions();
 
 	typedef void (*addFunc_t)(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
@@ -115,10 +117,10 @@ protected:
 
 public:
 	// Change current directory to the specified directory. Used by CWD and CDUP
-	int ChangeCurrentDir(LPCTSTR username, CStdString& currentdir, CStdString &dir);
+	int ChangeCurrentDir(CUser const& user, CStdString& currentdir, CStdString &dir);
 
 	// Retrieve a directory listing. Pass the actual formatting function as last parameter.
-	int GetDirectoryListing(LPCTSTR username, CStdString currentDir, CStdString dirToDisplay,
+	int GetDirectoryListing(CUser const& user, CStdString currentDir, CStdString dirToDisplay,
 							 std::list<t_dirlisting> &result, CStdString& physicalDir, 
 							 CStdString& logicalDir,
 							 addFunc_t addFunc,
@@ -133,26 +135,25 @@ public:
 	// Directory listing format used by MLSD
 	static void AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
 
-	CStdString GetHomeDir(LPCTSTR username, bool physicalPath = false) const;
-	CStdString GetHomeDir(const CUser &user, bool physicalPath = false) const;
+	CStdString GetHomeDir(CUser const& user, bool physicalPath = false) const;
 
-	int CheckDirectoryPermissions(LPCTSTR username, CStdString dirname, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
-	int CheckFilePermissions(LPCTSTR username, CStdString filename, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
+	int CheckDirectoryPermissions(CUser const& user, CStdString dirname, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
+	int CheckFilePermissions(CUser const& user, CStdString filename, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
 
-	CUser const* GetUser(CStdString const& username) const;
-	CUser const* CheckUserLogin(LPCTSTR username, LPCTSTR pass, BOOL noPasswordCheck = FALSE);
+	CUser GetUser(CStdString const& username) const;
+	bool CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswordCheck = FALSE);
 
 	BOOL GetAsCommand(char **pBuffer, DWORD *nBufferLength);
 	BOOL ParseUsersCommand(unsigned char *pData, DWORD dwDataLength);
-	void AutoCreateDirs(LPCTSTR username);
+	void AutoCreateDirs(CUser const& user);
 	void ReloadConfig();
 
-	int GetFact(LPCTSTR username, CStdString const& currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3]);
+	int GetFact(CUser const& user, CStdString const& currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3]);
 
 protected:
 	bool Init();
 	void UpdateInstances();
-	void UpdatePermissions();	
+	void UpdatePermissions(bool notifyOwner);	
 
 	void ReadSettings();
 
@@ -185,6 +186,8 @@ protected:
 	CPermissionsHelperWindow *m_pPermissionsHelperWindow;
 
 	friend CPermissionsHelperWindow;
+
+	std::function<void()> const updateCallback_;
 };
 
 #endif // !defined(AFX_PERMISSIONS_H__33DEA50E_AA34_4190_9ACD_355BF3D72FE0__INCLUDED_)

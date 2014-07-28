@@ -222,7 +222,7 @@ LRESULT CALLBACK CServer::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	{
 		COptions options;
 		options.ReloadConfig();
-		CPermissions perm;
+		CPermissions perm = CPermissions(std::function<void()>());
 		perm.ReloadConfig();
 	}
 	else if (message >= WM_FILEZILLA_SERVERMSG)
@@ -897,7 +897,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 		{
 			char *pBuffer = NULL;
 			DWORD nBufferLength = 0;
-			CPermissions permissions;
+			CPermissions permissions = CPermissions(std::function<void()>());
 			permissions.GetAsCommand(&pBuffer, &nBufferLength);
 			pAdminSocket->SendCommand(1, 6, pBuffer, nBufferLength);
 			delete [] pBuffer;
@@ -908,9 +908,8 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length")+1);
 			else
 			{
-				CPermissions permissions;
-				if (!permissions.ParseUsersCommand(pData, nDataLength))
-				{
+				CPermissions permissions = CPermissions(std::function<void()>());
+				if (!permissions.ParseUsersCommand(pData, nDataLength)) {
 					pAdminSocket->SendCommand(1, 1, "\001Protocol error: Invalid data, could not import account settings.", strlen("\001Protocol error: Invalid data, could not import account settings.")+1);
 					char buffer = 1;
 					pAdminSocket->SendCommand(1, 6, &buffer, 1);

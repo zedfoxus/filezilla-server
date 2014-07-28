@@ -83,7 +83,7 @@ BOOL CServerThread::InitInstance()
 	m_nSendCount = 0;
 	m_pOptions = new COptions;
 	m_pAutoBanManager = new CAutoBanManager(m_pOptions);
-	m_pPermissions = new CPermissions;
+	m_pPermissions = new CPermissions(std::bind(&CServerThread::OnPermissionsUpdated, this));
 
 	EnterCritSection(m_GlobalThreadsync);
 	if (m_sInstanceList.empty())
@@ -959,4 +959,15 @@ void CServerThread::AntiHammerDecrease()
 CHashThread& CServerThread::GetHashThread()
 {
 	return *m_hashThread;
+}
+
+void CServerThread::OnPermissionsUpdated()
+{
+	EnterCritSection(m_threadsync);
+	for( auto & cs : m_userids ) {
+		if( cs.second.pSocket ) {
+			cs.second.pSocket->UpdateUser();
+		}
+	}
+	LeaveCritSection(m_threadsync);
 }
