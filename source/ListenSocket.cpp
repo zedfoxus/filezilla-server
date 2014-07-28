@@ -103,14 +103,11 @@ void CListenSocket::OnAccept(int nErrorCode)
 	 * transferred over the control connection. Waiting for additional data
 	 * where there will be most likely none affects performance.
 	 */
-	BOOL value = TRUE;
-	socket.SetSockOpt(TCP_NODELAY, &value, sizeof(value), IPPROTO_TCP);
+	socket.SetNodelay(true);
 
 	SOCKET sockethandle = socket.Detach();
 
 	pBestThread->AddSocket(sockethandle, m_ssl);
-
-	CAsyncSocketEx::OnAccept(nErrorCode);
 }
 
 void CListenSocket::SendStatus(CStdString status, int type)

@@ -1923,3 +1923,9 @@ void CAsyncSocketEx::ResendCloseNotify()
 		SetTimer(m_pLocalAsyncSocketExThreadData->m_pHelperWindow->GetHwnd(), 1, 10, 0);
 	}
 }
+
+bool CAsyncSocketEx::SetNodelay(bool nodelay)
+{
+	BOOL value = nodelay ? TRUE : FALSE;
+	return SetSockOpt(TCP_NODELAY, &value, sizeof(value), IPPROTO_TCP) == TRUE;
+}

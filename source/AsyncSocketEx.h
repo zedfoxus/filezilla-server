@@ -228,6 +228,7 @@ public:
 	// Any combination of FD_READ, FD_WRITE, FD_CLOSE, FD_ACCEPT, FD_CONNECT and FD_FORCEREAD is valid for lEvent.
 	BOOL TriggerEvent(long lEvent);
 
+	bool SetNodelay(bool nodelay);
 protected:
 	//Strucure to hold the socket data
 	struct t_AsyncSocketExData

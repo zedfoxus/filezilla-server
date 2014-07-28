@@ -581,8 +581,9 @@ void CTransferSocket::OnConnect(int nErrorCode)
 			SetSockOpt(SO_SNDBUF, &size, sizeof(int));
 	}
 
-	if (m_sslContext)
-	{
+	if (m_sslContext) {
+		// Disable Nagle algorithm for duration of the handshake.
+		SetNodelay(true);
 		if (!m_pSslLayer)
 			m_pSslLayer = new CAsyncSslSocketLayer();
 		VERIFY(AddLayer(m_pSslLayer));
@@ -660,8 +661,10 @@ void CTransferSocket::OnAccept(int nErrorCode)
 			SetSockOpt(SO_SNDBUF, &size, sizeof(int));
 	}
 
-	if (m_sslContext)
-	{
+	if (m_sslContext) {
+		// Disable Nagle algorithm for duration of the handshake.
+		SetNodelay(true);
+
 		if (!m_pSslLayer)
 			m_pSslLayer = new CAsyncSslSocketLayer();
 		VERIFY(AddLayer(m_pSslLayer));
@@ -1072,6 +1075,9 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 				delete [] iter->str;
 				m_waitingForSslHandshake = false;
 				m_pOwner->SendStatus(_T("SSL connection for data connection established"), 0);
+
+				// Re-enable Nagle algorithm
+				SetNodelay(false);
 				return 0;
 			}
 		}
