@@ -185,6 +185,8 @@ private:
 
 	void TriggerEvents();
 
+	int LoadCertKeyFile(const char* cert, const char* key, CString* error);
+
 	//Will be called from the OpenSSL library
 	static void apps_ssl_info_callback(const SSL *s, int where, int ret);
 	static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
