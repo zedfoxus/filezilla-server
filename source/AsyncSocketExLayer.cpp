@@ -178,31 +178,26 @@ BOOL CAsyncSocketExLayer::TriggerEvent(long lEvent, int nErrorCode, BOOL bPassTh
 	if (m_pOwnerSocket->m_SocketData.hSocket==INVALID_SOCKET)
 		return FALSE;
 
-	if (!bPassThrough)
-	{
+	if (!bPassThrough) {
 		if (m_nPendingEvents & lEvent)
 			return TRUE;
 
 		m_nPendingEvents |= lEvent;
 	}
 
-	if (lEvent & FD_CONNECT)
-	{
+	if (lEvent & FD_CONNECT) {
 		ASSERT(bPassThrough);
 		if (!nErrorCode)
 			ASSERT(bPassThrough && (GetLayerState()==connected || GetLayerState()==attached));
-		else if (nErrorCode)
-		{
+		else if (nErrorCode) {
 			SetLayerState(aborted);
-			m_nCriticalError=nErrorCode;
+			m_nCriticalError = nErrorCode;
 		}
 	}
-	else if (lEvent & FD_CLOSE)
-	{
+	else if (lEvent & FD_CLOSE) {
 		if (!nErrorCode)
 			SetLayerState(closed);
-		else
-		{
+		else {
 			SetLayerState(aborted);
 			m_nCriticalError = nErrorCode;
 		}
@@ -210,11 +205,11 @@ BOOL CAsyncSocketExLayer::TriggerEvent(long lEvent, int nErrorCode, BOOL bPassTh
 	ASSERT(m_pOwnerSocket->m_pLocalAsyncSocketExThreadData);
 	ASSERT(m_pOwnerSocket->m_pLocalAsyncSocketExThreadData->m_pHelperWindow);
 	ASSERT(m_pOwnerSocket->m_SocketData.nSocketIndex!=-1);
-	t_LayerNotifyMsg *pMsg=new t_LayerNotifyMsg;
+	t_LayerNotifyMsg *pMsg = new t_LayerNotifyMsg;
 	pMsg->hSocket = m_pOwnerSocket->m_SocketData.hSocket;
 	pMsg->lEvent = ( lEvent % 0xffff ) + ( nErrorCode << 16);
-	pMsg->pLayer=bPassThrough?m_pPrevLayer:this;
-	BOOL res=PostMessage(m_pOwnerSocket->GetHelperWindowHandle(), WM_USER, (WPARAM)m_pOwnerSocket->m_SocketData.nSocketIndex, (LPARAM)pMsg);
+	pMsg->pLayer = bPassThrough ? m_pPrevLayer : this;
+	BOOL res = PostMessage(m_pOwnerSocket->GetHelperWindowHandle(), WM_USER, (WPARAM)m_pOwnerSocket->m_SocketData.nSocketIndex, (LPARAM)pMsg);
 	if (!res)
 		delete pMsg;
 	return res;
@@ -649,9 +644,9 @@ int CAsyncSocketExLayer::GetLayerState()
 void CAsyncSocketExLayer::SetLayerState(int nLayerState)
 {
 	ASSERT(m_pOwnerSocket);
-	int nOldLayerState=GetLayerState();
-	m_nLayerState=nLayerState;
-	if (nOldLayerState!=nLayerState)
+	int nOldLayerState = GetLayerState();
+	m_nLayerState = nLayerState;
+	if (nOldLayerState != nLayerState)
 		DoLayerCallback(LAYERCALLBACK_STATECHANGE, GetLayerState(), nOldLayerState);
 }
 

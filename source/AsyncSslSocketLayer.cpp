@@ -1155,28 +1155,19 @@ void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int r
 {
 	CAsyncSslSocketLayer *pLayer = 0;
 	m_sCriticalSection.Lock();
-	t_SslLayerList *cur = m_pSslLayerList;
-	while (cur)
-	{
-		if (cur->pLayer->m_ssl == s)
+	for (t_SslLayerList *cur = m_pSslLayerList; cur; cur = cur->pNext) {
+		if (cur->pLayer->m_ssl == s) {
+			pLayer = cur->pLayer;
 			break;
-		cur = cur->pNext;
+		}
 	}
-	if (!cur)
-	{
-		m_sCriticalSection.Unlock();
-		//MessageBox(0, _T("Can't lookup SSL session!"), _T("Critical error"), MB_ICONEXCLAMATION);
-		return;
-	}
-	else
-		pLayer = cur->pLayer;
 	m_sCriticalSection.Unlock();
 
 	// Called while unloading?
-	if (!pLayer->m_bUseSSL)
+	if (!pLayer || !pLayer->m_bUseSSL)
 		return;
 
-	char * str;
+	char const* str;
 	int w;
 
 	w = where& ~SSL_ST_MASK;
@@ -1188,71 +1179,68 @@ void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int r
 	else
 		str = "undefined";
 
-	if (where & SSL_CB_LOOP)
-	{
+	if (where & SSL_CB_LOOP) {
 #if SSL_VERBOSE_INFO
 		char *buffer = new char[4096];
-		sprintf(buffer, "%s: %s",
+		char const* state = pSSL_state_string_long(s);
+		_snprintf(buffer, sizeof(buffer), "%s: %s",
 				str,
-				pSSL_state_string_long(s));
+				state ? state : "unknown state" );
+		buffer[sizeof(buffer) - 1] = 0;
 		pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERBOSE_INFO, 0, buffer);
 #endif
 	}
-	else if (where & SSL_CB_ALERT)
-	{
+	else if (where & SSL_CB_ALERT) {
 		str=(where & SSL_CB_READ)? "read" : "write";
 		const char* desc = pSSL_alert_desc_string_long(ret);
 
 		// Don't send close notify warning
-		if (desc && strcmp(desc, "close notify"))
-		{
+		if (desc && strcmp(desc, "close notify")) {
 			char *buffer = new char[4096];
-			sprintf(buffer, "SSL3 alert %s: %s: %s",
+			char const* alert = pSSL_alert_type_string_long(ret);
+			_snprintf(buffer, sizeof(buffer), "SSL3 alert %s: %s: %s",
 					str,
-					pSSL_alert_type_string_long(ret),
+					alert ? alert : "unknown alert",
 					desc);
+			buffer[sizeof(buffer) - 1] = 0;
 			pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERBOSE_WARNING, 0, buffer);
 		}
 	}
-
-	else if (where & SSL_CB_EXIT)
-	{
-		if (ret == 0)
-		{
+	else if (where & SSL_CB_EXIT) {
+		if (ret == 0) {
 			char *buffer = new char[4096];
-			sprintf(buffer, "%s: failed in %s",
+			char const* state = pSSL_state_string_long(s);
+			_snprintf(buffer, sizeof(buffer), "%s: failed in %s",
 					str,
-					pSSL_state_string_long(s));
+					state ? state : "unknown state" );
+			buffer[sizeof(buffer) - 1] = 0;
 			pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERBOSE_WARNING, 0, buffer);
-			if (!pLayer->m_bFailureSent)
-			{
-				pLayer->m_bFailureSent=TRUE;
+			if (!pLayer->m_bFailureSent) {
+				pLayer->m_bFailureSent = TRUE;
 				pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_FAILURE, pLayer->m_bSslEstablished ? SSL_FAILURE_UNKNOWN : SSL_FAILURE_ESTABLISH);
 			}
 		}
-		else if (ret < 0)
-		{
-			int error = pSSL_get_error(s,ret);
-			if (error != SSL_ERROR_WANT_READ && error != SSL_ERROR_WANT_WRITE)
-			{
+		else if (ret < 0) {
+			int error = pSSL_get_error(s, ret);
+			if (error != SSL_ERROR_WANT_READ && error != SSL_ERROR_WANT_WRITE) {
 				char *buffer = new char[4096];
-				sprintf(buffer, "%s: error in %s",
+				char const* state = pSSL_state_string_long(s);
+				_snprintf(buffer, sizeof(buffer), "%s: error %d in %s",
 						str,
-						pSSL_state_string_long(s));
+						error,
+						state ? state : "unknown state");
+				buffer[sizeof(buffer) - 1] = 0;
 				pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERBOSE_WARNING, 0, buffer);
-				if (!pLayer->m_bFailureSent)
-				{
-					pLayer->m_bFailureSent=TRUE;
+				if (!pLayer->m_bFailureSent) {
+					pLayer->m_bFailureSent = TRUE;
 					pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_FAILURE, pLayer->m_bSslEstablished ? SSL_FAILURE_UNKNOWN : SSL_FAILURE_ESTABLISH);
 				}
 			}
 		}
 	}
-	if (where & SSL_CB_HANDSHAKE_DONE)
-	{
+	if (where & SSL_CB_HANDSHAKE_DONE) {
 		int error = pSSL_get_verify_result(pLayer->m_ssl);
-		if (error)
-		{
+		if (error) {
 			pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERIFY_CERT, error);
 			pLayer->m_bBlocking = TRUE;
 			return;
@@ -1260,6 +1248,7 @@ void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int r
 		pLayer->m_bSslEstablished = TRUE;
 		pLayer->PrintSessionInfo();
 		pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_INFO, SSL_INFO_ESTABLISHED);
+
 		pLayer->TriggerEvents();
 	}
 }
@@ -1293,6 +1282,147 @@ void CAsyncSslSocketLayer::UnloadSSL()
 	m_sCriticalSection.Unlock();
 }
 
+namespace {
+void ParseX509Name(X509_NAME * name, t_SslCertData::t_Contact & contact )
+{
+	if (!name)
+		return;
+
+	int count = pX509_NAME_entry_count(name);
+	for (int i=0; i < count; i++) {
+		X509_NAME_ENTRY * pX509NameEntry = pX509_NAME_get_entry(name, i);
+		if (!pX509NameEntry)
+			continue;
+		ASN1_OBJECT *pObject = pX509_NAME_ENTRY_get_object(pX509NameEntry);
+		ASN1_STRING *pString = pX509_NAME_ENTRY_get_data(pX509NameEntry);
+		CString str;
+
+		unsigned char *out;
+		int len = pASN1_STRING_to_UTF8(&out, pString);
+		if (len > 0) {
+			// Keep it huge
+			LPWSTR unicode = new WCHAR[len * 10];
+			memset(unicode, 0, sizeof(WCHAR) * len * 10);
+			int unicodeLen = MultiByteToWideChar(CP_UTF8, 0, (const char *)out, len, unicode, len * 10);
+			if (unicodeLen > 0)	{
+				str = unicode;
+			}
+			delete [] unicode;
+			pCRYPTO_free(out);
+		}
+
+		switch(pOBJ_obj2nid(pObject))
+		{
+		case NID_organizationName:
+			_tcsncpy(contact.Organization, str, 255);
+			contact.Organization[255] = 0;
+			break;
+		case NID_organizationalUnitName:
+			_tcsncpy(contact.Unit, str, 255);
+			contact.Unit[255] = 0;
+			break;
+		case NID_commonName:
+			_tcsncpy(contact.CommonName, str, 255);
+			contact.CommonName[255] = 0;
+			break;
+		case NID_pkcs9_emailAddress:
+			_tcsncpy(contact.Mail, str, 255);
+			contact.Mail[255] = 0;
+			break;
+		case NID_countryName:
+			_tcsncpy(contact.Country, str, 255);
+			contact.Country[255] = 0;
+			break;
+		case NID_stateOrProvinceName:
+			_tcsncpy(contact.StateProvince, str, 255);
+			contact.StateProvince[255] = 0;
+			break;
+		case NID_localityName:
+			_tcsncpy(contact.Town, str, 255);
+			contact.Town[255] = 0;
+			break;
+		default:
+			if ( !pOBJ_nid2sn(pOBJ_obj2nid(pObject)) )
+			{
+				TCHAR tmp[20];
+				_sntprintf(tmp, sizeof(tmp)/sizeof(TCHAR), _T("%d"), pOBJ_obj2nid(pObject));
+				tmp[sizeof(tmp)/sizeof(TCHAR) - 1] = 0;
+				int maxlen = 1024 - _tcslen(contact.Other)-1;
+				_tcsncpy(contact.Other+_tcslen(contact.Other), tmp, maxlen);
+
+				maxlen = 1024 - _tcslen(contact.Other)-1;
+				_tcsncpy(contact.Other+_tcslen(contact.Other), _T("="), maxlen);
+
+				maxlen = 1024 - _tcslen(contact.Other)-1;
+				_tcsncpy(contact.Other+_tcslen(contact.Other), str, maxlen);
+
+				maxlen = 1024 - _tcslen(contact.Other)-1;
+				_tcsncpy(contact.Other+_tcslen(contact.Other), _T(";"), maxlen);
+			}
+			else
+			{
+				int maxlen = 1024 - _tcslen(contact.Other)-1;
+
+				USES_CONVERSION;
+				_tcsncpy(contact.Other+_tcslen(contact.Other), A2CT(pOBJ_nid2sn(pOBJ_obj2nid(pObject))), maxlen);
+
+				maxlen = 1024 - _tcslen(contact.Other)-1;
+				_tcsncpy(contact.Other+_tcslen(contact.Other), _T("="), maxlen);
+
+				maxlen = 1024 - _tcslen(contact.Other)-1;
+				_tcsncpy(contact.Other+_tcslen(contact.Other), str, maxlen);
+
+				maxlen = 1024 - _tcslen(contact.Other)-1;
+				_tcsncpy(contact.Other+_tcslen(contact.Other), _T(";"), maxlen);
+			}
+			break;
+		}
+	}
+}
+
+bool ParseTime(ASN1_UTCTIME *pTime, t_SslCertData::t_validTime out)
+{
+	char *v;
+	int gmt = 0;
+	int i;
+	int y=0, M=0, d=0, h=0, m=0, s=0;
+
+	i = pTime->length;
+	v = (char *)pTime->data;
+
+	if (i < 10) {
+		return false;
+	}
+	if (v[i-1] == 'Z') gmt=1;
+	for (i=0; i<10; i++) {
+		if ((v[i] > '9') || (v[i] < '0')) {
+			return false;
+		}
+	}
+	y= (v[0]-'0')*10+(v[1]-'0');
+	if (y < 50) y+=100;
+	M= (v[2]-'0')*10+(v[3]-'0');
+	if ((M > 12) || (M < 1)) {
+		return false;
+	}
+	d= (v[4]-'0')*10+(v[5]-'0');
+	h= (v[6]-'0')*10+(v[7]-'0');
+	m=  (v[8]-'0')*10+(v[9]-'0');
+	if (	(v[10] >= '0') && (v[10] <= '9') &&
+		(v[11] >= '0') && (v[11] <= '9'))
+		s=  (v[10]-'0')*10+(v[11]-'0');
+
+	out.y = y+1900;
+	out.M = M;
+	out.d = d;
+	out.h = h;
+	out.m = m;
+	out.s = s;
+
+	return true;
+}
+}
+
 BOOL CAsyncSslSocketLayer::GetPeerCertificateData(t_SslCertData &SslCertData)
 {
 	X509 *pX509=pSSL_get_peer_certificate(m_ssl);
@@ -1303,307 +1433,16 @@ BOOL CAsyncSslSocketLayer::GetPeerCertificateData(t_SslCertData &SslCertData)
 	memset(&SslCertData, 0, sizeof(t_SslCertData));
 
 	//Set subject data fields
-	X509_NAME *pX509Name=pX509_get_subject_name(pX509);
+	ParseX509Name(pX509_get_subject_name(pX509), SslCertData.subject);
+	ParseX509Name(pX509_get_issuer_name(pX509), SslCertData.issuer);
 
-	if (pX509Name)
-	{
-		int count=pX509_NAME_entry_count(pX509Name);
-		for (int i=0;i<count;i++)
-		{
-			X509_NAME_ENTRY *pX509NameEntry=pX509_NAME_get_entry(pX509Name,i);
-			if (!pX509NameEntry)
-				continue;
-			ASN1_OBJECT *pObject = pX509_NAME_ENTRY_get_object(pX509NameEntry);
-			ASN1_STRING *pString = pX509_NAME_ENTRY_get_data(pX509NameEntry);
-			CString str;
-
-			unsigned char *out;
-			int len = pASN1_STRING_to_UTF8(&out, pString);
-			if (len > 0)
-			{
-				// Keep it huge
-				LPWSTR unicode = new WCHAR[len * 10];
-				memset(unicode, 0, sizeof(WCHAR) * len * 10);
-				int unicodeLen = MultiByteToWideChar(CP_UTF8, 0, (const char *)out, len, unicode, len * 10);
-				if (unicodeLen > 0)
-				{
-					str = unicode;
-				}
-				delete [] unicode;
-				pCRYPTO_free(out);
-			}
-
-			switch(pOBJ_obj2nid(pObject))
-			{
-			case NID_organizationName:
-				_tcsncpy(SslCertData.subject.Organization, str, 255);
-				SslCertData.subject.Organization[255] = 0;
-				break;
-			case NID_organizationalUnitName:
-				_tcsncpy(SslCertData.subject.Unit, str, 255);
-				SslCertData.subject.Unit[255] = 0;
-				break;
-			case NID_commonName:
-				_tcsncpy(SslCertData.subject.CommonName, str, 255);
-				SslCertData.subject.CommonName[255] = 0;
-				break;
-			case NID_pkcs9_emailAddress:
-				_tcsncpy(SslCertData.subject.Mail, str, 255);
-				SslCertData.subject.Mail[255] = 0;
-				break;
-			case NID_countryName:
-				_tcsncpy(SslCertData.subject.Country, str, 255);
-				SslCertData.subject.Country[255] = 0;
-				break;
-			case NID_stateOrProvinceName:
-				_tcsncpy(SslCertData.subject.StateProvince, str, 255);
-				SslCertData.subject.StateProvince[255] = 0;
-				break;
-			case NID_localityName:
-				_tcsncpy(SslCertData.subject.Town, str, 255);
-				SslCertData.subject.Town[255] = 0;
-				break;
-			default:
-				if ( !pOBJ_nid2sn(pOBJ_obj2nid(pObject)) )
-				{
-					TCHAR tmp[20];
-					_stprintf(tmp, _T("%d"), pOBJ_obj2nid(pObject));
-					int maxlen = 1024 - _tcslen(SslCertData.subject.Other)-1;
-					_tcsncpy(SslCertData.subject.Other+_tcslen(SslCertData.subject.Other), tmp, maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.subject.Other)-1;
-					_tcsncpy(SslCertData.subject.Other+_tcslen(SslCertData.subject.Other), _T("="), maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.subject.Other)-1;
-					_tcsncpy(SslCertData.subject.Other+_tcslen(SslCertData.subject.Other), str, maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.subject.Other)-1;
-					_tcsncpy(SslCertData.subject.Other+_tcslen(SslCertData.subject.Other), _T(";"), maxlen);
-				}
-				else
-				{
-					int maxlen = 1024 - _tcslen(SslCertData.subject.Other)-1;
-
-					USES_CONVERSION;
-					_tcsncpy(SslCertData.subject.Other+_tcslen(SslCertData.subject.Other), A2CT(pOBJ_nid2sn(pOBJ_obj2nid(pObject))), maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.subject.Other)-1;
-					_tcsncpy(SslCertData.subject.Other+_tcslen(SslCertData.subject.Other), _T("="), maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.subject.Other)-1;
-					_tcsncpy(SslCertData.subject.Other+_tcslen(SslCertData.subject.Other), str, maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.subject.Other)-1;
-					_tcsncpy(SslCertData.subject.Other+_tcslen(SslCertData.subject.Other), _T(";"), maxlen);
-				}
-				break;
-			}
-		}
-	}
-
-	//Set issuer data fields
-	pX509Name=pX509_get_issuer_name(pX509);
-	if (pX509Name)
-	{
-		int count=pX509_NAME_entry_count(pX509Name);
-		for (int i=0;i<count;i++)
-		{
-			X509_NAME_ENTRY *pX509NameEntry=pX509_NAME_get_entry(pX509Name,i);
-			if (!pX509NameEntry)
-				continue;
-			ASN1_STRING *pString=pX509_NAME_ENTRY_get_data(pX509NameEntry);
-			ASN1_OBJECT *pObject=pX509_NAME_ENTRY_get_object(pX509NameEntry);
-
-			CString str;
-
-			unsigned char *out;
-			int len = pASN1_STRING_to_UTF8(&out, pString);
-			if (len > 0)
-			{
-				// Keep it huge
-				LPWSTR unicode = new WCHAR[len * 10];
-				memset(unicode, 0, sizeof(WCHAR) * len * 10);
-				int unicodeLen = MultiByteToWideChar(CP_UTF8, 0, (const char *)out, len, unicode, len * 10);
-				if (unicodeLen > 0)
-					str = unicode;
-				delete [] unicode;
-				pCRYPTO_free(out);
-			}
-
-			switch(pOBJ_obj2nid(pObject))
-			{
-			case NID_organizationName:
-				_tcsncpy(SslCertData.issuer.Organization, str, 255);
-				SslCertData.issuer.Organization[255] = 0;
-				break;
-			case NID_organizationalUnitName:
-				_tcsncpy(SslCertData.issuer.Unit, str, 255);
-				SslCertData.issuer.Unit[255] = 0;
-				break;
-			case NID_commonName:
-				_tcsncpy(SslCertData.issuer.CommonName, str, 255);
-				SslCertData.issuer.CommonName[255] = 0;
-				break;
-			case NID_pkcs9_emailAddress:
-				_tcsncpy(SslCertData.issuer.Mail, str, 255);
-				SslCertData.issuer.Mail[255] = 0;
-				break;
-			case NID_countryName:
-				_tcsncpy(SslCertData.issuer.Country, str, 255);
-				SslCertData.issuer.Country[255] = 0;
-				break;
-			case NID_stateOrProvinceName:
-				_tcsncpy(SslCertData.issuer.StateProvince, str, 255);
-				SslCertData.issuer.StateProvince[255] = 0;
-				break;
-			case NID_localityName:
-				_tcsncpy(SslCertData.issuer.Town, str, 255);
-				SslCertData.issuer.Town[255] = 0;
-				break;
-			default:
-				if ( !pOBJ_nid2sn(pOBJ_obj2nid(pObject)) )
-				{
-					TCHAR tmp[20];
-					_stprintf(tmp, _T("%d"), pOBJ_obj2nid(pObject));
-					int maxlen = 1024 - _tcslen(SslCertData.issuer.Other)-1;
-					_tcsncpy(SslCertData.issuer.Other+_tcslen(SslCertData.issuer.Other), tmp, maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.issuer.Other)-1;
-					_tcsncpy(SslCertData.issuer.Other+_tcslen(SslCertData.issuer.Other), _T("="), maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.issuer.Other)-1;
-					_tcsncpy(SslCertData.issuer.Other+_tcslen(SslCertData.issuer.Other), str, maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.issuer.Other)-1;
-					_tcsncpy(SslCertData.issuer.Other+_tcslen(SslCertData.issuer.Other), _T(";"), maxlen);
-				}
-				else
-				{
-					int maxlen = 1024 - _tcslen(SslCertData.issuer.Other)-1;
-
-					USES_CONVERSION;
-					_tcsncpy(SslCertData.issuer.Other+_tcslen(SslCertData.issuer.Other), A2CT(pOBJ_nid2sn(pOBJ_obj2nid(pObject))), maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.issuer.Other)-1;
-					_tcsncpy(SslCertData.issuer.Other+_tcslen(SslCertData.issuer.Other), _T("="), maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.issuer.Other)-1;
-					_tcsncpy(SslCertData.issuer.Other+_tcslen(SslCertData.issuer.Other), str, maxlen);
-
-					maxlen = 1024 - _tcslen(SslCertData.issuer.Other)-1;
-					_tcsncpy(SslCertData.issuer.Other+_tcslen(SslCertData.issuer.Other), _T(";"), maxlen);
-				}
-				break;
-			}
-		}
-	}
-
-	//Set date fields
-
-	static const char *mon[12]=
-    {
-    "Jan","Feb","Mar","Apr","May","Jun",
-    "Jul","Aug","Sep","Oct","Nov","Dec"
-    };
-
-	//Valid from
-	ASN1_UTCTIME *pTime=X509_get_notBefore(pX509);
-	if (!pTime)
+	//Validity span
+	if (!ParseTime(X509_get_notBefore(pX509), SslCertData.validFrom) ||
+		!ParseTime(X509_get_notAfter(pX509), SslCertData.validUntil))
 	{
 		pX509_free(pX509);
 		return FALSE;
 	}
-
-	char *v;
-	int gmt = 0;
-	int i;
-	int y=0, M=0, d=0, h=0, m=0, s=0;
-
-	i = pTime->length;
-	v = (char *)pTime->data;
-
-	if (i < 10)
-	{
-		pX509_free(pX509);
-		return FALSE;
-	}
-	if (v[i-1] == 'Z') gmt=1;
-	for (i=0; i<10; i++)
-		if ((v[i] > '9') || (v[i] < '0'))
-		{
-			pX509_free(pX509);
-			return FALSE;
-		}
-	y= (v[0]-'0')*10+(v[1]-'0');
-	if (y < 50) y+=100;
-	M= (v[2]-'0')*10+(v[3]-'0');
-	if ((M > 12) || (M < 1))
-	{
-		pX509_free(pX509);
-		return FALSE;
-	}
-	d= (v[4]-'0')*10+(v[5]-'0');
-	h= (v[6]-'0')*10+(v[7]-'0');
-	m=  (v[8]-'0')*10+(v[9]-'0');
-	if (	(v[10] >= '0') && (v[10] <= '9') &&
-		(v[11] >= '0') && (v[11] <= '9'))
-		s=  (v[10]-'0')*10+(v[11]-'0');
-
-	SslCertData.validFrom.y = y+1900;
-	SslCertData.validFrom.M = M;
-	SslCertData.validFrom.d = d;
-	SslCertData.validFrom.h = h;
-	SslCertData.validFrom.m = m;
-	SslCertData.validFrom.s = s;
-
-	//Valid until
-	pTime = X509_get_notAfter(pX509);
-	if (!pTime)
-	{
-		pX509_free(pX509);
-		return FALSE;
-	}
-
-	gmt = 0;
-	i;
-	y=0,M=0,d=0,h=0,m=0,s=0;
-
-	i=pTime->length;
-	v=(char *)pTime->data;
-
-	if (i < 10)
-	{
-		pX509_free(pX509);
-		return FALSE;
-	}
-	if (v[i-1] == 'Z') gmt=1;
-	for (i=0; i<10; i++)
-		if ((v[i] > '9') || (v[i] < '0'))
-		{
-			pX509_free(pX509);
-			return FALSE;
-		}
-	y= (v[0]-'0')*10+(v[1]-'0');
-	if (y < 50) y+=100;
-	M= (v[2]-'0')*10+(v[3]-'0');
-	if ((M > 12) || (M < 1))
-	{
-		pX509_free(pX509);
-		return FALSE;
-	}
-	d= (v[4]-'0')*10+(v[5]-'0');
-	h= (v[6]-'0')*10+(v[7]-'0');
-	m=  (v[8]-'0')*10+(v[9]-'0');
-	if (	(v[10] >= '0') && (v[10] <= '9') &&
-		(v[11] >= '0') && (v[11] <= '9'))
-		s=  (v[10]-'0')*10+(v[11]-'0');
-
-	SslCertData.validUntil.y = y+1900;
-	SslCertData.validUntil.M = M;
-	SslCertData.validUntil.d = d;
-	SslCertData.validUntil.h = h;
-	SslCertData.validUntil.m = m;
-	SslCertData.validUntil.s = s;
 
 	unsigned int length = 20;
 	pX509_digest(pX509, pEVP_sha1(), SslCertData.hash, &length);
@@ -1629,12 +1468,10 @@ void CAsyncSslSocketLayer::SetNotifyReply(int nID, int nCode, int result)
 
 	m_bBlocking = FALSE;
 
-	if (!result)
-	{
+	if (!result) {
 		m_nNetworkError = WSAECONNABORTED;
 		WSASetLastError(WSAECONNABORTED);
-		if (!m_bFailureSent)
-		{
+		if (!m_bFailureSent) {
 			m_bFailureSent = TRUE;
 			DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_FAILURE, SSL_FAILURE_CERTREJECTED);
 		}
@@ -1906,8 +1743,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	// We use a memory bio, since the OpenSSL functions accepting a filepointer 
 	// do crash for no obvious reason.
 	FILE* file = _wfopen(filename, _T("w+"));
-	if (!file)
-	{
+	if (!file) {
 		err = _T("Failed to open output file");
 		return false;
 	}
@@ -1918,8 +1754,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	
 	char buffer[1001];
 	int len;
-	while ((len = pBIO_read(bio, buffer, 1000)) > 0)
-	{
+	while ((len = pBIO_read(bio, buffer, 1000)) > 0) {
 		buffer[len] = 0;
 		fprintf(file, buffer);
 	}
@@ -2012,8 +1847,7 @@ int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, cons
 
 int CAsyncSslSocketLayer::SendRaw(const void* lpBuf, int nBufLen, int nFlags)
 {
-	if (!m_bUseSSL)
-	{
+	if (!m_bUseSSL) {
 		SetLastError(WSANOTINITIALISED);
 		return SOCKET_ERROR;
 	}
@@ -2021,8 +1855,7 @@ int CAsyncSslSocketLayer::SendRaw(const void* lpBuf, int nBufLen, int nFlags)
 	if (!lpBuf)
 		return 0;
 	
-	if (m_nNetworkError)
-	{
+	if (m_nNetworkError) {
 		SetLastError(m_nNetworkError);
 		return SOCKET_ERROR;
 	}
@@ -2030,8 +1863,7 @@ int CAsyncSslSocketLayer::SendRaw(const void* lpBuf, int nBufLen, int nFlags)
 		SetLastError(WSAESHUTDOWN);
 		return SOCKET_ERROR;
 	}
-	if (m_nNetworkSendBufferLen)
-	{
+	if (m_nNetworkSendBufferLen) {
 		SetLastError(WSAEINPROGRESS);
 		return SOCKET_ERROR;
 	}
@@ -2051,8 +1883,7 @@ int CAsyncSslSocketLayer::SendRaw(const void* lpBuf, int nBufLen, int nFlags)
 
 void CAsyncSslSocketLayer::TriggerEvents()
 {
-	if (pBIO_ctrl_pending(m_nbio) > 0)
-	{
+	if (pBIO_ctrl_pending(m_nbio) > 0) {
 		if (m_mayTriggerWrite) {
 			m_mayTriggerWrite = false;
 			TriggerEvent(FD_WRITE, 0);
