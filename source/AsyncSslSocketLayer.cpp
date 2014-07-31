@@ -721,8 +721,7 @@ int CAsyncSslSocketLayer::Send(const void* lpBuf, int nBufLen, int nFlags)
 			SetLastError(WSAESHUTDOWN);
 			return SOCKET_ERROR;
 		}
-		if (!m_bSslEstablished)
-		{
+		if (!m_bSslEstablished) {
 			m_mayTriggerWriteUp = true;
 			SetLastError(WSAEWOULDBLOCK);
 			return SOCKET_ERROR;
@@ -730,8 +729,7 @@ int CAsyncSslSocketLayer::Send(const void* lpBuf, int nBufLen, int nFlags)
 		if (!nBufLen)
 			return 0;
 
-		if (m_onCloseCalled)
-		{
+		if (m_onCloseCalled) {
 			TriggerEvent(FD_CLOSE, 0, TRUE);
 			return 0;
 		}
@@ -739,11 +737,11 @@ int CAsyncSslSocketLayer::Send(const void* lpBuf, int nBufLen, int nFlags)
 		int len = pBIO_ctrl_get_write_guarantee(m_sslbio);
 		if (nBufLen > len)
 			nBufLen = len;
-		if (!len)
-		{
+		if (nBufLen <= 0) {
 			m_mayTriggerWriteUp = true;
 			TriggerEvents();				
 			SetLastError(WSAEWOULDBLOCK);
+			return SOCKET_ERROR;
 		}
 
 		m_pRetrySendBuffer = new char[nBufLen];
