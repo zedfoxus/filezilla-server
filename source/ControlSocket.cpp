@@ -70,8 +70,7 @@ CControlSocket::CControlSocket(CServerThread *pOwner)
 
 	m_pSslLayer = NULL;
 
-	for (int i = 0; i < 2; i++)
-	{
+	for (int i = 0; i < 2; ++i) {
 		m_SlQuotas[i].bContinue = false;
 		m_SlQuotas[i].nBytesAllowedToTransfer = -1;
 		m_SlQuotas[i].nTransferred = 0;
@@ -138,19 +137,17 @@ void CControlSocket::OnReceive(int nErrorCode)
 
 	int len = BUFFERSIZE;
 	long long nLimit = GetSpeedLimit(upload);
-	if (!nLimit)
-	{
+	if (!nLimit) {
 		ParseCommand();
 		return;
 	}
-	if (len > nLimit && nLimit != -1)
+	if (len > nLimit && nLimit > -1)
 		len = static_cast<int>(nLimit);
 
 	unsigned char *buffer = new unsigned char[BUFFERSIZE];
 	int numread = Receive(buffer, len);
-	if (numread != SOCKET_ERROR && numread)
-	{
-		if (nLimit != -1)
+	if (numread != SOCKET_ERROR && numread) {
+		if (nLimit > -1)
 			m_SlQuotas[upload].nTransferred += numread;
 
 		m_pOwner->IncRecvCount(numread);
@@ -160,15 +157,13 @@ void CControlSocket::OnReceive(int nErrorCode)
 			if (!m_nRecvBufferPos)
 			{
 				//Remove telnet characters
-				if (m_nTelnetSkip)
-				{
+				if (m_nTelnetSkip) {
 					if (buffer[i] < 240)
 						m_nTelnetSkip = 0;
 					else
 						continue;
 				}
-				else if (buffer[i] == 255)
-				{
+				else if (buffer[i] == 255) {
 					m_nTelnetSkip = 1;
 					continue;
 				}
@@ -274,13 +269,11 @@ void CControlSocket::SendStatus(LPCTSTR status, int type)
 	t_statusmsg *msg = new t_statusmsg;
 	_tcscpy(msg->ip, m_RemoteIP);
 	GetLocalTime(&msg->time);
-	if (!m_status.loggedon)
-	{
+	if (!m_status.loggedon) {
 		msg->user = new TCHAR[16];
 		_tcscpy(msg->user, _T("(not logged in)"));
 	}
-	else
-	{
+	else {
 		msg->user = new TCHAR[_tcslen(m_status.username) + 1];
 		_tcscpy(msg->user, m_status.username);
 	}
@@ -303,8 +296,7 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 	int len;
 	{
 		auto utf8 = ConvToNetwork(str);
-		if (utf8.empty())
-		{
+		if (utf8.empty()) {
 			Close();
 			SendStatus(_T("Failed to convert reply to UTF-8"), 1);
 			m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
@@ -319,12 +311,11 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 	}
 
 	//Add line to back of send buffer if it's not empty
-	if (m_pSendBuffer)
-	{
+	if (m_pSendBuffer) {
 		char *tmp = m_pSendBuffer;
 		m_pSendBuffer = new char[m_nSendBufferLen + len];
 		memcpy(m_pSendBuffer, tmp, m_nSendBufferLen);
-		memcpy(m_pSendBuffer+m_nSendBufferLen, buffer, len);
+		memcpy(m_pSendBuffer + m_nSendBufferLen, buffer, len);
 		delete [] tmp;
 		m_nSendBufferLen += len;
 		delete [] buffer;
@@ -332,19 +323,16 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 	}
 
 	long long nLimit = GetSpeedLimit(download);
-	if (!nLimit)
-	{
-		if (!m_pSendBuffer)
-		{
+	if (!nLimit) {
+		if (!m_pSendBuffer) {
 			m_pSendBuffer = buffer;
 			m_nSendBufferLen = len;
 		}
-		else
-		{
+		else {
 			char *tmp = m_pSendBuffer;
 			m_pSendBuffer = new char[m_nSendBufferLen + len];
 			memcpy(m_pSendBuffer, tmp, m_nSendBufferLen);
-			memcpy(m_pSendBuffer+m_nSendBufferLen, buffer, len);
+			memcpy(m_pSendBuffer + m_nSendBufferLen, buffer, len);
 			delete [] tmp;
 			m_nSendBufferLen += len;
 			delete [] buffer;
@@ -352,16 +340,14 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 		return TRUE;
 	}
 	int numsend = len;
-	if (nLimit != -1 && numsend > nLimit)
+	if (nLimit > -1 && numsend > nLimit)
 		numsend = static_cast<int>(nLimit);
 
 	int res = CAsyncSocketEx::Send(buffer, numsend);
-	if (res==SOCKET_ERROR && GetLastError() == WSAEWOULDBLOCK)
-	{
+	if (res == SOCKET_ERROR && GetLastError() == WSAEWOULDBLOCK) {
 		res = 0;
 	}
-	else if (!res || res==SOCKET_ERROR)
-	{
+	else if (!res || res == SOCKET_ERROR) {
 		delete [] buffer;
 		Close();
 		SendStatus(_T("could not send reply, disconnected."), 0);
@@ -369,25 +355,22 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 		return FALSE;
 	}
 
-	if (nLimit != -1)
+	if (nLimit > -1)
 		m_SlQuotas[download].nTransferred += res;
 
-	if (res != len)
-	{
-		if (!m_pSendBuffer)
-		{
-			m_pSendBuffer = new char[len-res];
-			memcpy(m_pSendBuffer, buffer+res, len-res);
-			m_nSendBufferLen = len-res;
+	if (res != len) {
+		if (!m_pSendBuffer) {
+			m_pSendBuffer = new char[len - res];
+			memcpy(m_pSendBuffer, buffer + res, len - res);
+			m_nSendBufferLen = len - res;
 		}
-		else
-		{
+		else {
 			char *tmp = m_pSendBuffer;
 			m_pSendBuffer = new char[m_nSendBufferLen + len - res];
 			memcpy(m_pSendBuffer, tmp, m_nSendBufferLen);
-			memcpy(m_pSendBuffer+m_nSendBufferLen, buffer+res, len-res);
+			memcpy(m_pSendBuffer + m_nSendBufferLen, buffer + res, len - res);
 			delete [] tmp;
-			m_nSendBufferLen += len-res;
+			m_nSendBufferLen += len - res;
 		}
 		TriggerEvent(FD_WRITE);
 	}
@@ -2342,13 +2325,12 @@ BOOL CControlSocket::UnquoteArgs(CStdString &args)
 
 void CControlSocket::OnSend(int nErrorCode)
 {
-	if (m_nSendBufferLen && m_pSendBuffer)
-	{
+	if (m_nSendBufferLen && m_pSendBuffer) {
 		long long nLimit = GetSpeedLimit(download);
 		if (!nLimit)
 			return;
 		int numsend;
-		if (nLimit == -1 || nLimit > m_nSendBufferLen)
+		if (nLimit <= -1 || nLimit > m_nSendBufferLen)
 			numsend = m_nSendBufferLen;
 		else
 			numsend = static_cast<int>(nLimit);
@@ -2357,8 +2339,7 @@ void CControlSocket::OnSend(int nErrorCode)
 
 		if (numsent==SOCKET_ERROR && GetLastError() == WSAEWOULDBLOCK)
 			return;
-		if (!numsent || numsent == SOCKET_ERROR)
-		{
+		if (!numsent || numsent == SOCKET_ERROR) {
 			Close();
 			SendStatus(_T("could not send reply, disconnected."), 0);
 			m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
@@ -2370,17 +2351,15 @@ void CControlSocket::OnSend(int nErrorCode)
 			return;
 		}
 
-		if (nLimit != -1)
+		if (nLimit > -1)
 			m_SlQuotas[download].nTransferred += numsent;
 
-		if (numsent == m_nSendBufferLen)
-		{
+		if (numsent == m_nSendBufferLen) {
 			delete [] m_pSendBuffer;
 			m_pSendBuffer = NULL;
 			m_nSendBufferLen = 0;
 		}
-		else
-		{
+		else {
 			char *tmp = m_pSendBuffer;
 			m_pSendBuffer = new char[m_nSendBufferLen-numsent];
 			memcpy(m_pSendBuffer, tmp+numsent, m_nSendBufferLen-numsent);
@@ -2535,17 +2514,17 @@ long long CControlSocket::GetSpeedLimit(sltype mode)
 			m_SlQuotas[mode].bContinue = TRUE;
 			return 0;
 		}
-		else
+		else {
 			nLimit -= m_SlQuotas[mode].nTransferred;
+		}
 	}
 	else
 		nLimit = -1;
 	if (m_status.user.BypassServerSpeedLimit(mode))
 		m_SlQuotas[mode].bBypassed = TRUE;
-	else if (m_SlQuotas[mode].nBytesAllowedToTransfer != -1)
-	{
+	else if (m_SlQuotas[mode].nBytesAllowedToTransfer > -1) {
 		if (nLimit == -1 || nLimit > (m_SlQuotas[mode].nBytesAllowedToTransfer - m_SlQuotas[mode].nTransferred))
-			nLimit = m_SlQuotas[mode].nBytesAllowedToTransfer - m_SlQuotas[mode].nTransferred;
+			nLimit = std::max(0ll, m_SlQuotas[mode].nBytesAllowedToTransfer - m_SlQuotas[mode].nTransferred);
 	}
 
 	if (!nLimit)

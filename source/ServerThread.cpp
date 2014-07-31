@@ -505,14 +505,11 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 					LeaveCritSection(pThread->m_threadsync);
 				}
 
-			for (int i = 0; i < 2; i++)
-			{
+			for (int i = 0; i < 2; ++i) {
 				long long limit = m_lastLimits[i];
 
-				if (limit == -1)
-				{
-					for (iter = m_sInstanceList.begin(); iter != m_sInstanceList.end(); iter++)
-					{
+				if (limit == -1) {
+					for (iter = m_sInstanceList.begin(); iter != m_sInstanceList.end(); iter++) {
 						CServerThread *pThread = *iter;
 						EnterCritSection(pThread->m_threadsync);
 						pThread->m_SlQuotas[i].nBytesAllowedToTransfer = -1;
@@ -529,8 +526,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 				
 				std::list<CServerThread *> fullUsageList;
 				
-				for (iter = m_sInstanceList.begin(); iter != m_sInstanceList.end(); iter++)
-				{
+				for (iter = m_sInstanceList.begin(); iter != m_sInstanceList.end(); ++iter) {
 					CServerThread *pThread = *iter;
 					EnterCritSection(pThread->m_threadsync);
 					long long r = pThread->m_SlQuotas[i].nBytesAllowedToTransfer - pThread->m_SlQuotas[i].nTransferred;
@@ -804,16 +800,14 @@ void CServerThread::ProcessNewSlQuota()
 void CServerThread::GatherTransferedBytes()
 {
 	EnterCritSection(m_threadsync);
-	for (std::map<int, CControlSocket *>::iterator iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); iter++)
-	{
-		for (int i = 0; i < 2; i++)
-		{
-			if (iter->second->m_SlQuotas[i].nBytesAllowedToTransfer != -1)
+	for (std::map<int, CControlSocket *>::iterator iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); ++iter) {
+		for (int i = 0; i < 2; ++i) {
+			if (iter->second->m_SlQuotas[i].nBytesAllowedToTransfer > -1) {
 				if (iter->second->m_SlQuotas[i].bBypassed)
 					iter->second->m_SlQuotas[i].nTransferred = 0;
 				else
 					m_SlQuotas[i].nTransferred += iter->second->m_SlQuotas[i].nTransferred;
-
+			}
 			iter->second->m_SlQuotas[i].bBypassed = false;
 		}
 	}
