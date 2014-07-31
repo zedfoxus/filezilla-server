@@ -227,21 +227,20 @@ void CTransferSocket::OnSend(int nErrorCode)
 					numsend = len;
 				
 				long long nLimit = m_pOwner->GetSpeedLimit(download);
-				if (nLimit != -1 && GetState() != aborted && numsend > nLimit)
+				if (nLimit > -1 && GetState() != aborted && numsend > nLimit)
 					numsend = static_cast<int>(nLimit);
 
 				if (!numsend)
 					return;
 
 				int numsent = Send(m_pBuffer + m_nBufferPos, numsend);
-				if (numsent == SOCKET_ERROR)
-				{
+				if (numsent == SOCKET_ERROR) {
 					if (GetLastError() != WSAEWOULDBLOCK)
 						EndTransfer(1);
 					return;
 				}
 
-				if (nLimit != -1 && GetState() != aborted)
+				if (nLimit > -1 && GetState() != aborted)
 					m_pOwner->m_SlQuotas[download].nTransferred += numsent;
 
 				((CServerThread *)m_pOwner->m_pOwner)->IncSendCount(numsent);
@@ -271,22 +270,21 @@ void CTransferSocket::OnSend(int nErrorCode)
 					numsend = directory_listing_.front().len - m_nBufferPos;
 
 				long long nLimit = m_pOwner->GetSpeedLimit(download);
-				if (nLimit != -1 && GetState() != aborted && numsend > nLimit)
+				if (nLimit > -1 && GetState() != aborted && numsend > nLimit)
 					numsend = static_cast<int>(nLimit);
 
 				if (!numsend)
 					return;
 
 				int numsent = Send(directory_listing_.front().buffer + m_nBufferPos, numsend);
-				if (numsent == SOCKET_ERROR)
-				{
+				if (numsent == SOCKET_ERROR) {
 					int error = GetLastError();
 					if (error != WSAEWOULDBLOCK)
 						EndTransfer(1);
 					return;
 				}
 
-				if (nLimit != -1 && GetState() != aborted)
+				if (nLimit > -1 && GetState() != aborted)
 					m_pOwner->m_SlQuotas[download].nTransferred += numsent;
 
 				((CServerThread *)m_pOwner->m_pOwner)->IncSendCount(numsent);
@@ -299,7 +297,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				m_currentFileOffset += numsent;
 
 				ASSERT(m_nBufferPos <= directory_listing_.front().len);
-				if (m_nBufferPos == directory_listing_.front().len) {
+				if (m_nBufferPos >= directory_listing_.front().len) {
 					directory_listing_.pop_front();
 					m_nBufferPos = 0;
 	
@@ -417,21 +415,20 @@ void CTransferSocket::OnSend(int nErrorCode)
 					numsend = len;
 				
 				long long nLimit = m_pOwner->GetSpeedLimit(download);
-				if (nLimit != -1 && GetState() != aborted && numsend > nLimit)
+				if (nLimit > -1 && GetState() != aborted && numsend > nLimit)
 					numsend = static_cast<int>(nLimit);
 
 				if (!numsend)
 					return;
 
 				int numsent = Send(m_pBuffer + m_nBufferPos, numsend);
-				if (numsent == SOCKET_ERROR)
-				{
+				if (numsent == SOCKET_ERROR) {
 					if (GetLastError() != WSAEWOULDBLOCK)
 						EndTransfer(1);
 					return;
 				}
 
-				if (nLimit != -1 && GetState() != aborted)
+				if (nLimit > -1 && GetState() != aborted)
 					m_pOwner->m_SlQuotas[download].nTransferred += numsent;
 
 				((CServerThread *)m_pOwner->m_pOwner)->IncSendCount(numsent);
@@ -492,40 +489,35 @@ void CTransferSocket::OnSend(int nErrorCode)
 					numread = m_nBufferPos;
 				m_nBufferPos = 0;
 
-				if (numread < m_nBufSize)
-				{
+				if (numread < m_nBufSize) {
 					CloseFile();
 				}
 
 				int numsend = numread;
 				long long nLimit = m_pOwner->GetSpeedLimit(download);
-				if (nLimit != -1 && GetState() != aborted && numsend > nLimit)
+				if (nLimit > -1 && GetState() != aborted && numsend > nLimit)
 					numsend = static_cast<int>(nLimit);
 
-				if (!numsend)
-				{
+				if (!numsend) {
 					m_nBufferPos = numread;
 					return;
 				}
 
 				int	numsent = Send(m_pBuffer, numsend);
-				if (numsent==SOCKET_ERROR)
-				{
-					if (GetLastError()!=WSAEWOULDBLOCK)
-					{
+				if (numsent == SOCKET_ERROR) {
+					if (GetLastError() != WSAEWOULDBLOCK) {
 						EndTransfer(1);
 						return;
 					}
 					m_nBufferPos=numread;
 					return;
 				}
-				else if ((unsigned int)numsent<numread)
-				{
-					memmove(m_pBuffer, m_pBuffer+numsent, numread-numsent);
+				else if ((unsigned int)numsent < numread) {
+					memmove(m_pBuffer, m_pBuffer + numsent, numread - numsent);
 					m_nBufferPos=numread-numsent;
 				}
 
-				if (nLimit != -1 && GetState() != aborted)
+				if (nLimit > -1 && GetState() != aborted)
 					m_pOwner->m_SlQuotas[download].nTransferred += numsent;
 	
 				((CServerThread *)m_pOwner->m_pOwner)->IncSendCount(numsent);
