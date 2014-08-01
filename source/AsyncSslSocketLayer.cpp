@@ -1380,7 +1380,7 @@ void ParseX509Name(X509_NAME * name, t_SslCertData::t_Contact & contact )
 	}
 }
 
-bool ParseTime(ASN1_UTCTIME *pTime, t_SslCertData::t_validTime out)
+bool ParseTime(ASN1_UTCTIME *pTime, t_SslCertData::t_validTime& out)
 {
 	char *v;
 	int gmt = 0;
