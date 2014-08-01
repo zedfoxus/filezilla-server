@@ -68,7 +68,6 @@ public:
 
 	bool WasOnConnectCalled() const { return m_on_connect_called; }
 
-	BOOL pasv;
 // Implementierung
 protected:
 	virtual void OnSend(int nErrorCode);
@@ -92,7 +91,6 @@ protected:
 	int m_status;
 	CControlSocket *m_pOwner;
 	_int64 m_nRest;
-	BOOL m_bBinary;
 	HANDLE m_hFile;
 	char *m_pBuffer;
 	char *m_pBuffer2; // Used by zlib transfers
