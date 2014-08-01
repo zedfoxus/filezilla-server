@@ -1177,14 +1177,16 @@ void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int r
 	else
 		str = "undefined";
 
+	int const bufsize = 4096;
+
 	if (where & SSL_CB_LOOP) {
 #if SSL_VERBOSE_INFO
-		char *buffer = new char[4096];
+		char *buffer = new char[bufsize];
 		char const* state = pSSL_state_string_long(s);
-		_snprintf(buffer, sizeof(buffer), "%s: %s",
+		_snprintf(buffer, 4096, "%s: %s",
 				str,
 				state ? state : "unknown state" );
-		buffer[sizeof(buffer) - 1] = 0;
+		buffer[bufsize - 1] = 0;
 		pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERBOSE_INFO, 0, buffer);
 #endif
 	}
@@ -1194,24 +1196,24 @@ void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int r
 
 		// Don't send close notify warning
 		if (desc && strcmp(desc, "close notify")) {
-			char *buffer = new char[4096];
+			char *buffer = new char[bufsize];
 			char const* alert = pSSL_alert_type_string_long(ret);
-			_snprintf(buffer, sizeof(buffer), "SSL3 alert %s: %s: %s",
+			_snprintf(buffer, bufsize, "SSL3 alert %s: %s: %s",
 					str,
 					alert ? alert : "unknown alert",
 					desc);
-			buffer[sizeof(buffer) - 1] = 0;
+			buffer[bufsize - 1] = 0;
 			pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERBOSE_WARNING, 0, buffer);
 		}
 	}
 	else if (where & SSL_CB_EXIT) {
 		if (ret == 0) {
-			char *buffer = new char[4096];
+			char *buffer = new char[bufsize];
 			char const* state = pSSL_state_string_long(s);
-			_snprintf(buffer, sizeof(buffer), "%s: failed in %s",
+			_snprintf(buffer, bufsize, "%s: failed in %s",
 					str,
 					state ? state : "unknown state" );
-			buffer[sizeof(buffer) - 1] = 0;
+			buffer[bufsize - 1] = 0;
 			pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERBOSE_WARNING, 0, buffer);
 			if (!pLayer->m_bFailureSent) {
 				pLayer->m_bFailureSent = TRUE;
@@ -1221,13 +1223,13 @@ void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int r
 		else if (ret < 0) {
 			int error = pSSL_get_error(s, ret);
 			if (error != SSL_ERROR_WANT_READ && error != SSL_ERROR_WANT_WRITE) {
-				char *buffer = new char[4096];
+				char *buffer = new char[bufsize];
 				char const* state = pSSL_state_string_long(s);
-				_snprintf(buffer, sizeof(buffer), "%s: error %d in %s",
+				_snprintf(buffer, bufsize, "%s: error %d in %s",
 						str,
 						error,
 						state ? state : "unknown state");
-				buffer[sizeof(buffer) - 1] = 0;
+				buffer[bufsize - 1] = 0;
 				pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERBOSE_WARNING, 0, buffer);
 				if (!pLayer->m_bFailureSent) {
 					pLayer->m_bFailureSent = TRUE;
