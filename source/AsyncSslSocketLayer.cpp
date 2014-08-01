@@ -962,7 +962,7 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /
 		m_contextRefCount[m_ssl_ctx] = 1;
 
 		long options = pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, 0, NULL);
-		pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options | SSL_OP_NO_SSLv2, NULL);
+		pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3, NULL);
 
 		if (clientMode) {
 			USES_CONVERSION;
