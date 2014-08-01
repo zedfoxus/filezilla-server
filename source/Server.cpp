@@ -271,11 +271,10 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 		if (!pConnOp)
 			return 0;
 		
-		int len;
-		unsigned char *buffer;
+		int len{};
+		unsigned char *buffer{};
 
-		switch (pConnOp->op)
-		{
+		switch (pConnOp->op) {
 		case USERCONTROL_CONNOP_ADD:
 			{
 				t_connectiondata_add* pData = (t_connectiondata_add*)pConnOp->data;
@@ -362,18 +361,16 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 					memcpy(p, physicalFile.c_str(), physicalFile.size());
 					p += physicalFile.size();
 
-                    *p++ = logicalFile.size() / 256;
+					*p++ = logicalFile.size() / 256;
 					*p++ = logicalFile.size() % 256;		
 					memcpy(p, logicalFile.c_str(), logicalFile.size());
 					p += logicalFile.size();
 
-					if (data.currentOffset != 0)
-					{
+					if (data.currentOffset != 0) {
 						memcpy(p, &data.currentOffset, 8);
 						p += 8;
 					}
-					if (data.totalSize != -1)
-					{
+					if (data.totalSize != -1) {
 						memcpy(p, &data.totalSize, 8);
 						p += 8;
 					}
@@ -408,6 +405,9 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				delete pData;
 			}
 			break;
+		default:
+			delete pConnOp;
+			return 0;
 		}
 		buffer[0] = USERCONTROL_CONNOP;
 		buffer[1] = pConnOp->op;
