@@ -71,8 +71,7 @@ BOOL CFileZillaserverApp::InitInstance()
 {
 	COptions *pOptions = new COptions;
 
-	if (m_lpCmdLine && _tcslen(m_lpCmdLine) >= 11 && !_tcsncmp(m_lpCmdLine, _T("/adminport "), 11))
-	{
+	if (m_lpCmdLine && _tcslen(m_lpCmdLine) >= 11 && !_tcsncmp(m_lpCmdLine, _T("/adminport "), 11))	{
 		int nAdminPort = _ttoi(m_lpCmdLine + 11);
 
 		if (nAdminPort > 1 && nAdminPort < 65535 && pOptions->GetOption(IOPTION_LASTSERVERADDRESS) == _T("127.0.0.1"))
@@ -82,21 +81,22 @@ BOOL CFileZillaserverApp::InitInstance()
 	}
 	
 	// initialize Winsock library
-	BOOL res=TRUE;
+	BOOL res = TRUE;
 	WSADATA wsaData;
 	
 	WORD wVersionRequested = MAKEWORD(1, 1);
 	int nResult = WSAStartup(wVersionRequested, &wsaData);
 	if (nResult != 0)
-		res=FALSE;
-	else if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1)
-	{
+		res = FALSE;
+	else if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1) {
 		WSACleanup();
-		res=FALSE;
+		res = FALSE;
 	}
 	
-	if(!res)
+	if(!res) {
+		delete pOptions;
 		return FALSE;
+	}
 
 	// Dieser Code erstellt ein neues Rahmenfensterobjekt und setzt dies
 	// dann als das Hauptfensterobjekt der Anwendung, um das Hauptfenster zu erstellen.
