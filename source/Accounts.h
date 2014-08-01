@@ -12,7 +12,6 @@
 class t_directory
 {
 public:
-	t_directory();
 #ifdef SERVICE
 	CStdString dir;
 	std::list<CStdString> aliases;
@@ -20,9 +19,9 @@ public:
 	CStdString dir;
 	std::list<CStdString> aliases;
 #endif
-	BOOL bFileRead, bFileWrite, bFileDelete, bFileAppend;
-	BOOL bDirCreate, bDirDelete, bDirList, bDirSubdirs, bIsHome;
-	BOOL bAutoCreate;
+	BOOL bFileRead{}, bFileWrite{}, bFileDelete{}, bFileAppend{};
+	BOOL bDirCreate{}, bDirDelete{}, bDirList{}, bDirSubdirs{}, bIsHome{};
+	BOOL bAutoCreate{};
 };
 
 enum sltype

@@ -2,11 +2,6 @@
 #include "accounts.h"
 #include "iputils.h"
 
-t_directory::t_directory()
-{
-	bAutoCreate = FALSE;
-}
-
 t_group::t_group()
 {
 	for (int i = 0; i < 2; ++i) {
