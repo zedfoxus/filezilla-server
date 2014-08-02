@@ -654,26 +654,23 @@ public:
 				return 0;
 
 			CAsyncSocketEx *pSocket = NULL;
-			for (int i = 0; i < pWnd->m_nWindowDataSize; i++)
-			{
+			for (int i = 0; i < pWnd->m_nWindowDataSize; ++i) {
 				pSocket = pWnd->m_pAsyncSocketExWindowData[i].m_pSocket;
 				if (pSocket && pSocket->m_hAsyncGetHostByNameHandle &&
 					pSocket->m_hAsyncGetHostByNameHandle == (HANDLE)wParam &&
 					pSocket->m_pAsyncGetHostByNameBuffer)
 					break;
 			}
-			if (!pSocket)
+			if (!pSocket || !pSocket->m_pAsyncGetHostByNameBuffer)
 				return 0;
 
 			int nErrorCode = lParam >> 16;
-			if (nErrorCode)
-			{
+			if (nErrorCode) {
 				pSocket->OnConnect(nErrorCode);
 				return 0;
 			}
 
-			SOCKADDR_IN sockAddr;
-			memset(&sockAddr,0,sizeof(sockAddr));
+			SOCKADDR_IN sockAddr{};
 			sockAddr.sin_family = AF_INET;
 			sockAddr.sin_addr.s_addr = ((LPIN_ADDR)((LPHOSTENT)pSocket->m_pAsyncGetHostByNameBuffer)->h_addr)->s_addr;
 
@@ -954,20 +951,18 @@ BOOL CAsyncSocketEx::Bind(UINT nSocketPort, LPCTSTR lpszSocketAddress)
 					return FALSE;
 				}
 
-				SOCKADDR_IN sockAddr;
-				memset(&sockAddr, 0, sizeof(sockAddr));
+				SOCKADDR_IN sockAddr{};
 				sockAddr.sin_family = m_SocketData.nFamily;
 				sockAddr.sin_addr.s_addr = ip;
 				sockAddr.sin_port = htons((u_short)nSocketPort);
 				return Bind((SOCKADDR*)&sockAddr, sizeof(sockAddr));
 			}
 		}
-		addrinfo hints, *res0, *res;
+		addrinfo hints{}, *res0, *res;
 		int error;
 		char port[10];
 		BOOL ret = FALSE;
 
-		memset(&hints, 0, sizeof(addrinfo));
 		hints.ai_family = m_SocketData.nFamily;
 		hints.ai_socktype = SOCK_STREAM;
 		_snprintf(port, 9, "%lu", nSocketPort);
@@ -990,9 +985,7 @@ BOOL CAsyncSocketEx::Bind(UINT nSocketPort, LPCTSTR lpszSocketAddress)
 	}
 	else if (!lpszAscii && m_SocketData.nFamily == AF_INET6)
 	{
-		SOCKADDR_IN6 sockAddr6;
-
-		memset(&sockAddr6, 0, sizeof(sockAddr6));
+		SOCKADDR_IN6 sockAddr6{};
 		sockAddr6.sin6_family = AF_INET6 ;
 		sockAddr6.sin6_addr = in6addr_any ;
 		sockAddr6.sin6_port = htons((u_short)nSocketPort);
@@ -1001,9 +994,7 @@ BOOL CAsyncSocketEx::Bind(UINT nSocketPort, LPCTSTR lpszSocketAddress)
 	}
 	else if (!lpszAscii && m_SocketData.nFamily == AF_INET)
 	{
-		SOCKADDR_IN sockAddr;
-
-		memset(&sockAddr, 0, sizeof(sockAddr));
+		SOCKADDR_IN sockAddr{};
 		sockAddr.sin_family = AF_INET ;
 		sockAddr.sin_addr.s_addr = INADDR_ANY ;
 		sockAddr.sin_port = htons((u_short)nSocketPort);
@@ -1262,10 +1253,9 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 
 		ASSERT(lpszHostAddress != NULL);
 
-		SOCKADDR_IN sockAddr;
-		memset(&sockAddr,0,sizeof(sockAddr));
-
 		LPSTR lpszAscii = T2A((LPTSTR)lpszHostAddress);
+
+		SOCKADDR_IN sockAddr{};
 		sockAddr.sin_family = AF_INET;
 		sockAddr.sin_addr.s_addr = inet_addr(lpszAscii);
 
@@ -1311,12 +1301,11 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 			m_SocketData.nextAddr = 0;
 		}
 
-		addrinfo hints;
 		int error;
 		BOOL ret = TRUE;
 		char port[10];
 
-		memset(&hints, 0, sizeof(addrinfo));
+		addrinfo hints{};
 		hints.ai_family = m_SocketData.nFamily;
 		hints.ai_socktype = SOCK_STREAM;
 		_snprintf(port, 9, "%lu", nHostPort);
@@ -1590,8 +1579,7 @@ BOOL CAsyncSocketEx::Attach(SOCKET hSocket, long lEvent /*= FD_READ | FD_WRITE |
 	VERIFY(InitAsyncSocketExInstance());
 	m_SocketData.hSocket = hSocket;
 
-	sockaddr_storage addr;
-	memset(&addr, 0, sizeof(sockaddr_storage));
+	sockaddr_storage addr{};
 	int len = sizeof(addr);
 	if (getsockname(m_SocketData.hSocket, reinterpret_cast<sockaddr*>(&addr), &len) != 0)
 		return FALSE;
