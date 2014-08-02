@@ -34,6 +34,7 @@ class t_group
 {
 public:
 	t_group();
+	virtual ~t_group() {}
 
 	virtual int GetRequiredBufferLen() const;
 	virtual int GetRequiredStringBufferLen(const CStdString& str) const;

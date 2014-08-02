@@ -261,37 +261,6 @@ HMODULE CAsyncSslSocketLayer::m_hSslDll1 = 0;
 HMODULE CAsyncSslSocketLayer::m_hSslDll2 = 0;
 std::map<SSL_CTX *, int> CAsyncSslSocketLayer::m_contextRefCount;
 
-CAsyncSslSocketLayer::CAsyncSslSocketLayer()
-{
-	m_ssl = 0;
-	m_sslbio = 0;
-	m_ibio = 0;
-	m_nbio = 0;
-	m_ssl_ctx = 0;
-
-	m_bUseSSL = false;
-	m_bSslInitialized = FALSE;
-	m_bSslEstablished = FALSE;
-	m_nNetworkSendBufferLen = 0;
-	m_nNetworkSendBufferMaxLen = 0;
-	m_pNetworkSendBuffer = NULL;
-	m_pRetrySendBuffer = 0;
-	m_nNetworkError = 0;
-
-	m_bBlocking = FALSE;
-	m_nSslAsyncNotifyId = 0;
-	m_bFailureSent = FALSE;
-	m_nVerificationResult = 0;
-	m_nVerificationDepth = 0;
-	m_mayTriggerRead = true;
-	m_mayTriggerWrite = true;
-	m_mayTriggerReadUp = true;
-	m_mayTriggerWriteUp = true;
-
-	m_onCloseCalled = false;
-	m_pKeyPassword = 0;
-}
-
 CAsyncSslSocketLayer::~CAsyncSslSocketLayer()
 {
 	UnloadSSL();
@@ -1099,7 +1068,7 @@ bool CAsyncSslSocketLayer::IsUsingSSL()
 	return m_bUseSSL;
 }
 
-BOOL CAsyncSslSocketLayer::ShutDown(int)
+BOOL CAsyncSslSocketLayer::ShutDown()
 {
 	BOOL ret = DoShutDown();
 	TriggerEvents();

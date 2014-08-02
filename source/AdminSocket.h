@@ -31,7 +31,7 @@
 #include <memory>
 
 class CAdminInterface;
-class CAdminSocket : public CAsyncSocketEx
+class CAdminSocket final : public CAsyncSocketEx
 {
 public:
 	BOOL CheckForTimeout();
@@ -52,20 +52,17 @@ protected:
 	struct t_data
 	{
 		t_data()
-			: pData()
-			, dwOffset()
-			, dwLength()
+			: dwLength()
 		{}
 
 		explicit t_data( DWORD len )
 			: pData(new unsigned char[len])
-			, dwOffset()
 			, dwLength(len)
 		{
 		}
 
 		std::shared_ptr<unsigned char> pData;
-		DWORD dwOffset;
+		DWORD dwOffset{};
 		DWORD const dwLength;
 	};
 	std::list<t_data> m_SendBuffer;
@@ -74,10 +71,10 @@ protected:
 	int m_nRecvBufferLen;
 	DWORD m_nRecvBufferPos;
 
-	BOOL m_bStillNeedAuth;
+	BOOL m_bStillNeedAuth{TRUE};
 	unsigned char m_Nonce1[8];
 	unsigned char m_Nonce2[8];
-	FILETIME m_LastRecvTime;
+	FILETIME m_LastRecvTime = FILETIME();
 };
 
 #endif // !defined(AFX_ADMINSOCKET_H__C8A04733_3DF9_41C9_B596_DCDE8246AE88__INCLUDED_)

@@ -75,7 +75,7 @@ class CAsyncSocketExLayer
 	friend CAsyncSocketExHelperWindow;
 protected:
 	//Protected constructor so that CAsyncSocketExLayer can't be instantiated
-	CAsyncSocketExLayer();
+	CAsyncSocketExLayer() {};
 	virtual ~CAsyncSocketExLayer();
 
 	//Notification event handlers
@@ -102,11 +102,10 @@ protected:
 	virtual BOOL Listen( int nConnectionBacklog);
 	virtual int Receive(void* lpBuf, int nBufLen, int nFlags = 0);
 	virtual int Send(const void* lpBuf, int nBufLen, int nFlags = 0);
-	virtual BOOL ShutDown( int nHow = sends );
-	enum { receives = 0, sends = 1, both = 2 };
+	virtual BOOL ShutDown();
 
 	//Functions that will call next layer
-	BOOL ShutDownNext( int nHow = sends );
+	BOOL ShutDownNext();
 	BOOL AcceptNext( CAsyncSocketEx& rConnectedSocket, SOCKADDR* lpSockAddr = NULL, int* lpSockAddrLen = NULL );
 	void CloseNext();
 	BOOL ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort);
@@ -120,7 +119,7 @@ protected:
 	int ReceiveNext(void *lpBuf, int nBufLen, int nFlags = 0);
 	int SendNext(const void *lpBuf, int nBufLen, int nFlags = 0);
 
-	CAsyncSocketEx *m_pOwnerSocket;
+	CAsyncSocketEx *m_pOwnerSocket{};
 
 	//Calls OnLayerCallback on owner socket
 	int DoLayerCallback(int nType, int nParam1, int nParam2, char* str = 0);
@@ -140,32 +139,31 @@ protected:
 private:
 	//Layer state can't be set directly from derived classes
 	void SetLayerState(int nLayerState);
-	int m_nLayerState;
+	int m_nLayerState{notsock};
 
-	int m_nFamily;
-	int m_lEvent;
-	LPTSTR m_lpszSocketAddress;
-	UINT m_nSocketPort;
+	int m_nFamily{AF_UNSPEC};
+	int m_lEvent{};
+	LPTSTR m_lpszSocketAddress{};
+	UINT m_nSocketPort{};
 
-	addrinfo *m_addrInfo, *m_nextAddr;
+	addrinfo *m_addrInfo{}, *m_nextAddr{};
 
 	//Called by helper window, dispatches event notification and updated layer state
 	void CallEvent(int nEvent, int nErrorCode);
 
-	int m_nPendingEvents;
-	int m_nCriticalError;
+	int m_nPendingEvents{};
+	int m_nCriticalError{};
 
 	void Init(CAsyncSocketExLayer *pPrevLayer, CAsyncSocketEx *pOwnerSocket);
 	CAsyncSocketExLayer *AddLayer(CAsyncSocketExLayer *pLayer, CAsyncSocketEx *pOwnerSocket);
 
-	CAsyncSocketExLayer *m_pNextLayer;
-	CAsyncSocketExLayer *m_pPrevLayer;
+	CAsyncSocketExLayer *m_pNextLayer{};
+	CAsyncSocketExLayer *m_pPrevLayer{};
 
-	struct t_LayerNotifyMsg
-	{
-		SOCKET hSocket;
-		CAsyncSocketExLayer *pLayer;
-		long lEvent;
+	struct t_LayerNotifyMsg {
+		SOCKET hSocket{INVALID_SOCKET};
+		CAsyncSocketExLayer *pLayer{};
+		long lEvent{};
 	};
 };
 

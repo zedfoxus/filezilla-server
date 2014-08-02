@@ -20,11 +20,6 @@
 #define AFX_SERVERTHREAD_H__4F566540_62DF_4338_85DE_EC699EB6640C__INCLUDED_
 
 #include "Thread.h"
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-// ServerThread.h : Header-Datei
-//
 
 class CControlSocket;
 class CServerThread;
@@ -35,25 +30,26 @@ class CExternalIpCheck;
 class CAutoBanManager;
 class CHashThread;
 
-typedef struct
+struct t_socketdata
 {
-	CControlSocket *pSocket;
-	CServerThread *pThread;
-} t_socketdata;
+	CControlSocket *pSocket{};
+	CServerThread *pThread{};
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // Thread CServerThread
 
-class CServerThread : public CThread
+class CServerThread final : public CThread
 {
 public:
 	virtual CStdString GetExternalIP(const CStdString& localIP);
 	virtual void ExternalIPFailed();
-	CServerThread(int nNotificationMessageId);
+	explicit CServerThread(int nNotificationMessageId);
 
-	CPermissions *m_pPermissions;
-	COptions *m_pOptions;
-	CAutoBanManager* m_pAutoBanManager;
+	CPermissions *m_pPermissions{};
+	COptions *m_pOptions{};
+	CAutoBanManager* m_pAutoBanManager{};
+
 	void IncRecvCount(int count);
 	void IncSendCount(int count);
 	void IncIpCount(const CStdString &ip);
@@ -66,8 +62,8 @@ public:
 
 	struct t_Notification
 	{
-		WPARAM wParam;
-		LPARAM lParam;
+		WPARAM wParam{};
+		LPARAM lParam{};
 	};
 
 	void SendNotification(WPARAM wParam, LPARAM lParam);
@@ -104,45 +100,40 @@ protected:
 	static std::map<CStdString, int> m_userIPs;
 	void AntiHammerDecrease();
 
-	int m_nRecvCount;
-	int m_nSendCount;
-	UINT m_nRateTimer;
-	BOOL m_bQuit;
+	int m_nRecvCount{};
+	int m_nSendCount{};
+	UINT m_nRateTimer{};
+	BOOL m_bQuit{};
 
 	CCriticalSectionWrapper m_threadsync;
 	static CCriticalSectionWrapper m_GlobalThreadsync;
-	unsigned int m_timerid;
+	unsigned int m_timerid{};
 
 	//Speed limit code
 	static std::list<CServerThread *> m_sInstanceList; //First instance is the SL master
-	BOOL m_bIsMaster;
-	int m_nLoopCount;
+	BOOL m_bIsMaster{};
+	int m_nLoopCount{};
 
 	int m_lastLimits[2];
 	typedef struct {
-		long long nBytesAllowedToTransfer;
-		long long nTransferred;
+		long long nBytesAllowedToTransfer{-1};
+		long long nTransferred{};
 	} t_Quota;
 	t_Quota m_SlQuotas[2];
 
 	CStdString m_RawWelcomeMessage;
 	std::list<CStdString> m_ParsedWelcomeMessage;
-	CExternalIpCheck *m_pExternalIpCheck;
+	CExternalIpCheck *m_pExternalIpCheck{};
 
 	std::list<t_Notification> m_pendingNotifications;
-	int m_throttled;
+	int m_throttled{};
 
-	int m_nNotificationMessageId;
+	int m_nNotificationMessageId{};
 
 	static std::map<CStdString, int> m_antiHammerInfo;
-	int m_antiHammerTimer;
+	int m_antiHammerTimer{};
 
 	static CHashThread* m_hashThread;
 };
-
-/////////////////////////////////////////////////////////////////////////////
-
-//{{AFX_INSERT_LOCATION}}
-// Microsoft Visual C++ fügt unmittelbar vor der vorhergehenden Zeile zusätzliche Deklarationen ein.
 
 #endif // AFX_SERVERTHREAD_H__4F566540_62DF_4338_85DE_EC699EB6640C__INCLUDED_

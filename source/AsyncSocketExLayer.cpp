@@ -79,25 +79,6 @@ to tim.kosse@filezilla-project.org
 //////////////////////////////////////////////////////////////////////
 // Konstruktion/Destruktion
 //////////////////////////////////////////////////////////////////////
-
-CAsyncSocketExLayer::CAsyncSocketExLayer()
-{
-	m_pOwnerSocket = NULL;
-	m_pNextLayer = NULL;
-	m_pPrevLayer = NULL;
-
-	m_nLayerState = notsock;
-	m_nCriticalError=0;
-
-	m_nPendingEvents = 0;
-
-	m_nFamily = AF_UNSPEC;
-	m_lpszSocketAddress = 0;
-
-	m_nextAddr = 0;
-	m_addrInfo = 0;
-}
-
 CAsyncSocketExLayer::~CAsyncSocketExLayer()
 {
 	delete [] m_lpszSocketAddress;
@@ -357,33 +338,27 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 		if (error)
 			return FALSE;
 
-		for (res1 = res0; res1; res1 = res1->ai_next)
-		{
+		for (res1 = res0; res1; res1 = res1->ai_next) {
 			if (m_nFamily == AF_UNSPEC)
 				hSocket = socket(res1->ai_family, res1->ai_socktype, res1->ai_protocol);
 			else
 				hSocket = m_pOwnerSocket->GetSocketHandle();
 
-			if (INVALID_SOCKET == hSocket)
-			{
+			if (INVALID_SOCKET == hSocket) {
 				res = FALSE;
 				continue;
 			}
 
-			if (m_nFamily == AF_UNSPEC)
-			{
+			if (m_nFamily == AF_UNSPEC) {
 				m_pOwnerSocket->m_SocketData.hSocket = hSocket;
 				m_pOwnerSocket->AttachHandle(hSocket);
-				if (!m_pOwnerSocket->AsyncSelect(m_lEvent))
-				{
+				if (!m_pOwnerSocket->AsyncSelect(m_lEvent)) {
 					m_pOwnerSocket->Close();
 					res = FALSE;
 					continue ;
 				}
-				if (m_pOwnerSocket->m_pFirstLayer)
-				{
-					if (WSAAsyncSelect(m_pOwnerSocket->m_SocketData.hSocket, m_pOwnerSocket->GetHelperWindowHandle(), m_pOwnerSocket->m_SocketData.nSocketIndex+WM_SOCKETEX_NOTIFY, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE) )
-					{
+				if (m_pOwnerSocket->m_pFirstLayer) {
+					if (WSAAsyncSelect(m_pOwnerSocket->m_SocketData.hSocket, m_pOwnerSocket->GetHelperWindowHandle(), m_pOwnerSocket->m_SocketData.nSocketIndex + WM_SOCKETEX_NOTIFY, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE) ) {
 						m_pOwnerSocket->Close();
 						res = FALSE;
 						continue;
@@ -393,11 +368,9 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 					PostMessage(m_pOwnerSocket->GetHelperWindowHandle(), WM_USER + 2, (WPARAM)m_pOwnerSocket->m_SocketData.nSocketIndex, 0);
 			}
 
-			if (m_nFamily == AF_UNSPEC)
-			{
+			if (m_nFamily == AF_UNSPEC) {
 				m_pOwnerSocket->m_SocketData.nFamily = m_nFamily = res1->ai_family;
-				if (!m_pOwnerSocket->Bind(m_nSocketPort, m_lpszSocketAddress))
-				{
+				if (!m_pOwnerSocket->Bind(m_nSocketPort, m_lpszSocketAddress)) {
 					m_pOwnerSocket->m_SocketData.nFamily = m_nFamily = AF_UNSPEC;
 					Close();
 					continue;
@@ -407,12 +380,11 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 			if (!( res = ( SOCKET_ERROR != connect(m_pOwnerSocket->GetSocketHandle(), res1->ai_addr, res1->ai_addrlen) ) )
 				&& WSAGetLastError() != WSAEWOULDBLOCK)
 			{
-				if (hints.ai_family == AF_UNSPEC)
-				{
+				if (hints.ai_family == AF_UNSPEC) {
 					m_nFamily = AF_UNSPEC;
 					Close();
 				}
-				continue ;
+				continue;
 			}
 
 			m_nFamily = res1->ai_family;
@@ -432,7 +404,11 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 			freeaddrinfo(res0);
 
 		if (INVALID_SOCKET == m_pOwnerSocket->GetSocketHandle())
-			res = FALSE ;
+			res = FALSE;
+	}
+	else {
+		WSASetLastError(WSAEPROTONOSUPPORT);
+		res = false;
 	}
 
 	if (res || WSAGetLastError() == WSAEWOULDBLOCK) {
@@ -878,36 +854,32 @@ BOOL CAsyncSocketExLayer::AcceptNext( CAsyncSocketEx& rConnectedSocket, SOCKADDR
 	return TRUE;
 }
 
-BOOL CAsyncSocketExLayer::ShutDown(int nHow /*=sends*/)
+BOOL CAsyncSocketExLayer::ShutDown()
 {
-	return ShutDownNext(nHow);
+	return ShutDownNext();
 }
 
-BOOL CAsyncSocketExLayer::ShutDownNext(int nHow /*=sends*/)
+BOOL CAsyncSocketExLayer::ShutDownNext()
 {
-	if (m_nCriticalError)
-	{
+	if (m_nCriticalError) {
 		WSASetLastError(m_nCriticalError);
 		return FALSE;
 	}
-	else if (GetLayerState()==notsock)
-	{
+	else if (GetLayerState() == notsock) {
 		WSASetLastError(WSAENOTSOCK);
 		return FALSE;
 	}
-	else if (GetLayerState()==unconnected || GetLayerState()==connecting || GetLayerState()==listening)
-	{
+	else if (GetLayerState() == unconnected || GetLayerState() == connecting || GetLayerState() == listening) {
 		WSASetLastError(WSAENOTCONN);
 		return FALSE;
 	}
 
-	if (!m_pNextLayer)
-	{
+	if (!m_pNextLayer) {
 		ASSERT(m_pOwnerSocket);
-		return shutdown(m_pOwnerSocket->GetSocketHandle(), nHow) == 0;
+		return shutdown(m_pOwnerSocket->GetSocketHandle(), SD_SEND) == 0;
 	}
 	else
-		return m_pNextLayer->ShutDownNext(nHow);
+		return m_pNextLayer->ShutDownNext();
 }
 
 int CAsyncSocketExLayer::GetFamily() const

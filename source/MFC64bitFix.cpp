@@ -72,12 +72,12 @@ BOOL PASCAL GetStatus64(LPCTSTR lpszFileName, CFileStatus64& rStatus)
 
 _int64 GetPosition64(HANDLE hFile)
 {
-	if (!hFile || hFile==INVALID_HANDLE_VALUE)
+	if (!hFile || hFile == INVALID_HANDLE_VALUE)
 		return -1;
-	LONG low=0;
-	LONG high=0;
-	low=SetFilePointer(hFile, low, &high, FILE_CURRENT);
-	if (low==0xFFFFFFFF && GetLastError!=NO_ERROR)
+	LONG low = 0;
+	LONG high = 0;
+	low = SetFilePointer(hFile, low, &high, FILE_CURRENT);
+	if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR)
 		return -1;
 	return ((_int64)high<<32)+low;
 }

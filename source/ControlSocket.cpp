@@ -123,10 +123,8 @@ CControlSocket::~CControlSocket()
 #define BUFFERSIZE 500
 void CControlSocket::OnReceive(int nErrorCode)
 {
-	if (m_antiHammeringWaitTime)
-	{
-		if (nErrorCode)
-		{
+	if (m_antiHammeringWaitTime) {
+		if (nErrorCode) {
 			//Control connection has been closed
 			Close();
 			SendStatus(_T("disconnected."), 0);
@@ -267,7 +265,8 @@ BOOL CControlSocket::GetCommand(CStdString &command, CStdString &args)
 void CControlSocket::SendStatus(LPCTSTR status, int type)
 {
 	t_statusmsg *msg = new t_statusmsg;
-	_tcscpy(msg->ip, m_RemoteIP);
+	_tcsncpy(msg->ip,  m_RemoteIP, sizeof(msg->ip) / sizeof(TCHAR));
+	msg->ip[sizeof(msg->ip) / sizeof(TCHAR) - 1] = 0;
 	GetLocalTime(&msg->time);
 	if (!m_status.loggedon) {
 		msg->user = new TCHAR[16];
@@ -1276,10 +1275,9 @@ void CControlSocket::ParseCommand()
 
 			CStdString physicalFile, logicalFile;
 			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_DELETE, physicalFile, logicalFile);
-			if (!error)
-			{
+			if (!error) {
 				RenName = physicalFile;
-				bRenFile = TRUE;
+				bRenFile = true;
 				Send(_T("350 File exists, ready for destination name."));
 				break;
 			}
@@ -1287,13 +1285,11 @@ void CControlSocket::ParseCommand()
 				Send(_T("550 Permission denied"));
 			else if (error & PERMISSION_INVALIDNAME)
 				Send(_T("550 Filename invalid."));
-			else
-			{
+			else {
 				int error2 = m_pOwner->m_pPermissions->CheckDirectoryPermissions(m_status.user, args, m_CurrentServerDir, DOP_DELETE, physicalFile, logicalFile);
-				if (!error2)
-				{
+				if (!error2) {
 					RenName = physicalFile;
-					bRenFile = FALSE;
+					bRenFile = false;
 					Send(_T("350 Directory exists, ready for destination name."));
 				}
 				else if (error2 & PERMISSION_DENIED)
@@ -1320,8 +1316,7 @@ void CControlSocket::ParseCommand()
 				break;
 			}
 
-			if (bRenFile)
-			{
+			if (bRenFile) {
 				CStdString physicalFile, logicalFile;
 				int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_CREATENEW, physicalFile, logicalFile);
 				if (error)
@@ -1342,8 +1337,7 @@ void CControlSocket::ParseCommand()
 						Send(_T("250 file renamed successfully"));
 				}
 			}
-			else
-			{
+			else {
 				CStdString physicalFile, logicalFile;
 				int error = m_pOwner->m_pPermissions->CheckDirectoryPermissions(m_status.user, args, m_CurrentServerDir, DOP_CREATE, physicalFile, logicalFile);
 				if (error)
@@ -1403,18 +1397,22 @@ void CControlSocket::ParseCommand()
 			else
 			{
 				CFileStatus64 status;
-				GetStatus64(physicalFile, status);
-				CStdString str;
-				SYSTEMTIME time;
-				FileTimeToSystemTime(&status.m_mtime, &time);
-				str.Format(_T("213 %04d%02d%02d%02d%02d%02d"),
-							time.wYear,
-							time.wMonth,
-							time.wDay,
-							time.wHour,
-							time.wMinute,
-							time.wSecond);
-				Send(str);
+				if (GetStatus64(physicalFile, status)) {
+					CStdString str;
+					SYSTEMTIME time;
+					FileTimeToSystemTime(&status.m_mtime, &time);
+					str.Format(_T("213 %04d%02d%02d%02d%02d%02d"),
+								time.wYear,
+								time.wMonth,
+								time.wDay,
+								time.wHour,
+								time.wMinute,
+								time.wSecond);
+					Send(str);
+				}
+				else {
+					Send(_T("550 Could not get file attributes"));
+				}
 			}
 		}
 		break;

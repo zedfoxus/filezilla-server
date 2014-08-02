@@ -36,7 +36,7 @@ static char THIS_FILE[]=__FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CPermissionsHelperWindow
 
-class CPermissionsHelperWindow
+class CPermissionsHelperWindow final
 {
 public:
 	CPermissionsHelperWindow(CPermissions *pPermissions)
@@ -66,7 +66,7 @@ public:
 		SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG)this);
 	};
 
-	virtual ~CPermissionsHelperWindow()
+	~CPermissionsHelperWindow()
 	{
 		//Destroy window
 		if (m_hWnd)
@@ -1784,7 +1784,6 @@ void CPermissions::ReadSettings()
 
 	for (TiXmlElement* pGroup = pGroups->FirstChildElement("Group"); pGroup; pGroup = pGroup->NextSiblingElement("Group")) {
 		t_group group;
-		group.nIpLimit = group.nIpLimit = group.nUserLimit = 0;
 		group.nBypassUserLimit = 2;
 		group.group = ConvFromNetwork(pGroup->Attribute("Name"));
 		if (group.group == _T(""))
@@ -1834,7 +1833,6 @@ void CPermissions::ReadSettings()
 
 	for (TiXmlElement* pUser = pUsers->FirstChildElement("User"); pUser; pUser = pUser->NextSiblingElement("User")) {
 		CUser user;
-		user.nIpLimit = user.nIpLimit = user.nUserLimit = 0;
 		user.nBypassUserLimit = 2;
 		user.user = ConvFromNetwork(pUser->Attribute("Name"));
 		if (user.user == _T(""))

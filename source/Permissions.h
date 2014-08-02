@@ -98,11 +98,11 @@ enum _facts {
 	fact_perm
 };
 
-class CPermissions
+class CPermissions final
 {
 public:
 	CPermissions(std::function<void()> const& updateCallback);
-	virtual ~CPermissions();
+	~CPermissions();
 
 	typedef void (*addFunc_t)(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
 protected:

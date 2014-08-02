@@ -20,12 +20,12 @@
 #define __AUTOBANMANAGER_H__
 
 class COptions;
-class CAutoBanManager
+class CAutoBanManager final
 {
 public:
 
 	CAutoBanManager(COptions* pOptions);
-	virtual ~CAutoBanManager();
+	~CAutoBanManager();
 
 	void PurgeOutdated();
 

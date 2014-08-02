@@ -141,7 +141,7 @@ protected:
 	} m_transferstatus;
 
 	CStdString RenName;
-	BOOL bRenFile;
+	bool bRenFile{};
 
 	enum TransferMode
 	{

@@ -25,25 +25,6 @@
 #include "xml_utils.h"
 #include "tinyxml/tinyxml.h"
 
-//////////////////////////////////////////////////////////////////////
-// Construction/Destruction
-//////////////////////////////////////////////////////////////////////
-
-CSpeedLimit::CSpeedLimit()
-{
-	m_Day = 0;
-
-	m_Speed = 10;
-	m_ToCheck = false;
-	m_DateCheck = false;
-	m_FromCheck = false;
-}
-
-CSpeedLimit::~CSpeedLimit()
-{
-
-}
-
 bool CSpeedLimit::IsItActive(const SYSTEMTIME &time) const
 {
 	if (m_DateCheck)

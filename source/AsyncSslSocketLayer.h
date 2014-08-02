@@ -141,7 +141,7 @@ class CAsyncSslSocketLayer final : public CAsyncSocketExLayer
 {
 public:
 	BOOL SetCertStorage(CString file);
-	CAsyncSslSocketLayer();
+	CAsyncSslSocketLayer() {};
 	virtual ~CAsyncSslSocketLayer();
 
 	void SetNotifyReply(int nID, int nCode, int result);
@@ -172,7 +172,7 @@ private:
 	virtual void OnClose(int nErrorCode);
 	virtual int Receive(void* lpBuf, int nBufLen, int nFlags = 0);
 	virtual int Send(const void* lpBuf, int nBufLen, int nFlags = 0);
-	virtual BOOL ShutDown( int nHow = sends );
+	virtual BOOL ShutDown();
 	BOOL DoShutDown();
 
 	void ResetSslSession();
@@ -192,27 +192,27 @@ private:
 	static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
 	static int pem_passwd_cb(char *buf, int size, int rwflag, void *userdata);
 
-	bool m_bUseSSL;
-	BOOL m_bFailureSent;
+	bool m_bUseSSL{};
+	BOOL m_bFailureSent{};
 
 	//Critical section for thread synchronization
 	static CCriticalSectionWrapper m_sCriticalSection;
 
 	// Status variables
 	static int m_nSslRefCount;
-	BOOL m_bSslInitialized;
-	BOOL m_nNetworkError;
-	int m_nSslAsyncNotifyId;
-	BOOL m_bBlocking;
-	BOOL m_bSslEstablished;
+	bool m_bSslInitialized{};
+	DWORD m_nNetworkError{};
+	int m_nSslAsyncNotifyId{};
+	BOOL m_bBlocking{};
+	bool m_bSslEstablished{};
 	CString m_CertStorage;
-	int m_nVerificationResult;
-	int m_nVerificationDepth;
+	int m_nVerificationResult{};
+	int m_nVerificationDepth{};
 
 	static struct t_SslLayerList
 	{
-		CAsyncSslSocketLayer *pLayer;
-		t_SslLayerList *pNext;
+		CAsyncSslSocketLayer *pLayer{};
+		t_SslLayerList *pNext{};
 	} *m_pSslLayerList;
 
 	// Handles to the SLL libraries
@@ -220,31 +220,31 @@ private:
 	static HMODULE m_hSslDll2;
 
 	// SSL data
-	SSL_CTX* m_ssl_ctx;	// SSL context
+	SSL_CTX* m_ssl_ctx{};	// SSL context
 	static std::map<SSL_CTX *, int> m_contextRefCount;
-	SSL* m_ssl;			// current session handle
+	SSL* m_ssl{};			// current session handle
 
-	//Data channels for encrypted/unencrypted data
-	BIO* m_nbio;	//Network side, sends/received encrypted data
-	BIO* m_ibio;	//Internal side, won't be used directly
-	BIO* m_sslbio;	//The data to encrypt / the decrypted data has to go though this bio
+	// Data channels for encrypted/unencrypted data
+	BIO* m_nbio{};   //Network side, sends/received encrypted data
+	BIO* m_ibio{};   //Internal side, won't be used directly
+	BIO* m_sslbio{}; //The data to encrypt / the decrypted data has to go though this bio
 
 	//Send buffer
-	char* m_pNetworkSendBuffer;
-	int m_nNetworkSendBufferLen;
-	int m_nNetworkSendBufferMaxLen;
+	char* m_pNetworkSendBuffer{};
+	int m_nNetworkSendBufferLen{};
+	int m_nNetworkSendBufferMaxLen{};
 
-	char* m_pRetrySendBuffer;
-	int m_nRetrySendBufferLen;
+	char* m_pRetrySendBuffer{};
+	int m_nRetrySendBufferLen{};
 
-	bool m_mayTriggerRead;
-	bool m_mayTriggerWrite;
-	bool m_mayTriggerReadUp;
-	bool m_mayTriggerWriteUp;
+	bool m_mayTriggerRead{true};
+	bool m_mayTriggerWrite{true};
+	bool m_mayTriggerReadUp{true};
+	bool m_mayTriggerWriteUp{true};
 
-	bool m_onCloseCalled;
+	bool m_onCloseCalled{};
 
-	char* m_pKeyPassword;
+	char* m_pKeyPassword{};
 
 	ShutDownState shutDownState = ShutDownState::none;
 };

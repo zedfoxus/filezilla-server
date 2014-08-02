@@ -47,10 +47,9 @@ CHashThread* CServerThread::m_hashThread = 0;
 // CServerThread
 
 CServerThread::CServerThread(int nNotificationMessageId)
+	: m_nNotificationMessageId(nNotificationMessageId)
 {
-	m_nNotificationMessageId = nNotificationMessageId;
-	m_pOptions = 0;
-	m_pAutoBanManager = 0;
+	m_lastLimits[0] = m_lastLimits[1] = 0;
 }
 
 CServerThread::~CServerThread()
@@ -362,24 +361,19 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 				SendNotification(FSM_THREADCANQUIT, (LPARAM)this);
 				return 0;
 			}
-			if (lParam==2)
-			{
+			if (lParam == 2) {
 				LeaveCritSection(m_threadsync);
 				return 0;
 			}
-			for (std::map<int, CControlSocket *>::iterator iter=m_LocalUserIDs.begin(); iter!=m_LocalUserIDs.end(); iter++)
-			{
-				switch (lParam)
-				{
-				case 2:
-					iter->second->WaitGoOffline(false);
-					break;
+
+			for (auto & it : m_LocalUserIDs) {
+				switch (lParam) {
 				case 0:
 				default:
-					iter->second->ForceClose(0);
+					it.second->ForceClose(0);
 					break;
 				case 1:
-					iter->second->WaitGoOffline(true);
+					it.second->WaitGoOffline(true);
 					break;
 				}
 			}
@@ -395,9 +389,8 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 			int hash_res = GetHashThread().GetResult(lParam, alg, hash, file);
 			EnterCritSection(m_threadsync);
 
-			for (std::map<int, CControlSocket *>::iterator iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); iter++)
-			{
-				iter->second->ProcessHashResult(lParam, hash_res, alg, hash, file);
+			for (auto & it : m_LocalUserIDs) {
+				it.second->ProcessHashResult(lParam, hash_res, alg, hash, file);
 			}
 			LeaveCritSection(m_threadsync);
 		}
@@ -873,18 +866,15 @@ void CServerThread::SendNotification(WPARAM wParam, LPARAM lParam)
 	m_pendingNotifications.push_back(notification);
 
 	// Check if main thread can't handle number of notifications fast enough, throttle thread if neccessary
-	if (m_pendingNotifications.size() > 200 && m_throttled < 3)
-	{
+	if (m_pendingNotifications.size() > 200 && m_throttled < 3) {
 		SetPriority(THREAD_PRIORITY_IDLE);
 		m_throttled = 3;
 	}
-	else if (m_pendingNotifications.size() > 150 && m_throttled < 2)
-	{
+	else if (m_pendingNotifications.size() > 150 && m_throttled < 2) {
 		SetPriority(THREAD_PRIORITY_LOWEST);
 		m_throttled = 2;
 	}
-	else if (m_pendingNotifications.size() > 100 && !m_throttled)
-	{
+	else if (m_pendingNotifications.size() > 100 && !m_throttled) {
 		SetPriority(THREAD_PRIORITY_BELOW_NORMAL);
 		m_throttled = 1;
 	}

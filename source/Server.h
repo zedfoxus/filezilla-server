@@ -5,10 +5,6 @@
 #if !defined(AFX_SERVER_H__4896D8C6_EDB5_438E_98E6_08957DBCD1BC__INCLUDED_)
 #define AFX_SERVER_H__4896D8C6_EDB5_438E_98E6_08957DBCD1BC__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-
 class CListenSocket;
 class CServerThread;
 class COptions;
@@ -18,16 +14,16 @@ class CAdminSocket;
 class CFileLogger;
 class CAutoBanManager;
 
-class CServer
+class CServer final
 {
 public:
 	void ShowStatus(LPCTSTR msg, int nType);
 	void ShowStatus(DWORD eventDateHigh, DWORD eventDateLow, LPCTSTR msg, int nType);
 	BOOL ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char *pData, int nDataLength);
-	virtual void OnClose();
+	void OnClose();
 	bool Create();
 	CServer();
-	virtual ~CServer();
+	~CServer();
 	HWND GetHwnd();
 	COptions *m_pOptions;
 	CAutoBanManager* m_pAutoBanManager;
@@ -46,7 +42,7 @@ protected:
 	BOOL m_bQuit;
 	int m_nServerState;
 	CAdminInterface *m_pAdminInterface;
-	CFileLogger *m_pFileLogger;
+	CFileLogger *m_pFileLogger{};
 
 	std::list<CServerThread*> m_ThreadArray;
 	std::list<CServerThread*> m_ClosedThreads;

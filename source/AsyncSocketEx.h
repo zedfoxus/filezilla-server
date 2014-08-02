@@ -192,8 +192,7 @@ public:
 	virtual int Send(const void* lpBuf, int nBufLen, int nFlags = 0);
 
 	//Disables Send and/or Receive calls on the socket.
-	BOOL ShutDown( int nHow = sends );
-	enum { receives = 0, sends = 1, both = 2 };
+	BOOL ShutDown();
 
 	//Overridable Notification Functions
 	//----------------------------------

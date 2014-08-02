@@ -1441,17 +1441,16 @@ BOOL CAsyncSocketEx::GetSockName( SOCKADDR* lpSockAddr, int* lpSockAddrLen )
 		return FALSE;
 }
 
-BOOL CAsyncSocketEx::ShutDown(int nHow /*=sends*/)
+BOOL CAsyncSocketEx::ShutDown()
 {
 #ifndef NOLAYERS
-	if (m_pFirstLayer)
-	{
+	if (m_pFirstLayer) {
 		return m_pFirstLayer->ShutDown();
 	}
 	else
 #endif //NOLAYERS
 	{
-		if (!shutdown(m_SocketData.hSocket, nHow))
+		if (!shutdown(m_SocketData.hSocket, SD_SEND))
 			return TRUE;
 		else
 			return FALSE;

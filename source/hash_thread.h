@@ -2,7 +2,7 @@
 #define __HASHTHREAD_H__
 
 class CServerThread;
-class CHashThread
+class CHashThread final
 {
 public:
 	enum _result
@@ -23,7 +23,7 @@ public:
 	};
 
 	CHashThread();
-	virtual ~CHashThread();
+	~CHashThread();
 
 	enum _result Hash(LPCTSTR file, enum _algorithm algorithm, int& id, CServerThread* server_thread);
 

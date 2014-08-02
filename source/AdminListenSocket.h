@@ -23,23 +23,18 @@
 #if !defined(AFX_ADMINLISTENSOCKET_H__F48CDEB4_67A4_47B6_B46F_5843DFC4A251__INCLUDED_)
 #define AFX_ADMINLISTENSOCKET_H__F48CDEB4_67A4_47B6_B46F_5843DFC4A251__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-
 #include "AsyncSocketEx.h"
 
 class CAdminInterface;
-class CAdminListenSocket : public CAsyncSocketEx
+class CAdminListenSocket final : public CAsyncSocketEx
 {
 public:
-	CAdminListenSocket(CAdminInterface *pAdminInterface);
-	virtual ~CAdminListenSocket();
+	CAdminListenSocket(CAdminInterface & adminInterface);
 
 protected:
 	virtual void OnAccept(int nErrorCode);
 
-	CAdminInterface *m_pAdminInterface;
+	CAdminInterface & m_adminInterface;
 };
 
 #endif // !defined(AFX_ADMINLISTENSOCKET_H__F48CDEB4_67A4_47B6_B46F_5843DFC4A251__INCLUDED_)

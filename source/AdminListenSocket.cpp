@@ -1,7 +1,3 @@
-// AdminListenSocket.cpp: Implementierung der Klasse CAdminListenSocket.
-//
-//////////////////////////////////////////////////////////////////////
-
 #include "stdafx.h"
 #include "AdminListenSocket.h"
 #include "AdminSocket.h"
@@ -9,30 +5,20 @@
 #include "Options.h"
 #include "iputils.h"
 
-//////////////////////////////////////////////////////////////////////
-// Konstruktion/Destruktion
-//////////////////////////////////////////////////////////////////////
-
-CAdminListenSocket::CAdminListenSocket(CAdminInterface *pAdminInterface)
-{
-	ASSERT(pAdminInterface);
-	m_pAdminInterface = pAdminInterface;
-}
-
-CAdminListenSocket::~CAdminListenSocket()
+CAdminListenSocket::CAdminListenSocket(CAdminInterface & adminInterface)
+	: m_adminInterface(adminInterface)
 {
 }
 
 void CAdminListenSocket::OnAccept(int nErrorCode)
 {
-	CAdminSocket *pSocket = new CAdminSocket(m_pAdminInterface);
+	CAdminSocket *pSocket = new CAdminSocket(&m_adminInterface);
 
 	SOCKADDR_IN sockAddr;
 	memset(&sockAddr, 0, sizeof(sockAddr));
 	int nSockAddrLen = sizeof(sockAddr);
 
-	if (Accept(*pSocket))
-	{
+	if (Accept(*pSocket)) {
 		//Validate IP address
 		CStdString ip;
 		UINT port = 0;
@@ -70,7 +56,7 @@ void CAdminListenSocket::OnAccept(int nErrorCode)
 		}
 
 		pSocket->AsyncSelect();
-		if (!m_pAdminInterface->Add(pSocket))
+		if (!m_adminInterface.Add(pSocket))
 			delete pSocket;
 	}
 }

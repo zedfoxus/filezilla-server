@@ -22,48 +22,27 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-// ListenSocket.h : Header-Datei
-//
-
 
 class CServerThread;
 class CServer;
 
-/////////////////////////////////////////////////////////////////////////////
-// Befehlsziel CListenSocket
-
-class CListenSocket : public CAsyncSocketEx
+class CListenSocket final: public CAsyncSocketEx
 {
-// Attribute
 public:
+	CListenSocket(CServer & server, std::list<CServerThread*> & threadList, bool ssl);
 
-// Operationen
 public:
-	CListenSocket(CServer *pServer, bool ssl);
-	virtual ~CListenSocket();
+	BOOL m_bLocked{};
 
-// Überschreibungen
-public:
-	BOOL m_bLocked;
-	std::list<CServerThread*> *m_pThreadList;
-	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen
-	//{{AFX_VIRTUAL(CListenSocket)
-	public:
-	virtual void OnAccept(int nErrorCode);
-	//}}AFX_VIRTUAL
-
-	// Generierte Nachrichtenzuordnungsfunktionen
-	//{{AFX_MSG(CListenSocket)
-		// HINWEIS - Der Klassen-Assistent fügt hier Member-Funktionen ein und entfernt diese.
-	//}}AFX_MSG
-
-// Implementierung
 protected:
+	virtual void OnAccept(int nErrorCode);
+
 	void SendStatus(CStdString status, int type);
 	bool AccessAllowed(CAsyncSocketEx &socket) const;
 
-	CServer *m_pServer;
-	bool m_ssl;
+	CServer & m_server;
+	std::list<CServerThread*> & m_threadList;
+	bool const m_ssl;
 };
 
 /////////////////////////////////////////////////////////////////////////////

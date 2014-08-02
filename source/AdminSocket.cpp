@@ -39,7 +39,6 @@ CAdminSocket::CAdminSocket(CAdminInterface *pAdminInterface)
 {
 	ASSERT(pAdminInterface);
 	m_pAdminInterface = pAdminInterface;
-	m_bStillNeedAuth = TRUE;
 
 	m_pRecvBuffer = new unsigned char[BUFSIZE];
 	m_nRecvBufferLen = BUFSIZE;

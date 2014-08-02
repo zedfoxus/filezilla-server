@@ -64,10 +64,8 @@ BOOL CFileLogger::Log(LPCTSTR msg)
 
 BOOL CFileLogger::CheckLogFile()
 {
-	if (!m_pOptions->GetOptionVal(OPTION_ENABLELOGGING))
-	{
-		if (m_hLogFile != INVALID_HANDLE_VALUE)
-		{
+	if (!m_pOptions->GetOptionVal(OPTION_ENABLELOGGING)) {
+		if (m_hLogFile != INVALID_HANDLE_VALUE) {
 			CloseHandle(m_hLogFile);
 			m_hLogFile = INVALID_HANDLE_VALUE;
 		}
@@ -85,19 +83,16 @@ BOOL CFileLogger::CheckLogFile()
 	//Get logfile name
 	_int64 nLogType = m_pOptions->GetOptionVal(OPTION_LOGTYPE);
 	TCHAR filename[MAX_PATH + 1];
-	if (!nLogType)
-	{
+	if (!nLogType) {
 		_tcscpy(filename, _T("FileZilla Server.log"));
 	}
-	else
-	{
+	else {
 		SYSTEMTIME time;
 		GetLocalTime(&time);
 		_stprintf(filename, _T("fzs-%d-%02d-%02d.log"), time.wYear, time.wMonth, time.wDay);
 	}
 
-	if (m_hLogFile == INVALID_HANDLE_VALUE || (m_pFileName && _tcscmp(m_pFileName, filename)))
-	{
+	if (m_hLogFile == INVALID_HANDLE_VALUE || !m_pFileName || _tcscmp(m_pFileName, filename)) {
 		TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 		_tcscpy(buffer, path);
 		CreateDirectory(buffer, NULL);
@@ -118,8 +113,7 @@ BOOL CFileLogger::CheckLogFile()
 	}
 	_int64 nLimit = m_pOptions->GetOptionVal(OPTION_LOGLIMITSIZE);
 
-	if (nLogType)
-	{
+	if (nLogType) {
 		//Different logfiles for each day
 		//Find all log files, delete old ones
 		//Also delete newer ones if total size exceeds limit

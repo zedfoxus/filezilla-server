@@ -39,10 +39,6 @@
 #define MB_SERVICE_NOTIFICATION          0x00040000L
 #endif
 
-//////////////////////////////////////////////////////////////////////
-// Konstruktion/Destruktion
-//////////////////////////////////////////////////////////////////////
-
 CServer::CServer()
 {
 	m_hWnd=0;
@@ -822,7 +818,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 						}
 						m_AdminListenSocketList.clear();
 					}
-					CAdminListenSocket *pSocket = new CAdminListenSocket(m_pAdminInterface);
+					CAdminListenSocket *pSocket = new CAdminListenSocket(*m_pAdminInterface);
 					if (!pSocket->Create((int)m_pOptions->GetOptionVal(OPTION_ADMINPORT), SOCK_STREAM, FD_ACCEPT, (m_pOptions->GetOption(OPTION_ADMINIPBINDINGS) != _T("*")) ? _T("127.0.0.1") : NULL))
 					{
 						delete pSocket;
@@ -864,7 +860,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 									break;
 								CStdString ip = ipBindings.Left(pos);
 								ipBindings = ipBindings.Mid(pos+1);
-								CAdminListenSocket *pAdminListenSocket = new CAdminListenSocket(m_pAdminInterface);
+								CAdminListenSocket *pAdminListenSocket = new CAdminListenSocket(*m_pAdminInterface);
 
 								int family;
 								if (ip.Find(':') != -1)
@@ -981,7 +977,7 @@ BOOL CServer::ToggleActive(int nServerState)
 		m_ThreadArray.clear();
 		m_nServerState &= ~STATE_ONLINE;
 		if (!m_ClosedThreads.empty())
-			m_nServerState = m_nServerState |= STATE_GOOFFLINE_LOGOUT;
+			m_nServerState |= STATE_GOOFFLINE_LOGOUT;
 	}
 	else if (nServerState & STATE_GOOFFLINE_WAITTRANSFER)
 	{
@@ -1004,7 +1000,7 @@ BOOL CServer::ToggleActive(int nServerState)
 		m_ThreadArray.clear();
 		m_nServerState &= ~STATE_ONLINE;
 		if (!m_ClosedThreads.empty())
-			m_nServerState = m_nServerState |= STATE_GOOFFLINE_WAITTRANSFER;
+			m_nServerState |= STATE_GOOFFLINE_WAITTRANSFER;
 	}
 	else if (nServerState & STATE_ONLINE)
 	{
@@ -1144,7 +1140,7 @@ void CServer::OnTimer(UINT nIDEvent)
 
 int CServer::DoCreateAdminListenSocket(UINT port, LPCTSTR addr, int family)
 {
-	CAdminListenSocket *pAdminListenSocket = new CAdminListenSocket(m_pAdminInterface);
+	CAdminListenSocket *pAdminListenSocket = new CAdminListenSocket(*m_pAdminInterface);
 	if (!pAdminListenSocket->Create(port, SOCK_STREAM, FD_ACCEPT, addr, family))
 	{
 		delete pAdminListenSocket;
@@ -1174,8 +1170,11 @@ int CServer::DoCreateAdminListenSocket(UINT port, LPCTSTR addr, int family)
 
 BOOL CServer::CreateAdminListenSocket()
 {
-	CStdString ipBindings = (m_pOptions ? m_pOptions->GetOption(OPTION_ADMINIPBINDINGS) : _T(""));
-	int nAdminPort = (m_pOptions ? (int)m_pOptions->GetOptionVal(OPTION_ADMINPORT) : 14147);
+	if (!m_pOptions)
+		return FALSE;
+
+	CStdString ipBindings = m_pOptions->GetOption(OPTION_ADMINIPBINDINGS);
+	int nAdminPort = (int)m_pOptions->GetOptionVal(OPTION_ADMINPORT);
 
 	CStdString error;
 
@@ -1231,7 +1230,7 @@ BOOL CServer::CreateAdminListenSocket()
 				break;
 			CStdString ip = ipBindings.Left(pos);
 			ipBindings = ipBindings.Mid(pos+1);
-			CAdminListenSocket *pAdminListenSocket = new CAdminListenSocket(m_pAdminInterface);
+			CAdminListenSocket *pAdminListenSocket = new CAdminListenSocket(*m_pAdminInterface);
 
 			int family;
 			if (ip.Find(':') != -1)
@@ -1292,11 +1291,9 @@ BOOL CServer::CreateListenSocket()
 		ShowStatus(str, 0);
 		if (ipBindings == _T("*"))
 		{
-			CListenSocket *pListenSocket = new CListenSocket(this, ssl);
-			pListenSocket->m_pThreadList = &m_ThreadArray;
+			CListenSocket *pListenSocket = new CListenSocket(*this, m_ThreadArray, ssl);
 
-			if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET) || !pListenSocket->Listen())
-			{
+			if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET) || !pListenSocket->Listen()) {
 				delete pListenSocket;
 				pListenSocket = NULL;
 				str.Format(_T("Failed to create listen socket on port %d for IPv4"), nPort);
@@ -1305,13 +1302,10 @@ BOOL CServer::CreateListenSocket()
 			else
 				m_ListenSocketList.push_back(pListenSocket);
 
-			if (!m_pOptions->GetOptionVal(OPTION_DISABLE_IPV6))
-			{
-				CListenSocket *pListenSocket = new CListenSocket(this, ssl);
-				pListenSocket->m_pThreadList = &m_ThreadArray;
+			if (!m_pOptions->GetOptionVal(OPTION_DISABLE_IPV6)) {
+				CListenSocket *pListenSocket = new CListenSocket(*this, m_ThreadArray, ssl);
 
-				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET6) || !pListenSocket->Listen())
-				{
+				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET6) || !pListenSocket->Listen()) {
 					delete pListenSocket;
 					pListenSocket = NULL;
 					str.Format(_T("Failed to create listen socket on port %d for IPv6"), nPort);
@@ -1321,21 +1315,18 @@ BOOL CServer::CreateListenSocket()
 					m_ListenSocketList.push_back(pListenSocket);
 			}
 		}
-		else
-		{
+		else {
 			BOOL bError = FALSE;
 			CStdString str;
 			str.Format(_T("Failed to bind the listen socket on port %d to the following IPs:"), nPort);
 			ipBindings += _T(" ");
-			while (ipBindings != _T(""))
-			{
+			while (ipBindings != _T("")) {
 				int pos = ipBindings.Find(' ');
 				if (pos == -1)
 					break;
 				CStdString ip = ipBindings.Left(pos);
 				ipBindings = ipBindings.Mid(pos + 1);
-				CListenSocket *pListenSocket = new CListenSocket(this, ssl);
-				pListenSocket->m_pThreadList = &m_ThreadArray;
+				CListenSocket *pListenSocket = new CListenSocket(*this, m_ThreadArray, ssl);
 
 				int family;
 				if (ip.Find(':') != -1)
@@ -1343,8 +1334,7 @@ BOOL CServer::CreateListenSocket()
 				else
 					family = AF_INET;
 
-				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, ip, family) || !pListenSocket->Listen())
-				{
+				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, ip, family) || !pListenSocket->Listen()) {
 					delete pListenSocket;
 					bError = TRUE;
 					str += _T(" ") + ip;

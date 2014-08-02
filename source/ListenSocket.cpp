@@ -32,30 +32,17 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-/////////////////////////////////////////////////////////////////////////////
-// CListenSocket
-
-CListenSocket::CListenSocket(CServer *pServer, bool ssl)
-{
-	ASSERT(pServer);
-	m_pServer = pServer;
-
-	m_bLocked = FALSE;
-	m_ssl = ssl;
-}
-
-CListenSocket::~CListenSocket()
+CListenSocket::CListenSocket(CServer & server, std::list<CServerThread*> & threadList, bool ssl)
+	: m_server(server)
+	, m_threadList(threadList)
+	, m_ssl(ssl)
 {
 }
-
-/////////////////////////////////////////////////////////////////////////////
-// Member-Funktion CListenSocket
 
 void CListenSocket::OnAccept(int nErrorCode)
 {
 	CAsyncSocketEx socket;
-	if (!Accept(socket))
-	{
+	if (!Accept(socket)) {
 		int nError = WSAGetLastError();
 		CStdString str;
 		str.Format(_T("Failure in CListenSocket::OnAccept(%d) - call to CAsyncSocketEx::Accept failed, errorcode %d"), nErrorCode, nError);
@@ -64,38 +51,33 @@ void CListenSocket::OnAccept(int nErrorCode)
 		return;
 	}
 
-	if (!AccessAllowed(socket))
-	{
+	if (!AccessAllowed(socket)) {
 		CStdStringA str = "550 No connections allowed from your IP\r\n";
-		socket.Send(str, str.GetLength());
+		(void)socket.Send(str, str.GetLength());
 		return;
 	}
 
-	if (m_bLocked)
-	{
+	if (m_bLocked) {
 		CStdStringA str = "421 Server is locked, please try again later.\r\n";
-		socket.Send(str, str.GetLength());
+		(void)socket.Send(str, str.GetLength());
 		return;
 	}
 
 	int minnum = 255*255*255;
-	CServerThread *pBestThread=0;;
-	for (std::list<CServerThread *>::iterator iter=m_pThreadList->begin(); iter!=m_pThreadList->end(); iter++)
-	{
-		int num=(*iter)->GetNumConnections();
-		if (num<minnum && (*iter)->IsReady())
-		{
-			minnum=num;
-			pBestThread=*iter;
+	CServerThread *pBestThread = 0;
+	for( auto const& pThread : m_threadList ) {
+		int num = pThread->GetNumConnections();
+		if (num < minnum && pThread->IsReady()) {
+			minnum = num;
+			pBestThread = pThread;
 			if (!num)
 				break;
 		}
 	}
-	if (!pBestThread)
-	{
+
+	if (!pBestThread) {
 		char str[] = "421 Server offline.";
-		socket.Send(str, strlen(str)+1);
-		socket.Close();
+		(void)socket.Send(str, strlen(str) + 1);
 		return;
 	}
 
@@ -112,7 +94,7 @@ void CListenSocket::OnAccept(int nErrorCode)
 
 void CListenSocket::SendStatus(CStdString status, int type)
 {
-	m_pServer->ShowStatus(status, type);
+	m_server.ShowStatus(status, type);
 }
 
 bool CListenSocket::AccessAllowed(CAsyncSocketEx &socket) const
@@ -123,16 +105,15 @@ bool CListenSocket::AccessAllowed(CAsyncSocketEx &socket) const
 	if (!bResult)
 		return true;
 
-	if (m_pServer->m_pAutoBanManager)
-	{
-		if (m_pServer->m_pAutoBanManager->IsBanned(peerIP))
+	if (m_server.m_pAutoBanManager) {
+		if (m_server.m_pAutoBanManager->IsBanned(peerIP))
 			return false;
 	}
 
 	bool disallowed = false;
 
 	// Get the list of IP filter rules.
-	CStdString ips = m_pServer->m_pOptions->GetOption(OPTION_IPFILTER_DISALLOWED);
+	CStdString ips = m_server.m_pOptions->GetOption(OPTION_IPFILTER_DISALLOWED);
 	ips += _T(" ");
 
 	int pos = ips.Find(' ');
@@ -149,7 +130,7 @@ bool CListenSocket::AccessAllowed(CAsyncSocketEx &socket) const
 	if (!disallowed)
 		return true;
 
-	ips = m_pServer->m_pOptions->GetOption(OPTION_IPFILTER_ALLOWED);
+	ips = m_server.m_pOptions->GetOption(OPTION_IPFILTER_ALLOWED);
 	ips += _T(" ");
 
 	pos = ips.Find(' ');

@@ -28,36 +28,32 @@
 #endif // _MSC_VER > 1000
 
 class TiXmlElement;
-class CSpeedLimit
+class CSpeedLimit final
 {
 public:
 	bool IsItActive(const SYSTEMTIME &time) const;
-	CSpeedLimit();
-	virtual ~CSpeedLimit();
 
-	virtual int GetRequiredBufferLen() const;
-	virtual char * FillBuffer(char *p) const;
-	virtual unsigned char * ParseBuffer(unsigned char *pBuffer, int length);
+	int GetRequiredBufferLen() const;
+	char * FillBuffer(char *p) const;
+	unsigned char * ParseBuffer(unsigned char *pBuffer, int length);
 
-	BOOL m_DateCheck;
-	struct t_date
-	{
-		int y;
-		int m;
-		int d;
+	BOOL m_DateCheck{};
+	struct t_date {
+		int y{};
+		int m{};
+		int d{};
 	} m_Date;
 
-	BOOL m_FromCheck;
-	BOOL m_ToCheck;
+	BOOL m_FromCheck{};
+	BOOL m_ToCheck{};
 
-	struct t_time
-	{
-		int h;
-		int m;
-		int s;
+	struct t_time {
+		int h{};
+		int m{};
+		int s{};
 	} m_FromTime, m_ToTime;
-	int	m_Speed;
-	int m_Day;
+	int	m_Speed{10};
+	int m_Day{};
 
 	void Save(TiXmlElement* pElement) const;
 	bool Load(TiXmlElement* pElement);

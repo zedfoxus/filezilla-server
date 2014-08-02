@@ -19,15 +19,11 @@
 #if !defined(AFX_EXTERNALIPCHECK_H__B077D8D7_6883_4DD9_9B0A_2C99562D0930__INCLUDED_)
 #define AFX_EXTERNALIPCHECK_H__B077D8D7_6883_4DD9_9B0A_2C99562D0930__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-
 #include "AsyncSocketEx.h"
 
 class CServerThread;
 
-class CExternalIpCheck : public CAsyncSocketEx
+class CExternalIpCheck final : public CAsyncSocketEx
 {
 public:
 	CExternalIpCheck(CServerThread *pOwner);

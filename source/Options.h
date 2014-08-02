@@ -30,7 +30,7 @@
 
 class TiXmlElement;
 class COptionsHelperWindow;
-class COptions
+class COptions final
 {
 	friend COptionsHelperWindow;
 
@@ -40,7 +40,7 @@ public:
 	_int64 GetOptionVal(int nOptionID);
 
 	COptions();
-	virtual ~COptions();
+	~COptions();
 
 	static TiXmlElement *GetXML();
 	static BOOL FreeXML(TiXmlElement *pXML, bool save);
