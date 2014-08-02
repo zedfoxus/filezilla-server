@@ -300,13 +300,12 @@ int CAsyncSocketExLayer::ReceiveNext(void *lpBuf, int nBufLen, int nFlags /*=0*/
 
 BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 {
-	ASSERT(GetLayerState()==unconnected);
+	ASSERT(GetLayerState() == unconnected);
 	ASSERT(m_pOwnerSocket);
-	BOOL res;
+	BOOL res{};
 	if (m_pNextLayer)
 		res = m_pNextLayer->Connect(lpszHostAddress, nHostPort);
-	else if (m_nFamily == AF_INET)
-	{
+	else if (m_nFamily == AF_INET) {
 		USES_CONVERSION;
 
 		ASSERT(lpszHostAddress != NULL);
@@ -436,8 +435,7 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 			res = FALSE ;
 	}
 
-	if (res || WSAGetLastError() == WSAEWOULDBLOCK)
-	{
+	if (res || WSAGetLastError() == WSAEWOULDBLOCK) {
 		SetLayerState(connecting);
 	}
 	return res;
