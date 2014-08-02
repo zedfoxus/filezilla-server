@@ -29,7 +29,7 @@ CStdString GetVersionString()
 	_tcscpy(str, fullpath);
 	DWORD tmp = 0;
 	DWORD len = GetFileVersionInfoSize(str, &tmp);
-	LPVOID pBlock = new char[len];
+	char* pBlock = new char[len];
 	GetFileVersionInfo(str, 0, len, pBlock);
 	LPVOID ptr;
 	UINT ptrlen;
