@@ -112,10 +112,6 @@ protected:
 
 CCriticalSectionWrapper CAsyncSocketEx::m_sGlobalCriticalSection;
 CAsyncSocketEx::t_AsyncSocketExThreadDataList *CAsyncSocketEx::m_spAsyncSocketExThreadDataList = 0;
-HMODULE CAsyncSocketEx::m_hDll = 0;
-t_getaddrinfo CAsyncSocketEx::p_getaddrinfo = 0;
-t_freeaddrinfo CAsyncSocketEx::p_freeaddrinfo = 0;
-
 
 #ifndef _AFX
 #ifndef VERIFY
@@ -758,33 +754,6 @@ private:
 // Konstruktion/Destruktion
 //////////////////////////////////////////////////////////////////////
 
-CAsyncSocketEx::CAsyncSocketEx()
-{
-	m_SocketData.hSocket = INVALID_SOCKET;
-	m_SocketData.nSocketIndex = -1;
-	m_SocketData.nFamily = AF_UNSPEC;
-	m_SocketData.onCloseCalled = false;
-	m_pLocalAsyncSocketExThreadData = 0;
-
-#ifndef NOSOCKETSTATES
-	m_nPendingEvents = 0;
-	m_nState = notsock;
-#endif //NOSOCKETSTATES
-
-#ifndef NOLAYERS
-	m_pFirstLayer = 0;
-	m_pLastLayer = 0;
-#endif //NOLAYERS
-	m_pAsyncGetHostByNameBuffer = NULL;
-	m_hAsyncGetHostByNameHandle = NULL;
-
-	m_nSocketPort = 0;
-	m_lpszSocketAddress = 0;
-
-	m_SocketData.addrInfo = 0;
-	m_SocketData.nextAddr = 0;
-}
-
 CAsyncSocketEx::~CAsyncSocketEx()
 {
 	Close();
@@ -933,55 +902,28 @@ BOOL CAsyncSocketEx::Bind(UINT nSocketPort, LPCTSTR lpszSocketAddress)
 	
 	LPSTR lpszAscii = (lpszSocketAddress && *lpszSocketAddress) ? T2A((LPTSTR)lpszSocketAddress) : 0;
 	
-	if ((m_SocketData.nFamily == AF_INET6 || m_SocketData.nFamily == AF_INET) && lpszAscii)
-	{
-		if (!p_getaddrinfo)
-		{
-			if (m_SocketData.nFamily != AF_INET)
-			{
-				WSASetLastError(WSAEPROTONOSUPPORT);
-				return FALSE;
-			}
-			else
-			{
-				unsigned long ip = inet_addr(lpszAscii);
-				if (!ip)
-				{
-					WSASetLastError(WSAEINVAL);
-					return FALSE;
-				}
-
-				SOCKADDR_IN sockAddr{};
-				sockAddr.sin_family = m_SocketData.nFamily;
-				sockAddr.sin_addr.s_addr = ip;
-				sockAddr.sin_port = htons((u_short)nSocketPort);
-				return Bind((SOCKADDR*)&sockAddr, sizeof(sockAddr));
-			}
-		}
-		addrinfo hints{}, *res0, *res;
-		int error;
+	if ((m_SocketData.nFamily == AF_INET6 || m_SocketData.nFamily == AF_INET) && lpszAscii) {
+		addrinfo hints{}, *res0{}, *res{};
+		int error{};
 		char port[10];
 		BOOL ret = FALSE;
 
 		hints.ai_family = m_SocketData.nFamily;
 		hints.ai_socktype = SOCK_STREAM;
 		_snprintf(port, 9, "%lu", nSocketPort);
-		error = p_getaddrinfo(lpszAscii, port, &hints, &res0);
+		error = getaddrinfo(lpszAscii, port, &hints, &res0);
 		if (error)
 			return FALSE;
 
-		for (res = res0; res; res = res->ai_next)
-			if (Bind(res->ai_addr, res->ai_addrlen))
-			{
+		for (res = res0; res; res = res->ai_next) {
+			if (Bind(res->ai_addr, res->ai_addrlen)) {
 				ret = TRUE;
 				break;
 			}
-			else
-				continue ;
+		}
 
-			p_freeaddrinfo(res0);
-
-			return ret ;
+		freeaddrinfo(res0);
+		return ret;
 	}
 	else if (!lpszAscii && m_SocketData.nFamily == AF_INET6)
 	{
@@ -1045,15 +987,13 @@ void CAsyncSocketEx::Close()
 	if (m_pFirstLayer)
 		m_pFirstLayer->Close();
 #endif //NOLAYERS
-	if (m_SocketData.hSocket != INVALID_SOCKET)
-	{
+	if (m_SocketData.hSocket != INVALID_SOCKET) {
 		VERIFY((closesocket(m_SocketData.hSocket) != SOCKET_ERROR));
 		DetachHandle(m_SocketData.hSocket);
 		m_SocketData.hSocket = INVALID_SOCKET;
 	}
-	if (m_SocketData.addrInfo)
-	{
-		p_freeaddrinfo(m_SocketData.addrInfo);
+	if (m_SocketData.addrInfo) {
+		freeaddrinfo(m_SocketData.addrInfo);
 		m_SocketData.addrInfo = 0;
 		m_SocketData.nextAddr = 0;
 	}
@@ -1078,65 +1018,45 @@ BOOL CAsyncSocketEx::InitAsyncSocketExInstance()
 	if (m_pLocalAsyncSocketExThreadData)
 		return TRUE;
 
-	DWORD id=GetCurrentThreadId();
+	DWORD id = GetCurrentThreadId();
 
 	m_sGlobalCriticalSection.Lock();
 
 	//Get thread specific data
-	if (m_spAsyncSocketExThreadDataList)
-	{
-		t_AsyncSocketExThreadDataList *pList=m_spAsyncSocketExThreadDataList;
-		while (pList)
-		{
+	if (m_spAsyncSocketExThreadDataList) {
+		t_AsyncSocketExThreadDataList *pList = m_spAsyncSocketExThreadDataList;
+		while (pList) {
 			ASSERT(pList->pThreadData);
-			ASSERT(pList->pThreadData->nInstanceCount>0);
+			ASSERT(pList->pThreadData->nInstanceCount > 0);
 
-			if (pList->pThreadData->nThreadId==id)
-			{
-				m_pLocalAsyncSocketExThreadData=pList->pThreadData;
-				m_pLocalAsyncSocketExThreadData->nInstanceCount++;
+			if (pList->pThreadData->nThreadId == id) {
+				m_pLocalAsyncSocketExThreadData = pList->pThreadData;
+				++m_pLocalAsyncSocketExThreadData->nInstanceCount;
 				break;
 			}
-			pList=pList->pNext;
+			pList = pList->pNext;
 		}
 		//Current thread yet has no sockets
-		if (!pList)
-		{
+		if (!pList) {
 			//Initialize data for current thread
-			pList=new t_AsyncSocketExThreadDataList;
-			pList->pNext=m_spAsyncSocketExThreadDataList;
-			m_spAsyncSocketExThreadDataList=pList;
-			m_pLocalAsyncSocketExThreadData=new t_AsyncSocketExThreadData;
-			m_pLocalAsyncSocketExThreadData->nInstanceCount=1;
-			m_pLocalAsyncSocketExThreadData->nThreadId=id;
-			m_pLocalAsyncSocketExThreadData->m_pHelperWindow=new CAsyncSocketExHelperWindow(m_pLocalAsyncSocketExThreadData);
-			m_spAsyncSocketExThreadDataList->pThreadData=m_pLocalAsyncSocketExThreadData;
+			pList = new t_AsyncSocketExThreadDataList;
+			pList->pNext = m_spAsyncSocketExThreadDataList;
+			m_spAsyncSocketExThreadDataList = pList;
+			m_pLocalAsyncSocketExThreadData = new t_AsyncSocketExThreadData;
+			m_pLocalAsyncSocketExThreadData->nInstanceCount = 1;
+			m_pLocalAsyncSocketExThreadData->nThreadId = id;
+			m_pLocalAsyncSocketExThreadData->m_pHelperWindow = new CAsyncSocketExHelperWindow(m_pLocalAsyncSocketExThreadData);
+			m_spAsyncSocketExThreadDataList->pThreadData = m_pLocalAsyncSocketExThreadData;
 		}
 	}
-	else
-	{	//No thread has instances of CAsyncSocketEx; Initialize data
-		m_spAsyncSocketExThreadDataList=new t_AsyncSocketExThreadDataList;
-		m_spAsyncSocketExThreadDataList->pNext=0;
-		m_pLocalAsyncSocketExThreadData=new t_AsyncSocketExThreadData;
-		m_pLocalAsyncSocketExThreadData->nInstanceCount=1;
-		m_pLocalAsyncSocketExThreadData->nThreadId=id;
-		m_pLocalAsyncSocketExThreadData->m_pHelperWindow=new CAsyncSocketExHelperWindow(m_pLocalAsyncSocketExThreadData);
-		m_spAsyncSocketExThreadDataList->pThreadData=m_pLocalAsyncSocketExThreadData;
-
-		m_hDll = LoadLibrary(_T("WS2_32.dll"));
-		if (m_hDll)
-		{
-			p_getaddrinfo = (t_getaddrinfo)GetProcAddress(m_hDll, "getaddrinfo");
-			p_freeaddrinfo = (t_freeaddrinfo)GetProcAddress(m_hDll, "freeaddrinfo");
-
-			if (!p_getaddrinfo || !p_freeaddrinfo)
-			{
-				p_getaddrinfo = 0;
-				p_freeaddrinfo = 0;
-				FreeLibrary(m_hDll);
-				m_hDll = 0;
-			}
-		}
+	else {
+		//No thread has instances of CAsyncSocketEx; Initialize data
+		m_spAsyncSocketExThreadDataList = new t_AsyncSocketExThreadDataList;
+		m_pLocalAsyncSocketExThreadData = new t_AsyncSocketExThreadData;
+		m_pLocalAsyncSocketExThreadData->nInstanceCount = 1;
+		m_pLocalAsyncSocketExThreadData->nThreadId = id;
+		m_pLocalAsyncSocketExThreadData->m_pHelperWindow = new CAsyncSocketExHelperWindow(m_pLocalAsyncSocketExThreadData);
+		m_spAsyncSocketExThreadDataList->pThreadData = m_pLocalAsyncSocketExThreadData;
 	}
 	m_sGlobalCriticalSection.Unlock();
 	return TRUE;
@@ -1167,46 +1087,31 @@ void CAsyncSocketEx::FreeAsyncSocketExInstance()
 	t_AsyncSocketExThreadDataList *pPrev=0;
 
 	//Serach for data for current thread and decrease instance count
-	while (pList)
-	{
+	while (pList) {
 		ASSERT(pList->pThreadData);
-		ASSERT(pList->pThreadData->nInstanceCount>0);
+		ASSERT(pList->pThreadData->nInstanceCount > 0);
 
-		if (pList->pThreadData->nThreadId==id)
-		{
-			ASSERT(m_pLocalAsyncSocketExThreadData==pList->pThreadData);
-			m_pLocalAsyncSocketExThreadData->nInstanceCount--;
+		if (pList->pThreadData->nThreadId == id) {
+			ASSERT(m_pLocalAsyncSocketExThreadData == pList->pThreadData);
+			--m_pLocalAsyncSocketExThreadData->nInstanceCount;
 
 			//Freeing last instance?
 			//If so, destroy helper window
-			if (!m_pLocalAsyncSocketExThreadData->nInstanceCount)
-			{
+			if (!m_pLocalAsyncSocketExThreadData->nInstanceCount) {
 				delete m_pLocalAsyncSocketExThreadData->m_pHelperWindow;
 				delete m_pLocalAsyncSocketExThreadData;
 				if (pPrev)
-					pPrev->pNext=pList->pNext;
+					pPrev->pNext = pList->pNext;
 				else
-					m_spAsyncSocketExThreadDataList=pList->pNext;
+					m_spAsyncSocketExThreadDataList = pList->pNext;
 				delete pList;
-
-				// Last thread closed, free dll
-				if (!m_spAsyncSocketExThreadDataList)
-				{
-					if (m_hDll)
-					{
-						p_getaddrinfo = 0;
-						p_freeaddrinfo = 0;
-						FreeLibrary(m_hDll);
-						m_hDll = 0;
-					}
-				}
 				break;
 			}
 
 			break;
 		}
-		pPrev=pList;
-		pList=pList->pNext;
+		pPrev = pList;
+		pList = pList->pNext;
 		ASSERT(pList);
 	}
 
@@ -1282,21 +1187,13 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 
 		return CAsyncSocketEx::Connect((SOCKADDR*)&sockAddr, sizeof(sockAddr));
 	}
-	else
-	{
-		if (!p_getaddrinfo)
-		{
-			WSASetLastError(WSAEPROTONOSUPPORT);
-			return FALSE;
-		}
-
+	else {
 		USES_CONVERSION;
 
 		ASSERT( lpszHostAddress != NULL );
 
-		if (m_SocketData.addrInfo)
-		{
-			p_freeaddrinfo(m_SocketData.addrInfo);
+		if (m_SocketData.addrInfo) {
+			freeaddrinfo(m_SocketData.addrInfo);
 			m_SocketData.addrInfo = 0;
 			m_SocketData.nextAddr = 0;
 		}
@@ -1309,7 +1206,7 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 		hints.ai_family = m_SocketData.nFamily;
 		hints.ai_socktype = SOCK_STREAM;
 		_snprintf(port, 9, "%lu", nHostPort);
-		error = p_getaddrinfo(T2CA(lpszHostAddress), port, &hints, &m_SocketData.addrInfo);
+		error = getaddrinfo(T2CA(lpszHostAddress), port, &hints, &m_SocketData.addrInfo);
 		if (error)
 			return FALSE;
 
@@ -1388,9 +1285,8 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 		if (m_SocketData.nextAddr)
 			m_SocketData.nextAddr = m_SocketData.nextAddr->ai_next;
 
-		if (!m_SocketData.nextAddr)
-		{
-			p_freeaddrinfo(m_SocketData.addrInfo);
+		if (!m_SocketData.nextAddr) {
+			freeaddrinfo(m_SocketData.addrInfo);
 			m_SocketData.nextAddr = 0;
 			m_SocketData.addrInfo = 0;
 		}
@@ -1873,9 +1769,8 @@ bool CAsyncSocketEx::TryNextProtocol()
 	if (m_SocketData.nextAddr)
 		m_SocketData.nextAddr = m_SocketData.nextAddr->ai_next;
 
-	if (!m_SocketData.nextAddr)
-	{
-		p_freeaddrinfo(m_SocketData.addrInfo);
+	if (!m_SocketData.nextAddr) {
+		freeaddrinfo(m_SocketData.addrInfo);
 		m_SocketData.nextAddr = 0;
 		m_SocketData.addrInfo = 0;
 	}

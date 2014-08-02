@@ -223,7 +223,7 @@ void CAsyncSocketExLayer::Close()
 void CAsyncSocketExLayer::CloseNext()
 {
 	if (m_addrInfo)
-		m_pOwnerSocket->p_freeaddrinfo(m_addrInfo);
+		freeaddrinfo(m_addrInfo);
 	m_nextAddr = 0;
 	m_addrInfo = 0;
 
@@ -335,13 +335,7 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 
 		res = (SOCKET_ERROR != connect(m_pOwnerSocket->GetSocketHandle(), (SOCKADDR*)&sockAddr, sizeof(sockAddr)) );
 	}
-	else if (m_nFamily == AF_INET6 || m_nFamily == AF_UNSPEC)
-	{
-		if (!m_pOwnerSocket->p_getaddrinfo)
-		{
-			WSASetLastError(WSAEPROTONOSUPPORT);
-			return FALSE;
-		}
+	else if (m_nFamily == AF_INET6 || m_nFamily == AF_UNSPEC) {
 		USES_CONVERSION;
 
 		ASSERT(lpszHostAddress != NULL);
@@ -351,7 +345,7 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 		int error;
 		char port[10];
 
-		m_pOwnerSocket->p_freeaddrinfo(m_addrInfo);
+		freeaddrinfo(m_addrInfo);
 		m_nextAddr = 0;
 		m_addrInfo = 0;
 
@@ -360,7 +354,7 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = 0;
 		_snprintf(port, 9, "%lu", nHostPort);
-		error = m_pOwnerSocket->p_getaddrinfo(T2CA(lpszHostAddress), port, &hints, &res0);
+		error = getaddrinfo(T2CA(lpszHostAddress), port, &hints, &res0);
 		if (error)
 			return FALSE;
 
@@ -431,13 +425,12 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 		if (res1)
 			res1 = res0->ai_next;
 
-		if (res1)
-		{
+		if (res1) {
 			m_addrInfo = res0;
 			m_nextAddr = res1;
 		}
 		else
-			m_pOwnerSocket->p_freeaddrinfo(res0);
+			freeaddrinfo(res0);
 
 		if (INVALID_SOCKET == m_pOwnerSocket->GetSocketHandle())
 			res = FALSE ;
@@ -996,9 +989,8 @@ bool CAsyncSocketExLayer::TryNextProtocol()
 	if (m_nextAddr)
 		m_nextAddr = m_nextAddr->ai_next;
 
-	if (!m_nextAddr)
-	{
-		m_pOwnerSocket->p_freeaddrinfo(m_addrInfo);
+	if (!m_nextAddr) {
+		freeaddrinfo(m_addrInfo);
 		m_nextAddr = 0;
 		m_addrInfo = 0;
 	}

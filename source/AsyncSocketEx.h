@@ -81,11 +81,6 @@ to tim.kosse@filezilla-project.org
 
 class CAsyncSocketExHelperWindow;
 
-extern "C" {
-	typedef int (FAR PASCAL *t_getaddrinfo)(const char* nodename, const char* servname, const struct addrinfo* hints, struct addrinfo** res);
-	typedef	void (FAR PASCAL *t_freeaddrinfo)(struct addrinfo* ai);
-}
-
 #ifndef NOLAYERS
 class CAsyncSocketExLayer;
 
@@ -100,6 +95,18 @@ struct t_callbackMsg
 
 #endif //NOLAYERS
 
+enum SocketState
+{
+	notsock,
+	unconnected,
+	connecting,
+	listening,
+	connected,
+	closed,
+	aborted,
+	attached
+};
+
 class CCriticalSectionWrapper;
 class CAsyncSocketEx
 {
@@ -112,7 +119,7 @@ public:
 	//------------
 
 	//Constructs a CAsyncSocketEx object.
-	CAsyncSocketEx();
+	CAsyncSocketEx() {};
 	virtual ~CAsyncSocketEx();
 
 	//Creates a socket.
@@ -233,20 +240,20 @@ protected:
 	//Strucure to hold the socket data
 	struct t_AsyncSocketExData
 	{
-		SOCKET hSocket; //Socket handle
-		int nSocketIndex; //Index of socket, required by CAsyncSocketExHelperWindow
-		int nFamily;
-		addrinfo *addrInfo, *nextAddr; // Iterate through protocols on connect failure
-		bool onCloseCalled; // Set to true on first received OnClose event
+		SOCKET hSocket{INVALID_SOCKET}; //Socket handle
+		int nSocketIndex{-1}; //Index of socket, required by CAsyncSocketExHelperWindow
+		int nFamily{AF_UNSPEC};
+		addrinfo *addrInfo{}, *nextAddr{}; // Iterate through protocols on connect failure
+		bool onCloseCalled{}; // Set to true on first received OnClose event
 	} m_SocketData;
 
 	//If using layers, only the events specified with m_lEvent will send to the event handlers.
-	long m_lEvent;
+	long m_lEvent{};
 
 	//AsyncGetHostByName
-	char *m_pAsyncGetHostByNameBuffer; //Buffer for hostend structure
-	HANDLE m_hAsyncGetHostByNameHandle; //TaskHandle
-	int m_nAsyncGetHostByNamePort; //Port to connect to
+	char *m_pAsyncGetHostByNameBuffer{}; //Buffer for hostend structure
+	HANDLE m_hAsyncGetHostByNameHandle{}; //TaskHandle
+	int m_nAsyncGetHostByNamePort{}; //Port to connect to
 
 	//Returns the handle of the helper window
 	HWND GetHelperWindowHandle();
@@ -263,17 +270,17 @@ protected:
 	//Pointer to the data of the local thread
 	struct t_AsyncSocketExThreadData
 	{
-		CAsyncSocketExHelperWindow *m_pHelperWindow;
-		int nInstanceCount;
-		DWORD nThreadId;
+		CAsyncSocketExHelperWindow *m_pHelperWindow{};
+		int nInstanceCount{};
+		DWORD nThreadId{};
 		std::list<CAsyncSocketEx*> layerCloseNotify;
-	} *m_pLocalAsyncSocketExThreadData;
+	} *m_pLocalAsyncSocketExThreadData{};
 
 	//List of the data structures for all threads
 	static struct t_AsyncSocketExThreadDataList
 	{
-		t_AsyncSocketExThreadDataList *pNext;
-		t_AsyncSocketExThreadData *pThreadData;
+		t_AsyncSocketExThreadDataList *pNext{};
+		t_AsyncSocketExThreadData *pThreadData{};
 	} *m_spAsyncSocketExThreadDataList;
 
 	//Initializes Thread data and helper window, fills m_pLocalAsyncSocketExThreadData
@@ -293,18 +300,18 @@ protected:
 #endif // NOLAYERS
 
 #ifndef NOSOCKETSTATES
-	int m_nPendingEvents;
+	int m_nPendingEvents{};
 
 	int GetState() const;
 	void SetState(int nState);
 
-	int m_nState;
+	int m_nState{notsock};
 #endif //NOSOCKETSTATES
 
 #ifndef NOLAYERS
 	//Layer chain
-	CAsyncSocketExLayer *m_pFirstLayer;
-	CAsyncSocketExLayer *m_pLastLayer;
+	CAsyncSocketExLayer *m_pFirstLayer{};
+	CAsyncSocketExLayer *m_pLastLayer{};
 
 	friend CAsyncSocketExLayer;
 
@@ -313,14 +320,8 @@ protected:
 #endif //NOLAYERS
 
 	// Used by Bind with AF_UNSPEC sockets
-	UINT m_nSocketPort;
-	LPTSTR m_lpszSocketAddress;
-
-	// imported IPv6 functions
-	static HMODULE m_hDll;
-
-	static t_getaddrinfo p_getaddrinfo;
-	static t_freeaddrinfo p_freeaddrinfo;
+	UINT m_nSocketPort{};
+	LPTSTR m_lpszSocketAddress{};
 
 	friend CAsyncSocketExHelperWindow;
 
@@ -338,18 +339,6 @@ private:
 #define LAYERCALLBACK_STATECHANGE 0
 #define LAYERCALLBACK_LAYERSPECIFIC 1
 #endif //NOLAYERS
-
-enum SocketState
-{
-	notsock,
-	unconnected,
-	connecting,
-	listening,
-	connected,
-	closed,
-	aborted,
-	attached
-};
 
 #define _sntprintf _snwprintf
 
