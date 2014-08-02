@@ -27,7 +27,7 @@
 #include "afxwin.h"
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CGroupsDlgGeneral 
+// Dialogfeld CGroupsDlgGeneral
 class CGroupsDlg;
 class CGroupsDlgGeneral : public CSAPrefsSubDlg
 {
@@ -40,7 +40,7 @@ public:
 	BOOL SaveGroup(t_group *pGroup);
 	void SetCtrlState();
 	CString Validate();
-	
+
 protected:
 // Dialogfelddaten
 	//{{AFX_DATA(CGroupsDlgGeneral)
@@ -62,14 +62,14 @@ protected:
 	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen
 	//{{AFX_VIRTUAL(CGroupsDlgGeneral)
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung
 protected:
 	CGroupsDlg *m_pOwner;
 	CImageList m_imagelist;
-	
+
 	// Generierte Nachrichtenzuordnungsfunktionen
 	//{{AFX_MSG(CGroupsDlgGeneral)
 	virtual BOOL OnInitDialog();

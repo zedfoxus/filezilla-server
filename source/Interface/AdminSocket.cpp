@@ -78,7 +78,7 @@ void CAdminSocket::OnReceive(int nErrorCode)
 		Close();
 		return;
 	}
-	
+
 	if (!m_nConnectionState)
 	{
 		m_pMainFrame->ShowStatus(_T("Connected, waiting for authentication"), 0);
@@ -171,7 +171,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			}
 			if (m_nRecvBufferPos < 9)
 				return FALSE;
-			
+
 			int version = (int)GET32(m_pRecvBuffer + 5);
 			if (version != SERVER_VERSION)
 			{
@@ -247,7 +247,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 					return FALSE;
 				}
 				unsigned char *p = m_pRecvBuffer + 5;
-				
+
 				unsigned int noncelen1 = *p*256 + p[1];
 				if ((noncelen1+2) > (len-2))
 				{
@@ -255,7 +255,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 					Close();
 					return FALSE;
 				}
-				
+
 				unsigned int noncelen2 = p[2 + noncelen1]*256 + p[2 + noncelen1 +1];
 				if ((noncelen1+noncelen2+4) > len)
 				{
@@ -263,7 +263,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 					Close();
 					return FALSE;
 				}
-				
+
 				MD5 md5;
 				if (noncelen1)
 					md5.update(p+2, noncelen1);
@@ -278,10 +278,10 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				if (noncelen2)
 					md5.update(p+noncelen1+4, noncelen2);
 				md5.finalize();
-				
+
 				memmove(m_pRecvBuffer, m_pRecvBuffer+len+5, m_nRecvBufferPos-len-5);
 				m_nRecvBufferPos-=len+5;
-				
+
 				unsigned char *digest = md5.raw_digest();
 				SendCommand(0, digest, 16);
 				delete [] digest;
@@ -328,7 +328,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
 				return FALSE;
-			}				
+			}
 			if (m_nRecvBufferPos < len+5)
 				return FALSE;
 			else
@@ -343,7 +343,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 					str.Format(_T("Protocol warning: Command type %d not implemented."), nType);
 					m_pMainFrame->ShowStatus(str, 1);
 				}
-				
+
 				memmove(m_pRecvBuffer, m_pRecvBuffer+len+5, m_nRecvBufferPos-len-5);
 				m_nRecvBufferPos-=len+5;
 			}
@@ -371,7 +371,7 @@ BOOL CAdminSocket::SendCommand(int nType)
 BOOL CAdminSocket::SendCommand(int nType, void *pData, int nDataLength)
 {
 	ASSERT((pData && nDataLength) || (!pData && !nDataLength));
-	
+
 	t_data data(nDataLength + 5);
 	*data.pData = nType << 2;
 	memcpy(&*data.pData + 1, &nDataLength, 4);
@@ -379,7 +379,7 @@ BOOL CAdminSocket::SendCommand(int nType, void *pData, int nDataLength)
 		memcpy(&*data.pData + 5, pData, nDataLength);
 
 	m_SendBuffer.push_back(data);
-	
+
 	bool res = SendPendingData();
 	if (!res)
 		Close();

@@ -26,7 +26,7 @@
 //
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsIpFilterPage 
+// Dialogfeld COptionsIpFilterPage
 
 class COptionsDlg;
 class COptionsIpFilterPage : public COptionsPage
@@ -38,7 +38,7 @@ public:
 	virtual BOOL IsDataValid();
 	virtual void SaveData();
 	virtual void LoadData();
-	
+
 	// Dialogfelddaten
 	//{{AFX_DATA(COptionsIpFilterPage)
 	enum { IDD = IDD_OPTIONS_IPFILTER };
@@ -50,7 +50,7 @@ public:
 	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen
 	//{{AFX_VIRTUAL(COptionsIpFilterPage)
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung

@@ -41,7 +41,7 @@ public:
 	void SetRoot(const LPITEMIDLIST pidl);
 
 	//
-    // Access a string that is displayed above the tree view control in the dialog box. This
+	// Access a string that is displayed above the tree view control in the dialog box. This
 	// string can be used to specify instructions to the user.  strTitle is a CString containing
 	// the text to be displayed.  nTitle is the index of a string resource to be loaded.  The
 	// return value is false if the resource could not be loaded.
@@ -57,7 +57,7 @@ public:
 	//          BIF_BROWSEFORCOMPUTER    Only returns computers. If the user selects anything
 	//                                   other than a computer, the OK button is grayed.
 	//
-	//          BIF_BROWSEFORPRINTER     Only returns printers. If the user selects anything 
+	//          BIF_BROWSEFORPRINTER     Only returns printers. If the user selects anything
 	//                                   other than a printer, the OK button is grayed.
 	//
 	//          BIF_DONTGOBELOWDOMAIN    Does not include network folders below the domain level
@@ -66,14 +66,14 @@ public:
 	//          BIF_RETURNFSANCESTORS    Only returns file system ancestors. If the user selects
 	//                                   anything other than a file system ancestor, the OK
 	//                                   button is grayed.
-    //
-    //          BIF_RETURNONLYFSDIRS     Only returns file system directories. If the user
+	//
+	//          BIF_RETURNONLYFSDIRS     Only returns file system directories. If the user
 	//                                   selects folders that are not part of the file system,
 	//                                   the OK button is grayed.
 	//
 	//          BIF_STATUSTEXT           Includes a status area in the dialog box. The callback
 	//                                   function can set the status text by sending messages to
-	//                                   the dialog box. 
+	//                                   the dialog box.
 	//
 	UINT GetFlags() const;
 	void SetFlags(const UINT ulFlags);
@@ -85,7 +85,7 @@ public:
 
 	//
 	// Function to retreive the image associated with the selected folder. The image is specified
-	// as an index to the system image list. 
+	// as an index to the system image list.
 	//
 	int GetImage() const;
 

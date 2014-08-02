@@ -27,7 +27,7 @@
 
 class CServerThread;
 
-class CExternalIpCheck : public CAsyncSocketEx  
+class CExternalIpCheck : public CAsyncSocketEx
 {
 public:
 	CExternalIpCheck(CServerThread *pOwner);

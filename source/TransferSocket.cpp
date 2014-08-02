@@ -68,7 +68,7 @@ CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 	m_zlibBytesOut = 0;
 
 	m_pBuffer2 = 0;
-	
+
 	m_currentFileOffset = 0;
 
 	m_waitingForSslHandshake = false;
@@ -89,7 +89,7 @@ void CTransferSocket::Init(std::list<t_dirlisting> &dir, int nMode)
 	if (m_pBuffer2)
 		delete [] m_pBuffer2;
 	m_pBuffer2 = 0;
-	
+
 	std::swap( directory_listing_, dir );
 
 	m_nMode = nMode;
@@ -217,7 +217,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 						directory_listing_.pop_front();
 					}
 				}
-				
+
 				numsend = m_nBufSize;
 				unsigned int len = m_nBufSize - m_nBufferPos - m_zlibStream.avail_out;
 				if (!len)
@@ -225,7 +225,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 
 				if (len < m_nBufSize)
 					numsend = len;
-				
+
 				long long nLimit = m_pOwner->GetSpeedLimit(download);
 				if (nLimit > -1 && GetState() != aborted && numsend > nLimit)
 					numsend = static_cast<int>(nLimit);
@@ -293,14 +293,14 @@ void CTransferSocket::OnSend(int nErrorCode)
 					m_nBufferPos += numsent;
 				else
 					m_nBufferPos += numsend;
-				
+
 				m_currentFileOffset += numsent;
 
 				ASSERT(m_nBufferPos <= directory_listing_.front().len);
 				if (m_nBufferPos >= directory_listing_.front().len) {
 					directory_listing_.pop_front();
 					m_nBufferPos = 0;
-	
+
 					if( directory_listing_.empty() ) {
 						break;
 					}
@@ -405,7 +405,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 						return;
 					}
 				}
-					
+
 				numsend = m_nBufSize;
 				unsigned int len = m_nBufSize - m_nBufferPos - m_zlibStream.avail_out;
 				if (!len)
@@ -413,7 +413,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 
 				if (len < m_nBufSize)
 					numsend = len;
-				
+
 				long long nLimit = m_pOwner->GetSpeedLimit(download);
 				if (nLimit > -1 && GetState() != aborted && numsend > nLimit)
 					numsend = static_cast<int>(nLimit);
@@ -519,7 +519,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 
 				if (nLimit > -1 && GetState() != aborted)
 					m_pOwner->m_SlQuotas[download].nTransferred += numsent;
-	
+
 				((CServerThread *)m_pOwner->m_pOwner)->IncSendCount(numsent);
 				m_wasActiveSinceCheck = true;
 
@@ -585,7 +585,7 @@ void CTransferSocket::OnConnect(int nErrorCode)
 			m_pOwner->SendStatus(_T("Failed to load SSL libraries"), 1);
 		else if (code == SSL_FAILURE_INITSSL)
 			m_pOwner->SendStatus(_T("Failed to initialize SSL library"), 1);
-		
+
 		if (code)
 		{
 			EndTransfer(2);
@@ -660,13 +660,13 @@ void CTransferSocket::OnAccept(int nErrorCode)
 		if (!m_pSslLayer)
 			m_pSslLayer = new CAsyncSslSocketLayer();
 		VERIFY(AddLayer(m_pSslLayer));
-		
+
 		int code = m_pSslLayer->InitSSLConnection(false, m_sslContext);
 		if (code == SSL_FAILURE_LOADDLLS)
 			m_pOwner->SendStatus(_T("Failed to load SSL libraries"), 1);
 		else if (code == SSL_FAILURE_INITSSL)
 			m_pOwner->SendStatus(_T("Failed to initialize SSL library"), 1);
-		
+
 		if (code)
 		{
 			EndTransfer(2);
@@ -746,13 +746,13 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			m_zlibStream.avail_in = numread;
 			m_zlibStream.next_out = (Bytef *)m_pBuffer2;
 			m_zlibStream.avail_out = m_nBufSize;
-			
+
 			m_zlibStream.total_in = 0;
 			m_zlibStream.total_out = 0;
 			int res = inflate(&m_zlibStream, 0);
 			m_zlibBytesIn += m_zlibStream.total_in;
 			m_zlibBytesOut += m_zlibStream.total_out;
-			
+
 			while (res == Z_OK)
 			{
 				DWORD numwritten;
@@ -845,13 +845,13 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 
 		if (!IsLocalhost(OwnerIP) && !IsLocalhost(TransferIP))
 		{
-			
+
 			if (GetFamily() == AF_INET6)
 			{
 				OwnerIP = GetIPV6LongForm(OwnerIP);
 				TransferIP = GetIPV6LongForm(TransferIP);
 			}
-			
+
 			if (!m_pOwner->m_pOwner->m_pOptions->GetOptionVal(optStrictFilter))
 			{
 				if (GetFamily() == AF_INET6)
@@ -880,7 +880,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		AsyncSelect(FD_READ|FD_CLOSE);
 	else
 		AsyncSelect(FD_WRITE|FD_CLOSE);
-	
+
 	if (m_bAccepted)
 		m_pOwner->SendTransferPreliminary();
 
@@ -1036,7 +1036,7 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 					delete [] iter->str;
 					iter++;
 				} while (iter != callbacks.end());
-				
+
 				return 0;
 			}
 			else if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_VERBOSE_WARNING)
@@ -1085,7 +1085,7 @@ bool CTransferSocket::InitZLib(int level)
 		res = inflateInit2(&m_zlibStream, 15);
 	else
 		res = deflateInit2(&m_zlibStream, level, Z_DEFLATED, 15, 8, Z_DEFAULT_STRATEGY);
-	
+
 	if (res == Z_OK)
 		m_useZlib = true;
 
@@ -1096,7 +1096,7 @@ bool CTransferSocket::GetZlibStats(_int64 &bytesIn, _int64 &bytesOut) const
 {
 	bytesIn = m_zlibBytesIn;
 	bytesOut = m_zlibBytesOut;
-	
+
 	return true;
 }
 

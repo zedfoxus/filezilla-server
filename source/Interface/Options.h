@@ -26,7 +26,7 @@
 //
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptions 
+// Dialogfeld COptions
 
 #define IOPTION_STARTMINIMIZED 1
 #define IOPTION_LASTSERVERADDRESS 2
@@ -50,10 +50,10 @@ public:
 	virtual ~COptions();
 	void SetOption(int nOptionID, CString value);
 	void SetOption(int nOptionID, __int64 value);
-	
+
 protected:
 	static bool IsNumeric(LPCTSTR str);
-	
+
 	struct t_OptionsCache
 	{
 		BOOL bCached;

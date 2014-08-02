@@ -190,7 +190,7 @@ int __stdcall CBrowseForFolder::BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM 
 		pbff->OnInit();
 	else if (uMsg == BFFM_SELCHANGED)
 		pbff->OnSelChanged(reinterpret_cast<LPITEMIDLIST>(lParam));
-	
+
 	return 0;
 }
 
@@ -211,22 +211,22 @@ CString CBrowseForFolder::FormatLongPath(CString oLongPath) const
 		//margins must be considered
 		RECT Rect = { 0, 0, 7, 0 };	//my lucky guess the margin would be seven units. It used to be 7 in resource editor, so why not here?
 		int nMargin = MapDialogRect( m_hwnd, &Rect ) ? Rect.right : 20;	//convert into pixels then
-		
+
 		//measure the width first
 		CRect oClientRect;
 		oWnd.GetClientRect( &oClientRect );
 		oClientRect.NormalizeRect();
 		int nMaxTextWidth = oClientRect.Width() - nMargin*2;
-		
+
 		CClientDC oClientDC(&oWnd);
 
 		//trying to determine the system metrix to create apropriate fonts for measurement
 		NONCLIENTMETRICS NonClientMetrics;
-		
+
 		NonClientMetrics.cbSize = sizeof(NONCLIENTMETRICS);
-		
-		BOOL bSystemMetrics = SystemParametersInfo( SPI_GETNONCLIENTMETRICS, 
-			NonClientMetrics.cbSize, 
+
+		BOOL bSystemMetrics = SystemParametersInfo( SPI_GETNONCLIENTMETRICS,
+			NonClientMetrics.cbSize,
 			&NonClientMetrics,
 			0 );
 
@@ -243,7 +243,7 @@ CString CBrowseForFolder::FormatLongPath(CString oLongPath) const
 		{
 			oClientDC.SelectStockObject( SYSTEM_FONT );	//it MUST NOT happen, but in case...
 		}
-		
+
 		//measure the actual text width
 		int nTextWidth = oClientDC.GetTextExtent( oModifString ).cx;
 
@@ -253,7 +253,7 @@ CString CBrowseForFolder::FormatLongPath(CString oLongPath) const
 		//oClientDC.Rectangle( nMaxTextWidth+nMargin, 0, oClientRect.Width(), nMargin*5 );
 		//oClientDC.Rectangle( nMargin, 0, nMaxTextWidth+nMargin, nMargin );
 		//oClientDC.TextOut( nMargin, 0, oModifString );
-		
+
 		//after all this measurements time to do the real job
 		if( nTextWidth > nMaxTextWidth )
 		{
@@ -280,14 +280,14 @@ CString CBrowseForFolder::FormatLongPath(CString oLongPath) const
 
 				CString oDottedText( "..." );//this three dots will be used to indicate the cut part of the path
 
-				CString oRootDirectory; 	//this can be cut as the last one
+				CString oRootDirectory;	//this can be cut as the last one
 				CString oMidDirectoryPart;	//we will try to shorten this part first
-				CString oLastDirectory; 	//and then, if still too long we'll cut this one
-				
+				CString oLastDirectory;	//and then, if still too long we'll cut this one
+
 				oRootDirectory =	oModifString.Left( nRootDirIndex );
 				oMidDirectoryPart =	oModifString.Mid( nRootDirIndex, nLastDirIndex - nRootDirIndex );
 				oLastDirectory =	oModifString.Mid( nLastDirIndex );
-				
+
 				while( nTextWidth > nMaxTextWidth )
 				{
 					int nMidPartLenght = oMidDirectoryPart.GetLength();
@@ -296,7 +296,7 @@ CString CBrowseForFolder::FormatLongPath(CString oLongPath) const
 
 					//measure the actual text width again
 					nTextWidth = oClientDC.GetTextExtent( oModifString ).cx;
-					
+
 					if( nMidPartLenght > 0 )
 					{
 						//prepare for the next loop (if any)
@@ -305,7 +305,7 @@ CString CBrowseForFolder::FormatLongPath(CString oLongPath) const
 					else
 					{
 						int nLastDirectoryLenght = oLastDirectory.GetLength();
-						
+
 						if( nLastDirectoryLenght > 0 )
 						{
 							//prepare for the next loop (if any)

@@ -31,7 +31,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CConnectDialog 
+// Dialogfeld CConnectDialog
 
 
 CConnectDialog::CConnectDialog(COptions *pOptions)
@@ -67,12 +67,12 @@ BEGIN_MESSAGE_MAP(CConnectDialog, CDialog)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CConnectDialog 
+// Behandlungsroutinen für Nachrichten CConnectDialog
 
-BOOL CConnectDialog::OnInitDialog() 
+BOOL CConnectDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	
+
 	m_ServerAddress = m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS);
 	m_ServerPort.Format(_T("%d"), static_cast<int>(m_pOptions->GetOptionVal(IOPTION_LASTSERVERPORT)));
 	m_ServerPassword = m_pOptions->GetOption(IOPTION_LASTSERVERPASS);
@@ -80,10 +80,10 @@ BOOL CConnectDialog::OnInitDialog()
 	UpdateData(FALSE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
-void CConnectDialog::OnOK() 
+void CConnectDialog::OnOK()
 {
 	UpdateData();
 

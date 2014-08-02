@@ -30,7 +30,7 @@ public:
 	virtual void LoadData();
 
 protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 
 	DECLARE_MESSAGE_MAP()
 public:

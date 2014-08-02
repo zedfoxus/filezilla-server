@@ -26,13 +26,13 @@
 //
 
 /////////////////////////////////////////////////////////////////////////////
-// Ansicht CStatusView 
+// Ansicht CStatusView
 class CStatusCtrl;
 
 class CStatusView : public CView
 {
 protected:
-	CStatusView();           // Dynamische Erstellung verwendet geschützten Konstruktor
+	CStatusView();		   // Dynamische Erstellung verwendet geschützten Konstruktor
 	DECLARE_DYNCREATE(CStatusView)
 
 // Attribute

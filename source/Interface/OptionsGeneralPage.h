@@ -26,7 +26,7 @@
 //
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsGeneralPage 
+// Dialogfeld COptionsGeneralPage
 
 class COptionsDlg;
 class COptionsGeneralPage : public COptionsPage
@@ -55,7 +55,7 @@ public:
 	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen
 	//{{AFX_VIRTUAL(COptionsGeneralPage)
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung

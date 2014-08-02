@@ -34,9 +34,9 @@
 
 #define NOMINMAX
 
-#include <afxwin.h>         // MFC-Kern- und -Standardkomponenten
-#include <afxext.h>         // MFC-Erweiterungen
-#include <afxdisp.h>        // MFC Automatisierungsklassen
+#include <afxwin.h>			// MFC-Kern- und -Standardkomponenten
+#include <afxext.h>			// MFC-Erweiterungen
+#include <afxdisp.h>		// MFC Automatisierungsklassen
 #include <afxdtctl.h>		// MFC-Unterstützung für allgemeine Steuerelemente von Internet Explorer 4
 #ifndef _AFX_NO_AFXCMN_SUPPORT
 #include <afxcmn.h>			// MFC-Unterstützung für gängige Windows-Steuerelemente

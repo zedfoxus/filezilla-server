@@ -30,7 +30,7 @@
 #include "AsyncSocketEx.h"
 
 class CAdminInterface;
-class CAdminListenSocket : public CAsyncSocketEx  
+class CAdminListenSocket : public CAsyncSocketEx
 {
 public:
 	CAdminListenSocket(CAdminInterface *pAdminInterface);

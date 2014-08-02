@@ -35,8 +35,8 @@ int CSplitterWndEx::Id_short(int row, int col)
 
 void CSplitterWndEx::ShowRow(int r)
 {
-    ASSERT_VALID(this);
-    ASSERT(m_nRows < m_nMaxRows);
+	ASSERT_VALID(this);
+	ASSERT(m_nRows < m_nMaxRows);
 
 	ASSERT(m_arr);
 	ASSERT(r < m_length);
@@ -46,7 +46,7 @@ void CSplitterWndEx::ShowRow(int r)
 	int rowNew = r;
 	int cyNew = m_pRowInfo[m_arr[r]].nCurSize;
 	int cyIdealNew = m_pRowInfo[m_arr[r]].nIdealSize;
-	
+
 	int new_val = 0;
 
 	for (int i = rowNew - 1; i >= 0; i--)
@@ -58,19 +58,19 @@ void CSplitterWndEx::ShowRow(int r)
 
 	int old_val = m_arr[rowNew];
 
-    m_nRows++;  // add a row
+	m_nRows++;  // add a row
 
-    // fill the hided row
-    int row;
-    for (int col = 0; col < m_nCols; col++)
-    {
+	// fill the hided row
+	int row;
+	for (int col = 0; col < m_nCols; col++)
+	{
 		CWnd* pPaneShow = GetDlgItem(
 			Id_short(old_val, col));
-        ASSERT(pPaneShow != NULL);
-        pPaneShow->ShowWindow(SW_SHOWNA);
+		ASSERT(pPaneShow != NULL);
+		pPaneShow->ShowWindow(SW_SHOWNA);
 
 		for (row = m_length - 1; row >= 0; row--)
-        {
+		{
 			if ((m_arr[row] >= new_val) &&
 				(m_arr[row] < old_val))
 			{
@@ -78,9 +78,9 @@ void CSplitterWndEx::ShowRow(int r)
 				ASSERT(pPane != NULL);
 				pPane->SetDlgCtrlID(Id_short(m_arr[row] + 1, col));
 			}
-        }
+		}
 		pPaneShow->SetDlgCtrlID(Id_short(new_val, col));
-    }
+	}
 
 	for (row = 0; row < m_length; row++)
 		if ((m_arr[row] >= new_val) &&
@@ -89,7 +89,7 @@ void CSplitterWndEx::ShowRow(int r)
 
 	m_arr[rowNew] = new_val;
 
-    //new panes have been created -- recalculate layout
+	//new panes have been created -- recalculate layout
 	for (row = new_val + 1; row < m_length; row++)
 	{
 		if (m_arr[row]<m_nRows)
@@ -109,13 +109,13 @@ void CSplitterWndEx::ShowRow(int r)
 
 	m_pRowInfo[new_val].nIdealSize = cyNew;
 	m_pRowInfo[new_val].nCurSize = cyNew;
-    RecalcLayout();
+	RecalcLayout();
 }
 
 void CSplitterWndEx::ShowColumn(int c)
 {
-    ASSERT_VALID(this);
-    ASSERT(m_nCols < m_nMaxCols);
+	ASSERT_VALID(this);
+	ASSERT(m_nCols < m_nMaxCols);
 
 	ASSERT(m_arr);
 	ASSERT(c < m_length);
@@ -125,7 +125,7 @@ void CSplitterWndEx::ShowColumn(int c)
 	int colNew = c;
 	int cxNew = m_pColInfo[m_arr[c]].nCurSize;
 	int cxIdealNew = m_pColInfo[m_arr[c]].nIdealSize;
-	
+
 	int new_val = 0;
 
 	for (int i = colNew - 1; i >= 0; i--)
@@ -137,19 +137,19 @@ void CSplitterWndEx::ShowColumn(int c)
 
 	int old_val = m_arr[colNew];
 
-    m_nCols++;  // add a col
+	m_nCols++;  // add a col
 
-    // fill the hided col
-    int col;
-    for (int row = 0; row < m_nRows; row++)
-    {
+	// fill the hided col
+	int col;
+	for (int row = 0; row < m_nRows; row++)
+	{
 		CWnd* pPaneShow = GetDlgItem(
 			Id_short(row, old_val));
-        ASSERT(pPaneShow != NULL);
-        pPaneShow->ShowWindow(SW_SHOWNA);
+		ASSERT(pPaneShow != NULL);
+		pPaneShow->ShowWindow(SW_SHOWNA);
 
 		for (col = m_length - 1; col >= 0; col--)
-        {
+		{
 			if ((m_arr[col] >= new_val) &&
 				(m_arr[col] < old_val))
 			{
@@ -157,9 +157,9 @@ void CSplitterWndEx::ShowColumn(int c)
 				ASSERT(pPane != NULL);
 				pPane->SetDlgCtrlID(Id_short(row, m_arr[col]+1));
 			}
-        }
+		}
 		pPaneShow->SetDlgCtrlID(Id_short(row, new_val));
-    }
+	}
 
 	for (col = 0; col < m_length; col++)
 		if ((m_arr[col] >= new_val) &&
@@ -168,7 +168,7 @@ void CSplitterWndEx::ShowColumn(int c)
 
 	m_arr[colNew] = new_val;
 
-    //new panes have been created -- recalculate layout
+	//new panes have been created -- recalculate layout
 	for (col = new_val + 1; col < m_length; col++)
 	{
 		if (m_arr[col]<m_nCols)
@@ -188,19 +188,19 @@ void CSplitterWndEx::ShowColumn(int c)
 
 	m_pColInfo[new_val].nIdealSize = cxNew;
 	m_pColInfo[new_val].nCurSize = cxNew;
-    RecalcLayout();
+	RecalcLayout();
 }
 
 void CSplitterWndEx::HideRow(int rowHide,int rowToResize)
 {
-    ASSERT_VALID(this);
-    ASSERT(m_nRows > 1);
+	ASSERT_VALID(this);
+	ASSERT(m_nRows > 1);
 
 	if (m_arr)
 		ASSERT(m_arr[rowHide] < m_nRows);
 
-    // if the row has an active window -- change it
-    int rowActive, colActive;
+	// if the row has an active window -- change it
+	int rowActive, colActive;
 
 	if (!m_arr)
 	{
@@ -211,24 +211,24 @@ void CSplitterWndEx::HideRow(int rowHide,int rowToResize)
 	}
 
 	if (GetActivePane(&rowActive, &colActive) != NULL &&
-        rowActive == rowHide) //colActive == rowHide)
-    {
-        if (++rowActive >= m_nRows)
+		rowActive == rowHide) //colActive == rowHide)
+	{
+		if (++rowActive >= m_nRows)
 			rowActive = 0;
-        //SetActivePane(rowActive, colActive);
+		//SetActivePane(rowActive, colActive);
 
 		SetActivePane(rowActive, colActive);
-    }
+	}
 
-    // hide all row panes
-    for (int col = 0; col < m_nCols; col++)
-    {
-        CWnd* pPaneHide = CSplitterWnd::GetPane(m_arr[rowHide], col);
-        ASSERT(pPaneHide != NULL);
-	    pPaneHide->ShowWindow(SW_HIDE);
+	// hide all row panes
+	for (int col = 0; col < m_nCols; col++)
+	{
+		CWnd* pPaneHide = CSplitterWnd::GetPane(m_arr[rowHide], col);
+		ASSERT(pPaneHide != NULL);
+		pPaneHide->ShowWindow(SW_HIDE);
 
 		for (int row = rowHide + 1; row < m_length; row++)
-        {
+		{
 			if (m_arr[row] < m_nRows )
 			{
 				CWnd* pPane = CSplitterWnd::GetPane(m_arr[row], col);
@@ -236,10 +236,10 @@ void CSplitterWndEx::HideRow(int rowHide,int rowToResize)
 				pPane->SetDlgCtrlID(Id_short(row-1, col));
 				m_arr[row]--;
 			}
-        }
-        pPaneHide->SetDlgCtrlID(
+		}
+		pPaneHide->SetDlgCtrlID(
 			Id_short(m_nRows -1 , col));
-    }
+	}
 
 	int oldsize=m_pRowInfo[m_arr[rowHide]].nCurSize;
 	for (int row=rowHide;row<(m_length-1);row++)
@@ -247,7 +247,7 @@ void CSplitterWndEx::HideRow(int rowHide,int rowToResize)
 		if (m_arr[row+1] < m_nRows )
 		{
 			m_pRowInfo[m_arr[row]].nCurSize=m_pRowInfo[m_arr[row+1]].nCurSize;
-			m_pRowInfo[m_arr[row]].nIdealSize=m_pRowInfo[m_arr[row+1]].nCurSize;		
+			m_pRowInfo[m_arr[row]].nIdealSize=m_pRowInfo[m_arr[row+1]].nCurSize;
 		}
 	}
 	if (rowToResize!=-1)
@@ -259,24 +259,24 @@ void CSplitterWndEx::HideRow(int rowHide,int rowToResize)
 
 	m_pRowInfo[m_nRows - 1].nCurSize =oldsize;
 	m_pRowInfo[m_nRows - 1].nIdealSize =oldsize;
-	
-	m_arr[rowHide] = m_nRows-1;
-	
 
-    m_nRows--;
+	m_arr[rowHide] = m_nRows-1;
+
+
+	m_nRows--;
 	RecalcLayout();
 }
 
 void CSplitterWndEx::HideColumn(int colHide, int colToResize)
 {
-    ASSERT_VALID(this);
-    ASSERT(m_nCols > 1);
+	ASSERT_VALID(this);
+	ASSERT(m_nCols > 1);
 
 	if (m_arr)
 		ASSERT(m_arr[colHide] < m_nCols);
 
-    // if the col has an active window -- change it
-    int colActive, rowActive;
+	// if the col has an active window -- change it
+	int colActive, rowActive;
 
 	if (!m_arr)
 	{
@@ -287,22 +287,22 @@ void CSplitterWndEx::HideColumn(int colHide, int colToResize)
 	}
 
 	if (GetActivePane(&rowActive, &colActive) != NULL &&
-        colActive == colHide)
-    {
-        if (++colActive >= m_nCols)
+		colActive == colHide)
+	{
+		if (++colActive >= m_nCols)
 			colActive = 0;
-        SetActivePane(rowActive, colActive);
-    }
+		SetActivePane(rowActive, colActive);
+	}
 
-    // hide all row panes
-    for (int row = 0; row < m_nRows; row++)
-    {
-        CWnd* pPaneHide = CSplitterWnd::GetPane(row, m_arr[colHide]);
-        ASSERT(pPaneHide != NULL);
-	    pPaneHide->ShowWindow(SW_HIDE);
+	// hide all row panes
+	for (int row = 0; row < m_nRows; row++)
+	{
+		CWnd* pPaneHide = CSplitterWnd::GetPane(row, m_arr[colHide]);
+		ASSERT(pPaneHide != NULL);
+		pPaneHide->ShowWindow(SW_HIDE);
 
 		for (int col = colHide + 1; col < m_length; col++)
-        {
+		{
 			if (m_arr[col] < m_nCols )
 			{
 				CWnd* pPane = CSplitterWnd::GetPane(row, m_arr[col]);
@@ -310,10 +310,10 @@ void CSplitterWndEx::HideColumn(int colHide, int colToResize)
 				pPane->SetDlgCtrlID(Id_short(row, col-1));
 				m_arr[col]--;
 			}
-        }
-        pPaneHide->SetDlgCtrlID(
+		}
+		pPaneHide->SetDlgCtrlID(
 			Id_short(row, m_nCols -1));
-    }
+	}
 
 	int oldsize = m_pColInfo[m_arr[colHide]].nCurSize;
 	for (int col = colHide; col < (m_length - 1); ++col)
@@ -321,7 +321,7 @@ void CSplitterWndEx::HideColumn(int colHide, int colToResize)
 		if (m_arr[col + 1] < m_nCols)
 		{
 			m_pColInfo[m_arr[col]].nCurSize = m_pColInfo[m_arr[col + 1]].nCurSize;
-			m_pColInfo[m_arr[col]].nIdealSize = m_pColInfo[m_arr[col + 1]].nCurSize;		
+			m_pColInfo[m_arr[col]].nIdealSize = m_pColInfo[m_arr[col + 1]].nCurSize;
 		}
 	}
 	if (colToResize != -1)
@@ -333,10 +333,10 @@ void CSplitterWndEx::HideColumn(int colHide, int colToResize)
 
 	m_pColInfo[m_nCols - 1].nCurSize = oldsize;
 	m_pColInfo[m_nCols - 1].nIdealSize = oldsize;
-	
+
 	m_arr[colHide] = m_nCols - 1;
 
-    m_nCols--;
+	m_nCols--;
 	RecalcLayout();
 }
 

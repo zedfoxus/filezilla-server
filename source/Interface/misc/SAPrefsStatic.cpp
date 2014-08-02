@@ -81,7 +81,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CSAPrefsStatic message handlers
 
-void CSAPrefsStatic::OnPaint() 
+void CSAPrefsStatic::OnPaint()
 {
    CPaintDC dc(this); // device context for painting
 
@@ -101,8 +101,8 @@ void CSAPrefsStatic::OnPaint()
 		// create a font, if we need to
 		if (m_captionFont.GetSafeHandle()==NULL)
 		{
-			m_captionFont.CreateFont( m_fontSize, 
-												0, 0, 0, 
+			m_captionFont.CreateFont( m_fontSize,
+												0, 0, 0,
 												m_fontWeight,
 												0, 0, 0, ANSI_CHARSET,
 												OUT_DEFAULT_PRECIS,
@@ -125,7 +125,7 @@ void CSAPrefsStatic::OnPaint()
 
 	// vertical center
    CRect cr;
-   GetClientRect(cr); 
+   GetClientRect(cr);
 
 	cr.left+=5;
 	dc.DrawText( strText, cr, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
@@ -134,7 +134,7 @@ void CSAPrefsStatic::OnPaint()
 		dc.SelectObject(pOldFont);
 }
 
-BOOL CSAPrefsStatic::OnEraseBkgnd(CDC* pDC) 
+BOOL CSAPrefsStatic::OnEraseBkgnd(CDC* pDC)
 {
    if (!m_bm.GetSafeHandle())
    {
@@ -166,7 +166,7 @@ LRESULT CSAPrefsStatic::OnSetText(WPARAM wParam, LPARAM lParam)
 	Invalidate(TRUE);
 	return 1;
 }
-   
+
 
 //////////////////
 // Helper to paint rectangle with a color.
@@ -211,12 +211,12 @@ void CSAPrefsStatic::MakeCaptionBitmap()
 
 	PaintRect(dc, x, 0, cr.right-x, h, clrBG);
 
-	while (x > xDelta) 
+	while (x > xDelta)
    {												// paint bands right to left
 		x -= xDelta;							// next band
 		int wmx2 = (w1-x)*(w1-x);			// w minus x squared
 		int w2  = w1*w1;						// w squared
-		PaintRect(dc, x, 0, xDelta, h,	
+		PaintRect(dc, x, 0, xDelta, h,
 			RGB(r-(r*wmx2)/w2, g-(g*wmx2)/w2, b-(b*wmx2)/w2));
 	}
 
@@ -233,7 +233,7 @@ void CSAPrefsStatic::MakeCaptionBitmap()
 											CLIP_DEFAULT_PRECIS,
 											DEFAULT_QUALITY,
 											FF_MODERN,
-											m_csFontName);	
+											m_csFontName);
 	}
 
 	CFont * OldFont = dc.SelectObject(&m_nameFont);

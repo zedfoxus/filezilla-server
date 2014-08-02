@@ -38,10 +38,10 @@ CExternalIpCheck::CExternalIpCheck(CServerThread *pOwner)
 	m_bTriggerUpdateCalled = FALSE;
 	m_nFailedConnections = 0;
 	m_nElapsedSeconds = 0;
-	
+
 	if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE))
 		return;
-	
+
 	if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 2)
 		Start();
 	else if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 1)
@@ -49,10 +49,10 @@ CExternalIpCheck::CExternalIpCheck(CServerThread *pOwner)
 		CStdString hostname = m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIP);
 		SOCKADDR_IN sockAddr;
 		memset(&sockAddr, 0, sizeof(sockAddr));
-		
+
 		sockAddr.sin_family = AF_INET;
 		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname));
-		
+
 		if (sockAddr.sin_addr.s_addr == INADDR_NONE)
 		{
 			LPHOSTENT lphost;
@@ -68,12 +68,12 @@ CExternalIpCheck::CExternalIpCheck(CServerThread *pOwner)
 				return;
 			}
 		}
-		
+
 		const char *ip = inet_ntoa(sockAddr.sin_addr);
-		
+
 		if (!ip)
 			return;
-		
+
 		m_IP = ConvFromLocal(ip);
 	}
 }
@@ -102,7 +102,7 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 	{
 		if (GetLastError() == WSAEWOULDBLOCK)
 			return;
-	
+
 		Close();
 		m_nRetryCount++;
 		m_bActive = FALSE;
@@ -121,8 +121,8 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 		m_bActive = FALSE;
 		return;
 	}
-	
-	
+
+
 	while (*p && (*p == '\n' || *p == '\r'))
 		p++;
 
@@ -138,13 +138,13 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 	while (*p && *p != '\n' && *p != '\r')
 		p++;
 	*p = 0;
-	
+
 	SOCKADDR_IN sockAddr;
 	memset(&sockAddr,0,sizeof(sockAddr));
-	
+
 	sockAddr.sin_family = AF_INET;
 	sockAddr.sin_addr.s_addr = inet_addr(ip);
-	
+
 	if (sockAddr.sin_addr.s_addr == INADDR_NONE)
 	{
 		LPHOSTENT lphost;
@@ -159,17 +159,17 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 			return;
 		}
 	}
-	
+
 	ip = inet_ntoa(sockAddr.sin_addr);
 
 	if (!ip)
-	{		
+	{
 		Close();
 		m_nRetryCount++;
 		m_bActive = FALSE;
 		return;
 	}
-	
+
 	m_IP = ConvFromLocal(ip);
 
 	m_nFailedConnections = 0;
@@ -191,7 +191,7 @@ void CExternalIpCheck::OnConnect(int nErrorCode)
 		m_nRetryCount++;
 		return;
 	}
-	
+
 	CStdStringA address = "GET " + m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIPSERVER) + " HTTP/1.0\r\nUser-Agent: FileZilla Server\r\n\r\n";
 	const char *buffer = address;
 	int len = strlen(buffer);
@@ -226,10 +226,10 @@ void CExternalIpCheck::OnTimer()
 		CStdString hostname = m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIP);
 		SOCKADDR_IN sockAddr;
 		memset(&sockAddr,0,sizeof(sockAddr));
-		
+
 		sockAddr.sin_family = AF_INET;
 		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname));
-		
+
 		if (sockAddr.sin_addr.s_addr == INADDR_NONE)
 		{
 			LPHOSTENT lphost;
@@ -244,12 +244,12 @@ void CExternalIpCheck::OnTimer()
 				return;
 			}
 		}
-		
+
 		const char *ip = inet_ntoa(sockAddr.sin_addr);
-		
+
 		if (!ip)
 			return;
-	
+
 		m_IP = ConvFromLocal(ip);
 		m_nFailedConnections = 0;
 		return;
@@ -361,9 +361,9 @@ CStdString CExternalIpCheck::GetIP(const CStdString& localIP)
 		}
 	case 1:
 		ip = m_IP;
-		
+
 		break;
 	}
-	
+
 	return ip;
 }

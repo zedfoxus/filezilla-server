@@ -28,7 +28,7 @@
 #include "UsersDlg.h"
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CUsersDlgSharedFolders 
+// Dialogfeld CUsersDlgSharedFolders
 class CUsersDlgSharedFolders : public CSAPrefsSubDlg
 {
 	friend CUsersDlg;
@@ -71,7 +71,7 @@ protected:
 	public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung

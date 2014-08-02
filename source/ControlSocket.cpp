@@ -220,7 +220,7 @@ BOOL CControlSocket::GetCommand(CStdString &command, CStdString &args)
 
 	//Output command in status window
 	CStdString str2 = ConvFromNetwork(str);
-	
+
 	//Hide passwords if the server admin wants to.
 	if (!str2.Left(5).CompareNoCase(_T("PASS ")))
 	{	if (m_pOwner->m_pOptions->GetOptionVal(OPTION_LOGSHOWPASS))
@@ -717,7 +717,7 @@ void CControlSocket::ParseCommand()
 			int res = inet_addr(ConvToLocal(ip));
 
 			if (res == INADDR_NONE || port < 1 || port > 65535)
- 			{
+			{
 				Send(_T("501 Syntax error"));
 				m_transferstatus.pasv = -1;
 				break;
@@ -781,7 +781,7 @@ void CControlSocket::ParseCommand()
 				Send(_T("421 Could not create socket, unable to query socket for used port."));
 				break;
 			}
-			
+
 			break;
 		}
 	case commands::TYPE:
@@ -1033,7 +1033,7 @@ void CControlSocket::ParseCommand()
 
 					m_transferstatus.socket->PasvTransfer();
 				}
-				
+
 				__int64 totalSize;
 				if (!GetLength64(physicalFile, totalSize))
 					totalSize = -1;
@@ -1425,7 +1425,7 @@ void CControlSocket::ParseCommand()
 			if( !CreatePassiveTransferSocket() ) {
 				break;
 			}
-			
+
 			//Now retrieve the port
 			CStdString dummy;
 			UINT port = 0;
@@ -1857,7 +1857,7 @@ void CControlSocket::ParseCommand()
 			CStdString cmd;
 
 			args.MakeUpper();
-			
+
 			int pos = args.Find(' ');
 			if (pos != -1)
 			{
@@ -2062,7 +2062,7 @@ void CControlSocket::ProcessTransferMsg()
 
 	if (status == 2 && m_transferstatus.pasv && m_transferstatus.usedResolvedIP)
 		m_pOwner->ExternalIPFailed();
-	
+
 	int mode = m_transferstatus.socket->GetMode();
 	_int64 zlibBytesIn = 0;
 	_int64 zlibBytesOut = 0;
@@ -2777,7 +2777,7 @@ CStdString CControlSocket::GetPassiveIP()
 		if (m_pOwner->m_pOptions->GetOptionVal(OPTION_NOEXTERNALIPONLOCAL) && !IsRoutableAddress(peerIP))
 		{
 			// Remote IP address from an unroutable subnet
-			
+
 			// Inside a NAT-in-NAT environment, two different unroutable address ranges are used.
 			// If remote address comes from a different unroutable subnet, don't use local
 			// address.
@@ -2866,7 +2866,7 @@ void CControlSocket::ParseMlstOpts(CStdString args)
 		factstr += _T("modify;");
 	if (facts[fact_perm])
 		factstr += _T("perm;");
-	
+
 	CStdString result = _T("200 MLST OPTS");
 	if (factstr != _T(""))
 		result += _T(" ") + factstr;
@@ -2927,7 +2927,7 @@ void CControlSocket::ProcessHashResult(int hash_id, int res, CHashThread::_algor
 {
 	if (hash_id != m_hash_id)
 		return;
-	
+
 	m_hash_id = 0;
 
 	if (res == CHashThread::BUSY)
@@ -2991,7 +2991,7 @@ void CControlSocket::SendTransferPreliminary()
 		s.Format(_T(", restarting at offset %I64d"), m_transferstatus.rest);
 		msg += s;
 	}
-	
+
 	Send(msg);
 }
 

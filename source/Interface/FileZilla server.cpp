@@ -40,7 +40,7 @@ BEGIN_MESSAGE_MAP(CFileZillaserverApp, CWinApp)
 	//{{AFX_MSG_MAP(CFileZillaserverApp)
 	ON_COMMAND(ID_APP_ABOUT, OnAppAbout)
 		// HINWEIS - Hier werden Mapping-Makros vom Klassen-Assistenten eingefügt und entfernt.
-		//    Innerhalb dieser generierten Quelltextabschnitte NICHTS VERÄNDERN!
+		//	Innerhalb dieser generierten Quelltextabschnitte NICHTS VERÄNDERN!
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -79,11 +79,11 @@ BOOL CFileZillaserverApp::InitInstance()
 		delete pOptions;
 		return FALSE;
 	}
-	
+
 	// initialize Winsock library
 	BOOL res = TRUE;
 	WSADATA wsaData;
-	
+
 	WORD wVersionRequested = MAKEWORD(1, 1);
 	int nResult = WSAStartup(wVersionRequested, &wsaData);
 	if (nResult != 0)
@@ -92,7 +92,7 @@ BOOL CFileZillaserverApp::InitInstance()
 		WSACleanup();
 		res = FALSE;
 	}
-	
+
 	if(!res) {
 		delete pOptions;
 		return FALSE;
@@ -147,11 +147,11 @@ public:
 	//}}AFX_DATA
 
 	CHyperLink m_cDonate;
-	
+
 	// Überladungen für virtuelle Funktionen, die vom Anwendungs-Assistenten erzeugt wurden
 	//{{AFX_VIRTUAL(CAboutDlg)
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung
@@ -193,28 +193,28 @@ void CFileZillaserverApp::OnAppAbout()
 /////////////////////////////////////////////////////////////////////////////
 // CFileZillaserverApp-Nachrichtenbehandlungsroutinen
 
-int CFileZillaserverApp::ExitInstance() 
+int CFileZillaserverApp::ExitInstance()
 {
 	return CWinApp::ExitInstance();
 }
 
-BOOL CAboutDlg::OnInitDialog() 
+BOOL CAboutDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	
+
 	m_homepage.ModifyLinkStyle(0, CHyperLink::StyleUseHover);
-	m_homepage.SetColors(0xFF0000, 0xFF0000, 
+	m_homepage.SetColors(0xFF0000, 0xFF0000,
 				   0xFF0000, 0xFF);
 	m_mail.ModifyLinkStyle(0, CHyperLink::StyleUseHover);
-	m_mail.SetColors(0xFF0000, 0xFF0000, 
+	m_mail.SetColors(0xFF0000, 0xFF0000,
 				   0xFF0000, 0xFF);
 	m_mail.SetURL("mailto:tim.kosse@filezilla-project.org");
 
 	m_cDonate.SubclassDlgItem(IDC_DONATE, this, _T("https://www.paypal.com/xclick/business=Tim.Kosse%40gmx.de&item_name=FileZilla&cn=Enter+your+comments+here&tax=0&currency_code=USD"));
-	
+
 	m_cVersion.SetWindowText(GetVersionString());
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
 

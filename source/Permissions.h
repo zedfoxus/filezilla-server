@@ -98,7 +98,7 @@ enum _facts {
 	fact_perm
 };
 
-class CPermissions  
+class CPermissions
 {
 public:
 	CPermissions(std::function<void()> const& updateCallback);
@@ -121,7 +121,7 @@ public:
 
 	// Retrieve a directory listing. Pass the actual formatting function as last parameter.
 	int GetDirectoryListing(CUser const& user, CStdString currentDir, CStdString dirToDisplay,
-							 std::list<t_dirlisting> &result, CStdString& physicalDir, 
+							 std::list<t_dirlisting> &result, CStdString& physicalDir,
 							 CStdString& logicalDir,
 							 addFunc_t addFunc,
 							 bool *enabledFacts = 0);
@@ -153,7 +153,7 @@ public:
 protected:
 	bool Init();
 	void UpdateInstances();
-	void UpdatePermissions(bool notifyOwner);	
+	void UpdatePermissions(bool notifyOwner);
 
 	void ReadSettings();
 
@@ -168,20 +168,20 @@ protected:
 
 	void SetKey(TiXmlElement *pXML, LPCTSTR name, LPCTSTR value);
 	void SetKey(TiXmlElement *pXML, LPCTSTR name, int value);
-	
+
 	int GetRealDirectory(CStdString directory, const CUser &user, t_directory &ret, BOOL &truematch);
 
 	static CCriticalSectionWrapper m_sync;
 
 	bool WildcardMatch(CStdString string, CStdString pattern) const;
 
-	typedef std::map<CStdString, CUser> t_UsersList; 
-	typedef std::vector<t_group> t_GroupsList; 
+	typedef std::map<CStdString, CUser> t_UsersList;
+	typedef std::vector<t_group> t_GroupsList;
 	static t_UsersList m_sUsersList;
 	static t_GroupsList m_sGroupsList;
 	t_UsersList m_UsersList;
 	t_GroupsList m_GroupsList;
-	
+
 	static std::list<CPermissions *> m_sInstanceList;
 	CPermissionsHelperWindow *m_pPermissionsHelperWindow;
 

@@ -149,7 +149,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
 		return -1;
-	
+
 	SetupTrayIcon();
 
 	if (!m_wndReBar.Create(this))
@@ -162,7 +162,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		TRACE0("Could not create Toolbar 1\n");
 		return -1;	  // Fehler bei Erstellung
 	}
-	
+
 	if (!m_wndUserListToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_ALIGN_LEFT
 		| CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC) ||
 		!m_wndUserListToolBar.LoadToolBar(IDR_USERLISTTOOLBAR))
@@ -178,7 +178,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndReBar.AddBar(&m_wndToolBar);
 	m_wndReBar.AddBar(&m_wndUserListToolBar);
 	m_wndReBar.GetReBarCtrl().MinimizeBand(0);
-	
+
 	if (!m_wndStatusBar.Create(this) ||
 		!m_wndStatusBar.SetIndicators(indicators,
 		  sizeof(indicators)/sizeof(UINT)))
@@ -191,14 +191,14 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndStatusBar.SetPaneInfo(7, 0, SBPS_NOBORDERS, 0);
 
 	CRect rect;
-	m_wndStatusBar.GetItemRect(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVLED), rect);  
+	m_wndStatusBar.GetItemRect(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVLED), rect);
 
 	//Create the first LED control
-	m_RecvLed.Create(_T(""), WS_VISIBLE|WS_CHILD, rect, &m_wndStatusBar, m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVLED)); 
+	m_RecvLed.Create(_T(""), WS_VISIBLE|WS_CHILD, rect, &m_wndStatusBar, m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVLED));
 	m_RecvLed.SetLed( CLed::LED_COLOR_GREEN, CLed::LED_OFF, CLed::LED_ROUND);
 
 	//Create the second LED control
-	m_SendLed.Create(_T(""), WS_VISIBLE|WS_CHILD, rect, &m_wndStatusBar, m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED)); 
+	m_SendLed.Create(_T(""), WS_VISIBLE|WS_CHILD, rect, &m_wndStatusBar, m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED));
 	m_SendLed.SetLed( CLed::LED_COLOR_RED, CLed::LED_OFF, CLed::LED_ROUND);
 
 	m_wndStatusBar.GetItemRect(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED), &rect);
@@ -230,7 +230,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 //////////////////
 // Helper function to register a new window class based on an already
-// existing window class, but with a different name and icon. 
+// existing window class, but with a different name and icon.
 // Returns new name if successful; otherwise NULL.
 //
 static bool RegisterSimilarClass(LPCTSTR lpszNewClassName,
@@ -260,7 +260,7 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
 	if( !CFrameWnd::PreCreateWindow(cs) )
 		return FALSE;
-	
+
 	// ZU ERLEDIGEN: Ändern Sie hier die Fensterklasse oder das Erscheinungsbild, indem Sie
 	//  CREATESTRUCT cs modifizieren.
 
@@ -269,7 +269,7 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	cs.dwExStyle &= ~WS_EX_CLIENTEDGE;
 
 	//Change the window class name
-	if (!s_winClassName) 
+	if (!s_winClassName)
 	{
 		s_winClassName = new TCHAR[_tcslen(_T("FileZilla Server Main Window")) + 1];
 		_tcscpy(s_winClassName, _T("FileZilla Server Main Window"));
@@ -293,7 +293,7 @@ BOOL CMainFrame::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 	return CFrameWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 }
 
-BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext) 
+BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext)
 {
 	CRect rect;
 	GetClientRect(rect);
@@ -335,7 +335,7 @@ CUsersView* CMainFrame::GetUsersPane()
 	return m_pUsersPane;
 }
 
-void CMainFrame::OnSize(UINT nType, int cx, int cy) 
+void CMainFrame::OnSize(UINT nType, int cx, int cy)
 {
 	if (m_wndStatusBar.GetSafeHwnd())
 	{
@@ -357,7 +357,7 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 		//Restore the queue
 		m_wndSplitter.ShowRow(1);
 	}
-	
+
 	if (m_wndStatusBar.GetSafeHwnd())
 	{
 		RECT rc;
@@ -366,22 +366,22 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 
 		// Reposition the first LED correctly!
 		m_RecvLed.SetWindowPos(&wndTop, rc.left, rc.top+1, rc.right - rc.left,
-			rc.bottom - rc.top, 0); 
+			rc.bottom - rc.top, 0);
 
 		m_wndStatusBar.GetItemRect(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED), &rc);
-	
+
 		// Reposition the second LED correctly!
 		m_SendLed.SetWindowPos(&wndTop, rc.left, rc.top+1, rc.right - rc.left,
-				rc.bottom - rc.top, 0); 
+				rc.bottom - rc.top, 0);
 	}
 }
 
-void CMainFrame::OnClose() 
+void CMainFrame::OnClose()
 {
 	CFrameWnd::OnClose();
 }
 
-void CMainFrame::OnEditSettings() 
+void CMainFrame::OnEditSettings()
 {
 	if (m_nEdit)
 	{
@@ -393,7 +393,7 @@ void CMainFrame::OnEditSettings()
 	ShowStatus(_T("Retrieving settings, please wait..."), 0);
 }
 
-void CMainFrame::OnActive() 
+void CMainFrame::OnActive()
 {
 	if (m_nServerState & STATE_ONLINE && !(m_nServerState & STATE_MASK_GOOFFLINE))
 	{
@@ -431,9 +431,9 @@ void CMainFrame::OnActive()
 				buffer[0] = nServerState / 256;
 				buffer[1] = nServerState % 256;
 				SendCommand(2, buffer, 2);
-				ShowStatus(_T("Server is going offline..."), 0);				
+				ShowStatus(_T("Server is going offline..."), 0);
 				return;
-			}				
+			}
 			else
 			{
 				int nServerState = m_nServerState | STATE_GOOFFLINE_NOW;
@@ -456,7 +456,7 @@ void CMainFrame::OnActive()
 	}
 }
 
-void CMainFrame::OnUpdateActive(CCmdUI* pCmdUI) 
+void CMainFrame::OnUpdateActive(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(m_pAdminSocket && m_pAdminSocket->IsConnected());
 	pCmdUI->SetCheck(m_nServerState & STATE_ONLINE && !(m_nServerState & STATE_MASK_GOOFFLINE));
@@ -487,13 +487,13 @@ void CMainFrame::SetupTrayIcon()
 // Show or hide the taskbar button for this app, depending on whether
 // we're minimized right now or not.
 
-void CMainFrame::OnTrayExit() 
+void CMainFrame::OnTrayExit()
 {
 	if (!m_bQuit)
-		OnClose();	
+		OnClose();
 }
 
-void CMainFrame::OnTrayRestore() 
+void CMainFrame::OnTrayRestore()
 {
 	ShowWindow(SW_RESTORE);
 	ShowWindow(SW_SHOW);
@@ -509,7 +509,7 @@ void CMainFrame::SetIcon()
 	else if (!(m_nServerState & STATE_ONLINE) || m_nServerState & STATE_MASK_GOOFFLINE)
 	{
 		if (!GetUsersPane()->m_pListCtrl->GetItemCount())
-		{	
+		{
 			m_TrayIcon.StopAnimation();
 			m_TrayIcon.SetIcon(IDI_RED);
 		}
@@ -522,7 +522,7 @@ void CMainFrame::SetIcon()
 	else if (m_nServerState & STATE_LOCKED)
 	{
 		if (GetUsersPane()->m_pListCtrl->GetItemCount())
-		{	
+		{
 			m_TrayIcon.SetIconList(IDI_GREEN, IDI_YELLOW);
 			m_TrayIcon.Animate(300);
 		}
@@ -541,7 +541,7 @@ void CMainFrame::SetIcon()
 
 }
 
-void CMainFrame::OnLock() 
+void CMainFrame::OnLock()
 {
 	if (!(m_nServerState & STATE_ONLINE) || m_nServerState & STATE_MASK_GOOFFLINE)
 		return;
@@ -562,15 +562,15 @@ void CMainFrame::OnLock()
 		buffer[0] = nServerState / 256;
 		buffer[1] = nServerState % 256;
 		SendCommand(2, buffer, 2);
-		ShowStatus("Server locked", 0);	
-	}	
+		ShowStatus("Server locked", 0);
+	}
 }
 
-void CMainFrame::OnUpdateLock(CCmdUI* pCmdUI) 
+void CMainFrame::OnUpdateLock(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(m_pAdminSocket && m_pAdminSocket->IsConnected() && m_nServerState & STATE_ONLINE && !(m_nServerState & STATE_MASK_GOOFFLINE));
 	pCmdUI->SetCheck((m_nServerState & STATE_LOCKED) ? 1 : 0);
-	
+
 }
 
 CString FormatSpeed(__int64 diff, const int span)
@@ -616,7 +616,7 @@ CString FormatSpeed(__int64 diff, const int span)
 	return str;
 }
 
-void CMainFrame::OnTimer(UINT_PTR nIDEvent) 
+void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 {
 	if (!nIDEvent)
 		return;
@@ -642,9 +642,9 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 		else
 			m_lastwritediff = diff;
 
-		CString writeSpeed = FormatSpeed(diff, span);		
+		CString writeSpeed = FormatSpeed(diff, span);
 		SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDRATE), writeSpeed);
-		
+
 		diff = m_nRecvCount - m_nOldRecvCount;
 		m_nOldRecvCount = m_nRecvCount;
 
@@ -656,15 +656,15 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 		}
 		else
 			m_lastreaddiff = diff;
-		
-		CString readSpeed = FormatSpeed(diff, span);		
+
+		CString readSpeed = FormatSpeed(diff, span);
 		SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVRATE), readSpeed);
 	}
 	else if (nIDEvent == m_nReconnectTimerID)
 	{
 		KillTimer(m_nReconnectTimerID);
 		m_nReconnectTimerID = 0;
-		
+
 		if (m_pAdminSocket)
 			return;
 
@@ -682,7 +682,7 @@ void CMainFrame::SetStatusbarText(int nIndex,CString str)
 	HFONT hFont = (HFONT)m_wndStatusBar.SendMessage(WM_GETFONT);
 	if (str=="")
 	{
-		str.LoadString(m_wndStatusBar.GetItemID(nIndex));		
+		str.LoadString(m_wndStatusBar.GetItemID(nIndex));
 	}
 	CClientDC dcScreen(NULL);
 	HGDIOBJ hOldFont = NULL;
@@ -697,14 +697,14 @@ void CMainFrame::SetStatusbarText(int nIndex,CString str)
 		if (cx<cxold)
 			cx=cxold;
 		m_wndStatusBar.SetPaneInfo(nIndex,nID,nStyle,cx);
-	
+
 	}
 	if (hOldFont != NULL)
 		dcScreen.SelectObject(hOldFont);
 
 }
 
-void CMainFrame::OnMenuEditUsers() 
+void CMainFrame::OnMenuEditUsers()
 {
 	if (m_nEdit)
 	{
@@ -716,7 +716,7 @@ void CMainFrame::OnMenuEditUsers()
 	ShowStatus(_T("Retrieving account settings, please wait..."), 0);
 }
 
-void CMainFrame::OnMenuEditGroups() 
+void CMainFrame::OnMenuEditGroups()
 {
 	if (m_nEdit)
 	{
@@ -914,7 +914,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 				ShowStatus(_T("Protocol error: Unexpected data length"), 1);
 				return;
 			}
-			
+
 			CString msg;
 
 			char *buffer = new char[nDataLength - 9 + 1];
@@ -928,7 +928,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 					*q = 0;
 					msg = ConvFromNetwork(buffer);
 					q = buffer;
-					
+
 					DWORD timeHigh = GET32(pData + 1);
 					DWORD timeLow = GET32(pData + 5);
 
@@ -938,7 +938,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 
 					SYSTEMTIME sFileTime;
 					FileTimeToSystemTime(&fFileTime, &sFileTime);
-					
+
 					TCHAR datetime[200];
 					int res = GetDateFormat(
 							LOCALE_USER_DEFAULT,	// locale for which date is to be formatted
@@ -954,7 +954,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 						msg += datetime;
 						msg += ' ';
 					}
-	
+
 					res = GetTimeFormat(
 							LOCALE_USER_DEFAULT,	// locale for which date is to be formatted
 							TIME_FORCE24HOURFORMAT,	// flags specifying function options
@@ -997,7 +997,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 		{
 			int nType = *pData;
 			int size = (int)GET32(pData + 1);
-			
+
 			if (!nType)
 			{
 				m_nRecvCount += size;
@@ -1093,7 +1093,7 @@ void CMainFrame::CloseAdminSocket(bool shouldReconnect /*=true*/)
 	}
 }
 
-void CMainFrame::OnFileConnect() 
+void CMainFrame::OnFileConnect()
 {
 	if (m_nReconnectTimerID)
 	{
@@ -1113,44 +1113,44 @@ void CMainFrame::OnFileConnect()
 	}
 }
 
-void CMainFrame::OnFileDisconnect() 
+void CMainFrame::OnFileDisconnect()
 {
 	CloseAdminSocket(false);
 }
 
-void CMainFrame::OnUpdateFileDisconnect(CCmdUI* pCmdUI) 
+void CMainFrame::OnUpdateFileDisconnect(CCmdUI* pCmdUI)
 {
-	pCmdUI->Enable(m_pAdminSocket?TRUE:FALSE);	
+	pCmdUI->Enable(m_pAdminSocket?TRUE:FALSE);
 }
 
-void CMainFrame::OnUpdateEditSettings(CCmdUI* pCmdUI) 
-{
-	pCmdUI->Enable(m_pAdminSocket && m_pAdminSocket->IsConnected());
-}
-
-void CMainFrame::OnUpdateMenuEditUsers(CCmdUI* pCmdUI) 
+void CMainFrame::OnUpdateEditSettings(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(m_pAdminSocket && m_pAdminSocket->IsConnected());
 }
 
-void CMainFrame::OnUpdateMenuEditGroups(CCmdUI* pCmdUI) 
+void CMainFrame::OnUpdateMenuEditUsers(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(m_pAdminSocket && m_pAdminSocket->IsConnected());
 }
 
-void CMainFrame::OnUpdateUsers(CCmdUI* pCmdUI) 
+void CMainFrame::OnUpdateMenuEditGroups(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(m_pAdminSocket && m_pAdminSocket->IsConnected());
 }
 
-void CMainFrame::OnUpdateGroups(CCmdUI* pCmdUI) 
+void CMainFrame::OnUpdateUsers(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(m_pAdminSocket && m_pAdminSocket->IsConnected());
+}
+
+void CMainFrame::OnUpdateGroups(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(m_pAdminSocket && m_pAdminSocket->IsConnected());
 }
 
 // this function gets called whenever the user decides to quit the app
 // (by pressing the 'x' for example
-void CMainFrame::OnDestroy() 
+void CMainFrame::OnDestroy()
 {
 	m_pOptions->SetOption(IOPTION_USERSORTING, GetUsersPane()->m_pListCtrl->GetSortColumn() + (GetUsersPane()->m_pListCtrl->GetSortDirection() << 4));
 	CloseAdminSocket(false);
@@ -1225,7 +1225,7 @@ LRESULT CMainFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	else if (message == WM_APP + 1)
 		OnAdminInterfaceClosed();
-	
+
 	return CFrameWnd::DefWindowProc(message, wParam, lParam);
 }
 

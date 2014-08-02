@@ -31,7 +31,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsMisc 
+// Dialogfeld COptionsMisc
 
 
 COptionsAutobanPage::COptionsAutobanPage(COptionsDlg *pOptionsDlg, CWnd* pParent /*=NULL*/)
@@ -68,12 +68,12 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // Behandlungsroutinen für Nachrichten COptionsAutobanPage
 
-BOOL COptionsAutobanPage::OnInitDialog() 
+BOOL COptionsAutobanPage::OnInitDialog()
 {
 	COptionsPage::OnInitDialog();
-	
+
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
 void COptionsAutobanPage::LoadData()

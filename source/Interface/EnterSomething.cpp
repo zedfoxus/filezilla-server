@@ -30,7 +30,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CEnterSomething 
+// Dialogfeld CEnterSomething
 
 CEnterSomething::CEnterSomething(UINT nID, int dialogID /*=CEnterSomething::IDD*/):CDialog(dialogID, 0)
 {
@@ -59,9 +59,9 @@ BEGIN_MESSAGE_MAP(CEnterSomething, CDialog)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CEnterSomething 
+// Behandlungsroutinen für Nachrichten CEnterSomething
 
-void CEnterSomething::OnOK() 
+void CEnterSomething::OnOK()
 {
 	UpdateData(TRUE);
 	//Check if a value was entered
@@ -71,7 +71,7 @@ void CEnterSomething::OnOK()
 		CDialog::OnOK();
 }
 
-void CEnterSomething::OnChangeEdit1() 
+void CEnterSomething::OnChangeEdit1()
 {
 	//Disable the OK button if the edit field is empty
 	UpdateData(TRUE);
@@ -81,10 +81,10 @@ void CEnterSomething::OnChangeEdit1()
 		m_OkCtrl.EnableWindow((m_String != _T("")) ? TRUE : FALSE);
 }
 
-BOOL CEnterSomething::OnInitDialog() 
+BOOL CEnterSomething::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	
+
 	//Load and set the window title
 	CString title;
 	title.LoadString(m_nID);
@@ -95,5 +95,5 @@ BOOL CEnterSomething::OnInitDialog()
 	m_OkCtrl.EnableWindow(m_String!=""?TRUE:FALSE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }

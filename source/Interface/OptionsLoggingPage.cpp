@@ -29,7 +29,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsLoggingPage 
+// Dialogfeld COptionsLoggingPage
 
 
 COptionsLoggingPage::COptionsLoggingPage(COptionsDlg *pOptionsDlg, CWnd* pParent /*=NULL*/)
@@ -79,20 +79,20 @@ BEGIN_MESSAGE_MAP(COptionsLoggingPage, COptionsPage)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten COptionsLoggingPage 
+// Behandlungsroutinen für Nachrichten COptionsLoggingPage
 
-BOOL COptionsLoggingPage::OnInitDialog() 
+BOOL COptionsLoggingPage::OnInitDialog()
 {
 	COptionsPage::OnInitDialog();
-	
+
 	//Set ctrl states
 	OnOptionsLoggingChangedOption();
-	
+
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
-void COptionsLoggingPage::OnOptionsLoggingChangedOption() 
+void COptionsLoggingPage::OnOptionsLoggingChangedOption()
 {
 	UpdateData(TRUE);
 
@@ -123,7 +123,7 @@ void COptionsLoggingPage::OnOptionsLoggingChangedOption()
 		m_cDelete.EnableWindow(FALSE);
 		m_cDeleteTime.EnableWindow(FALSE);
 	}
-	
+
 }
 
 void COptionsLoggingPage::LoadData()

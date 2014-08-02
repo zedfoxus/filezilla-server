@@ -15,7 +15,7 @@
 
 #include "BrowseForFolder.h"
 
-class CSBDestination : public CBrowseForFolder  
+class CSBDestination : public CBrowseForFolder
 {
 public:
 	CSBDestination(const HWND hParent = NULL, const int nTitleID = 0);

@@ -30,7 +30,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COfflineAskDlg 
+// Dialogfeld COfflineAskDlg
 
 
 COfflineAskDlg::COfflineAskDlg(CWnd* pParent /*=NULL*/)
@@ -57,15 +57,15 @@ BEGIN_MESSAGE_MAP(COfflineAskDlg, CDialog)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten COfflineAskDlg 
+// Behandlungsroutinen für Nachrichten COfflineAskDlg
 
-BOOL COfflineAskDlg::OnInitDialog() 
+BOOL COfflineAskDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	
+
 	m_nRadio=0;
 	UpdateData(FALSE);
-	
+
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }

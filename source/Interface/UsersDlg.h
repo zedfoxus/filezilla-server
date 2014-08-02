@@ -60,7 +60,7 @@ protected:
 	public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung
@@ -74,9 +74,9 @@ protected:
 	void SetCtrlState();
 	int m_olduser;
 	BOOL Validate();
-	
-	typedef std::vector<t_group> t_GroupsList; 
-	typedef std::vector<t_user> t_UsersList; 
+
+	typedef std::vector<t_group> t_GroupsList;
+	typedef std::vector<t_user> t_UsersList;
 	t_GroupsList m_GroupsList;
 	t_UsersList m_UsersList;
 	bool m_localConnection;

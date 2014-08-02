@@ -55,7 +55,7 @@ bool CAutoBanManager::IsBanned(const CStdString& ip)
 	m_sync.Lock();
 	bool banned = m_banMap.find(ip) != m_banMap.end();
 	m_sync.Unlock();
-	
+
 	return banned;
 }
 
@@ -95,7 +95,7 @@ bool CAutoBanManager::RegisterAttempt(const CStdString& ip)
 			{
 				// TODO
 			}
-			
+
 			m_sync.Unlock();
 			return true;
 		}
@@ -105,7 +105,7 @@ bool CAutoBanManager::RegisterAttempt(const CStdString& ip)
 
 	m_sync.Unlock();
 
-    return false;
+	return false;
 }
 
 void CAutoBanManager::PurgeOutdated()

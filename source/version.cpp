@@ -24,7 +24,7 @@ CStdString GetVersionString()
 	//Fill the version info
 	TCHAR fullpath[MAX_PATH + 10];
 	GetModuleFileName(0, fullpath, MAX_PATH + 10);
-	
+
 	TCHAR *str = new TCHAR[_tcslen(fullpath) + 1];
 	_tcscpy(str, fullpath);
 	DWORD tmp = 0;
@@ -36,9 +36,9 @@ CStdString GetVersionString()
 
 	CStdString ProductName;
 	//Retreive the product name
-	
+
 	TCHAR SubBlock[50];
-			
+
 	// Structure used to store enumerated languages and code pages.
 	struct LANGANDCODEPAGE {
 		WORD wLanguage;
@@ -46,23 +46,23 @@ CStdString GetVersionString()
 	} *lpTranslate;
 
 	UINT cbTranslate;
-			
+
 	// Read the list of languages and code pages.
-	if (VerQueryValue(pBlock, 
+	if (VerQueryValue(pBlock,
 				_T("\\VarFileInfo\\Translation"),
 				(LPVOID*)&lpTranslate,
 				&cbTranslate))
 	{
 		// Read the file description for each language and code page.
-	
-		_stprintf( SubBlock, 
-	           _T("\\StringFileInfo\\%04x%04x\\ProductName"),
-	           lpTranslate[0].wLanguage,
-	           lpTranslate[0].wCodePage);
-		// Retrieve file description for language and code page "0". 
-		if (VerQueryValue(pBlock, 
-				SubBlock, 
-				&ptr, 
+
+		_stprintf( SubBlock,
+			   _T("\\StringFileInfo\\%04x%04x\\ProductName"),
+			   lpTranslate[0].wLanguage,
+			   lpTranslate[0].wCodePage);
+		// Retrieve file description for language and code page "0".
+		if (VerQueryValue(pBlock,
+				SubBlock,
+				&ptr,
 					&ptrlen))
 		{
 			ProductName = (TCHAR*)ptr;
@@ -73,7 +73,7 @@ CStdString GetVersionString()
 	if (VerQueryValue(pBlock, _T("\\"), &ptr, &ptrlen))
 	{
 		VS_FIXEDFILEINFO *fi = (VS_FIXEDFILEINFO*)ptr;
-		
+
 		if (fi->dwFileVersionMS >> 16)
 		{
 			//v1.00+
@@ -118,7 +118,7 @@ CStdString GetVersionString()
 					//final version
 					version.Format(_T("%s version 0.%d.%d beta"), (LPCTSTR)ProductName, fi->dwFileVersionMS&0xFFFF, fi->dwFileVersionLS >> 16);
 		}
-		
+
 	}
 	delete [] str;
 	delete [] pBlock;

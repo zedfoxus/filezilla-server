@@ -27,7 +27,7 @@
 #include "..\OptionTypes.h"
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptions 
+// Dialogfeld COptions
 
 class COptions;
 class COptionsPage;
@@ -48,7 +48,7 @@ public:
 	COptions *m_pInterfaceOptions;
 
 	bool IsLocalConnection() const { return m_localConnection; }
-	
+
 protected:
 
 	std::list<COptionsPage *> m_PageList;
@@ -56,7 +56,7 @@ protected:
 	COptionsSpeedLimitPage *m_pOptionsSpeedLimitPage;
 
 	static bool IsNumeric(LPCTSTR str);
-	
+
 	struct t_OptionsCache
 	{
 		int nType;
@@ -70,7 +70,7 @@ protected:
 	CSAPrefsSubDlg* GetCurPage();
 
 	bool m_localConnection;
-	
+
 // Dialogfelddaten
 	//{{AFX_DATA(COptions)
 	enum { IDD = IDD_SAPREFS };

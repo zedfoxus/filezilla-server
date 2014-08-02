@@ -84,7 +84,7 @@ void CHashThread::DoHash()
 	int shareMode = FILE_SHARE_READ;
 	HANDLE hFile = CreateFile(file, GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	delete [] file;
-	
+
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
 		m_sync.Lock();
@@ -227,16 +227,16 @@ enum CHashThread::_result CHashThread::GetResult(int id, CHashThread::_algorithm
 {
 	if (id <= 0)
 		return FAILURE_MASK;
-	
+
 	m_sync.Lock();
-	
+
 	if (id != m_active_id)
 	{
 		m_sync.Unlock();
 		return BUSY;
 	}
 
-	if (m_result == PENDING) 
+	if (m_result == PENDING)
 	{
 		m_sync.Unlock();
 		return PENDING;

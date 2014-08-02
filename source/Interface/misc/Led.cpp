@@ -54,11 +54,11 @@ END_MESSAGE_MAP()
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-void CLed::OnPaint() 
+void CLed::OnPaint()
 {
 	CPaintDC dc(this); // device context for painting
 	DrawLed(&dc,m_nLedColor,m_nLedMode,m_nLedShape);
-	
+
 	// Do not call CStatic::OnPaint() for painting messages
 }
 
@@ -71,7 +71,7 @@ void CLed::OnPaint()
 //				CDC *pDC - DC to draw to
 //
 //				int iLedColor - Where color is defined by:
-//			 		LED_COLOR_RED
+//					LED_COLOR_RED
 //					LED_COLOR_GREEN
 //					LED_COLOR_YELLOW
 //					LED_COLOR_BLUE
@@ -125,13 +125,13 @@ void CLed::DrawLed(CDC *pDC,int nLEDColor, int nMode, int nShape)
 	// Work with tempDC and bitmapTemp to reduce flickering
 	//
 	CBitmap *pOldBitmapTemp = TempDC.SelectObject(&bitmapTemp);
-	TempDC.BitBlt(0, 0, LED_SIZE, LED_SIZE, pDC, rect.left, rect.top, SRCCOPY); 
+	TempDC.BitBlt(0, 0, LED_SIZE, LED_SIZE, pDC, rect.left, rect.top, SRCCOPY);
 
 	//
 	// Create mask
 	//
 	COLORREF OldBkColor = srcDC.SetBkColor(RGB(255,0,255));
-	dcMask.BitBlt(0, 0, LED_SIZE, LED_SIZE,&srcDC, nMode*LED_SIZE, nLEDColor+nShape, SRCCOPY); 
+	dcMask.BitBlt(0, 0, LED_SIZE, LED_SIZE,&srcDC, nMode*LED_SIZE, nLEDColor+nShape, SRCCOPY);
 	TempDC.SetBkColor(OldBkColor);
 
 	//
@@ -139,16 +139,16 @@ void CLed::DrawLed(CDC *pDC,int nLEDColor, int nMode, int nShape)
 	// LED. By using the mask color (RGB(255,0,255)) a mask has been created
 	// so the bitmap will appear transparent.
 	//
-	TempDC.BitBlt(0, 0, LED_SIZE, LED_SIZE, &srcDC, nMode*LED_SIZE, nLEDColor+nShape, SRCINVERT); 
-	TempDC.BitBlt(0, 0, LED_SIZE, LED_SIZE,&dcMask, 0, 0, SRCAND); 
-	TempDC.BitBlt(0, 0, LED_SIZE, LED_SIZE, &srcDC, nMode*LED_SIZE, nLEDColor+nShape, SRCINVERT); 
+	TempDC.BitBlt(0, 0, LED_SIZE, LED_SIZE, &srcDC, nMode*LED_SIZE, nLEDColor+nShape, SRCINVERT);
+	TempDC.BitBlt(0, 0, LED_SIZE, LED_SIZE,&dcMask, 0, 0, SRCAND);
+	TempDC.BitBlt(0, 0, LED_SIZE, LED_SIZE, &srcDC, nMode*LED_SIZE, nLEDColor+nShape, SRCINVERT);
 
 	//
 	// Since the actual minipulation is done to tempDC so there is minimal
 	// flicker, it is now time to draw the result to the screen.
 	//
-	pDC->BitBlt(rect.left, rect.top, LED_SIZE, LED_SIZE, &TempDC, 0, 0, SRCCOPY); 
-	
+	pDC->BitBlt(rect.left, rect.top, LED_SIZE, LED_SIZE, &TempDC, 0, 0, SRCCOPY);
+
 	//
 	// House cleaning
 	//
@@ -167,7 +167,7 @@ void CLed::DrawLed(CDC *pDC,int nLEDColor, int nMode, int nShape)
 // Description:	This method will draw and set led parameters.
 //
 // Entry:		int iLedColor - Where color is defined by:
-//			 		LED_COLOR_RED
+//					LED_COLOR_RED
 //					LED_COLOR_GREEN
 //					LED_COLOR_YELLOW
 //					LED_COLOR_BLUE
@@ -218,7 +218,7 @@ void CLed::Ping(DWORD dwTimeout)
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-void CLed::OnTimer(UINT_PTR nIDEvent) 
+void CLed::OnTimer(UINT_PTR nIDEvent)
 {
 	if (nIDEvent == TIMER_ID_PING)
 	{
@@ -231,13 +231,13 @@ void CLed::OnTimer(UINT_PTR nIDEvent)
 			m_bPingEnabled = FALSE;
 		}
 	}
-	
+
 	CStatic::OnTimer(nIDEvent);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-BOOL CLed::OnEraseBkgnd(CDC* pDC) 
+BOOL CLed::OnEraseBkgnd(CDC* pDC)
 {
 	// No background rendering
 	return TRUE;

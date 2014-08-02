@@ -12,7 +12,7 @@ CStdString ReadText(TiXmlElement* pElement)
 	if (!textNode || !textNode->ToText())
 		return _T("");
 
-	return ConvFromNetwork(textNode->Value());					
+	return ConvFromNetwork(textNode->Value());
 }
 
 void SetText(TiXmlElement* pElement, const CStdString& text)

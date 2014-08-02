@@ -32,7 +32,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsPasvPage 
+// Dialogfeld COptionsPasvPage
 
 
 COptionsPasvPage::COptionsPasvPage(COptionsDlg *pOptionsDlg, CWnd* pParent /*=NULL*/)
@@ -82,31 +82,31 @@ BEGIN_MESSAGE_MAP(COptionsPasvPage, COptionsPage)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten COptionsPasvPage 
+// Behandlungsroutinen für Nachrichten COptionsPasvPage
 
-void COptionsPasvPage::OnOptionsPasvIptype() 
+void COptionsPasvPage::OnOptionsPasvIptype()
 {
 	UpdateData(TRUE);
 	m_cIP.EnableWindow(m_nIPType == 1);
-	m_cURL.EnableWindow(m_nIPType == 2);	
+	m_cURL.EnableWindow(m_nIPType == 2);
 }
 
-void COptionsPasvPage::OnOptionsPasvUseportrange() 
+void COptionsPasvPage::OnOptionsPasvUseportrange()
 {
 	UpdateData(TRUE);
 	m_cPortMin.EnableWindow(m_bUseCustomPort);
 	m_cPortMax.EnableWindow(m_bUseCustomPort);
 }
 
-BOOL COptionsPasvPage::OnInitDialog() 
+BOOL COptionsPasvPage::OnInitDialog()
 {
 	COptionsPage::OnInitDialog();
-	
+
 	OnOptionsPasvIptype();
 	OnOptionsPasvUseportrange();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
 BOOL COptionsPasvPage::IsDataValid()

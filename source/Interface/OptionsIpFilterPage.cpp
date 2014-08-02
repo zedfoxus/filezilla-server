@@ -33,7 +33,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsIpFilterPage 
+// Dialogfeld COptionsIpFilterPage
 
 
 COptionsIpFilterPage::COptionsIpFilterPage(COptionsDlg *pOptionsDlg, CWnd* pParent /*=NULL*/)
@@ -60,14 +60,14 @@ BEGIN_MESSAGE_MAP(COptionsIpFilterPage, COptionsPage)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten COptionsIpFilterPage 
+// Behandlungsroutinen für Nachrichten COptionsIpFilterPage
 
-BOOL COptionsIpFilterPage::OnInitDialog() 
+BOOL COptionsIpFilterPage::OnInitDialog()
 {
 	COptionsPage::OnInitDialog();
-	
+
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
 BOOL COptionsIpFilterPage::IsDataValid()

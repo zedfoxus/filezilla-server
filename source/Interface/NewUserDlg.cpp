@@ -81,7 +81,7 @@ BOOL CNewUserDlg::OnInitDialog()
 		m_cGroup.AddString(*iter);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
 void CNewUserDlg::OnOK()

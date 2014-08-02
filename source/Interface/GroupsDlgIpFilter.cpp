@@ -72,7 +72,7 @@ BOOL CGroupsDlgIpFilter::OnInitDialog()
 	CSAPrefsSubDlg::OnInitDialog();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
 CString CGroupsDlgIpFilter::Validate()

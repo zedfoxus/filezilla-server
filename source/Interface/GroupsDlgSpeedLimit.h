@@ -26,7 +26,7 @@
 //
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CGroupsDlgSpeedLimit 
+// Dialogfeld CGroupsDlgSpeedLimit
 #include "GroupsDlg.h"
 
 class CGroupsDlgSpeedLimit : public CSAPrefsSubDlg
@@ -35,12 +35,12 @@ class CGroupsDlgSpeedLimit : public CSAPrefsSubDlg
 public:
 	CGroupsDlgSpeedLimit(CGroupsDlg *pOwner);   // Standardkonstruktor
 	~CGroupsDlgSpeedLimit();
-	
+
 	void SetCtrlState();
 	BOOL DisplayGroup(const t_group *pGroup);
 	BOOL SaveGroup(t_group *pGroup);
 	CString Validate();
-	
+
 protected:
 	void ShowSpeedLimit( CListBox &listBox, SPEEDLIMITSLIST &list);
 
@@ -75,7 +75,7 @@ protected:
 	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen
 	//{{AFX_VIRTUAL(CGroupsDlgSpeedLimit)
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung

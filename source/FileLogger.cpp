@@ -81,9 +81,9 @@ BOOL CFileLogger::CheckLogFile()
 	if (pos)
 		*++pos=0;
 	_tcscat(path, _T("Logs\\"));
-	
+
 	//Get logfile name
-	_int64 nLogType = m_pOptions->GetOptionVal(OPTION_LOGTYPE);		
+	_int64 nLogType = m_pOptions->GetOptionVal(OPTION_LOGTYPE);
 	TCHAR filename[MAX_PATH + 1];
 	if (!nLogType)
 	{
@@ -105,19 +105,19 @@ BOOL CFileLogger::CheckLogFile()
 		if (m_pFileName)
 			delete [] m_pFileName;
 		m_pFileName = new TCHAR[_tcslen(filename)+1];
-		_tcscpy(m_pFileName, filename);	
+		_tcscpy(m_pFileName, filename);
 		_tcscat(buffer, filename);
-		
+
 		if (m_hLogFile != INVALID_HANDLE_VALUE)
 			CloseHandle(m_hLogFile);
 		m_hLogFile = CreateFile(buffer, GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, 0, 0);
 		if (m_hLogFile == INVALID_HANDLE_VALUE)
 			return FALSE;
-		
+
 		SetFilePointer(m_hLogFile, 0, 0, FILE_END);
 	}
 	_int64 nLimit = m_pOptions->GetOptionVal(OPTION_LOGLIMITSIZE);
-	
+
 	if (nLogType)
 	{
 		//Different logfiles for each day
@@ -131,7 +131,7 @@ BOOL CFileLogger::CheckLogFile()
 		GetSystemTime(&time);
 		SystemTimeToFileTime(&time, &curFileTime);
 		_int64 nTime = curFileTime.dwLowDateTime + ((_int64)curFileTime.dwHighDateTime<<32);
-		
+
 		TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 		_tcscpy(buffer, path);
 		_tcscat(buffer, _T("fzs-*.log"));
@@ -140,7 +140,7 @@ BOOL CFileLogger::CheckLogFile()
 		WIN32_FIND_DATA NextFindFileData;
 		HANDLE hFind;
 		hFind = FindFirstFile(buffer, &NextFindFileData);
-		
+
 		_int64 nDeleteTime = (_int64)m_pOptions->GetOptionVal(OPTION_LOGDELETETIME);
 		if (nDeleteTime)
 			nDeleteTime = (nDeleteTime+1) * 60 * 60 * 24 * 10000000;
@@ -149,7 +149,7 @@ BOOL CFileLogger::CheckLogFile()
 		_int64 totalsize = 0;
 		CStdString oldestname;
 		_int64 oldestDate = 0;
-		
+
 		while (hFind != INVALID_HANDLE_VALUE)
 		{
 			FindFileData=NextFindFileData;
@@ -186,7 +186,7 @@ BOOL CFileLogger::CheckLogFile()
 				}
 			}
 		}
-		
+
 		if (_tcscmp(oldestname, _T("")) && nLimit && totalsize > nLimit*1024)
 		{
 			DeleteFile(oldestname);
@@ -213,7 +213,7 @@ BOOL CFileLogger::CheckLogFile()
 				if (!ReadFile(m_hLogFile, buffer, bufsize, &numread, 0))
 					break;
 				curReadPos += numread;
-				
+
 				SetFilePointer(m_hLogFile, curWritePos, 0, FILE_BEGIN);
 				if (bFirst) //Assure log starts with complete line
 				{
@@ -233,9 +233,9 @@ BOOL CFileLogger::CheckLogFile()
 					if (!WriteFile(m_hLogFile, buffer, numread, &numwritten, 0))
 						break;
 					curWritePos += numwritten;
-					
+
 			} while (numread == bufsize);
-			
+
 			SetFilePointer(m_hLogFile, curWritePos, 0, FILE_BEGIN);
 			SetEndOfFile(m_hLogFile);
 		}

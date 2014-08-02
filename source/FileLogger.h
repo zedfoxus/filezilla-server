@@ -24,7 +24,7 @@
 #endif // _MSC_VER > 1000
 
 class COptions;
-class CFileLogger  
+class CFileLogger
 {
 public:
 	BOOL CheckLogFile();

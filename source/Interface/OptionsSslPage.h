@@ -49,7 +49,7 @@ protected:
 	CButton m_cForceProtP;
 	CEdit m_cCertificate;
 	CButton m_cCertificateBrowse;
-	
+
 	CEdit m_cKey;
 	CEdit m_cPass;
 	CButton m_cKeyBrowse;

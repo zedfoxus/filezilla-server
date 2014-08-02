@@ -44,7 +44,7 @@ CAdminSocket::CAdminSocket(CAdminInterface *pAdminInterface)
 	m_pRecvBuffer = new unsigned char[BUFSIZE];
 	m_nRecvBufferLen = BUFSIZE;
 	m_nRecvBufferPos = 0;
-	
+
 	SYSTEMTIME sTime;
 	GetSystemTime(&sTime);
 	VERIFY(SystemTimeToFileTime(&sTime, &m_LastRecvTime));
@@ -68,7 +68,7 @@ BOOL CAdminSocket::Init()
 	*p++ = 4;
 	memcpy(p, &SERVER_VERSION, 4);
 	p += 4;
-	
+
 	*p++ = 0;
 	*p++ = 4;
 
@@ -88,29 +88,29 @@ BOOL CAdminSocket::Init()
 			Close();
 			return FALSE;
 		}
-		return FinishLogon();		
+		return FinishLogon();
 	}
 	else
 	{
 		*p++ = 0;
-		
+
 		DWORD len = 20;
 		memcpy(p, &len, 4);
 		p += 4;
 
 		*p++ = 0;
 		*p++ = 8;
-		
+
 		int i;
 		for (i = 0; i < 8; i++)
 		{
 			m_Nonce1[i] = (rand()*256)/(RAND_MAX+1);
 			*p++ = m_Nonce1[i];
 		}
-		
+
 		*p++ = 0;
 		*p++ = 8;
-		
+
 		for (i = 0; i < 8; i++)
 		{
 			m_Nonce2[i] = (rand()*256)/(RAND_MAX+1);
@@ -327,7 +327,7 @@ BOOL CAdminSocket::SendCommand(LPCTSTR pszCommand, int nTextType)
 		utf8 = ConvToNetwork(pszCommand);
 
 	DWORD nDataLength = utf8.size() + 1;
-	
+
 	t_data data(nDataLength + 5);
 	*data.pData = 2;
 	*data.pData |= 1 << 2;
@@ -336,7 +336,7 @@ BOOL CAdminSocket::SendCommand(LPCTSTR pszCommand, int nTextType)
 	memcpy(reinterpret_cast<char *>(&*data.pData+6), utf8.c_str(), nDataLength - 1);
 
 	m_SendBuffer.push_back(data);
-	
+
 	return SendPendingData();
 }
 
@@ -346,7 +346,7 @@ BOOL CAdminSocket::CheckForTimeout()
 	FILETIME fTime;
 	GetSystemTime(&sTime);
 	VERIFY(SystemTimeToFileTime(&sTime, &fTime));
-	
+
 	_int64 LastRecvTime = ((_int64)m_LastRecvTime.dwHighDateTime << 32) + m_LastRecvTime.dwLowDateTime;
 	_int64 CurTime = ((_int64)fTime.dwHighDateTime << 32) + fTime.dwLowDateTime;
 

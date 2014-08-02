@@ -94,7 +94,7 @@ protected:
 	CLed m_SendLed;
 	CLed m_RecvLed;
 	CStatusBar  m_wndStatusBar;
-	CToolBar    m_wndToolBar;
+	CToolBar	m_wndToolBar;
 	CToolBar	m_wndUserListToolBar;
 	CSplitterWndEx m_wndSplitter;
 

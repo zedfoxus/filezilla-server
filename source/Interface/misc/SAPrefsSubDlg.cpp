@@ -76,14 +76,14 @@ void CSAPrefsSubDlg::OnCancel()
    EndDialog(IDCANCEL);
 }
 
-BOOL CSAPrefsSubDlg::PreTranslateMessage(MSG* pMsg) 
+BOOL CSAPrefsSubDlg::PreTranslateMessage(MSG* pMsg)
 {
 	// Don't let CDialog process the Escape key.
 	if ((pMsg->message == WM_KEYDOWN) && (pMsg->wParam == VK_ESCAPE))
 	{
 	//	return TRUE;
 	}
-	
+
 	// Don't let CDialog process the Return key, if a multi-line edit has focus
 	if ((pMsg->message == WM_KEYDOWN) && (pMsg->wParam == VK_RETURN))
 	{

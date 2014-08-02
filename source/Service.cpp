@@ -23,7 +23,7 @@
 #include "server.h"
 #include "Options.h"
 
-void ServiceMain(DWORD argc, LPTSTR *argv); 
+void ServiceMain(DWORD argc, LPTSTR *argv);
 void ServiceCtrlHandler(DWORD nControlCode);
 BOOL UpdateServiceStatus(DWORD dwCurrentState, DWORD dwWin32ExitCode,
 					 DWORD dwServiceSpecificExitCode, DWORD dwCheckPoint,
@@ -33,7 +33,7 @@ DWORD ServiceExecutionThread(LPDWORD param);
 HANDLE hServiceThread=0;
 void KillService();
 
-SERVICE_STATUS_HANDLE nServiceStatusHandle = 0; 
+SERVICE_STATUS_HANDLE nServiceStatusHandle = 0;
 HANDLE killServiceEvent = 0;
 BOOL nServiceRunning = 0;
 DWORD nServiceCurrentStatus = 0;
@@ -104,14 +104,14 @@ int SetServiceDisplayName(LPCTSTR serviceDisplayName)
 }
 
 int APIENTRY WinMain(HINSTANCE hInstance,
-                     HINSTANCE hPrevInstance,
-                     LPSTR     lpCmdLine,
-                     int       nCmdShow )
+					 HINSTANCE hPrevInstance,
+					 LPSTR	 lpCmdLine,
+					 int	   nCmdShow )
 {
 	BOOL bNT = FALSE;
 	BOOL bInstalled = FALSE;
 	BOOL dwCurrentState = 0;
-	
+
 	int nAction = 0;
 	if (lpCmdLine[0] == '/' || lpCmdLine[0] == '-')
 	{
@@ -152,7 +152,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 	SC_HANDLE hService, hScm;
 	hScm = OpenSCManager(0, 0, SC_MANAGER_CONNECT);
-	
+
 	if (hScm)
 	{
 		bNT = TRUE;
@@ -169,7 +169,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 				{
 					CloseServiceHandle(hService);
 					CloseServiceHandle(hScm);
-					
+
 					const SERVICE_TABLE_ENTRY servicetable[]=
 					{
 						{ServiceName,(LPSERVICE_MAIN_FUNCTION)ServiceMain},
@@ -201,7 +201,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			return CompatMain(lpCmdLine);
 		}
 	}
-		
+
 	if (!bInstalled)
 	{
 		if (nAction==1 || nAction==5 || (nAction == 0 && MessageBox(0, _T("Install Service?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES))
@@ -246,7 +246,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		else
 			return 0;
 	}
-		
+
 	if (dwCurrentState == SERVICE_STOPPED && (nAction==3 || (nAction == 0 && MessageBox(0, _T("Start server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES)))
 	{
 		SC_HANDLE hService,hScm;
@@ -307,7 +307,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		CloseServiceHandle(hScm);
 		return 0;
 	}
-		
+
 	if (dwCurrentState == SERVICE_STOPPED)
 		return 0;
 
@@ -366,7 +366,7 @@ BOOL UpdateServiceStatus(DWORD dwCurrentState, DWORD dwWin32ExitCode,
 	}
 	else
 	{
-		nServiceStatus.dwControlsAccepted=SERVICE_ACCEPT_STOP			
+		nServiceStatus.dwControlsAccepted=SERVICE_ACCEPT_STOP
 			|SERVICE_ACCEPT_SHUTDOWN;
 	}
 	if(dwServiceSpecificExitCode==0)
@@ -392,7 +392,7 @@ BOOL UpdateServiceStatus(DWORD dwCurrentState, DWORD dwWin32ExitCode,
 }
 
 BOOL StartServiceThread()
-{	
+{
 	DWORD id;
 	hServiceThread=CreateThread(0,0,
 		(LPTHREAD_START_ROUTINE)ServiceExecutionThread,
@@ -455,12 +455,12 @@ void ServiceCtrlHandler(DWORD nControlCode)
 {
 	BOOL success;
 	switch(nControlCode)
-	{	
+	{
 	case SERVICE_CONTROL_SHUTDOWN:
 	case SERVICE_CONTROL_STOP:
 		nServiceCurrentStatus=SERVICE_STOP_PENDING;
 		success=UpdateServiceStatus(SERVICE_STOP_PENDING,NO_ERROR,0,1,3000);
-		KillService();		
+		KillService();
 		return;
 	case 128:
 		SendReloadConfig();
@@ -476,7 +476,7 @@ DWORD ServiceExecutionThread(LPDWORD param)
 	// initialize Winsock library
 	BOOL res=TRUE;
 	WSADATA wsaData;
-	
+
 	WORD wVersionRequested = MAKEWORD(1, 1);
 	int nResult = WSAStartup(wVersionRequested, &wsaData);
 	if (nResult != 0)
@@ -499,7 +499,7 @@ DWORD ServiceExecutionThread(LPDWORD param)
 
 	if (!nServiceRunning)
 		PostQuitMessage(0);
-	
+
 	MSG msg;
 	while (GetMessage(&msg, 0, 0, 0))
 	{
@@ -589,13 +589,13 @@ int CompatMain(LPCSTR lpCmdLine)
 		return 0;
 	else if (nAction==2 && !hWnd)
 		return 0;
-	
+
 	if (!hWnd && (nAction == 1 || (nAction == 0 && MessageBox(0, _T("Start Server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES)))
 	{
 		// initialize Winsock library
 		BOOL res=TRUE;
 		WSADATA wsaData;
-		
+
 		WORD wVersionRequested = MAKEWORD(1, 1);
 		int nResult = WSAStartup(wVersionRequested, &wsaData);
 		if (nResult != 0)
@@ -605,26 +605,26 @@ int CompatMain(LPCSTR lpCmdLine)
 			WSACleanup();
 			res=FALSE;
 		}
-		
+
 		if(!res)
 		{
 			return 1;
 		}
-		
+
 		CServer *pServer = new CServer;
 		VERIFY(pServer->Create());
-		
+
 		MSG msg;
 		while (GetMessage(&msg, 0, 0, 0))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		
+
 		delete pServer;
 		WSACleanup();
 		return 0;
-	}		
+	}
 	else if (hWnd && (nAction == 2 || (nAction == 0 && MessageBox(0, _T("Stop Server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES)))
 	{
 		SendMessage(hWnd, WM_CLOSE, 0, 0);
@@ -633,6 +633,6 @@ int CompatMain(LPCSTR lpCmdLine)
 		else
 			return 0;
 	}
-	
+
 	return 1;
 }

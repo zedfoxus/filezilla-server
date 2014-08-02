@@ -35,11 +35,11 @@ public:
 
 protected:
 	CStatic m_Desc;
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 
 	DECLARE_MESSAGE_MAP()
 public:
-	typedef std::vector<t_group> t_GroupsList; 
+	typedef std::vector<t_group> t_GroupsList;
 	const t_GroupsList* m_GroupsList;
 	CString m_groupName;
 	CComboBox m_NewGroup;

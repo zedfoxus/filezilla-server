@@ -45,7 +45,7 @@ public:
 	void Run();
 
 //	virtual BOOL Create( DWORD in_dwStyle, const RECT& in_rcRect,
-//                         CWnd* in_pParentWnd, UINT in_nID );
+//						 CWnd* in_pParentWnd, UINT in_nID );
 
 	// Generierte Nachrichtenzuordnungsfunktionen
 protected:
@@ -91,10 +91,10 @@ protected:
 /*class _AFX_RICHEDITEX_STATE
 {
 public:
-    _AFX_RICHEDITEX_STATE();
-    virtual ~_AFX_RICHEDITEX_STATE();
+	_AFX_RICHEDITEX_STATE();
+	virtual ~_AFX_RICHEDITEX_STATE();
 
-    HINSTANCE m_hInstRichEdit20 ;
+	HINSTANCE m_hInstRichEdit20 ;
 };
 
 BOOL PASCAL AfxInitRichEditEx();

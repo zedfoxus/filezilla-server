@@ -8,10 +8,10 @@
 //				jmoleary@earthlink.net
 //				http://www.joeo.net/stdstring.htm (a bit outdated)
 //
-//      The latest version of this code should always be available at the
-//      following link:
+//	  The latest version of this code should always be available at the
+//	  following link:
 //
-//              http://www.joeo.net/code/StdString.zip (Dec 6, 2003)
+//			  http://www.joeo.net/code/StdString.zip (Dec 6, 2003)
 //
 //
 //  REMARKS:
@@ -79,12 +79,12 @@
 //			- John James
 //			- Wang Haifeng
 //			- Tim Dowty
-//          - Arnt Witteveen
-//          - Glen Maynard
-//          - Paul DeMarco
-//          - Bagira (full name?)
-//          - Ronny Schulz
-//          - Jakko Van Hunen
+//		  - Arnt Witteveen
+//		  - Glen Maynard
+//		  - Paul DeMarco
+//		  - Bagira (full name?)
+//		  - Ronny Schulz
+//		  - Jakko Van Hunen
 //			- Charles Godwin
 //			- Henk Demper
 //			- Greg Marr
@@ -98,9 +98,9 @@
 //					finally spotting a silly little error in StdCodeCvt that
 //					has been causing me (and users of CStdString) problems for
 //					years in some relatively rare conversions.  I had reversed
-//					two length arguments. 
+//					two length arguments.
 //
-//    2003-NOV-24 - Thanks to a bunch of people for helping me clean up many
+//	2003-NOV-24 - Thanks to a bunch of people for helping me clean up many
 //					compiler warnings (and yes, even a couple of actual compiler
 //					errors).  These include Henk Demper for figuring out how
 //					to make the Intellisense work on with CStdString on VC6,
@@ -114,39 +114,39 @@
 //					for helping me fix compiler signed unsigned warnings in
 //					several functions.
 //
-//    2003-JUL-10 - Thanks to Charles Godwin for making me realize my 'FmtArg'
+//	2003-JUL-10 - Thanks to Charles Godwin for making me realize my 'FmtArg'
 //					fixes had inadvertently broken the DLL-export code (which is
-//                  normally commented out.  I had to move it up higher.  Also
+//				  normally commented out.  I had to move it up higher.  Also
 //					this helped me catch a bug in ssicoll that would prevent
-//                  compilation, otherwise.
+//				  compilation, otherwise.
 //
-//    2003-MAR-14 - Thanks to Jakko Van Hunen for pointing out a copy-and-paste
-//                  bug in one of the overloads of FmtArg.
+//	2003-MAR-14 - Thanks to Jakko Van Hunen for pointing out a copy-and-paste
+//				  bug in one of the overloads of FmtArg.
 //
-//    2003-MAR-10 - Thanks to Ronny Schulz for (twice!) sending me some changes
-//                  to help CStdString build on SGI and for pointing out an
-//                  error in placement of my preprocessor macros for ssfmtmsg.
+//	2003-MAR-10 - Thanks to Ronny Schulz for (twice!) sending me some changes
+//				  to help CStdString build on SGI and for pointing out an
+//				  error in placement of my preprocessor macros for ssfmtmsg.
 //
-//    2002-NOV-26 - Thanks to Bagira for pointing out that my implementation of
-//                  SpanExcluding was not properly handling the case in which
-//                  the string did NOT contain any of the given characters
+//	2002-NOV-26 - Thanks to Bagira for pointing out that my implementation of
+//				  SpanExcluding was not properly handling the case in which
+//				  the string did NOT contain any of the given characters
 //
-//    2002-OCT-21 - Many thanks to Paul DeMarco who was invaluable in helping me
-//                  get this code working with Borland's free compiler as well
-//                  as the Dev-C++ compiler (available free at SourceForge).
+//	2002-OCT-21 - Many thanks to Paul DeMarco who was invaluable in helping me
+//				  get this code working with Borland's free compiler as well
+//				  as the Dev-C++ compiler (available free at SourceForge).
 //
-//    2002-SEP-13 - Thanks to Glen Maynard who helped me get rid of some loud
-//                  but harmless warnings that were showing up on g++.  Glen
-//                  also pointed out that some pre-declarations of FmtArg<>
-//                  specializations were unnecessary (and no good on G++)
+//	2002-SEP-13 - Thanks to Glen Maynard who helped me get rid of some loud
+//				  but harmless warnings that were showing up on g++.  Glen
+//				  also pointed out that some pre-declarations of FmtArg<>
+//				  specializations were unnecessary (and no good on G++)
 //
-//    2002-JUN-26 - Thanks to Arnt Witteveen for pointing out that I was using
-//                  static_cast<> in a place in which I should have been using
-//                  reinterpret_cast<> (the ctor for unsigned char strings).
-//                  That's what happens when I don't unit-test properly!
-//                  Arnt also noticed that CString was silently correcting the
-//                  'nCount' argument to Left() and Right() where CStdString was
-//                  not (and crashing if it was bad).  That is also now fixed!
+//	2002-JUN-26 - Thanks to Arnt Witteveen for pointing out that I was using
+//				  static_cast<> in a place in which I should have been using
+//				  reinterpret_cast<> (the ctor for unsigned char strings).
+//				  That's what happens when I don't unit-test properly!
+//				  Arnt also noticed that CString was silently correcting the
+//				  'nCount' argument to Left() and Right() where CStdString was
+//				  not (and crashing if it was bad).  That is also now fixed!
 //
 //	  2002-FEB-25 - Thanks to Tim Dowty for pointing out (and giving me the fix
 //					for) a conversion problem with non-ASCII MBCS characters.
@@ -160,9 +160,9 @@
 //					due to a conflict with the rel_ops operator!=.  Thanks to
 //					John James for pointing this out.
 //
-//    2001-OCT-29 - Added a minor range checking fix for the Mid function to
+//	2001-OCT-29 - Added a minor range checking fix for the Mid function to
 //					make it as forgiving as CString's version is.  Thanks to
-//					Igor Kholodov for noticing this.  
+//					Igor Kholodov for noticing this.
 //				  - Added a specialization of std::swap for CStdString.  Thanks
 //					to Mike Crusader for suggesting this!  It's commented out
 //					because you're not supposed to inject your own code into the
@@ -180,10 +180,10 @@
 //	  2001-APR-27 - StreamLoad was calculating the number of BYTES in one
 //					case, not characters.  Thanks to Pablo Presedo for this.
 //
-//    2001-FEB-23 - Replace() had a bug which caused infinite loops if the
+//	2001-FEB-23 - Replace() had a bug which caused infinite loops if the
 //					source string was empty.  Fixed thanks to Eric Nitzsche.
 //
-//    2001-FEB-23 - Scott Hathaway was a huge help in providing me with the
+//	2001-FEB-23 - Scott Hathaway was a huge help in providing me with the
 //					ability to build CStdString on Sun Unix systems.  He
 //					sent me detailed build reports about what works and what
 //					does not.  If CStdString compiles on your Unix box, you
@@ -215,7 +215,7 @@
 //	  2000-MAR-07 - Thanks to Ullrich Pollähne for catching a range bug in one
 //					of the overloads of assign.
 //
-//    2000-FEB-01 - You can now use CStdString on the Mac with CodeWarrior!
+//	2000-FEB-01 - You can now use CStdString on the Mac with CodeWarrior!
 //					Thanks to Todd Heckel for helping out with this.
 //
 //	  2000-JAN-23 - Thanks to Jim Cline for pointing out how I could make the
@@ -240,11 +240,11 @@
 //				  - Some of the Q172398 fixes were not checking for assignment-
 //					to-self.  Fixed.  Thanks to Baptiste Lepilleur.
 //
-//	  1999-AUG-20 - Improved Load() function to be more efficient by using 
+//	  1999-AUG-20 - Improved Load() function to be more efficient by using
 //					SizeOfResource().  Thanks to Rich Zuris for this.
 //				  - Corrected resource ID constructor, again thanks to Rich.
 //				  - Fixed a bug that occurred with UNICODE characters above
-//					the first 255 ANSI ones.  Thanks to Craig Watson. 
+//					the first 255 ANSI ones.  Thanks to Craig Watson.
 //				  - Added missing overloads of TrimLeft() and TrimRight().
 //					Thanks to Karim Ratib for pointing them out
 //
@@ -269,7 +269,7 @@
 //				  - Changed operators << and >> (for MFC CArchive) to serialize
 //					EXACTLY as CString's do.  So now you can send a CString out
 //					to a CArchive and later read it in as a CStdString.   I have
-//					no idea why you would want to do this but you can. 
+//					no idea why you would want to do this but you can.
 //
 //	  1999-JUN-21 - Changed the CStdString class into the CStdStr template.
 //				  - Fixed FormatV() to correctly decrement the loop counter.
@@ -279,7 +279,7 @@
 //					using to _alloca().
 //				  - Updated the text conversion macros to properly use code
 //					pages and to fit in better in MFC/ATL builds.  In other
-//					words, I copied Microsoft's conversion stuff again. 
+//					words, I copied Microsoft's conversion stuff again.
 //				  - Added equivalents of CString::GetBuffer, GetBufferSetLength
 //				  - new sscpy() replacement of CStdString::CopyString()
 //				  - a Trim() function that combines TrimRight() and TrimLeft().
@@ -293,15 +293,15 @@
 //	  1999-FEB-03 - Fixed a bug in a rarely-used overload of operator+() that
 //					caused infinite recursion and stack overflow
 //				  - Added member functions to simplify the process of
-//					persisting CStdStrings to/from DCOM IStream interfaces 
+//					persisting CStdStrings to/from DCOM IStream interfaces
 //				  - Added functional objects (e.g. StdStringLessNoCase) that
 //					allow CStdStrings to be used as keys STL map objects with
-//					case-insensitive comparison 
+//					case-insensitive comparison
 //				  - Added array indexing operators (i.e. operator[]).  I
 //					originally assumed that these were unnecessary and would be
 //					inherited from basic_string.  However, without them, Visual
 //					C++ complains about ambiguous overloads when you try to use
-//					them.  Thanks to Julian Selman to pointing this out. 
+//					them.  Thanks to Julian Selman to pointing this out.
 //
 //	  1998-FEB-?? - Added overloads of assign() function to completely account
 //					for Q172398 bug.  Thanks to "Pete the Plumber" for this
@@ -310,11 +310,11 @@
 //
 // COPYRIGHT:
 //		2002 Joseph M. O'Leary.  This code is 100% free.  Use it anywhere you
-//      want.  Rewrite it, restructure it, whatever.  If you can write software
-//      that makes money off of it, good for you.  I kinda like capitalism. 
-//      Please don't blame me if it causes your $30 billion dollar satellite
-//      explode in orbit.  If you redistribute it in any form, I'd appreciate it
-//      if you would leave this notice here.
+//	  want.  Rewrite it, restructure it, whatever.  If you can write software
+//	  that makes money off of it, good for you.  I kinda like capitalism.
+//	  Please don't blame me if it causes your $30 billion dollar satellite
+//	  explode in orbit.  If you redistribute it in any form, I'd appreciate it
+//	  if you would leave this notice here.
 // =============================================================================
 
 // Avoid multiple inclusion the VC++ way,
@@ -332,7 +332,7 @@
 // Borland warnings to turn off
 
 #ifdef __BORLANDC__
-    #pragma option push -w-inl
+	#pragma option push -w-inl
 //	#pragma warn -inl   // Turn off inline function warnings
 #endif
 
@@ -358,10 +358,10 @@
 
 // MACRO: SS_UNSIGNED
 // ------------------
-//      This macro causes the addition of a constructor and assignment operator
-//      which take unsigned characters.  CString has such functions and in order
-//      to provide maximum CString-compatability, this code needs them as well.
-//      In practice you will likely never need these functions...
+//	  This macro causes the addition of a constructor and assignment operator
+//	  which take unsigned characters.  CString has such functions and in order
+//	  to provide maximum CString-compatability, this code needs them as well.
+//	  In practice you will likely never need these functions...
 
 //#define SS_UNSIGNED
 
@@ -371,56 +371,56 @@
 
 // MACRO: SS_SAFE_FORMAT
 // ---------------------
-//      This macro provides limited compatability with a questionable CString
-//      "feature".  You can define it in order to avoid a common problem that
-//      people encounter when switching from CString to CStdString.
+//	  This macro provides limited compatability with a questionable CString
+//	  "feature".  You can define it in order to avoid a common problem that
+//	  people encounter when switching from CString to CStdString.
 //
-//      To illustrate the problem -- With CString, you can do this:
+//	  To illustrate the problem -- With CString, you can do this:
 //
-//          CString sName("Joe");
-//          CString sTmp;
-//          sTmp.Format("My name is %s", sName);                    // WORKS!
+//		  CString sName("Joe");
+//		  CString sTmp;
+//		  sTmp.Format("My name is %s", sName);					// WORKS!
 //
-//      However if you were to try this with CStdString, your program would
-//      crash.
+//	  However if you were to try this with CStdString, your program would
+//	  crash.
 //
-//          CStdString sName("Joe");
-//          CStdString sTmp;
-//          sTmp.Format("My name is %s", sName);                    // CRASHES!
+//		  CStdString sName("Joe");
+//		  CStdString sTmp;
+//		  sTmp.Format("My name is %s", sName);					// CRASHES!
 //
-//      You must explicitly call c_str() or cast the object to the proper type
+//	  You must explicitly call c_str() or cast the object to the proper type
 //
-//          sTmp.Format("My name is %s", sName.c_str());            // WORKS!
-//          sTmp.Format("My name is %s", static_cast<PCSTR>(sName));// WORKS!
-//          sTmp.Format("My name is %s", (PCSTR)sName);// WORKS!
+//		  sTmp.Format("My name is %s", sName.c_str());			// WORKS!
+//		  sTmp.Format("My name is %s", static_cast<PCSTR>(sName));// WORKS!
+//		  sTmp.Format("My name is %s", (PCSTR)sName);// WORKS!
 //
-//      This is because it is illegal to pass anything but a POD type as a
-//      variadic argument to a variadic function (i.e. as one of the "..."
-//      arguments).  The type const char* is a POD type.  The type CStdString
-//      is not.  Of course, neither is the type CString, but CString lets you do
-//      it anyway due to the way they laid out the class in binary.  I have no
-//      control over this in CStdString since I derive from whatever
-//      implementation of basic_string is available.
+//	  This is because it is illegal to pass anything but a POD type as a
+//	  variadic argument to a variadic function (i.e. as one of the "..."
+//	  arguments).  The type const char* is a POD type.  The type CStdString
+//	  is not.  Of course, neither is the type CString, but CString lets you do
+//	  it anyway due to the way they laid out the class in binary.  I have no
+//	  control over this in CStdString since I derive from whatever
+//	  implementation of basic_string is available.
 //
-//      However if you have legacy code (which does this) that you want to take
-//      out of the MFC world and you don't want to rewrite all your calls to
-//      Format(), then you can define this flag and it will no longer crash.
+//	  However if you have legacy code (which does this) that you want to take
+//	  out of the MFC world and you don't want to rewrite all your calls to
+//	  Format(), then you can define this flag and it will no longer crash.
 //
-//      Note however that this ONLY works for Format(), not sprintf, fprintf, 
-//      etc.  If you pass a CStdString object to one of those functions, your
-//      program will crash.  Not much I can do to get around this, short of
-//      writing substitutes for those functions as well.
+//	  Note however that this ONLY works for Format(), not sprintf, fprintf,
+//	  etc.  If you pass a CStdString object to one of those functions, your
+//	  program will crash.  Not much I can do to get around this, short of
+//	  writing substitutes for those functions as well.
 
 #define SS_SAFE_FORMAT  // use new template style Format() function
 
 
 // MACRO: SS_NO_IMPLICIT_CAST
 // --------------------------
-//      Some people don't like the implicit cast to const char* (or rather to
-//      const CT*) that CStdString (and MFC's CString) provide.  That was the
-//      whole reason I created this class in the first place, but hey, whatever
-//      bakes your cake.  Just #define this macro to get rid of the the implicit
-//      cast.
+//	  Some people don't like the implicit cast to const char* (or rather to
+//	  const CT*) that CStdString (and MFC's CString) provide.  That was the
+//	  whole reason I created this class in the first place, but hey, whatever
+//	  bakes your cake.  Just #define this macro to get rid of the the implicit
+//	  cast.
 
 //#define SS_NO_IMPLICIT_CAST // gets rid of operator const CT*()
 
@@ -436,43 +436,43 @@
 
 // MACRO: SS_WIN32
 // ---------------
-//      When this flag is set, we are building code for the Win32 platform and
-//      may use Win32 specific functions (such as LoadString).  This gives us
-//      a couple of nice extras for the code.
+//	  When this flag is set, we are building code for the Win32 platform and
+//	  may use Win32 specific functions (such as LoadString).  This gives us
+//	  a couple of nice extras for the code.
 //
-//      Obviously, Microsoft's is not the only compiler available for Win32 out
-//      there.  So I can't just check to see if _MSC_VER is defined to detect
-//      if I'm building on Win32.  So for now, if you use MS Visual C++ or
-//      Borland's compiler, I turn this on.  Otherwise you may turn it on
-//      yourself, if you prefer
+//	  Obviously, Microsoft's is not the only compiler available for Win32 out
+//	  there.  So I can't just check to see if _MSC_VER is defined to detect
+//	  if I'm building on Win32.  So for now, if you use MS Visual C++ or
+//	  Borland's compiler, I turn this on.  Otherwise you may turn it on
+//	  yourself, if you prefer
 #if defined(_MSC_VER) || defined(__BORLANDC__) || defined(_WIN32)
-    #define SS_WIN32
+	#define SS_WIN32
 #endif
 
 // MACRO: SS_ANSI
 // --------------
-//      When this macro is defined, the code attempts only to use ANSI/ISO
-//      standard library functions to do it's work.  It will NOT attempt to use
-//      any Win32 of Visual C++ specific functions -- even if they are
-//      available.  You may define this flag yourself to prevent any Win32
-//      of VC++ specific functions from being called. 
+//	  When this macro is defined, the code attempts only to use ANSI/ISO
+//	  standard library functions to do it's work.  It will NOT attempt to use
+//	  any Win32 of Visual C++ specific functions -- even if they are
+//	  available.  You may define this flag yourself to prevent any Win32
+//	  of VC++ specific functions from being called.
 
 // If we're not on Win32, we MUST use an ANSI build
 
 #ifndef SS_WIN32
-    #if !defined(SS_NO_ANSI)
-        #define SS_ANSI
-    #endif
+	#if !defined(SS_NO_ANSI)
+		#define SS_ANSI
+	#endif
 #endif
 
 // MACRO: SS_ALLOCA
 // ----------------
-//      Some implementations of the Standard C Library have a non-standard
-//      function known as alloca().  This functions allows one to allocate a
-//      variable amount of memory on the stack.  It is needed to implement
-//      the ASCII/MBCS conversion macros.
+//	  Some implementations of the Standard C Library have a non-standard
+//	  function known as alloca().  This functions allows one to allocate a
+//	  variable amount of memory on the stack.  It is needed to implement
+//	  the ASCII/MBCS conversion macros.
 //
-//      I wanted to find some way to determine automatically if alloca() is
+//	  I wanted to find some way to determine automatically if alloca() is
 //		available on this platform via compiler flags but that is asking for
 //		trouble.  The crude test presented here will likely need fixing on
 //		other platforms.  Therefore I'll leave it up to you to fiddle with
@@ -502,11 +502,11 @@
 
 // Compiler Error regarding _UNICODE and UNICODE
 // -----------------------------------------------
-// Microsoft header files are screwy.  Sometimes they depend on a preprocessor 
+// Microsoft header files are screwy.  Sometimes they depend on a preprocessor
 // flag named "_UNICODE".  Other times they check "UNICODE" (note the lack of
 // leading underscore in the second version".  In several places, they silently
-// "synchronize" these two flags this by defining one of the other was defined. 
-// In older version of this header , I used to try to do the same thing. 
+// "synchronize" these two flags this by defining one of the other was defined.
+// In older version of this header , I used to try to do the same thing.
 //
 // However experience has taught me that this is a bad idea.  You get weird
 // compiler errors that seem to indicate things like LPWSTR and LPTSTR not being
@@ -540,7 +540,7 @@
 
 // -----------------------------------------------------------------------------
 // MIN and MAX.  The Standard C++ template versions go by so many names (at
-// at least in the MS implementation) that you never know what's available 
+// at least in the MS implementation) that you never know what's available
 // -----------------------------------------------------------------------------
 template<class Type>
 inline const Type& SSMIN(const Type& arg1, const Type& arg2)
@@ -563,8 +563,8 @@ inline const Type& SSMAX(const Type& arg1, const Type& arg2)
 	#ifdef SS_ANSI
 
 		// On Win32 we have TCHAR.H so just include it.  This is NOT violating
-        // the spirit of SS_ANSI as we are not calling any Win32 functions here.
-        
+		// the spirit of SS_ANSI as we are not calling any Win32 functions here.
+
 		#ifdef SS_WIN32
 
 			#include <TCHAR.H>
@@ -573,7 +573,7 @@ inline const Type& SSMAX(const Type& arg1, const Type& arg2)
 				#define STRICT
 			#endif
 
-        // ... but on non-Win32 platforms, we must #define the types we need.
+		// ... but on non-Win32 platforms, we must #define the types we need.
 
 		#else
 
@@ -690,8 +690,8 @@ inline const Type& SSMAX(const Type& arg1, const Type& arg2)
 // SGI compiler 7.3 doesnt know these  types - oh and btw, remember to use
 // -LANG:std in the CXX Flags
 #if defined(__sgi)
-    typedef unsigned long           DWORD;
-    typedef void *                  LPCVOID;
+	typedef unsigned long		   DWORD;
+	typedef void *				  LPCVOID;
 #endif
 
 
@@ -735,7 +735,7 @@ inline const Type& SSMAX(const Type& arg1, const Type& arg2)
 
 	// ...and
 	#elif defined(_RWSTD_NO_TEMPLATE_ON_RETURN_TYPE)
-        #define SS_USE_FACET(loc, fac) std::use_facet(loc, (fac*)0)
+		#define SS_USE_FACET(loc, fac) std::use_facet(loc, (fac*)0)
 	#else
 		#define SS_USE_FACET(loc, fac) std::use_facet<fac >(loc)
 	#endif
@@ -745,10 +745,10 @@ inline const Type& SSMAX(const Type& arg1, const Type& arg2)
 // UNICODE/MBCS conversion macros.  Made to work just like the MFC/ATL ones.
 // =============================================================================
 
-#include <wchar.h>      // Added to Std Library with Amendment #1.
+#include <wchar.h>	  // Added to Std Library with Amendment #1.
 
 // First define the conversion helper functions.  We define these regardless of
-// any preprocessor macro settings since their names won't collide. 
+// any preprocessor macro settings since their names won't collide.
 
 // Not sure if we need all these headers.   I believe ANSI says we do.
 
@@ -764,8 +764,8 @@ inline const Type& SSMAX(const Type& arg1, const Type& arg2)
 // StdCodeCvt - made to look like Win32 functions WideCharToMultiByte
 //				and MultiByteToWideChar but uses locales in SS_ANSI
 //				builds.  There are a number of overloads.
-//              First argument is the destination buffer.
-//              Second argument is the source buffer
+//			  First argument is the destination buffer.
+//			  Second argument is the source buffer
 //#if defined (SS_ANSI) || !defined (SS_WIN32)
 
 // 'SSCodeCvt' - shorthand name for the codecvt facet we use
@@ -773,13 +773,13 @@ inline const Type& SSMAX(const Type& arg1, const Type& arg2)
 typedef std::codecvt<wchar_t, char, mbstate_t> SSCodeCvt;
 
 inline PWSTR StdCodeCvt(PWSTR pDstW, int nDst, PCSTR pSrcA, int nSrc,
-    const std::locale& loc=std::locale())
+	const std::locale& loc=std::locale())
 {
 
-    ASSERT(0 != pSrcA);
-    ASSERT(0 != pDstW);
+	ASSERT(0 != pSrcA);
+	ASSERT(0 != pDstW);
 
-	pDstW[0]					= '\0';	
+	pDstW[0]					= '\0';
 
 	if ( nSrc > 0 )
 	{
@@ -804,21 +804,21 @@ inline PWSTR StdCodeCvt(PWSTR pDstW, int nDst, PCSTR pSrcA, int nSrc,
 		else
 			*pNextDstW = '\0';
 	}
-    return pDstW;
+	return pDstW;
 }
 inline PWSTR StdCodeCvt(PWSTR pDstW, int nDst, PCUSTR pSrcA, int nSrc,
-    const std::locale& loc=std::locale())
+	const std::locale& loc=std::locale())
 {
-    return StdCodeCvt(pDstW, nDst, (PCSTR)pSrcA, nSrc, loc);
+	return StdCodeCvt(pDstW, nDst, (PCSTR)pSrcA, nSrc, loc);
 }
 
 inline PSTR StdCodeCvt(PSTR pDstA, int nDst, PCWSTR pSrcW, int nSrc,
-    const std::locale& loc=std::locale())
+	const std::locale& loc=std::locale())
 {
-    ASSERT(0 != pDstA);
-    ASSERT(0 != pSrcW);
+	ASSERT(0 != pDstA);
+	ASSERT(0 != pSrcW);
 
-	pDstA[0]					= '\0';	
+	pDstA[0]					= '\0';
 
 	if ( nSrc > 0 )
 	{
@@ -843,12 +843,12 @@ inline PSTR StdCodeCvt(PSTR pDstA, int nDst, PCWSTR pSrcW, int nSrc,
 		else
 			*pNextDstA = '\0';
 	}
-    return pDstA;
+	return pDstA;
 }
 inline PUSTR StdCodeCvt(PUSTR pDstA, int nDst, PCWSTR pSrcW, int nSrc,
-    const std::locale& loc=std::locale())
+	const std::locale& loc=std::locale())
 {
-    return (PUSTR)StdCodeCvt((PSTR)pDstA, nDst, pSrcW, nSrc, loc);
+	return (PUSTR)StdCodeCvt((PSTR)pDstA, nDst, pSrcW, nSrc, loc);
 }
 /*
 #else   // ...or are we doing things assuming win32 and Visual C++?
@@ -885,124 +885,124 @@ inline PUSTR StdCodeCvt(PUSTR pDstA, int nDst, PCWSTR pSrcW, int nSrc,
 // Unicode/MBCS conversion macros are only available on implementations of
 // the "C" library that have the non-standard _alloca function.  As far as I
 // know that's only Microsoft's though I've heard that the function exists
-// elsewhere.  
-    
+// elsewhere.
+
 #if defined(SS_ALLOCA) && !defined SS_NO_CONVERSION
 
-    #include <malloc.h>	// needed for _alloca
+	#include <malloc.h>	// needed for _alloca
 
-    // Define our conversion macros to look exactly like Microsoft's to
-    // facilitate using this stuff both with and without MFC/ATL
+	// Define our conversion macros to look exactly like Microsoft's to
+	// facilitate using this stuff both with and without MFC/ATL
 
-    #ifdef _CONVERSION_USES_THREAD_LOCALE
+	#ifdef _CONVERSION_USES_THREAD_LOCALE
 
-	    #ifndef _DEBUG
-		    #define SSCVT int _cvt; _cvt; UINT _acp=GetACP(); \
-			    _acp; PCWSTR _pw; _pw; PCSTR _pa; _pa
-	    #else
-		    #define SSCVT int _cvt = 0; _cvt; UINT _acp=GetACP();\
-			     _acp; PCWSTR _pw=0; _pw; PCSTR _pa=0; _pa
-	    #endif
-	    #define SSA2W(pa) (\
-		    ((_pa = pa) == 0) ? 0 : (\
-			    _cvt = (sslen(_pa)),\
-			    StdCodeCvt((PWSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
+		#ifndef _DEBUG
+			#define SSCVT int _cvt; _cvt; UINT _acp=GetACP(); \
+				_acp; PCWSTR _pw; _pw; PCSTR _pa; _pa
+		#else
+			#define SSCVT int _cvt = 0; _cvt; UINT _acp=GetACP();\
+				 _acp; PCWSTR _pw=0; _pw; PCSTR _pa=0; _pa
+		#endif
+		#define SSA2W(pa) (\
+			((_pa = pa) == 0) ? 0 : (\
+				_cvt = (sslen(_pa)),\
+				StdCodeCvt((PWSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
 							_pa, _cvt, _acp)))
-	    #define SSW2A(pw) (\
-		    ((_pw = pw) == 0) ? 0 : (\
-			    _cvt = sslen(_pw), \
-			    StdCodeCvt((LPSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
+		#define SSW2A(pw) (\
+			((_pw = pw) == 0) ? 0 : (\
+				_cvt = sslen(_pw), \
+				StdCodeCvt((LPSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
 					_pw, _cvt, _acp)))
 	#else
 
-	    #ifndef _DEBUG
-		    #define SSCVT int _cvt; _cvt; UINT _acp=CP_ACP; _acp;\
-			     PCWSTR _pw; _pw; PCSTR _pa; _pa
-	    #else
-		    #define SSCVT int _cvt = 0; _cvt; UINT _acp=CP_ACP; \
-			    _acp; PCWSTR _pw=0; _pw; PCSTR _pa=0; _pa
-	    #endif
-	    #define SSA2W(pa) (\
-		    ((_pa = pa) == 0) ? 0 : (\
-			    _cvt = (sslen(_pa)),\
-			    StdCodeCvt((PWSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
+		#ifndef _DEBUG
+			#define SSCVT int _cvt; _cvt; UINT _acp=CP_ACP; _acp;\
+				 PCWSTR _pw; _pw; PCSTR _pa; _pa
+		#else
+			#define SSCVT int _cvt = 0; _cvt; UINT _acp=CP_ACP; \
+				_acp; PCWSTR _pw=0; _pw; PCSTR _pa=0; _pa
+		#endif
+		#define SSA2W(pa) (\
+			((_pa = pa) == 0) ? 0 : (\
+				_cvt = (sslen(_pa)),\
+				StdCodeCvt((PWSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
 					_pa, _cvt)))
-	    #define SSW2A(pw) (\
-		    ((_pw = pw) == 0) ? 0 : (\
-			    _cvt = (sslen(_pw)),\
-			    StdCodeCvt((LPSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
+		#define SSW2A(pw) (\
+			((_pw = pw) == 0) ? 0 : (\
+				_cvt = (sslen(_pw)),\
+				StdCodeCvt((LPSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
 					_pw, _cvt)))
-    #endif
+	#endif
 
-    #define SSA2CW(pa) ((PCWSTR)SSA2W((pa)))
-    #define SSW2CA(pw) ((PCSTR)SSW2A((pw)))
+	#define SSA2CW(pa) ((PCWSTR)SSA2W((pa)))
+	#define SSW2CA(pw) ((PCSTR)SSW2A((pw)))
 
-    #ifdef UNICODE
-	    #define SST2A	SSW2A
-	    #define SSA2T	SSA2W
-	    #define SST2CA	SSW2CA
-	    #define SSA2CT	SSA2CW
+	#ifdef UNICODE
+		#define SST2A	SSW2A
+		#define SSA2T	SSA2W
+		#define SST2CA	SSW2CA
+		#define SSA2CT	SSA2CW
 		// (Did you get a compiler error here about not being able to convert
-		// PTSTR into PWSTR?  Then your _UNICODE and UNICODE flags are messed 
+		// PTSTR into PWSTR?  Then your _UNICODE and UNICODE flags are messed
 		// up.  Best bet: #define BOTH macros before including any MS headers.)
-	    inline PWSTR	SST2W(PTSTR p)			{ return p; }
-	    inline PTSTR	SSW2T(PWSTR p)			{ return p; }
-	    inline PCWSTR	SST2CW(PCTSTR p)		{ return p; }
-	    inline PCTSTR	SSW2CT(PCWSTR p)		{ return p; }
-    #else
-	    #define SST2W	SSA2W
-	    #define SSW2T	SSW2A
-	    #define SST2CW	SSA2CW
-	    #define SSW2CT	SSW2CA
-	    inline PSTR		SST2A(PTSTR p)			{ return p; }
-	    inline PTSTR	SSA2T(PSTR p)			{ return p; }
-	    inline PCSTR	SST2CA(PCTSTR p)		{ return p; }
-	    inline PCTSTR	SSA2CT(PCSTR p)			{ return p; }
-    #endif // #ifdef UNICODE
+		inline PWSTR	SST2W(PTSTR p)			{ return p; }
+		inline PTSTR	SSW2T(PWSTR p)			{ return p; }
+		inline PCWSTR	SST2CW(PCTSTR p)		{ return p; }
+		inline PCTSTR	SSW2CT(PCWSTR p)		{ return p; }
+	#else
+		#define SST2W	SSA2W
+		#define SSW2T	SSW2A
+		#define SST2CW	SSA2CW
+		#define SSW2CT	SSW2CA
+		inline PSTR		SST2A(PTSTR p)			{ return p; }
+		inline PTSTR	SSA2T(PSTR p)			{ return p; }
+		inline PCSTR	SST2CA(PCTSTR p)		{ return p; }
+		inline PCTSTR	SSA2CT(PCSTR p)			{ return p; }
+	#endif // #ifdef UNICODE
 
-    #if defined(UNICODE)
-    // in these cases the default (TCHAR) is the same as OLECHAR
-	    inline PCOLESTR	SST2COLE(PCTSTR p)		{ return p; }
-	    inline PCTSTR	SSOLE2CT(PCOLESTR p)	{ return p; }
-	    inline POLESTR	SST2OLE(PTSTR p)		{ return p; }
-	    inline PTSTR	SSOLE2T(POLESTR p)		{ return p; }
-    #elif defined(OLE2ANSI)
-    // in these cases the default (TCHAR) is the same as OLECHAR
-	    inline PCOLESTR	SST2COLE(PCTSTR p)		{ return p; }
-	    inline PCTSTR	SSOLE2CT(PCOLESTR p)	{ return p; }
-	    inline POLESTR	SST2OLE(PTSTR p)		{ return p; }
-	    inline PTSTR	SSOLE2T(POLESTR p)		{ return p; }
-    #else
-	    //CharNextW doesn't work on Win95 so we use this
-	    #define SST2COLE(pa)	SSA2CW((pa))
-	    #define SST2OLE(pa)		SSA2W((pa))
-	    #define SSOLE2CT(po)	SSW2CA((po))
-	    #define SSOLE2T(po)		SSW2A((po))
-    #endif
+	#if defined(UNICODE)
+	// in these cases the default (TCHAR) is the same as OLECHAR
+		inline PCOLESTR	SST2COLE(PCTSTR p)		{ return p; }
+		inline PCTSTR	SSOLE2CT(PCOLESTR p)	{ return p; }
+		inline POLESTR	SST2OLE(PTSTR p)		{ return p; }
+		inline PTSTR	SSOLE2T(POLESTR p)		{ return p; }
+	#elif defined(OLE2ANSI)
+	// in these cases the default (TCHAR) is the same as OLECHAR
+		inline PCOLESTR	SST2COLE(PCTSTR p)		{ return p; }
+		inline PCTSTR	SSOLE2CT(PCOLESTR p)	{ return p; }
+		inline POLESTR	SST2OLE(PTSTR p)		{ return p; }
+		inline PTSTR	SSOLE2T(POLESTR p)		{ return p; }
+	#else
+		//CharNextW doesn't work on Win95 so we use this
+		#define SST2COLE(pa)	SSA2CW((pa))
+		#define SST2OLE(pa)		SSA2W((pa))
+		#define SSOLE2CT(po)	SSW2CA((po))
+		#define SSOLE2T(po)		SSW2A((po))
+	#endif
 
-    #ifdef OLE2ANSI
-	    #define SSW2OLE		SSW2A
-	    #define SSOLE2W		SSA2W
-	    #define SSW2COLE	SSW2CA
-	    #define SSOLE2CW	SSA2CW
-	    inline POLESTR		SSA2OLE(PSTR p)		{ return p; }
-	    inline PSTR			SSOLE2A(POLESTR p)	{ return p; }
-	    inline PCOLESTR		SSA2COLE(PCSTR p)	{ return p; }
-	    inline PCSTR		SSOLE2CA(PCOLESTR p){ return p; }
-    #else
-	    #define SSA2OLE		SSA2W
-	    #define SSOLE2A		SSW2A
-	    #define SSA2COLE	SSA2CW
-	    #define SSOLE2CA	SSW2CA
-	    inline POLESTR		SSW2OLE(PWSTR p)	{ return p; }
-	    inline PWSTR		SSOLE2W(POLESTR p)	{ return p; }
-	    inline PCOLESTR		SSW2COLE(PCWSTR p)	{ return p; }
-	    inline PCWSTR		SSOLE2CW(PCOLESTR p){ return p; }
-    #endif
+	#ifdef OLE2ANSI
+		#define SSW2OLE		SSW2A
+		#define SSOLE2W		SSA2W
+		#define SSW2COLE	SSW2CA
+		#define SSOLE2CW	SSA2CW
+		inline POLESTR		SSA2OLE(PSTR p)		{ return p; }
+		inline PSTR			SSOLE2A(POLESTR p)	{ return p; }
+		inline PCOLESTR		SSA2COLE(PCSTR p)	{ return p; }
+		inline PCSTR		SSOLE2CA(PCOLESTR p){ return p; }
+	#else
+		#define SSA2OLE		SSA2W
+		#define SSOLE2A		SSW2A
+		#define SSA2COLE	SSA2CW
+		#define SSOLE2CA	SSW2CA
+		inline POLESTR		SSW2OLE(PWSTR p)	{ return p; }
+		inline PWSTR		SSOLE2W(POLESTR p)	{ return p; }
+		inline PCOLESTR		SSW2COLE(PCWSTR p)	{ return p; }
+		inline PCWSTR		SSOLE2CW(PCOLESTR p){ return p; }
+	#endif
 
-    // Above we've defined macros that look like MS' but all have
-    // an 'SS' prefix.  Now we need the real macros.  We'll either
-    // get them from the macros above or from MFC/ATL. 
+	// Above we've defined macros that look like MS' but all have
+	// an 'SS' prefix.  Now we need the real macros.  We'll either
+	// get them from the macros above or from MFC/ATL.
 
 	#if defined (USES_CONVERSION)
 
@@ -1042,7 +1042,7 @@ inline PUSTR StdCodeCvt(PUSTR pDstA, int nDst, PCWSTR pSrcW, int nSrc,
 			#define OLE2CA			SSOLE2CA
 			#define W2COLE			SSW2COLE
 			#define OLE2CW			SSOLE2CW
-	
+
 		#endif // #ifdef _MFC_VER
 	#endif // #ifndef USES_CONVERSION
 #endif // #ifndef SS_NO_CONVERSION
@@ -1123,13 +1123,13 @@ inline PWSTR StdCodeCvt(PWSTR pDst, int nDst, PCWSTR pSrc, int nSrc)
 // Therefore, to keep the CStdStr declaration simple, we have these inline
 // functions.  The template calls them often.  Since they are inline (and NOT
 // exported when this is built as a DLL), they will probably be resolved away
-// to nothing. 
+// to nothing.
 //
 // Without these functions, the CStdStr<> template would probably have to broken
 // out into two, almost identical classes.  Either that or it would be a huge,
 // convoluted mess, with tons of "if" statements all over the place checking the
 // size of template parameter CT.
-// 
+//
 // In several cases, you will see two versions of each function.  One version is
 // the more portable, standard way of doing things, while the other is the
 // non-standard, but often significantly faster Visual C++ way.
@@ -1178,9 +1178,9 @@ inline CT sstoupper(const CT& t, const std::locale& loc = std::locale())
 // ssasn: assignment functions -- assign "sSrc" to "sDst"
 // -----------------------------------------------------------------------------
 typedef std::string::size_type		SS_SIZETYPE; // just for shorthand, really
-typedef std::string::pointer		SS_PTRTYPE;  
+typedef std::string::pointer		SS_PTRTYPE;
 typedef std::wstring::size_type		SW_SIZETYPE;
-typedef std::wstring::pointer		SW_PTRTYPE;  
+typedef std::wstring::pointer		SW_PTRTYPE;
 
 inline void	ssasn(std::string& sDst, const std::string& sSrc)
 {
@@ -1285,7 +1285,7 @@ inline void ssasn(std::string& sDst, const int nNull)
 	UNUSED(nNull);
 	ASSERT(nNull==0);
 	sDst.assign("");
-}	
+}
 inline void	ssasn(std::wstring& sDst, const std::wstring& sSrc)
 {
 	if ( sDst.c_str() != sSrc.c_str() )
@@ -1442,7 +1442,7 @@ inline void	ssadd(std::string& sDst, PCSTR pA)
 		}
 		else
 		{
-			sDst.append(pA); 
+			sDst.append(pA);
 		}
 	}
 }
@@ -1458,7 +1458,7 @@ inline void	ssadd(std::wstring& sDst, const std::string& sSrc)
 		int nDst	= static_cast<int>(sDst.size());
 
 		sDst.resize(nDst + nSrc + 1);
-		PCWSTR szCvt = StdCodeCvt(const_cast<SW_PTRTYPE>(sDst.data()+nDst), 
+		PCWSTR szCvt = StdCodeCvt(const_cast<SW_PTRTYPE>(sDst.data()+nDst),
 			nSrc, sSrc.c_str(), nSrc+1);
 
 #ifdef SS_MBCS
@@ -1519,16 +1519,16 @@ inline void	ssadd(std::wstring& sDst, PCWSTR pW)
 template<typename CT>
 inline int sscmp(const CT* pA1, const CT* pA2)
 {
-    CT f;
-    CT l;
+	CT f;
+	CT l;
 
-    do 
-    {
-	    f = *(pA1++);
-	    l = *(pA2++);
-    } while ( (f) && (f == l) );
+	do
+	{
+		f = *(pA1++);
+		l = *(pA2++);
+	} while ( (f) && (f == l) );
 
-    return (int)(f - l);
+	return (int)(f - l);
 }
 
 // -----------------------------------------------------------------------------
@@ -1540,17 +1540,17 @@ inline int ssicmp(const CT* pA1, const CT* pA2)
 	// Using the "C" locale = "not affected by locale"
 
 	std::locale loc = std::locale::classic();
-    const std::ctype<CT>& ct = SS_USE_FACET(loc, std::ctype<CT>);
-    CT f;
-    CT l;
+	const std::ctype<CT>& ct = SS_USE_FACET(loc, std::ctype<CT>);
+	CT f;
+	CT l;
 
-    do 
-    {
-	    f = ct.tolower(*(pA1++));
-	    l = ct.tolower(*(pA2++));
-    } while ( (f) && (f == l) );
+	do
+	{
+		f = ct.tolower(*(pA1++));
+		l = ct.tolower(*(pA2++));
+	} while ( (f) && (f == l) );
 
-    return (int)(f - l);
+	return (int)(f - l);
 }
 
 // -----------------------------------------------------------------------------
@@ -1574,13 +1574,13 @@ inline void ssupr(CT* pT, size_t nLen, const std::locale& loc=std::locale())
 // -----------------------------------------------------------------------------
 #if defined(SS_ANSI) || !defined(_MSC_VER)
 
-    // Borland's headers put some ANSI "C" functions in the 'std' namespace. 
-    // Promote them to the global namespace so we can use them here.
+	// Borland's headers put some ANSI "C" functions in the 'std' namespace.
+	// Promote them to the global namespace so we can use them here.
 
-    #if defined(__BORLANDC__)
-        using std::vsprintf;
-        using std::vswprintf;
-    #endif
+	#if defined(__BORLANDC__)
+		using std::vsprintf;
+		using std::vswprintf;
+	#endif
 
 	inline int ssvsprintf(PSTR pA, size_t /*nCount*/, PCSTR pFmtA, va_list vl)
 	{
@@ -1589,49 +1589,49 @@ inline void ssupr(CT* pT, size_t nLen, const std::locale& loc=std::locale())
 	inline int ssvsprintf(PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl)
 	{
 		// JMO: Some distributions of the "C" have a version of vswprintf that
-        // takes 3 arguments (e.g. Microsoft, Borland, GNU).  Others have a 
-        // version which takes 4 arguments (an extra "count" argument in the
-        // second position.  The best stab I can take at this so far is that if
-        // you are NOT running with MS, Borland, or GNU, then I'll assume you
-        // have the version that takes 4 arguments.
-        //
-        // I'm sure that these checks don't catch every platform correctly so if
-        // you get compiler errors on one of the lines immediately below, it's
-        // probably because your implemntation takes a different number of
-        // arguments.  You can comment out the offending line (and use the
-        // alternate version) or you can figure out what compiler flag to check
-        // and add that preprocessor check in.  Regardless, if you get an error
-        // on these lines, I'd sure like to hear from you about it.
-        //
-        // Thanks to Ronny Schulz for the SGI-specific checks here.
+		// takes 3 arguments (e.g. Microsoft, Borland, GNU).  Others have a
+		// version which takes 4 arguments (an extra "count" argument in the
+		// second position.  The best stab I can take at this so far is that if
+		// you are NOT running with MS, Borland, or GNU, then I'll assume you
+		// have the version that takes 4 arguments.
+		//
+		// I'm sure that these checks don't catch every platform correctly so if
+		// you get compiler errors on one of the lines immediately below, it's
+		// probably because your implemntation takes a different number of
+		// arguments.  You can comment out the offending line (and use the
+		// alternate version) or you can figure out what compiler flag to check
+		// and add that preprocessor check in.  Regardless, if you get an error
+		// on these lines, I'd sure like to hear from you about it.
+		//
+		// Thanks to Ronny Schulz for the SGI-specific checks here.
 
 //	#if !defined(__MWERKS__) && !defined(__SUNPRO_CC_COMPAT) && !defined(__SUNPRO_CC)
-    #if    !defined(_MSC_VER) \
-        && !defined (__BORLANDC__) \
-        && !defined(__GNUC__) \
-        && !defined(__sgi)
+	#if	!defined(_MSC_VER) \
+		&& !defined (__BORLANDC__) \
+		&& !defined(__GNUC__) \
+		&& !defined(__sgi)
 
-        return vswprintf(pW, nCount, pFmtW, vl);
+		return vswprintf(pW, nCount, pFmtW, vl);
 
-    // suddenly with the current SGI 7.3 compiler there is no such function as
-    // vswprintf and the substitute needs explicit casts to compile
+	// suddenly with the current SGI 7.3 compiler there is no such function as
+	// vswprintf and the substitute needs explicit casts to compile
 
-    #elif defined(__sgi)
+	#elif defined(__sgi)
 
-        nCount;
-        return vsprintf( (char *)pW, (char *)pFmtW, vl);
+		nCount;
+		return vsprintf( (char *)pW, (char *)pFmtW, vl);
 
-    #else
+	#else
 
-        nCount;
-        return vswprintf(pW, pFmtW, vl);
+		nCount;
+		return vswprintf(pW, pFmtW, vl);
 
-    #endif
+	#endif
 
 	}
 #else
 	inline int	ssnprintf(PSTR pA, size_t nCount, PCSTR pFmtA, va_list vl)
-	{ 
+	{
 		return _vsnprintf(pA, nCount, pFmtA, vl);
 	}
 	inline int	ssnprintf(PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl)
@@ -1685,8 +1685,8 @@ inline int ssicoll(const CT* sz1, int nLen1, const CT* sz2, int nLen2)
 //	std::collate<CT>::string_type s1(sz1);
 //	std::collate<CT>::string_type s2(sz2);
 	const std::basic_string<CT> sEmpty;
-    std::basic_string<CT> s1(sz1 ? sz1 : sEmpty.c_str());
-    std::basic_string<CT> s2(sz2 ? sz2 : sEmpty.c_str());
+	std::basic_string<CT> s1(sz1 ? sz1 : sEmpty.c_str());
+	std::basic_string<CT> s2(sz2 ? sz2 : sEmpty.c_str());
 
 	sslwr(const_cast<CT*>(s1.c_str()), nLen1, loc);
 	sslwr(const_cast<CT*>(s2.c_str()), nLen2, loc);
@@ -1705,7 +1705,7 @@ inline int ssicoll(const CT* sz1, int nLen1, const CT* sz2, int nLen2)
 	inline DWORD ssfmtmsg(DWORD dwFlags, LPCVOID pSrc, DWORD dwMsgId,
 						  DWORD dwLangId, PSTR pBuf, DWORD nSize,
 						  va_list* vlArgs)
-	{ 
+	{
 		return FormatMessageA(dwFlags, pSrc, dwMsgId, dwLangId,
 							  pBuf, nSize,vlArgs);
 	}
@@ -1718,7 +1718,7 @@ inline int ssicoll(const CT* sz1, int nLen1, const CT* sz2, int nLen2)
 	}
 #else
 #endif
- 
+
 
 
 // FUNCTION: sscpy.  Copies up to 'nMax' characters from pSrc to pDst.
@@ -1744,7 +1744,7 @@ inline int ssicoll(const CT* sz1, int nLen1, const CT* sz2, int nLen2)
 //		characters.  The return value is the number of characters copied,
 //		not including the NULL terminator.
 //
-// PARAMETERS: 
+// PARAMETERS:
 //		pSrc - the string to be copied FROM.  May be a char based string, an
 //			   MBCS string (in Win32 builds) or a wide string (wchar_t).
 //		pSrc - the string to be copied TO.  Also may be either MBCS or wide
@@ -1764,7 +1764,7 @@ inline int sscpycvt(CT1* pDst, const CT2* pSrc, int nMax)
 {
 	// Note -- we assume pDst is big enough to hold pSrc.  If not, we're in
 	// big trouble.  No bounds checking.  Caveat emptor.
-	
+
 	int nSrc = sslen(pSrc);
 
 	const CT1* szCvt = StdCodeCvt(pDst, nMax, pSrc, nSrc);
@@ -1836,7 +1836,7 @@ inline int sscpy(CT1* pDst, const std::basic_string<CT2>& sSrc)
 	inline int sscpy(CT1* pDst, const _bstr_t& bs, int nMax)
 	{
 		return sscpycvt(pDst, static_cast<PCOLESTR>(bs),
-            SSMIN(nMax, static_cast<int>(bs.length())));
+			SSMIN(nMax, static_cast<int>(bs.length())));
 	}
 	template<typename CT1>
 	inline int sscpy(CT1* pDst, const _bstr_t& bs)
@@ -1853,18 +1853,18 @@ inline int sscpy(CT1* pDst, const std::basic_string<CT2>& sSrc)
 template<typename CT>
 struct SSToUpper : public std::binary_function<CT, std::locale, CT>
 {
-    inline CT operator()(const CT& t, const std::locale& loc) const
-    {
-	    return sstoupper<CT>(t, loc);
-    }
+	inline CT operator()(const CT& t, const std::locale& loc) const
+	{
+		return sstoupper<CT>(t, loc);
+	}
 };
 template<typename CT>
 struct SSToLower : public std::binary_function<CT, std::locale, CT>
 {
-    inline CT operator()(const CT& t, const std::locale& loc) const
-    {
-	    return sstolower<CT>(t, loc);
-    }
+	inline CT operator()(const CT& t, const std::locale& loc) const
+	{
+		return sstolower<CT>(t, loc);
+	}
 };
 
 // This struct is used for TrimRight() and TrimLeft() function implementations.
@@ -1890,7 +1890,7 @@ struct NotSpace : public std::unary_function<CT, bool>
 	// This is DinkumWare's implementation problem.  If you encounter this
 	// problem, you may replace the calls here with good old isspace() and
 	// iswspace() from the CRT unless they specify SS_ANSI
-    
+
 	const std::locale loc;
 	NotSpace(const std::locale& locArg=std::locale()) : loc(locArg) {}
 	bool operator() (CT t) const { return !std::isspace(t, loc); }
@@ -1912,23 +1912,23 @@ struct NotSpace : public std::unary_function<CT, bool>
 //		easy to use as the MFC CString class.
 //
 //		Note that although this is a template, it makes the assumption that the
-//		template argument (CT, the character type) is either char or wchar_t.  
+//		template argument (CT, the character type) is either char or wchar_t.
 // =============================================================================
 
 //#define CStdStr _SS	// avoid compiler warning 4786
 
-//    template<typename ARG> ARG& FmtArg(ARG& arg)  { return arg; }
-//    PCSTR  FmtArg(const std::string& arg)  { return arg.c_str(); }
-//    PCWSTR FmtArg(const std::wstring& arg) { return arg.c_str(); }
+//	template<typename ARG> ARG& FmtArg(ARG& arg)  { return arg; }
+//	PCSTR  FmtArg(const std::string& arg)  { return arg.c_str(); }
+//	PCWSTR FmtArg(const std::wstring& arg) { return arg.c_str(); }
 
 template<typename ARG>
 struct FmtArg
 {
-    explicit FmtArg(const ARG& arg) : a_(arg) {}
-    const ARG& operator()() const { return a_; }
-    const ARG& a_;
+	explicit FmtArg(const ARG& arg) : a_(arg) {}
+	const ARG& operator()() const { return a_; }
+	const ARG& a_;
 private:
-    FmtArg& operator=(const FmtArg&) { return *this; }
+	FmtArg& operator=(const FmtArg&) { return *this; }
 };
 
 template<typename CT>
@@ -1940,18 +1940,18 @@ class CStdStr : public std::basic_string<CT>
 	#define MYBASE std::basic_string<CT>				 // my base class
 	//typedef typename std::basic_string<CT>		MYBASE;	 // my base class
 	typedef CStdStr<CT>							MYTYPE;	 // myself
-	typedef typename MYBASE::const_pointer		PCMYSTR; // PCSTR or PCWSTR 
+	typedef typename MYBASE::const_pointer		PCMYSTR; // PCSTR or PCWSTR
 	typedef typename MYBASE::pointer			PMYSTR;	 // PSTR or PWSTR
 	typedef typename MYBASE::iterator			MYITER;  // my iterator type
 	typedef typename MYBASE::const_iterator		MYCITER; // you get the idea...
 	typedef typename MYBASE::reverse_iterator	MYRITER;
-	typedef typename MYBASE::size_type			MYSIZE;   
-	typedef typename MYBASE::value_type			MYVAL; 
+	typedef typename MYBASE::size_type			MYSIZE;
+	typedef typename MYBASE::value_type			MYVAL;
 	typedef typename MYBASE::allocator_type		MYALLOC;
-	
+
 public:
 	// shorthand conversion from PCTSTR to string resource ID
-	#define SSRES(pctstr)  LOWORD(reinterpret_cast<unsigned long>(pctstr))	
+	#define SSRES(pctstr)  LOWORD(reinterpret_cast<unsigned long>(pctstr))
 
 	bool TryLoad(const void* pT)
 	{
@@ -2044,8 +2044,8 @@ public:
 	// CStdStr inline assignment operators -- the ssasn function now takes care
 	// of fixing  the MSVC assignment bug (see knowledge base article Q172398).
 	MYTYPE& operator=(const MYTYPE& str)
-	{ 
-		ssasn(*this, str); 
+	{
+		ssasn(*this, str);
 		return *this;
 	}
 
@@ -2108,7 +2108,7 @@ public:
 	// Overloads  also needed to fix the MSVC assignment bug (KB: Q172398)
 	//  *** Thanks to Pete The Plumber for catching this one ***
 	// They also are compiled if you have explicitly turned off refcounting
-	#if ( defined(_MSC_VER) && ( _MSC_VER < 1200 ) ) || defined(SS_NO_REFCOUNT) 
+	#if ( defined(_MSC_VER) && ( _MSC_VER < 1200 ) ) || defined(SS_NO_REFCOUNT)
 
 		MYTYPE& assign(const MYTYPE& str)
 		{
@@ -2195,13 +2195,13 @@ public:
 
 		MYTYPE& assign(MYCITER iterFirst, MYCITER iterLast)
 		{
-	#if defined ( _MSC_VER ) && ( _MSC_VER < 1200 ) 
+	#if defined ( _MSC_VER ) && ( _MSC_VER < 1200 )
 			// Q172398 fix.  don't call erase() if we're assigning from ourself
 			if ( iterFirst < this->begin() ||
-                 iterFirst > this->begin() + this->size() )
-            {
+				 iterFirst > this->begin() + this->size() )
+			{
 				this->erase()
-            }
+			}
 	#endif
 			this->replace(this->begin(), this->end(), iterFirst, iterLast);
 			return *this;
@@ -2221,7 +2221,7 @@ public:
 	MYTYPE& operator+=(const std::string& str)
 	{
 		ssadd(*this, str);
-		return *this; 
+		return *this;
 	}
 
 	MYTYPE& operator+=(const std::wstring& str)
@@ -2259,7 +2259,7 @@ public:
 	// Case changing functions
 	// -------------------------------------------------------------------------
 
-    MYTYPE& ToUpper(const std::locale& loc=std::locale())
+	MYTYPE& ToUpper(const std::locale& loc=std::locale())
 	{
 		// Note -- if there are any MBCS character sets in which the lowercase
 		// form a character takes up a different number of bytes than the
@@ -2317,7 +2317,7 @@ public:
 	// CStdStr -- Direct access to character buffer.  In the MS' implementation,
 	// the at() function that we use here also calls _Freeze() providing us some
 	// protection from multithreading problems associated with ref-counting.
-    // In VC 7 and later, of course, the ref-counting stuff is gone.
+	// In VC 7 and later, of course, the ref-counting stuff is gone.
 	// -------------------------------------------------------------------------
 
 	CT* GetBuf(int nMinLen=-1)
@@ -2340,7 +2340,7 @@ public:
 	void RelBuf(int nNewLen=-1)
 	{
 		this->resize(static_cast<MYSIZE>(nNewLen > -1 ? nNewLen :
-                                                        sslen(this->c_str())));
+														sslen(this->c_str())));
 	}
 
 	void BufferRel()		 { RelBuf(); }			// backwards compatability
@@ -2350,7 +2350,7 @@ public:
 	bool Equals(const CT* pT, bool bUseCase=false) const
 	{
 		return  0 == (bUseCase ? this->compare(pT) : ssicmp(this->c_str(), pT));
-	} 
+	}
 
 	// -------------------------------------------------------------------------
 	// FUNCTION:  CStdStr::Load
@@ -2399,13 +2399,13 @@ public:
 			*this			= strRes;
 
 	#else // otherwise make our own hackneyed version of CString's Load
-		
+
 		// Get the resource name and module handle
 
 		if ( NULL == hModule )
 			hModule			= GetResourceHandle();
 
-		PCTSTR szName		= MAKEINTRESOURCE((nId>>4)+1); // lifted 
+		PCTSTR szName		= MAKEINTRESOURCE((nId>>4)+1); // lifted
 		DWORD dwSize		= 0;
 
 		// No sense continuing if we can't find the resource
@@ -2435,19 +2435,19 @@ public:
 	}
 
 #endif  // #ifdef SS_ANSI
-	
+
 	// -------------------------------------------------------------------------
 	// FUNCTION:  CStdStr::Format
 	//		void _cdecl Formst(CStdStringA& PCSTR szFormat, ...)
 	//		void _cdecl Format(PCSTR szFormat);
-	//           
+	//
 	// DESCRIPTION:
 	//		This function does sprintf/wsprintf style formatting on CStdStringA
 	//		objects.  It looks a lot like MFC's CString::Format.  Some people
 	//		might even call this identical.  Fortunately, these people are now
 	//		dead... heh heh.
 	//
-	// PARAMETERS: 
+	// PARAMETERS:
 	//		nId - ID of string resource holding the format string
 	//		szFormat - a PCSTR holding the format specifiers
 	//		argList - a va_list holding the arguments for the format specifiers.
@@ -2456,27 +2456,27 @@ public:
 	// -------------------------------------------------------------------------
 	// formatting (using wsprintf style formatting)
 
-    // If they want a Format() function that safely handles string objects
-    // without casting
- 
-#ifdef SS_SAFE_FORMAT       
-    
-    // Question:  Joe, you wacky coder you, why do you have so many overloads
-    //      of the Format() function
-    // Answer:  One reason only - CString compatability.  In short, by making
-    //      the Format() function a template this way, I can do strong typing
-    //      and allow people to pass CStdString arguments as fillers for
-    //      "%s" format specifiers without crashing their program!  The downside
-    //      is that I need to overload on the number of arguments.   If you are
-    //      passing more arguments than I have listed below in any of my
-    //      overloads, just add another one.
-    //
-    //      Yes, yes, this is really ugly.  In essence what I am doing here is
-    //      protecting people from a bad (and incorrect) programming practice
-    //      that they should not be doing anyway.  I am protecting them from
-    //      themselves.  Why am I doing this?  Well, if you had any idea the
-    //      number of times I've been emailed by people about this
-    //      "incompatability" in my code, you wouldn't ask.
+	// If they want a Format() function that safely handles string objects
+	// without casting
+
+#ifdef SS_SAFE_FORMAT
+
+	// Question:  Joe, you wacky coder you, why do you have so many overloads
+	//	  of the Format() function
+	// Answer:  One reason only - CString compatability.  In short, by making
+	//	  the Format() function a template this way, I can do strong typing
+	//	  and allow people to pass CStdString arguments as fillers for
+	//	  "%s" format specifiers without crashing their program!  The downside
+	//	  is that I need to overload on the number of arguments.   If you are
+	//	  passing more arguments than I have listed below in any of my
+	//	  overloads, just add another one.
+	//
+	//	  Yes, yes, this is really ugly.  In essence what I am doing here is
+	//	  protecting people from a bad (and incorrect) programming practice
+	//	  that they should not be doing anyway.  I am protecting them from
+	//	  themselves.  Why am I doing this?  Well, if you had any idea the
+	//	  number of times I've been emailed by people about this
+	//	  "incompatability" in my code, you wouldn't ask.
 
 	void Fmt(const CT* szFmt, ...)
 	{
@@ -2488,441 +2488,441 @@ public:
 
 #ifndef SS_ANSI
 
-    void Format(UINT nId)
-    {
-		MYTYPE strFmt;
-		if ( strFmt.Load(nId) ) 
-            this->swap(strFmt);
-    }
-    template<class A1>
-    void Format(UINT nId, const A1& v)
-    {
+	void Format(UINT nId)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-            Fmt(strFmt, FmtArg<A1>(v)());
-    }
-    template<class A1, class A2>
-    void Format(UINT nId, const A1& v1, const A2& v2)
-    {
+			this->swap(strFmt);
+	}
+	template<class A1>
+	void Format(UINT nId, const A1& v)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-           Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)());
-    }
-    template<class A1, class A2, class A3>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3)
-    {
+			Fmt(strFmt, FmtArg<A1>(v)());
+	}
+	template<class A1, class A2>
+	void Format(UINT nId, const A1& v1, const A2& v2)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4)
-    {
+		   Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)());
+	}
+	template<class A1, class A2, class A3>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(),FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(),FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(),FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-           Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(),FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-                FmtArg<A9>(v9)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10)
-    {
+		{
+		   Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-                FmtArg<A9>(v9)(), FmtArg<A10>(v10)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+				FmtArg<A9>(v9)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-                FmtArg<A9>(v9)(),FmtArg<A10>(v10)(),FmtArg<A11>(v11)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+				FmtArg<A9>(v9)(), FmtArg<A10>(v10)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-                FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-                FmtArg<A12>(v12)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12,
-        class A13>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12, const A13& v13)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+				FmtArg<A9>(v9)(),FmtArg<A10>(v10)(),FmtArg<A11>(v11)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-                FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-                FmtArg<A12>(v12)(), FmtArg<A13>(v13)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12,
-        class A13, class A14>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12, const A13& v13, const A14& v14)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+				FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+				FmtArg<A12>(v12)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12,
+		class A13>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12, const A13& v13)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-                FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-                FmtArg<A12>(v12)(), FmtArg<A13>(v13)(),FmtArg<A14>(v14)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12,
-        class A13, class A14, class A15>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12, const A13& v13, const A14& v14, const A15& v15)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+				FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+				FmtArg<A12>(v12)(), FmtArg<A13>(v13)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12,
+		class A13, class A14>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12, const A13& v13, const A14& v14)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-                FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-                FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
-                FmtArg<A15>(v15)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12,
-        class A13, class A14, class A15, class A16>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12, const A13& v13, const A14& v14, const A15& v15,
-                const A16& v16)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+				FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+				FmtArg<A12>(v12)(), FmtArg<A13>(v13)(),FmtArg<A14>(v14)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12,
+		class A13, class A14, class A15>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12, const A13& v13, const A14& v14, const A15& v15)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-                FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-                FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
-                FmtArg<A15>(v15)(), FmtArg<A16>(v16)());
-        }
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12,
-        class A13, class A14, class A15, class A16, class A17>
-    void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12, const A13& v13, const A14& v14, const A15& v15,
-                const A16& v16, const A17& v17)
-    {
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+				FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+				FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
+				FmtArg<A15>(v15)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12,
+		class A13, class A14, class A15, class A16>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12, const A13& v13, const A14& v14, const A15& v15,
+				const A16& v16)
+	{
 		MYTYPE strFmt;
 		if ( strFmt.Load(nId) )
-        {
-            Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-                FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-                FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-                FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-                FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
-                FmtArg<A15>(v15)(),FmtArg<A16>(v16)(),FmtArg<A17>(v17)());
-        }
-    }
-    
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+				FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+				FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
+				FmtArg<A15>(v15)(), FmtArg<A16>(v16)());
+		}
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12,
+		class A13, class A14, class A15, class A16, class A17>
+	void Format(UINT nId, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12, const A13& v13, const A14& v14, const A15& v15,
+				const A16& v16, const A17& v17)
+	{
+		MYTYPE strFmt;
+		if ( strFmt.Load(nId) )
+		{
+			Fmt(strFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+				FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+				FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+				FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+				FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
+				FmtArg<A15>(v15)(),FmtArg<A16>(v16)(),FmtArg<A17>(v17)());
+		}
+	}
+
 #endif // #ifndef SS_ANSI
 
-    // ...now the other overload of Format: the one that takes a string literal
+	// ...now the other overload of Format: the one that takes a string literal
 
-    void Format(const CT* szFmt)
-    {
-        *this = szFmt;
-    }
-    template<class A1>
-    void Format(const CT* szFmt, A1 v)
-    {
-        Fmt(szFmt, FmtArg<A1>(v)());
-    }
-    template<class A1, class A2>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)());
-    }
-    template<class A1, class A2, class A3>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)());
-    }
-    template<class A1, class A2, class A3, class A4>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-            FmtArg<A9>(v9)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-            FmtArg<A9>(v9)(), FmtArg<A10>(v10)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-            FmtArg<A9>(v9)(),FmtArg<A10>(v10)(),FmtArg<A11>(v11)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-            FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-            FmtArg<A12>(v12)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12,
-        class A13>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12, const A13& v13)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-            FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-            FmtArg<A12>(v12)(), FmtArg<A13>(v13)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12,
-        class A13, class A14>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12, const A13& v13, const A14& v14)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-            FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-            FmtArg<A12>(v12)(), FmtArg<A13>(v13)(),FmtArg<A14>(v14)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12,
-        class A13, class A14, class A15>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12, const A13& v13, const A14& v14, const A15& v15)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-            FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-            FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
-            FmtArg<A15>(v15)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12,
-        class A13, class A14, class A15, class A16>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12, const A13& v13, const A14& v14, const A15& v15,
-                const A16& v16)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-            FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-            FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
-            FmtArg<A15>(v15)(), FmtArg<A16>(v16)());
-    }
-    template<class A1, class A2, class A3, class A4, class A5, class A6,
-        class A7, class A8, class A9, class A10, class A11, class A12,
-        class A13, class A14, class A15, class A16, class A17>
-    void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
-                const A4& v4, const A5& v5, const A6& v6, const A7& v7,
-                const A8& v8, const A9& v9, const A10& v10, const A11& v11,
-                const A12& v12, const A13& v13, const A14& v14, const A15& v15,
-                const A16& v16, const A17& v17)
-    {
-        Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
-            FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
-            FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
-            FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
-            FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
-            FmtArg<A15>(v15)(),FmtArg<A16>(v16)(),FmtArg<A17>(v17)());
-    }
+	void Format(const CT* szFmt)
+	{
+		*this = szFmt;
+	}
+	template<class A1>
+	void Format(const CT* szFmt, A1 v)
+	{
+		Fmt(szFmt, FmtArg<A1>(v)());
+	}
+	template<class A1, class A2>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)());
+	}
+	template<class A1, class A2, class A3>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)());
+	}
+	template<class A1, class A2, class A3, class A4>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+			FmtArg<A9>(v9)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+			FmtArg<A9>(v9)(), FmtArg<A10>(v10)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+			FmtArg<A9>(v9)(),FmtArg<A10>(v10)(),FmtArg<A11>(v11)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+			FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+			FmtArg<A12>(v12)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12,
+		class A13>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12, const A13& v13)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+			FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+			FmtArg<A12>(v12)(), FmtArg<A13>(v13)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12,
+		class A13, class A14>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12, const A13& v13, const A14& v14)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+			FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+			FmtArg<A12>(v12)(), FmtArg<A13>(v13)(),FmtArg<A14>(v14)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12,
+		class A13, class A14, class A15>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12, const A13& v13, const A14& v14, const A15& v15)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+			FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+			FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
+			FmtArg<A15>(v15)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12,
+		class A13, class A14, class A15, class A16>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12, const A13& v13, const A14& v14, const A15& v15,
+				const A16& v16)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+			FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+			FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
+			FmtArg<A15>(v15)(), FmtArg<A16>(v16)());
+	}
+	template<class A1, class A2, class A3, class A4, class A5, class A6,
+		class A7, class A8, class A9, class A10, class A11, class A12,
+		class A13, class A14, class A15, class A16, class A17>
+	void Format(const CT* szFmt, const A1& v1, const A2& v2, const A3& v3,
+				const A4& v4, const A5& v5, const A6& v6, const A7& v7,
+				const A8& v8, const A9& v9, const A10& v10, const A11& v11,
+				const A12& v12, const A13& v13, const A14& v14, const A15& v15,
+				const A16& v16, const A17& v17)
+	{
+		Fmt(szFmt, FmtArg<A1>(v1)(), FmtArg<A2>(v2)(),
+			FmtArg<A3>(v3)(), FmtArg<A4>(v4)(), FmtArg<A5>(v5)(),
+			FmtArg<A6>(v6)(), FmtArg<A7>(v7)(), FmtArg<A8>(v8)(),
+			FmtArg<A9>(v9)(), FmtArg<A10>(v10)(),FmtArg<A11>(v11)(),
+			FmtArg<A12>(v12)(),FmtArg<A13>(v13)(),FmtArg<A14>(v14)(),
+			FmtArg<A15>(v15)(),FmtArg<A16>(v16)(),FmtArg<A17>(v17)());
+	}
 
 #else  // #ifdef SS_SAFE_FORMAT
 
@@ -2940,7 +2940,7 @@ public:
 
 		va_end(argList);
 	}
-    
+
 #endif  // #ifdef SS_ANSI
 
 	void Format(const CT* szFmt, ...)
@@ -2961,7 +2961,7 @@ public:
 		va_end(argList);
 	}
 
-	#define MAX_FMT_TRIES		5	 // #of times we try 
+	#define MAX_FMT_TRIES		5	 // #of times we try
 	#define FMT_BLOCK_SIZE		2048 // # of bytes to increment per try
 	#define BUFSIZE_1ST	256
 	#define BUFSIZE_2ND 512
@@ -2984,18 +2984,18 @@ public:
 	// -------------------------------------------------------------------------
 	// FUNCTION:  FormatV
 	//		void FormatV(PCSTR szFormat, va_list, argList);
-	//           
+	//
 	// DESCRIPTION:
-	//		This function formats the string with sprintf style format-specs. 
+	//		This function formats the string with sprintf style format-specs.
 	//		It makes a general guess at required buffer size and then tries
 	//		successively larger buffers until it finds one big enough or a
 	//		threshold (MAX_FMT_TRIES) is exceeded.
 	//
-	// PARAMETERS: 
+	// PARAMETERS:
 	//		szFormat - a PCSTR holding the format of the output
 	//		argList - a Microsoft specific va_list for variable argument lists
 	//
-	// RETURN VALUE: 
+	// RETURN VALUE:
 	// -------------------------------------------------------------------------
 
 	void FormatV(const CT* szFormat, va_list argList)
@@ -3014,7 +3014,7 @@ public:
 		size_type nActual	= 0;
 		int nTry			= 0;
 
-		do	
+		do
 		{
 			// Grow more than linearly (e.g. 512, 1536, 3072, etc)
 
@@ -3064,7 +3064,7 @@ public:
 
 	int Compare(PCMYSTR szThat) const
 	{
-		return this->compare(szThat);	
+		return this->compare(szThat);
 	}
 
 	int CompareNoCase(PCMYSTR szThat)	const
@@ -3074,7 +3074,7 @@ public:
 
 	int Delete(int nIdx, int nCount=1)
 	{
-        if ( nIdx < 0 )
+		if ( nIdx < 0 )
 			nIdx = 0;
 
 		if ( nIdx < this->GetLength() )
@@ -3195,7 +3195,7 @@ public:
 	{
 		return static_cast<int>(this->length());
 	}
-	
+
 	int Insert(int nIdx, CT ch)
 	{
 		if ( static_cast<MYSIZE>(nIdx) > this->size()-1 )
@@ -3222,10 +3222,10 @@ public:
 
 	MYTYPE Left(int nCount) const
 	{
-        // Range check the count.
+		// Range check the count.
 
 		nCount = SSMAX(0, SSMIN(nCount, static_cast<int>(this->size())));
-		return this->substr(0, static_cast<MYSIZE>(nCount)); 
+		return this->substr(0, static_cast<MYSIZE>(nCount));
 	}
 
 #ifndef SS_ANSI
@@ -3246,7 +3246,7 @@ public:
 	}
 
 	void MakeUpper()
-	{ 
+	{
 		ToUpper();
 	}
 
@@ -3353,7 +3353,7 @@ public:
 
 	MYTYPE Right(int nCount) const
 	{
-        // Range check the count.
+		// Range check the count.
 
 		nCount = SSMAX(0, SSMIN(nCount, static_cast<int>(this->size())));
 		return this->substr(this->size()-static_cast<MYSIZE>(nCount));
@@ -3380,14 +3380,14 @@ public:
 
 	MYTYPE SpanExcluding(PCMYSTR szCharSet) const
 	{
-        MYSIZE pos = this->find_first_of(szCharSet);
-        return pos == MYBASE::npos ? *this : Left(pos);
+		MYSIZE pos = this->find_first_of(szCharSet);
+		return pos == MYBASE::npos ? *this : Left(pos);
 	}
 
 	MYTYPE SpanIncluding(PCMYSTR szCharSet) const
 	{
-        MYSIZE pos = this->find_first_not_of(szCharSet);
-        return pos == MYBASE::npos ? *this : Left(pos);
+		MYSIZE pos = this->find_first_not_of(szCharSet);
+		return pos == MYBASE::npos ? *this : Left(pos);
 	}
 
 #if defined SS_WIN32 && !defined(UNICODE) && !defined(SS_ANSI)
@@ -3424,7 +3424,7 @@ public:
 	}
 
 #endif
-	
+
 
 	// -------------------------------------------------------------------------
 	// Trim and its variants
@@ -3615,7 +3615,7 @@ public:
 			// we're trying to read, then we can read it directly into our
 			// buffer. Otherwise, we have to read into an intermediate buffer
 			// and convert.
-			
+
 			if ( (hdr.byCtrl & SSSO_UNICODE) != 0 )
 			{
 				ULONG nBytes	= hdr.nChars * sizeof(wchar_t);
@@ -3625,7 +3625,7 @@ public:
 						TRACE(_T("StreamLoad: Cannot read string: 0x%X\n"), hr);
 				}
 				else
-				{	
+				{
 					PWSTR pBufW = reinterpret_cast<PWSTR>(_alloca((nBytes)+1));
 					if ( FAILED(hr=pStream->Read(pBufW, nBytes, &nRead)) )
 						TRACE(_T("StreamLoad: Cannot read string: 0x%X\n"), hr);
@@ -3708,8 +3708,8 @@ public:
 //		SSDLLEXP	(nothing, just #define it)		extern
 //		SSDLLSPEC	__declspec(dllexport)			__declspec(dllimport)
 //
-//		Note that these macros must be available to ALL clients who want to 
-//		link to the DLL and use the class.  If they 
+//		Note that these macros must be available to ALL clients who want to
+//		link to the DLL and use the class.  If they
 //
 // A word of advice: Don't bother.
 //
@@ -3773,7 +3773,7 @@ inline CStdStringA operator+(PCSTR pA, const CStdStringA& sA)
 {
 	CStdStringA sRet;
 	CStdStringA::size_type nObjSize = sA.size();
-	CStdStringA::size_type nLitSize = 
+	CStdStringA::size_type nLitSize =
 		static_cast<CStdStringA::size_type>(sslen(pA));
 
 	sRet.reserve(nLitSize + nObjSize);
@@ -3835,7 +3835,7 @@ inline CStdStringW operator+(PCWSTR pW, const CStdStringW& sW)
 {
 	CStdStringW sRet;
 	CStdStringW::size_type nObjSize = sW.size();
-	CStdStringA::size_type nLitSize = 
+	CStdStringA::size_type nLitSize =
 		static_cast<CStdStringW::size_type>(sslen(pW));
 
 	sRet.reserve(nLitSize + nObjSize);
@@ -3861,39 +3861,39 @@ inline CStdStringW operator+(const CStdStringW& s1, PCSTR pA)
 template<>
 struct FmtArg<CStdStringA>
 {
-    explicit FmtArg(const CStdStringA& arg) : a_(arg) {}
-    PCSTR operator()() const { return a_.c_str(); }
-    const CStdStringA& a_;
+	explicit FmtArg(const CStdStringA& arg) : a_(arg) {}
+	PCSTR operator()() const { return a_.c_str(); }
+	const CStdStringA& a_;
 private:
-    FmtArg<CStdStringA>& operator=(const FmtArg<CStdStringA>&) { return *this; }
+	FmtArg<CStdStringA>& operator=(const FmtArg<CStdStringA>&) { return *this; }
 };
 template<>
 struct FmtArg<CStdStringW>
 {
-    explicit FmtArg(const CStdStringW& arg) : a_(arg) {}
-    PCWSTR operator()() const { return a_.c_str(); }
-    const CStdStringW& a_;
+	explicit FmtArg(const CStdStringW& arg) : a_(arg) {}
+	PCWSTR operator()() const { return a_.c_str(); }
+	const CStdStringW& a_;
 private:
-    FmtArg<CStdStringW>& operator=(const FmtArg<CStdStringW>&) { return *this; }
+	FmtArg<CStdStringW>& operator=(const FmtArg<CStdStringW>&) { return *this; }
 };
 
 template<>
 struct FmtArg<std::string>
 {
-    explicit FmtArg(const std::string& arg) : a_(arg) {}
-    PCSTR operator()() const { return a_.c_str(); }
-    const std::string& a_;
+	explicit FmtArg(const std::string& arg) : a_(arg) {}
+	PCSTR operator()() const { return a_.c_str(); }
+	const std::string& a_;
 private:
-    FmtArg<std::string>& operator=(const FmtArg<std::string>&) { return *this; }
+	FmtArg<std::string>& operator=(const FmtArg<std::string>&) { return *this; }
 };
 template<>
 struct FmtArg<std::wstring>
 {
-    explicit FmtArg(const std::wstring& arg) : a_(arg) {}
-    PCWSTR operator()() const { return a_.c_str(); }
-    const std::wstring& a_;
+	explicit FmtArg(const std::wstring& arg) : a_(arg) {}
+	PCWSTR operator()() const { return a_.c_str(); }
+	const std::wstring& a_;
 private:
-    FmtArg<std::wstring>& operator=(const FmtArg<std::wstring>&) {return *this;}
+	FmtArg<std::wstring>& operator=(const FmtArg<std::wstring>&) {return *this;}
 };
 #endif // #ifdef SS_SAFEFORMAT
 
@@ -4008,20 +4008,20 @@ inline CStdStringW WUFormatW(PCWSTR szwFormat, ...)
 	// FUNCTION: WUSysMessage
 	//	 CStdStringA WUSysMessageA(DWORD dwError, DWORD dwLangId=SS_DEFLANGID);
 	//	 CStdStringW WUSysMessageW(DWORD dwError, DWORD dwLangId=SS_DEFLANGID);
-	//           
+	//
 	// DESCRIPTION:
 	//	 This function simplifies the process of obtaining a string equivalent
 	//	 of a system error code returned from GetLastError().  You simply
 	//	 supply the value returned by GetLastError() to this function and the
 	//	 corresponding system string is returned in the form of a CStdStringA.
 	//
-	// PARAMETERS: 
+	// PARAMETERS:
 	//	 dwError - a DWORD value representing the error code to be translated
 	//	 dwLangId - the language id to use.  defaults to english.
 	//
-	// RETURN VALUE: 
+	// RETURN VALUE:
 	//	 a CStdStringA equivalent of the error code.  Currently, this function
-	//	 only returns either English of the system default language strings.  
+	//	 only returns either English of the system default language strings.
 	// -------------------------------------------------------------------------
 	#define SS_DEFLANGID MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT)
 	inline CStdStringA WUSysMessageA(DWORD dwError, DWORD dwLangId=SS_DEFLANGID)
@@ -4032,7 +4032,7 @@ inline CStdStringW WUFormatW(PCWSTR szwFormat, ...)
 								   dwLangId, szBuf, 511, NULL) )
 			return WUFormatA("%s (0x%X)", szBuf, dwError);
 		else
- 			return WUFormatA("Unknown error (0x%X)", dwError);
+			return WUFormatA("Unknown error (0x%X)", dwError);
 	}
 	inline CStdStringW WUSysMessageW(DWORD dwError, DWORD dwLangId=SS_DEFLANGID)
 	{
@@ -4042,7 +4042,7 @@ inline CStdStringW WUFormatW(PCWSTR szwFormat, ...)
 								   dwLangId, szBuf, 511, NULL) )
 			return WUFormatW(L"%s (0x%X)", szBuf, dwError);
 		else
- 			return WUFormatW(L"Unknown error (0x%X)", dwError);
+			return WUFormatW(L"Unknown error (0x%X)", dwError);
 	}
 #endif
 
@@ -4083,16 +4083,16 @@ inline CStdStringW WUFormatW(PCWSTR szwFormat, ...)
 //		 proper string but in the wrong case.
 // -----------------------------------------------------------------------------
 #define StdStringLessNoCaseW		SSLNCW	// avoid VC compiler warning 4786
-#define StdStringEqualsNoCaseW		SSENCW		
-#define StdStringLessNoCaseA		SSLNCA		
-#define StdStringEqualsNoCaseA		SSENCA		
+#define StdStringEqualsNoCaseW		SSENCW
+#define StdStringLessNoCaseA		SSLNCA
+#define StdStringEqualsNoCaseA		SSENCA
 
 #ifdef UNICODE
-	#define StdStringLessNoCase		SSLNCW		
-	#define StdStringEqualsNoCase	SSENCW		
+	#define StdStringLessNoCase		SSLNCW
+	#define StdStringEqualsNoCase	SSENCW
 #else
-	#define StdStringLessNoCase		SSLNCA		
-	#define StdStringEqualsNoCase	SSENCA		
+	#define StdStringLessNoCase		SSLNCA
+	#define StdStringEqualsNoCase	SSENCA
 #endif
 
 struct StdStringLessNoCaseW
@@ -4132,7 +4132,7 @@ struct StdStringEqualsNoCaseA
 #endif
 
 
-// These std::swap specializations come courtesy of Mike Crusader. 
+// These std::swap specializations come courtesy of Mike Crusader.
 
 //namespace std
 //{
@@ -4150,7 +4150,7 @@ struct StdStringEqualsNoCaseA
 // Turn back on any Borland warnings we turned off.
 
 #ifdef __BORLANDC__
-    #pragma option pop  // Turn back on inline function warnings
+	#pragma option pop  // Turn back on inline function warnings
 //	#pragma warn +inl   // Turn back on inline function warnings
 #endif
 

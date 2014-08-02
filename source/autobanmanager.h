@@ -37,7 +37,7 @@ public:
 protected:
 
 	static int m_refCount;
-	
+
 	struct t_attemptInfo
 	{
 		int attempts;

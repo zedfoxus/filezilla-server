@@ -17,7 +17,7 @@ CAsyncSslSocketLayer to your socket and call InitClientSsl after creation of the
 
 This class only has a couple of public functions:
 - InitSSLConnection(bool clientMode);
-  This functions establishes an SSL connection. The clientMode parameter specifies wether the SSL connection 
+  This functions establishes an SSL connection. The clientMode parameter specifies wether the SSL connection
   is in server or in client mode.
   Most likely you want to call this function right after calling Create for the socket.
   But sometimes, you'll need to call this function later. One example is for an FTP connection
@@ -26,7 +26,7 @@ This class only has a couple of public functions:
 - Is UsingSSL();
   Returns true if you've previously called InitClientSsl()
 - SetNotifyReply(SetNotifyReply(int nID, int nCode, int result);
-  You can call this function only after receiving a layerspecific callback with the SSL_VERIFY_CERT 
+  You can call this function only after receiving a layerspecific callback with the SSL_VERIFY_CERT
   id. Set result to 1 if you trust the certificate and 0 if you don't trust it.
   nID has to be the priv_data element of the t_SslCertData structure and nCode has to be SSL_VERIFY_CERT.
 - CreateSslCertificate(LPCTSTR filename, int bits, unsigned char* country, unsigned char* state,
@@ -43,10 +43,10 @@ Valid notification IDs are:
 - SSL_INFO 0
   There are two possible values for param2:
 	SSL_INFO_ESTABLISHED 0 - You'll get this notification if the SSL negotiation was successful
-	SSL_INFO_SHUTDOWNCOMPLETE 1 - You'll get this notification if the SSL connection has been shut 
+	SSL_INFO_SHUTDOWNCOMPLETE 1 - You'll get this notification if the SSL connection has been shut
                                   down successfully. See below for details.
 - SSL_FAILURE 1
-  This notification is sent if the SSL connection could not be established or if an existing 
+  This notification is sent if the SSL connection could not be established or if an existing
   connection failed. Valid values for param2 are:
   - SSL_FAILURE_UNKNOWN 0 - Details may have been sent with a SSL_VERBOSE_* notification.
   - SSL_FAILURE_ESTABLISH 1 - Problem during SSL negotiation
@@ -56,14 +56,14 @@ Valid notification IDs are:
   - SSL_FAILURE_CERTREJECTED 16 - The remote SSL certificate was rejected by user
 - SSL_VERBOSE_WARNING 3
   SSL_VERBOSE_INFO 4
-  This two notifications contain some additional information. The value given by param2 is a 
+  This two notifications contain some additional information. The value given by param2 is a
   pointer to a null-terminated char string (char *) with some useful information.
 - SSL_VERIFY_CERT 2
   This notification is sent each time a remote certificate has to be verified.
   param2 is a pointer to a t_SslCertData structure which contains some information
   about the remote certificate.
   You have to set the reply to this message using the SetNotifyReply function.
-  
+
 Be careful with closing the connection after sending data, not all data may have been sent already.
 Before closing the connection, you should call Shutdown() and wait for the SSL_INFO_SHUTDOWNCOMPLETE
 notification. This assures that all encrypted data really has been sent.
@@ -388,7 +388,7 @@ int CAsyncSslSocketLayer::InitSSL()
 			if (m_hSslDll2)
 				FreeLibrary(m_hSslDll2);
 			m_hSslDll2 = NULL;
-			
+
 			m_sCriticalSection.Unlock();
 			return SSL_FAILURE_LOADDLLS;
 		}
@@ -475,7 +475,7 @@ void CAsyncSslSocketLayer::OnReceive(int nErrorCode)
 			return;
 
 		m_mayTriggerRead = false;
-		
+
 		//Get number of bytes we can receive and store in the network input bio
 		size_t len = pBIO_ctrl_get_write_guarantee(m_nbio);
 		if (!len)
@@ -489,7 +489,7 @@ void CAsyncSslSocketLayer::OnReceive(int nErrorCode)
 		len = std::min(len, sizeof(buffer));
 
 		int numread = 0;
-		
+
 		// Receive data
 		numread = ReceiveNext(buffer, len);
 		if (numread > 0)
@@ -638,7 +638,7 @@ void CAsyncSslSocketLayer::OnSend(int nErrorCode)
 				{
 					char * tmp = m_pNetworkSendBuffer;
 					m_nNetworkSendBufferMaxLen = static_cast<int>((m_nNetworkSendBufferLen + numread - numsent) * 1.5);
-					m_pNetworkSendBuffer = new char[m_nNetworkSendBufferMaxLen];					
+					m_pNetworkSendBuffer = new char[m_nNetworkSendBufferMaxLen];
 					if (tmp)
 					{
 						memcpy(m_pNetworkSendBuffer, tmp, m_nNetworkSendBufferLen);
@@ -739,7 +739,7 @@ int CAsyncSslSocketLayer::Send(const void* lpBuf, int nBufLen, int nFlags)
 			nBufLen = len;
 		if (nBufLen <= 0) {
 			m_mayTriggerWriteUp = true;
-			TriggerEvents();				
+			TriggerEvents();
 			SetLastError(WSAEWOULDBLOCK);
 			return SOCKET_ERROR;
 		}
@@ -980,7 +980,7 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /
 
 	// Disable DES and other weak and export ciphers
 	pSSL_set_cipher_list(m_ssl, "DEFAULT:!eNULL:!aNULL:!DES:!3DES:!WEAK:!EXP:!LOW:!MD5");
-	
+
 	//Add current instance to list of active instances
 	t_SslLayerList *tmp = m_pSslLayerList;
 	m_pSslLayerList = new t_SslLayerList;
@@ -1125,7 +1125,7 @@ BOOL CAsyncSslSocketLayer::DoShutDown()
 			WSASetLastError(WSAEWOULDBLOCK);
 			return FALSE;
 		}
-	
+
 		// Empty read buffer
 		char buffer[1000];
 		int numread;
@@ -1539,18 +1539,18 @@ void CAsyncSslSocketLayer::OnConnect(int nErrorCode)
 int CAsyncSslSocketLayer::verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
 	X509   *err_cert;
-    int     err, depth;
-    SSL    *ssl;
+	int     err, depth;
+	SSL    *ssl;
 
-    err_cert = pX509_STORE_CTX_get_current_cert(ctx);
-    err = pX509_STORE_CTX_get_error(ctx);
-    depth = pX509_STORE_CTX_get_error_depth(ctx);
+	err_cert = pX509_STORE_CTX_get_current_cert(ctx);
+	err = pX509_STORE_CTX_get_error(ctx);
+	depth = pX509_STORE_CTX_get_error_depth(ctx);
 
-    /*
-     * Retrieve the pointer to the SSL of the connection currently treated
-     * and the application specific data stored into the SSL object.
-     */
-    ssl = (SSL *)pX509_STORE_CTX_get_ex_data(ctx, pSSL_get_ex_data_X509_STORE_CTX_idx());
+	/*
+	 * Retrieve the pointer to the SSL of the connection currently treated
+	 * and the application specific data stored into the SSL object.
+	 */
+	ssl = (SSL *)pX509_STORE_CTX_get_ex_data(ctx, pSSL_get_ex_data_X509_STORE_CTX_idx());
 
 	// Lookup CAsyncSslSocketLayer instance
 	CAsyncSslSocketLayer *pLayer = 0;
@@ -1569,20 +1569,20 @@ int CAsyncSslSocketLayer::verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 		pLayer = cur->pLayer;
 	m_sCriticalSection.Unlock();
 
-    /*
-     * Catch a too long certificate chain. The depth limit set using
-     * SSL_CTX_set_verify_depth() is by purpose set to "limit+1" so
-     * that whenever the "depth>verify_depth" condition is met, we
-     * have violated the limit and want to log this error condition.
-     * We must do it here, because the CHAIN_TOO_LONG error would not
-     * be found explicitly; only errors introduced by cutting off the
-     * additional certificates would be logged.
-     */
-    if (depth > 10) {//mydata->verify_depth) {
-        preverify_ok = 0;
-        err = X509_V_ERR_CERT_CHAIN_TOO_LONG;
-        pX509_STORE_CTX_set_error(ctx, err);
-    }
+	/*
+	 * Catch a too long certificate chain. The depth limit set using
+	 * SSL_CTX_set_verify_depth() is by purpose set to "limit+1" so
+	 * that whenever the "depth>verify_depth" condition is met, we
+	 * have violated the limit and want to log this error condition.
+	 * We must do it here, because the CHAIN_TOO_LONG error would not
+	 * be found explicitly; only errors introduced by cutting off the
+	 * additional certificates would be logged.
+	 */
+	if (depth > 10) {//mydata->verify_depth) {
+		preverify_ok = 0;
+		err = X509_V_ERR_CERT_CHAIN_TOO_LONG;
+		pX509_STORE_CTX_set_error(ctx, err);
+	}
 
 	if (!preverify_ok) {
 		if (!pLayer->m_nVerificationResult) {
@@ -1683,7 +1683,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	EVP_PKEY *pk;
 	RSA *rsa;
 	X509_NAME *name = NULL;
-	
+
 	if ((pk = pEVP_PKEY_new()) == NULL)
 	{
 		err = _T("Could not create key object");
@@ -1697,7 +1697,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	}
 
 	rsa = pRSA_generate_key(bits, RSA_F4, 0/*callback*/, NULL);
-	
+
 	if (!pEVP_PKEY_assign(pk, EVP_PKEY_RSA, (char *)(rsa)))
 	{
 		err = _T("Failed to assign rsa key to key object");
@@ -1729,7 +1729,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 				MBSTRING_UTF8, const_cast<unsigned char*>(email), -1, -1, 0);
 
 	/* Its self signed so set the issuer name to be the same as the
- 	 * subject.
+	 * subject.
 	 */
 	pX509_set_issuer_name(x,name);
 
@@ -1740,7 +1740,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	}
 
 	// Write key and certificate to file
-	// We use a memory bio, since the OpenSSL functions accepting a filepointer 
+	// We use a memory bio, since the OpenSSL functions accepting a filepointer
 	// do crash for no obvious reason.
 	FILE* file = _wfopen(filename, _T("w+"));
 	if (!file) {
@@ -1751,7 +1751,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	BIO* bio = pBIO_new(pBIO_s_mem());
 	pPEM_ASN1_write_bio((int (*)())pi2d_PrivateKey, (((pk)->type == EVP_PKEY_DSA)?PEM_STRING_DSA:PEM_STRING_RSA), bio, (char *)pk, NULL, NULL, 0, NULL, NULL);
 	pPEM_ASN1_write_bio((int (*)())pi2d_X509, PEM_STRING_X509, bio, (char *)x, NULL, NULL, 0, NULL, NULL);
-	
+
 	char buffer[1001];
 	int len;
 	while ((len = pBIO_read(bio, buffer, 1000)) > 0) {
@@ -1811,7 +1811,7 @@ int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, cons
 		return res;
 
 	m_sCriticalSection.Lock();
-	
+
 	if (!m_ssl_ctx) {
 		// Create new context
 		if (!(m_ssl_ctx = pSSL_CTX_new( pSSLv23_method()))) {
@@ -1854,7 +1854,7 @@ int CAsyncSslSocketLayer::SendRaw(const void* lpBuf, int nBufLen, int nFlags)
 
 	if (!lpBuf)
 		return 0;
-	
+
 	if (m_nNetworkError) {
 		SetLastError(m_nNetworkError);
 		return SOCKET_ERROR;

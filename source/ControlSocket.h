@@ -165,7 +165,7 @@ protected:
 	bool m_shutdown;
 
 	int m_hash_id;
-	
+
 	enum CHashThread::_algorithm m_hash_algorithm;
 
 public:

@@ -35,7 +35,7 @@
 #pragma once
 #endif // _MSC_VER >= 1000
 
-class CSAPrefsSubDlg : public CDialog  
+class CSAPrefsSubDlg : public CDialog
 {
 public:
 	DECLARE_DYNCREATE(CSAPrefsSubDlg)

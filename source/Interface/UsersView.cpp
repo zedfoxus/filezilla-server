@@ -55,7 +55,7 @@ BEGIN_MESSAGE_MAP(CUsersView, CView)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Zeichnung CUsersView 
+// Zeichnung CUsersView
 
 void CUsersView::OnDraw(CDC* pDC)
 {
@@ -78,33 +78,33 @@ void CUsersView::Dump(CDumpContext& dc) const
 #endif //_DEBUG
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CUsersView 
+// Behandlungsroutinen für Nachrichten CUsersView
 
-void CUsersView::OnSize(UINT nType, int cx, int cy) 
+void CUsersView::OnSize(UINT nType, int cx, int cy)
 {
 	CView::OnSize(nType, cx, cy);
-		
-    m_pListCtrl->SetWindowPos( NULL, 0, 0, cx, cy, SWP_NOZORDER | SWP_NOMOVE );
+
+	m_pListCtrl->SetWindowPos( NULL, 0, 0, cx, cy, SWP_NOZORDER | SWP_NOMOVE );
 }
 
-int CUsersView::OnCreate(LPCREATESTRUCT lpCreateStruct) 
+int CUsersView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CView::OnCreate(lpCreateStruct) == -1)
 		return -1;
-	
+
 	CMainFrame *pMainFrame = (CMainFrame *)AfxGetMainWnd();
 	m_pListCtrl = new CUsersListCtrl(pMainFrame);
 	m_pListCtrl->Create(LVS_REPORT | WS_CHILD | WS_VISIBLE | LVS_SHOWSELALWAYS | LVS_OWNERDATA | LVS_SHAREIMAGELISTS | WS_VSCROLL, CRect(0,0,0,0), this, 0);
-	
+
 	return 0;
 }
 
-void CUsersView::OnDestroy() 
+void CUsersView::OnDestroy()
 {
 	delete m_pListCtrl;
 	m_pListCtrl = 0;
 	CView::OnDestroy();
-	
+
 	// TODO: Code für die Behandlungsroutine für Nachrichten hier einfügen
-	
+
 }

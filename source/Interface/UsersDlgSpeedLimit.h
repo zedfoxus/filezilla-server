@@ -26,7 +26,7 @@
 //
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CUsersDlgSpeedLimit 
+// Dialogfeld CUsersDlgSpeedLimit
 #include "UsersDlg.h"
 
 class CUsersDlgSpeedLimit : public CSAPrefsSubDlg
@@ -35,12 +35,12 @@ class CUsersDlgSpeedLimit : public CSAPrefsSubDlg
 public:
 	CUsersDlgSpeedLimit(CUsersDlg *pOwner);   // Standardkonstruktor
 	~CUsersDlgSpeedLimit();
-	
+
 	void SetCtrlState();
 	BOOL DisplayUser(const t_user *pUser);
 	BOOL SaveUser(t_user *pUser);
 	CString Validate();
-	
+
 protected:
 	void ShowSpeedLimit( CListBox &listBox, SPEEDLIMITSLIST &list);
 
@@ -75,7 +75,7 @@ protected:
 	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen
 	//{{AFX_VIRTUAL(CUsersDlgSpeedLimit)
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung

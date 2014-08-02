@@ -34,7 +34,7 @@ static char THIS_FILE[] = __FILE__;
 BOOL COptions::m_bInitialized=FALSE;
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptions 
+// Dialogfeld COptions
 
 COptions::COptions()
 {
@@ -115,7 +115,7 @@ void COptions::SetOption(int nOptionID, __int64 value)
 	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name).c_str());
 	pItem->SetAttribute("type", "numeric");
 	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr).c_str()));
-	
+
 	document.SaveFile(bufferA);
 }
 
@@ -170,7 +170,7 @@ void COptions::SetOption(int nOptionID, CString value)
 	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID - 1].name).c_str());
 	pItem->SetAttribute("type", "string");
 	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value).c_str()));
-	
+
 	document.SaveFile(bufferA);
 }
 
@@ -179,7 +179,7 @@ CString COptions::GetOption(int nOptionID)
 	ASSERT(nOptionID>0 && nOptionID<=IOPTIONS_NUM);
 	ASSERT(!m_Options[nOptionID-1].nType);
 	Init();
-	
+
 	if (m_OptionsCache[nOptionID-1].bCached)
 		return m_OptionsCache[nOptionID-1].str;
 
@@ -203,7 +203,7 @@ __int64 COptions::GetOptionVal(int nOptionID)
 	ASSERT(nOptionID>0 && nOptionID<=IOPTIONS_NUM);
 	ASSERT(m_Options[nOptionID-1].nType == 1);
 	Init();
-	
+
 	if (m_OptionsCache[nOptionID-1].bCached)
 		return m_OptionsCache[nOptionID-1].value;
 
@@ -231,10 +231,10 @@ void COptions::Init()
 	if (pos)
 		*++pos=0;
 	_tcscat(buffer, _T("FileZilla Server Interface.xml"));
-	
+
 	for (int i = 0; i < IOPTIONS_NUM; i++)
 		m_OptionsCache[i].bCached = FALSE;
-	
+
 	USES_CONVERSION;
 	char* bufferA = T2A(buffer);
 	if (!bufferA)

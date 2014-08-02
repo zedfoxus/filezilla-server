@@ -135,7 +135,7 @@ BOOL CGroupsDlgSharedFolders::OnInitDialog()
 	SetCtrlState();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Propertypages should return FALSE
+				  // EXCEPTION: OCX-Propertypages should return FALSE
 }
 
 CString CGroupsDlgSharedFolders::Validate()

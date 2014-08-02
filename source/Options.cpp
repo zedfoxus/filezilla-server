@@ -326,7 +326,7 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name).c_str());
 	pItem->SetAttribute("type", "numeric");
 	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr).c_str()));
-	
+
 	document.SaveFile(bufferA);
 }
 
@@ -341,7 +341,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 	case OPTION_SSLPORTS:
 		{
 			std::set<int> portSet;
-			
+
 			str.TrimLeft(_T(" ,"));
 
 			int pos = str.FindOneOf(_T(" ,"));
@@ -580,7 +580,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID - 1].name).c_str());
 	pItem->SetAttribute("type", "string");
 	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value).c_str()));
-	
+
 	document.SaveFile(bufferA);
 }
 
@@ -729,7 +729,7 @@ void COptions::Init()
 		return;
 	EnterCritSection(m_Sync);
 	m_bInitialized = TRUE;
-	
+
 	for (int i = 0; i < OPTIONS_NUM; i++)
 		m_sOptionsCache[i].bCached = FALSE;
 
@@ -844,7 +844,7 @@ bool COptions::IsNumeric(LPCTSTR str)
 TiXmlElement *COptions::GetXML()
 {
 	EnterCritSection(m_Sync);
-	
+
 	USES_CONVERSION;
 	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 	char* bufferA = T2A(xmlFileName);
@@ -855,7 +855,7 @@ TiXmlElement *COptions::GetXML()
 	}
 
 	TiXmlDocument *pDocument = new TiXmlDocument;
-	
+
 	if (!pDocument->LoadFile(bufferA))
 	{
 		LeaveCritSection(m_Sync);
@@ -1103,7 +1103,7 @@ BOOL COptions::SaveSpeedLimits(TiXmlElement* pSettings)
 	TiXmlElement* pSpeedLimits;
 	while ((pSpeedLimits = pSettings->FirstChildElement("SpeedLimits")))
 		pSettings->RemoveChild(pSpeedLimits);
-	
+
 	pSpeedLimits = pSettings->LinkEndChild(new TiXmlElement("SpeedLimits"))->ToElement();
 
 	const char* names[] = { "Download", "Upload" };
@@ -1131,7 +1131,7 @@ CStdString ReadText(TiXmlElement* pElement)
 	if (!textNode || !textNode->ToText())
 		return _T("");
 
-	return ConvFromNetwork(textNode->Value());					
+	return ConvFromNetwork(textNode->Value());
 }
 
 BOOL COptions::ReadSpeedLimits(TiXmlElement *pXML)
@@ -1156,7 +1156,7 @@ BOOL COptions::ReadSpeedLimits(TiXmlElement *pXML)
 			}
 		}
 	}
-	
+
 	return TRUE;
 }
 
@@ -1191,7 +1191,7 @@ void COptions::ReloadConfig()
 	EnterCritSection(m_Sync);
 
 	m_bInitialized = TRUE;
-	
+
 	for (int i = 0; i < OPTIONS_NUM; i++)
 		m_sOptionsCache[i].bCached = FALSE;
 

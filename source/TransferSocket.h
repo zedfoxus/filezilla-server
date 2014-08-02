@@ -37,7 +37,7 @@ struct t_dirlisting;
 #include <zlib.h>
 
 /////////////////////////////////////////////////////////////////////////////
-// Befehlsziel CTransferSocket 
+// Befehlsziel CTransferSocket
 class CAsyncSslSocketLayer;
 class CTransferSocket final : public CAsyncSocketEx
 {
@@ -98,7 +98,7 @@ protected:
 	BOOL m_bAccepted;
 	SYSTEMTIME m_LastActiveTime;
 	bool m_wasActiveSinceCheck;
-	
+
 	CAsyncSslSocketLayer* m_pSslLayer;
 	void* m_sslContext;
 
@@ -107,7 +107,7 @@ protected:
 	z_stream m_zlibStream;
 	__int64 m_zlibBytesIn;
 	__int64 m_zlibBytesOut;
-	
+
 	__int64 m_currentFileOffset;
 
 	bool m_waitingForSslHandshake;

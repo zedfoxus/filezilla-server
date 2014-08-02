@@ -31,7 +31,7 @@
 #include <memory>
 
 class CAdminInterface;
-class CAdminSocket : public CAsyncSocketEx  
+class CAdminSocket : public CAsyncSocketEx
 {
 public:
 	BOOL CheckForTimeout();
@@ -57,8 +57,8 @@ protected:
 			, dwLength()
 		{}
 
-		explicit t_data( DWORD len ) 
-			: pData(new unsigned char[len]) 
+		explicit t_data( DWORD len )
+			: pData(new unsigned char[len])
 			, dwOffset()
 			, dwLength(len)
 		{

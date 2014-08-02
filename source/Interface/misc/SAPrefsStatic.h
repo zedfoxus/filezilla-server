@@ -70,7 +70,7 @@ protected:
    CBitmap m_bm;
 
 	CString m_csConstantText;
-	
+
 
    void MakeCaptionBitmap();
 

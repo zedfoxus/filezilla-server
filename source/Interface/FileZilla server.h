@@ -30,7 +30,7 @@
 	#error include 'stdafx.h' before including this file for PCH
 #endif
 
-#include "resource.h"       // Hauptsymbole
+#include "resource.h"	   // Hauptsymbole
 
 /////////////////////////////////////////////////////////////////////////////
 // CFileZillaserverApp:
@@ -57,7 +57,7 @@ public:
 	//{{AFX_MSG(CFileZillaserverApp)
 	afx_msg void OnAppAbout();
 		// HINWEIS - An dieser Stelle werden Member-Funktionen vom Klassen-Assistenten eingefügt und entfernt.
-		//    Innerhalb dieser generierten Quelltextabschnitte NICHTS VERÄNDERN!
+		//	Innerhalb dieser generierten Quelltextabschnitte NICHTS VERÄNDERN!
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

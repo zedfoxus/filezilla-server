@@ -26,7 +26,7 @@
 //
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsSpeedLimitPage 
+// Dialogfeld COptionsSpeedLimitPage
 #include "..\Accounts.h"
 
 class COptionsDlg;
@@ -36,12 +36,12 @@ class COptionsSpeedLimitPage : public COptionsPage
 public:
 	COptionsSpeedLimitPage(COptionsDlg *pOptionsDlg);   // Standardkonstruktor
 	~COptionsSpeedLimitPage();
-	
+
 	virtual void SaveData();
 	virtual void LoadData();
 
 	void SetCtrlState();
-	
+
 	SPEEDLIMITSLIST m_DownloadSpeedLimits;
 	SPEEDLIMITSLIST m_UploadSpeedLimits;
 
@@ -73,7 +73,7 @@ protected:
 	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen
 	//{{AFX_VIRTUAL(COptionsSpeedLimitPage)
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung

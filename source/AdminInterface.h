@@ -29,7 +29,7 @@
 
 class CAdminSocket;
 class CServer;
-class CAdminInterface  
+class CAdminInterface
 {
 public:
 	void CheckForTimeout();
@@ -39,7 +39,7 @@ public:
 	virtual ~CAdminInterface();
 	BOOL SendCommand(int nType, int nID, const void *pData, int nDataLength);
 	BOOL Remove(CAdminSocket *pAdminSocket);
-	
+
 protected:
 	CServer *m_pServer;
 

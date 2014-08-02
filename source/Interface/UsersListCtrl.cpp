@@ -775,7 +775,7 @@ void CUsersListCtrl::QSortList(const unsigned int dir, int anf, int ende, int (*
 	const unsigned int ref = (l + r) / 2;
 	const CConnectionData* refData = m_connectionDataArray[ref];
 	do
-    {
+	{
 		if (!dir)
 		{
 			while ((comp(this, l, refData) < 0) && (l<ende)) l++;
@@ -794,7 +794,7 @@ void CUsersListCtrl::QSortList(const unsigned int dir, int anf, int ende, int (*
 			l++;
 			r--;
 		}
-    }
+	}
 	while (l<=r);
 
 	if (anf<r) QSortList(dir, anf, r, comp);

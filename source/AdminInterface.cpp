@@ -62,7 +62,7 @@ BOOL CAdminInterface::SendCommand(int nType, int nID, const void *pData, int nDa
 		{
 			deleteList.push_back(*iter);
 		}
-	
+
 	for (iter = deleteList.begin(); iter != deleteList.end(); iter++)
 		VERIFY(Remove(*iter));
 	return TRUE;
@@ -93,7 +93,7 @@ void CAdminInterface::CheckForTimeout()
 	for (iter=m_AdminSocketList.begin(); iter!=m_AdminSocketList.end(); iter++)
 		if ((*iter)->CheckForTimeout())
 			deleteList.push_back(*iter);
-		
+
 	for (iter=deleteList.begin(); iter!=deleteList.end(); iter++)
 		VERIFY(Remove(*iter));
 }

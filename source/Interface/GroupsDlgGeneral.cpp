@@ -32,7 +32,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CGroupsDlgGeneral 
+// Dialogfeld CGroupsDlgGeneral
 
 CGroupsDlgGeneral::CGroupsDlgGeneral(CGroupsDlg *pOwner)
 	: CSAPrefsSubDlg(CGroupsDlgGeneral::IDD)
@@ -40,7 +40,7 @@ CGroupsDlgGeneral::CGroupsDlgGeneral(CGroupsDlg *pOwner)
 {
 	ASSERT(pOwner);
 	m_pOwner = pOwner;
-	
+
 	//{{AFX_DATA_INIT(CGroupsDlgGeneral)
 	m_nMaxUsersBypass = FALSE;
 	m_MaxConnCount = _T("");
@@ -82,24 +82,24 @@ BEGIN_MESSAGE_MAP(CGroupsDlgGeneral, CSAPrefsSubDlg)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CGroupsDlgGeneral 
+// Behandlungsroutinen für Nachrichten CGroupsDlgGeneral
 
-BOOL CGroupsDlgGeneral::OnInitDialog() 
+BOOL CGroupsDlgGeneral::OnInitDialog()
 {
 	CSAPrefsSubDlg::OnInitDialog();
-	
+
 	UpdateData(FALSE);
-	
+
 	SetCtrlState();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Propertypages should return FALSE
+				  // EXCEPTION: OCX-Propertypages should return FALSE
 }
 
 CString CGroupsDlgGeneral::Validate()
 {
 	UpdateData(TRUE);
-	
+
 	if (_ttoi(m_MaxConnCount)<0 || _ttoi(m_MaxConnCount)>999999999)
 	{
 		m_cMaxConnCount.SetFocus();
@@ -148,12 +148,12 @@ BOOL CGroupsDlgGeneral::DisplayGroup(const t_group *pGroup)
 		m_MaxConnCount = _T("");
 		m_Comments = _T("");
 		m_nForceSsl = 0;
-		
+
 		UpdateData(FALSE);
-		
+
 		return TRUE;
 	}
-	
+
 	m_nEnabled = pGroup->nEnabled;
 	m_nMaxUsersBypass = pGroup->nBypassUserLimit;
 	CString str;
@@ -163,7 +163,7 @@ BOOL CGroupsDlgGeneral::DisplayGroup(const t_group *pGroup)
 	m_IpLimit = str;
 	m_Comments = pGroup->comment;
 	m_nForceSsl = pGroup->forceSsl;
-	
+
 	UpdateData(FALSE);
 
 	return TRUE;
@@ -174,12 +174,12 @@ BOOL CGroupsDlgGeneral::SaveGroup(t_group *pGroup)
 	if (!pGroup)
 		return FALSE;
 
-    pGroup->nEnabled = m_nEnabled;		
+	pGroup->nEnabled = m_nEnabled;
 	pGroup->nBypassUserLimit = m_nMaxUsersBypass;
 	pGroup->nUserLimit = _ttoi(m_MaxConnCount);
 	pGroup->nIpLimit = _ttoi(m_IpLimit);
 	pGroup->comment = m_Comments;
 	pGroup->forceSsl = m_nForceSsl;
-	
+
 	return TRUE;
 }

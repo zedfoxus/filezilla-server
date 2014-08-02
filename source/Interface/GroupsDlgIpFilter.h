@@ -26,7 +26,7 @@
 #include "GroupsDlg.h"
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CGroupsDlgIpFilter 
+// Dialogfeld CGroupsDlgIpFilter
 class CGroupsDlgIpFilter : public CSAPrefsSubDlg
 {
 	friend CGroupsDlg;
@@ -53,7 +53,7 @@ protected:
 	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen
 	//{{AFX_VIRTUAL(CGroupsDlgIpFilter)
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung

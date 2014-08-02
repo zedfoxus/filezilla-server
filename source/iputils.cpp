@@ -148,7 +148,7 @@ bool MatchesFilter(CStdString filter, CStdString ip)
 			}
 			if (!prefixLength)
 				return true;
-			
+
 			int mask;
 			if (prefixLength == 1)
 				mask = 0x8;

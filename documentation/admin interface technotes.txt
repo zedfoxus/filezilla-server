@@ -20,4 +20,4 @@ bit 4: got all data, prepare editing
 bit 8: currently editing
 
 Actually user and group data isn't separated, so this is for the interface only.
-Retrieving data and actual editing are handled in two different messages, else admin connection could get out of sync if the dialogs are displayed immediately after receiving data. 
+Retrieving data and actual editing are handled in two different messages, else admin connection could get out of sync if the dialogs are displayed immediately after receiving data.

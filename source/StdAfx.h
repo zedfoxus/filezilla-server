@@ -115,7 +115,7 @@ class CServerThread;
 typedef struct
 {
 	int userid;
-	
+
 	// Set only by USERCONTROL_CONNOP_CHANGEUSER messages
 	CStdString user;
 
@@ -173,7 +173,7 @@ class CCriticalSectionWrapper
 public:
 	CCriticalSectionWrapper();
 	~CCriticalSectionWrapper();
-	
+
 	void Lock();
 	void Unlock();
 

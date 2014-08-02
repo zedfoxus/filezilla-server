@@ -31,7 +31,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsPage 
+// Dialogfeld COptionsPage
 
 
 COptionsPage::COptionsPage(COptionsDlg *pOptionsDlg, UINT nID, CWnd *pParent /*=NULL*/)

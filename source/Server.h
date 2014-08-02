@@ -18,7 +18,7 @@ class CAdminSocket;
 class CFileLogger;
 class CAutoBanManager;
 
-class CServer  
+class CServer
 {
 public:
 	void ShowStatus(LPCTSTR msg, int nType);
@@ -39,15 +39,15 @@ protected:
 	BOOL ToggleActive(int nServerState);
 	unsigned int GetNextThreadNotificationID();
 	void FreeThreadNotificationID(CServerThread *pThread);
-	
+
 	// Send state to interface
 	void SendState();
-	
+
 	BOOL m_bQuit;
 	int m_nServerState;
 	CAdminInterface *m_pAdminInterface;
 	CFileLogger *m_pFileLogger;
-	
+
 	std::list<CServerThread*> m_ThreadArray;
 	std::list<CServerThread*> m_ClosedThreads;
 
@@ -58,10 +58,10 @@ protected:
 	std::map<int, t_connectiondata> m_UsersList;
 
 	UINT m_nTimerID;
-	
+
 	_int64 m_nRecvCount;
 	_int64 m_nSendCount;
-	
+
 	UINT m_nBanTimerID;
 
 	LRESULT OnServerMessage(CServerThread *pThread, WPARAM wParam, LPARAM lParam);

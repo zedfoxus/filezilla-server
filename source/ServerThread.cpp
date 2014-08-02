@@ -61,7 +61,7 @@ BOOL CServerThread::InitInstance()
 {
 	BOOL res = TRUE;
 	WSADATA wsaData;
-	
+
 	WORD wVersionRequested = MAKEWORD(1, 1);
 	int nResult = WSAStartup(wVersionRequested, &wsaData);
 	if (nResult != 0)
@@ -71,7 +71,7 @@ BOOL CServerThread::InitInstance()
 		WSACleanup();
 		res=FALSE;
 	}
-	
+
 	m_timerid = SetTimer(0, 0, 1000, 0);
 	m_nRateTimer = SetTimer(0, 0, 100, 0);
 
@@ -147,7 +147,7 @@ DWORD CServerThread::ExitInstance()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CServerThread 
+// Behandlungsroutinen für Nachrichten CServerThread
 
 const int CServerThread::GetNumConnections()
 {
@@ -290,7 +290,7 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 
 		line = msg.Mid(oldpos);
 		if (line != _T(""))
-			m_ParsedWelcomeMessage.push_back(_T("220 ") + line);		
+			m_ParsedWelcomeMessage.push_back(_T("220 ") + line);
 		else
 		{
 			m_ParsedWelcomeMessage.back()[3] = 0;
@@ -412,8 +412,8 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 	if (wParam == m_timerid)
 	{
 		EnterCritSection(m_threadsync);
-		
-		/* 
+
+		/*
 		 * Check timeouts and collect transfer file offsets.
 		 * Do both in the same loop to save performance.
 		 */
@@ -444,7 +444,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 			}
 			iter->second->CheckForTimeout();
 		}
-		
+
 		if ((p - buffer) <= 2)
 			delete [] buffer;
 		else
@@ -471,12 +471,12 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 	else if (wParam==m_nRateTimer)
 	{
 		if (m_nSendCount)
-		{	
+		{
 			SendNotification(FSM_SEND, m_nSendCount);
 			m_nSendCount = 0;
 		}
 		if (m_nRecvCount)
-		{	
+		{
 			SendNotification(FSM_RECV, m_nRecvCount);
 			m_nRecvCount = 0;
 		}
@@ -520,12 +520,12 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 				}
 
 				limit *= 100;
-				
+
 				long long nRemaining = limit;
 				long long nThreadLimit = limit / m_sInstanceList.size();
-				
+
 				std::list<CServerThread *> fullUsageList;
-				
+
 				for (iter = m_sInstanceList.begin(); iter != m_sInstanceList.end(); ++iter) {
 					CServerThread *pThread = *iter;
 					EnterCritSection(pThread->m_threadsync);
@@ -550,14 +550,14 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 					}
 					LeaveCritSection(pThread->m_threadsync);
 				}
-				
+
 				// fullUsageList now contains all threads which did use up its assigned quota
 				std::list<CServerThread *> fullUsageList2;
 				if (!fullUsageList.empty())
 				{
 					nThreadLimit = nRemaining / fullUsageList.size();
 					for (iter = fullUsageList.begin(); iter != fullUsageList.end(); iter++)
-					{	
+					{
 						CServerThread *pThread = *iter;
 
 						// Thread has already been locked
@@ -579,12 +579,12 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 						}
 						LeaveCritSection(pThread->m_threadsync);
 					}
-					
+
 					if (!fullUsageList2.empty())
 					{
 						nThreadLimit = nRemaining / fullUsageList2.size();
 						for (iter = fullUsageList2.begin(); iter != fullUsageList2.end(); iter++)
-						{	
+						{
 							CServerThread *pThread = *iter;
 							pThread->m_SlQuotas[i].nTransferred = 0;
 							pThread->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
@@ -595,7 +595,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 					}
 				}
 			}
-			
+
 			LeaveCritSection(m_GlobalThreadsync);
 		}
 		ProcessNewSlQuota();
@@ -715,12 +715,12 @@ void CServerThread::ProcessNewSlQuota()
 			}
 			continue;
 		}
-	
+
 		long long nRemaining = m_SlQuotas[i].nBytesAllowedToTransfer;
 		long long nThreadLimit = nRemaining / m_sInstanceList.size();
-			
+
 		std::list<CControlSocket *> fullUsageList;
-		
+
 		for (iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); iter++)
 		{
 			CControlSocket *pControlSocket = iter->second;
@@ -748,15 +748,15 @@ void CServerThread::ProcessNewSlQuota()
 				continue;
 			}
 		}
-		
+
 		std::list<CControlSocket *> fullUsageList2;
 		if (!fullUsageList.empty())
 		{
 			std::list<CControlSocket *>::iterator iter;
-			
+
 			nThreadLimit = nRemaining / fullUsageList.size();
 			for (iter = fullUsageList.begin(); iter != fullUsageList.end(); iter++)
-			{	
+			{
 				CControlSocket *pControlSocket = *iter;
 				long long r = pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer - pControlSocket->m_SlQuotas[i].nTransferred;
 				if (r)
@@ -774,12 +774,12 @@ void CServerThread::ProcessNewSlQuota()
 					continue;
 				}
 			}
-			
+
 			if (!fullUsageList2.empty())
 			{
 				nThreadLimit = nRemaining / fullUsageList2.size();
 				for (iter = fullUsageList2.begin(); iter != fullUsageList2.end(); iter++)
-				{	
+				{
 					CControlSocket *pControlSocket = *iter;
 					pControlSocket->m_SlQuotas[i].nTransferred = 0;
 					pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
@@ -787,7 +787,7 @@ void CServerThread::ProcessNewSlQuota()
 			}
 		}
 	}
-	
+
 	for (iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); iter++)
 	{
 		CControlSocket *pControlSocket = iter->second;
@@ -888,7 +888,7 @@ void CServerThread::SendNotification(WPARAM wParam, LPARAM lParam)
 		SetPriority(THREAD_PRIORITY_BELOW_NORMAL);
 		m_throttled = 1;
 	}
-	
+
 	LeaveCritSection(m_threadsync);
 }
 
@@ -946,7 +946,7 @@ void CServerThread::AntiHammerDecrease()
 		else
 			m_antiHammerInfo.erase(iter++);
 	}
-	
+
 	LeaveCritSection(m_GlobalThreadsync);
 }
 

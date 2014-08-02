@@ -176,7 +176,7 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 
 		nSpeedLimit[i] = int(*p++) << 8;
 		nSpeedLimit[i] |= *p++;
-	
+
 		if (!nSpeedLimit[i])
 			nSpeedLimit[i] = 10;
 
@@ -224,7 +224,7 @@ void t_group::FillString(char *& p, const CStdString& str) const
 char * t_group::FillBuffer(char *p) const
 {
 	FillString(p, group);
-	
+
 	memcpy(p, &nIpLimit, 4);
 	p += 4;
 	memcpy(p, &nUserLimit, 4);
@@ -487,7 +487,7 @@ bool t_group::ParseString(const unsigned char* endMarker, unsigned char *&p, CSt
 	delete [] tmp;
 	p += len;
 	string = str;
-	
+
 	return true;
 }
 

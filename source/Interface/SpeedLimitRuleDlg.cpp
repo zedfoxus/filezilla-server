@@ -92,7 +92,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CSpeedLimitRuleDlg message handlers
 
-void CSpeedLimitRuleDlg::OnDateCheck() 
+void CSpeedLimitRuleDlg::OnDateCheck()
 {
 	// TODO: Add your control notification handler code here
 	UpdateData();
@@ -100,7 +100,7 @@ void CSpeedLimitRuleDlg::OnDateCheck()
 	m_DateCtrl.EnableWindow( m_DateCheck);
 }
 
-void CSpeedLimitRuleDlg::OnToCheck() 
+void CSpeedLimitRuleDlg::OnToCheck()
 {
 	// TODO: Add your control notification handler code here
 	UpdateData();
@@ -108,7 +108,7 @@ void CSpeedLimitRuleDlg::OnToCheck()
 	m_ToCtrl.EnableWindow( m_ToCheck);
 }
 
-void CSpeedLimitRuleDlg::OnFromCheck() 
+void CSpeedLimitRuleDlg::OnFromCheck()
 {
 	// TODO: Add your control notification handler code here
 	UpdateData();
@@ -116,23 +116,23 @@ void CSpeedLimitRuleDlg::OnFromCheck()
 	m_FromCtrl.EnableWindow( m_FromCheck);
 }
 
-BOOL CSpeedLimitRuleDlg::OnInitDialog() 
+BOOL CSpeedLimitRuleDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	
+
 	// TODO: Add extra initialization here
 	m_DateCtrl.EnableWindow( m_DateCheck);
 	m_ToCtrl.EnableWindow( m_ToCheck);
 	m_FromCtrl.EnableWindow( m_FromCheck);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX Property Pages should return FALSE
+				  // EXCEPTION: OCX Property Pages should return FALSE
 }
 
 CSpeedLimit CSpeedLimitRuleDlg::GetSpeedLimit()
 {
 	CSpeedLimit res;
-	
+
 	res.m_DateCheck = m_DateCheck;
 	res.m_Date.y = m_Date.GetYear();
 	res.m_Date.m = m_Date.GetMonth();

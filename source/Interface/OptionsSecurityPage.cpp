@@ -32,7 +32,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsSecurityPage 
+// Dialogfeld COptionsSecurityPage
 
 
 COptionsSecurityPage::COptionsSecurityPage(COptionsDlg *pOptionsDlg, CWnd* pParent /*=NULL*/)
@@ -69,30 +69,30 @@ BEGIN_MESSAGE_MAP(COptionsSecurityPage, COptionsPage)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten COptionsSecurityPage 
+// Behandlungsroutinen für Nachrichten COptionsSecurityPage
 
-void COptionsSecurityPage::OnInfxp() 
+void COptionsSecurityPage::OnInfxp()
 {
 	UpdateData(TRUE);
 	m_cInFxpStrict.EnableWindow(m_bInFxp);
-	
+
 }
 
-void COptionsSecurityPage::OnOutfxp() 
+void COptionsSecurityPage::OnOutfxp()
 {
 	UpdateData(TRUE);
-	m_cOutFxpStrict.EnableWindow(m_bOutFxp);		
+	m_cOutFxpStrict.EnableWindow(m_bOutFxp);
 }
 
-BOOL COptionsSecurityPage::OnInitDialog() 
+BOOL COptionsSecurityPage::OnInitDialog()
 {
 	COptionsPage::OnInitDialog();
-	
+
 	m_cInFxpStrict.EnableWindow(m_bInFxp);
 	m_cOutFxpStrict.EnableWindow(m_bOutFxp);
-	
+
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
 void COptionsSecurityPage::LoadData()

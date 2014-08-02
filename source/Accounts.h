@@ -63,7 +63,7 @@ public:
 	int nSpeedLimit[2];
 	SPEEDLIMITSLIST SpeedLimits[2];
 	int nBypassServerSpeedLimit[2];
-	
+
 	std::list<CStdString> allowedIPs, disallowedIPs;
 
 	CStdString comment;

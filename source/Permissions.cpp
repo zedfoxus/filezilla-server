@@ -96,7 +96,7 @@ protected:
 				return 0;
 			if (!pWnd->m_pPermissions)
 				return 0;
-	
+
 			pWnd->m_pPermissions->UpdatePermissions(true);
 		}
 		return ::DefWindowProc(hWnd, message, wParam, lParam);
@@ -322,7 +322,7 @@ void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool is
 		}
 		else
 		{
-		}	
+		}
 	}
 
 	result.back().len += sprintf(result.back().buffer + result.back().len, " %s\r\n", name);
@@ -377,7 +377,7 @@ bool is8dot3(const CStdString& file)
 }
 
 int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, CStdString dirToDisplay,
-									  std::list<t_dirlisting> &result, CStdString& physicalDir, 
+									  std::list<t_dirlisting> &result, CStdString& physicalDir,
 									  CStdString& logicalDir, void (*addFunc)(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts),
 									  bool *enabledFacts /*=0*/)
 {
@@ -405,7 +405,7 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 
 		if (dir == _T("/"))
 			return res;
-		
+
 		pos = dir.ReverseFind('/');
 		sFileSpec = dir.Mid(pos + 1);
 		if (pos)
@@ -461,7 +461,7 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 	}
 
 	physicalDir = directory.dir;
-    if (sFileSpec != _T("*") && sFileSpec != _T("*.*"))
+	if (sFileSpec != _T("*") && sFileSpec != _T("*.*"))
 		physicalDir += sFileSpec;
 
 	WIN32_FIND_DATA FindFileData;
@@ -493,7 +493,7 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 		}
 		else
 			fn = FindFileData.cFileName;
-		
+
 		if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
 			// Check permissions of subdir. If we don't have LIST permission,
@@ -540,7 +540,7 @@ int CPermissions::CheckDirectoryPermissions(CUser const& user, CStdString dirnam
 		dir = _T("/");
 	else
 		dir = dir.Left(pos);
-	
+
 	// dir now is the absolute path (logical server path of course)
 	// awhile dirname is the pure dirname without the full path
 
@@ -576,7 +576,7 @@ int CPermissions::CheckDirectoryPermissions(CUser const& user, CStdString dirnam
 		}
 		else if (res)
 			return res;
-		
+
 		realDir = directory.dir;
 		realDirname = dirname2;
 		if (!directory.bDirDelete && op & DOP_DELETE)
@@ -594,7 +594,7 @@ int CPermissions::CheckDirectoryPermissions(CUser const& user, CStdString dirnam
 
 	if (!res2)
 		physicalDir = directory.dir;
-	
+
 	if (!res2 && op&DOP_CREATE)
 		res |= PERMISSION_DOESALREADYEXIST;
 	else if (!(res2 & PERMISSION_NOTFOUND)) {
@@ -627,7 +627,7 @@ int CPermissions::CheckFilePermissions(CUser const& user, CStdString filename, C
 		return PERMISSION_NOTFOUND;
 
 	logicalFile = dir;
-	
+
 	filename = dir.Mid(pos + 1);
 	if (pos)
 		dir = dir.Left(pos);
@@ -685,12 +685,12 @@ CStdString CPermissions::GetHomeDir(const CUser &user, bool physicalPath /*=fals
 
 	if (!physicalPath)
 		return _T("/");
-	
+
 	CStdString path;
 	path = user.homedir;
-	
+
 	user.DoReplacements(path);
-	
+
 	return path;
 }
 
@@ -702,12 +702,12 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	 * The given server directory is already an absolute canonified path, so
 	 * parsing it is very quick.
 	 * To find the absolute local path, we go though each segment of the server
-	 * path. For the local path, we start form the homedir and append segments 
+	 * path. For the local path, we start form the homedir and append segments
 	 * sequentially or resolve aliases if required.
 	 */
 
 	directory.TrimLeft(_T("/"));
-	
+
 	// Split server path
 	// --------------------
 
@@ -730,7 +730,7 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	CStdString homepath = GetHomeDir(user, true);
 	if (homepath.empty()) //No homedir found
 		return PERMISSION_DENIED;
-	
+
 	// Reassamble path to get local path
 	CStdString path = homepath; // Start with homedir as root
 
@@ -784,12 +784,12 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	 * Distinguish the case
 	 */
 	truematch = TRUE;
-	
+
 	while (path != _T(""))
 	{
 		BOOL bFoundMatch = FALSE;
 		unsigned int i;
-	
+
 		// Check user permissions
 		for (i = 0; i < user.permissions.size(); i++)
 		{
@@ -967,7 +967,7 @@ void CPermissions::SavePermissions(TiXmlElement *pXML, const t_group &user)
 
 BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 {
-	// This function returns all account data as a command string which will be 
+	// This function returns all account data as a command string which will be
 	// sent to the user interface.
 	if (!pBuffer || !nBufferLength)
 		return FALSE;
@@ -1043,7 +1043,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		p = group.ParseBuffer(p, endMarker - p);
 		if (!p)
 			return FALSE;
-	
+
 		if (group.group != _T(""))
 		{
 			//Set a home dir if no home dir could be read
@@ -1069,11 +1069,11 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	p+=2;
 	for (i = 0; i < num; i++) {
 		CUser user;
-	
+
 		p = user.ParseBuffer(p, endMarker - p);
 		if (!p)
 			return FALSE;
-	
+
 		if (user.user != _T("")) {
 			user.pOwner = NULL;
 			if (user.group != _T("")) {
@@ -1151,7 +1151,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	for (t_GroupsList::const_iterator groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++) {
 		TiXmlElement* pGroup = new TiXmlElement("Group");
 		pGroups->LinkEndChild(pGroup);
-		
+
 		pGroup->SetAttribute("Name", ConvToNetwork(groupiter->group).c_str());
 
 		SetKey(pGroup, _T("Bypass server userlimit"), groupiter->nBypassUserLimit);
@@ -1162,7 +1162,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		SetKey(pGroup, _T("ForceSsl"), groupiter->forceSsl);
 		SetKey(pGroup, _T("8plus3"), groupiter->b8plus3 ? 1 : 0);
 
-		SaveIpFilter(pGroup, *groupiter);		
+		SaveIpFilter(pGroup, *groupiter);
 		SavePermissions(pGroup, *groupiter);
 		SaveSpeedLimits(pGroup, *groupiter);
 	}
@@ -1178,7 +1178,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		CUser const& user = iter.second;
 		TiXmlElement* pUser = new TiXmlElement("User");
 		pUsers->LinkEndChild(pUser);
-		
+
 		pUser->SetAttribute("Name", ConvToNetwork(user.user).c_str());
 
 		SetKey(pUser, _T("Pass"), user.password);
@@ -1296,14 +1296,14 @@ void CPermissions::AutoCreateDirs(CUser const& user)
 		if (permission.bAutoCreate) {
 			CStdString dir = permission.dir;
 			user.DoReplacements(dir);
-			
+
 			dir += _T("\\");
 			CStdString str;
 			while (dir != _T("")) {
 				int pos = dir.Find(_T("\\"));
 				CStdString piece = dir.Left(pos + 1);
 				dir = dir.Mid(pos + 1);
-				
+
 				str += piece;
 				CreateDirectory(str, 0);
 			}
@@ -1322,7 +1322,7 @@ void CPermissions::AutoCreateDirs(CUser const& user)
 					int pos = dir.Find(_T("\\"));
 					CStdString piece = dir.Left(pos + 1);
 					dir = dir.Mid(pos + 1);
-				
+
 					str += piece;
 					CreateDirectory(str, 0);
 				}
@@ -1390,7 +1390,7 @@ void CPermissions::SaveSpeedLimits(TiXmlElement *pXML, const t_group &group)
 		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Type")).c_str(), group.nSpeedLimitType[i]);
 		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Limit")).c_str(), group.nSpeedLimit[i]);
 		pSpeedLimits->SetAttribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")).c_str(), group.nBypassServerSpeedLimit[i]);
-	
+
 		TiXmlElement* pSpeedLimit = new TiXmlElement(names[i]);
 		pSpeedLimits->LinkEndChild(pSpeedLimit);
 
@@ -1458,9 +1458,9 @@ void CPermissions::ReadIpFilter(TiXmlElement *pXML, t_group &group)
 void CPermissions::SaveIpFilter(TiXmlElement *pXML, const t_group &group)
 {
 	TiXmlElement* pFilter = pXML->LinkEndChild(new TiXmlElement("IpFilter"))->ToElement();
-	
+
 	TiXmlElement* pDisallowed = pFilter->LinkEndChild(new TiXmlElement("Disallowed"))->ToElement();
-		
+
 	std::list<CStdString>::const_iterator iter;
 	for (iter = group.disallowedIPs.begin(); iter != group.disallowedIPs.end(); iter++)
 	{
@@ -1469,7 +1469,7 @@ void CPermissions::SaveIpFilter(TiXmlElement *pXML, const t_group &group)
 	}
 
 	TiXmlElement* pAllowed = pFilter->LinkEndChild(new TiXmlElement("Allowed"))->ToElement();
-		
+
 	for (iter = group.allowedIPs.begin(); iter != group.allowedIPs.end(); iter++)
 	{
 		TiXmlElement* pIP = pAllowed->LinkEndChild(new TiXmlElement("IP"))->ToElement();
@@ -1493,13 +1493,13 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 	// Make segment separators pretty
 	newDir.Replace(_T("\\"), _T("/"));
 	while (newDir.Replace(_T("//"), _T("/")));
-	
+
 	if (newDir == _T("/"))
 		return newDir;
-	
+
 	// This list will hold the individual path segments
 	std::list<CStdString> piecelist;
-	
+
 	/*
 	 * Check the type of the path: Absolute or relative?
 	 * On relative paths, use currentDir as base, else use
@@ -1518,13 +1518,13 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 		if (currentDir != _T(""))
 			piecelist.push_back(currentDir);
 	}
-	
+
 	/*
 	 * Now split up the new dir into individual segments. Here we
 	 * check for dot segments and remove the proper number of segments
 	 * from the piece list on dots.
 	 */
-	
+
 	int pos;
 	newDir.TrimLeft(_T("/"));
 	if (newDir.Right(1) != _T("/"))
@@ -1636,7 +1636,7 @@ int CPermissions::GetFact(CUser const& user, CStdString const& currentDir, CStdS
 			return PERMISSION_DENIED;
 
 		file = directory.dir + _T("\\") + fn;
-		
+
 		if (enabledFacts[0])
 			fact = _T("type=file;");
 		else
@@ -1773,7 +1773,7 @@ void CPermissions::ReadSettings()
 	TiXmlElement *pXML = COptions::GetXML();
 	if (!pXML)
 		return;
-    
+
 	EnterCritSection(m_sync);
 	m_sGroupsList.clear();
 	m_sUsersList.clear();
@@ -1827,7 +1827,7 @@ void CPermissions::ReadSettings()
 		if (m_sGroupsList.size() < 200000)
 			m_sGroupsList.push_back(group);
 	}
-		
+
 	TiXmlElement* pUsers = pXML->FirstChildElement("Users");
 	if (!pUsers)
 		pUsers = pXML->LinkEndChild(new TiXmlElement("Users"))->ToElement();
@@ -1893,23 +1893,23 @@ void CPermissions::ReadSettings()
 					break;
 				}
 			}
-		
+
 			if (!user.pOwner)
 				user.group = _T("");
 		}
-			
+
 		ReadIpFilter(pUser, user);
 
 		BOOL bGotHome = FALSE;
 		ReadPermissions(pUser, user, bGotHome);
 		user.PrepareAliasMap();
-				
+
 		//Set a home dir if no home dir could be read
 		if (!bGotHome && !user.pOwner) {
 			if (!user.permissions.empty())
 				user.permissions.begin()->bIsHome = TRUE;
 		}
-			
+
 		std::vector<t_directory>::iterator iter;
 		for (iter = user.permissions.begin(); iter != user.permissions.end(); iter++) {
 			if (iter->bIsHome) {
@@ -1925,7 +1925,7 @@ void CPermissions::ReadSettings()
 				}
 			}
 		}
-			
+
 		ReadSpeedLimits(pUser, user);
 
 		if (m_sUsersList.size() < 200000) {
@@ -2000,13 +2000,13 @@ bool CPermissions::WildcardMatch(CStdString string, CStdString pattern) const
 void CPermissions::UpdatePermissions(bool notifyOwner)
 {
 	EnterCritSection(m_sync);
-	
+
 	// Clear old group data and copy over the new data
 	m_GroupsList.clear();
 	for (auto const& group : m_sGroupsList ) {
 		m_GroupsList.push_back(group);
 	}
-	
+
 	// Clear old user data and copy over the new data
 	m_UsersList.clear();
 	for (auto const& it : m_sUsersList ) {
@@ -2022,7 +2022,7 @@ void CPermissions::UpdatePermissions(bool notifyOwner)
 		}
 		m_UsersList[it.first] = user;
 	}
-	
+
 	LeaveCritSection(m_sync);
 
 	if( notifyOwner && updateCallback_ ) {

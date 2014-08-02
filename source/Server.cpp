@@ -66,7 +66,7 @@ CServer::~CServer()
 	for (std::list<CListenSocket*>::iterator iter = m_ListenSocketList.begin(); iter != m_ListenSocketList.end(); iter++)
 		delete *iter;
 	m_ListenSocketList.clear();
-	
+
 	for (std::list<CAdminListenSocket*>::iterator adminIter = m_AdminListenSocketList.begin(); adminIter != m_AdminListenSocketList.end(); adminIter++)
 		delete *adminIter;
 	m_AdminListenSocketList.clear();
@@ -89,22 +89,22 @@ CServer::~CServer()
 bool CServer::Create()
 {
 	//Create window
-	WNDCLASSEX wndclass; 
-	wndclass.cbSize=sizeof wndclass; 
-	wndclass.style=0; 
-	wndclass.lpfnWndProc=WindowProc; 
-	wndclass.cbClsExtra=0; 
-	wndclass.cbWndExtra=0; 
-	wndclass.hInstance=GetModuleHandle(0); 
-	wndclass.hIcon=0; 
-	wndclass.hCursor=0; 
-	wndclass.hbrBackground=0; 
-	wndclass.lpszMenuName=0; 
-	wndclass.lpszClassName=_T("FileZilla Server Helper Window"); 
-	wndclass.hIconSm=0; 
-	
+	WNDCLASSEX wndclass;
+	wndclass.cbSize=sizeof wndclass;
+	wndclass.style=0;
+	wndclass.lpfnWndProc=WindowProc;
+	wndclass.cbClsExtra=0;
+	wndclass.cbWndExtra=0;
+	wndclass.hInstance=GetModuleHandle(0);
+	wndclass.hIcon=0;
+	wndclass.hCursor=0;
+	wndclass.hbrBackground=0;
+	wndclass.lpszMenuName=0;
+	wndclass.lpszClassName=_T("FileZilla Server Helper Window");
+	wndclass.hIconSm=0;
+
 	RegisterClassEx(&wndclass);
-	
+
 	m_hWnd = CreateWindow(_T("FileZilla Server Helper Window"), _T("FileZilla Server Helper Window"), 0, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(0));
 	if (!m_hWnd)
 		return false;
@@ -115,7 +115,7 @@ bool CServer::Create()
 	m_pOptions = new COptions;
 	m_pFileLogger = new CFileLogger(m_pOptions);
 	m_pAutoBanManager = new CAutoBanManager(m_pOptions);
-	
+
 	//Create the threads
 	int num = (int)m_pOptions->GetOptionVal(OPTION_THREADNUM);
 	for (int i = 0; i < num; i++)
@@ -129,7 +129,7 @@ bool CServer::Create()
 			m_ThreadArray.push_back(pThread);
 		}
 	}
-	
+
 	m_pFileLogger->Log(GetVersionString() + _T(" started"));
 	m_pFileLogger->Log(_T("Initializing Server."));
 
@@ -242,7 +242,7 @@ LRESULT CALLBACK CServer::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		}
 		return 0;
 	}
-	
+
 	return ::DefWindowProc(hWnd, message, wParam, lParam);
 }
 
@@ -258,7 +258,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 
 		FILETIME fFileTime;
 		SystemTimeToFileTime(&msg->time, &fFileTime);
-		
+
 		str.Format(_T("(%06d)- %s (%s)> %s"), msg->userid, (LPCTSTR)msg->user, (LPCTSTR)msg->ip, (LPCTSTR)msg->status);
 		ShowStatus(fFileTime.dwHighDateTime, fFileTime.dwLowDateTime, str, msg->type);
 		delete [] msg->status;
@@ -270,7 +270,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 		t_connop *pConnOp = reinterpret_cast<t_connop*>(lParam);
 		if (!pConnOp)
 			return 0;
-		
+
 		int len{};
 		unsigned char *buffer{};
 
@@ -304,7 +304,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 			{
 				t_connectiondata_changeuser* pData = (t_connectiondata_changeuser*)pConnOp->data;
 				m_UsersList[pConnOp->userid].user = pData->user;
-			
+
 				auto utf8 = ConvToNetwork(pData->user);
 				len = 2 + 4 + 2 + utf8.size();
 				buffer = new unsigned char[len];
@@ -348,21 +348,21 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 					buffer = new unsigned char[len];
 					unsigned char *p = buffer + 6;
 					*p = data.transferMode;
-					
+
 					// Bit 5 and 6 indicate presence of currentOffset and totalSize.
 					if (data.currentOffset != 0)
 						*p |= 0x20;
 					if (data.totalSize != -1)
 						*p |= 0x40;
 					p++;
-					
+
 					*p++ = physicalFile.size() / 256;
-					*p++ = physicalFile.size() % 256;		
+					*p++ = physicalFile.size() % 256;
 					memcpy(p, physicalFile.c_str(), physicalFile.size());
 					p += physicalFile.size();
 
 					*p++ = logicalFile.size() / 256;
-					*p++ = logicalFile.size() % 256;		
+					*p++ = logicalFile.size() % 256;
 					memcpy(p, logicalFile.c_str(), logicalFile.size());
 					p += logicalFile.size();
 
@@ -400,7 +400,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 					t_connectiondata& data = m_UsersList[*userid];
 					data.currentOffset = *offset;
 
-					p += 12;					
+					p += 12;
 				}
 				delete pData;
 			}
@@ -413,7 +413,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 		buffer[1] = pConnOp->op;
 		if (pConnOp->op != USERCONTROL_CONNOP_TRANSFEROFFSETS)
 			memcpy(buffer + 2, &pConnOp->userid, 4);
-		
+
 		m_pAdminInterface->SendCommand(2, 3, buffer, len);
 		delete [] buffer;
 		delete pConnOp;
@@ -474,7 +474,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				}
 				return -1;
 			}
-			
+
 		}
 	}
 	else if (wParam == FSM_SEND)
@@ -616,7 +616,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 					*p++ = physicalFile.size() % 256;
 					memcpy(p, physicalFile.c_str(), physicalFile.size());
 					p += physicalFile.size();
-					
+
 					auto logicalFile = ConvToNetwork(data.logicalFile);
 					*p++ = logicalFile.size() / 256;
 					*p++ = logicalFile.size() % 256;
@@ -637,7 +637,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				else
 					p++;
 			}
-			m_pAdminInterface->SendCommand(1, 3, buffer, len);			
+			m_pAdminInterface->SendCommand(1, 3, buffer, len);
 			delete [] buffer;
 		}
 		else if (*pData == USERCONTROL_KICK || *pData == USERCONTROL_BAN)
@@ -648,7 +648,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			{
 				int nUserID;
 				memcpy(&nUserID, pData+1, 4);
-				
+
 				std::map<int, t_connectiondata>::iterator iter = m_UsersList.find(nUserID);
 				if (iter!=m_UsersList.end())
 				{
@@ -679,7 +679,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 							ips += iter->second.ip;
 							m_pOptions->SetOption(OPTION_IPFILTER_DISALLOWED, ips);
 						}
-					}	
+					}
 					t_controlmessage *msg=new t_controlmessage;
 					msg->command=USERCONTROL_KICK;
 					msg->socketid=nUserID;
@@ -723,7 +723,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				bool enableSsl = m_pOptions->GetOptionVal(OPTION_ENABLESSL) != 0;
 				int nAdminListenPort = (int)m_pOptions->GetOptionVal(OPTION_ADMINPORT);
 				CStdString adminIpBindings = m_pOptions->GetOption(OPTION_ADMINIPBINDINGS);
-				
+
 				CStdString peerIP;
 				UINT port = 0;
 				bool bLocal = false;
@@ -800,7 +800,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 						if (!CreateListenSocket())
 						{
 							ShowStatus(_T("Failed to create a listen socket on any of the specified ports. Server is not online!"), 1);
-                            m_nServerState &= ~STATE_ONLINE;
+							m_nServerState &= ~STATE_ONLINE;
 						}
 						else
 						{
@@ -887,7 +887,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 						if (adminIpBindings != m_pOptions->GetOption(OPTION_ADMINIPBINDINGS))
 							ShowStatus(_T("Admin interface IP bindings changed"), 0);
 					}
-	
+
 				}
 			}
 		}
@@ -975,7 +975,7 @@ BOOL CServer::ToggleActive(int nServerState)
 			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 2);
 		for (std::list<CServerThread *>::iterator iter=m_ThreadArray.begin(); iter!=m_ThreadArray.end(); iter++)
 		{
-			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 2);			
+			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 2);
 			m_ClosedThreads.push_back(*iter);
 		}
 		m_ThreadArray.clear();
@@ -998,7 +998,7 @@ BOOL CServer::ToggleActive(int nServerState)
 			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 1);
 		for (std::list<CServerThread *>::iterator iter=m_ThreadArray.begin(); iter!=m_ThreadArray.end(); iter++)
 		{
-			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 1);			
+			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 1);
 			m_ClosedThreads.push_back(*iter);
 		}
 		m_ThreadArray.clear();
@@ -1095,25 +1095,25 @@ void CServer::ShowStatus(DWORD eventDateHigh, DWORD eventDateLow, LPCTSTR msg, i
 		FileTimeToSystemTime(&fFileTime, &sFileTime);
 		TCHAR text[80];
 		if (!GetDateFormat(
-			LOCALE_USER_DEFAULT,               // locale for which date is to be formatted
-			DATE_SHORTDATE,             // flags specifying function options
-			&sFileTime,  // date to be formatted
-			0,          // date format string
-			text,          // buffer for storing formatted string
-			80                // size of buffer
+			LOCALE_USER_DEFAULT,			// locale for which date is to be formatted
+			DATE_SHORTDATE,					// flags specifying function options
+			&sFileTime,						// date to be formatted
+			0,								// date format string
+			text,							// buffer for storing formatted string
+			80								// size of buffer
 			))
 			return;
-		
+
 		CStdString text2 = _T(" ");
 		text2 += text;
-		
+
 		if (!GetTimeFormat(
-			LOCALE_USER_DEFAULT,               // locale for which date is to be formatted
-			TIME_FORCE24HOURFORMAT,             // flags specifying function options
-			&sFileTime,  // date to be formatted
-			0,          // date format string
-			text,          // buffer for storing formatted string
-			80                // size of buffer
+			LOCALE_USER_DEFAULT,			// locale for which date is to be formatted
+			TIME_FORCE24HOURFORMAT,			// flags specifying function options
+			&sFileTime,						// date to be formatted
+			0,								// date format string
+			text,							// buffer for storing formatted string
+			80								// size of buffer
 			))
 			return;
 
@@ -1167,7 +1167,7 @@ int CServer::DoCreateAdminListenSocket(UINT port, LPCTSTR addr, int family)
 			return 0;
 		}
 	}
-	
+
 	m_AdminListenSocketList.push_back(pAdminListenSocket);
 	return port;
 }
@@ -1263,7 +1263,7 @@ BOOL CServer::CreateListenSocket()
 {
 	CStdString ports = (m_pOptions ? m_pOptions->GetOption(OPTION_SERVERPORT) : _T("21"));
 	bool ssl = false;
-	
+
 	if (ports == _T("") && m_pOptions && m_pOptions->GetOptionVal(OPTION_ENABLESSL))
 	{
 		ports = m_pOptions->GetOption(OPTION_SSLPORTS);
@@ -1294,7 +1294,7 @@ BOOL CServer::CreateListenSocket()
 		{
 			CListenSocket *pListenSocket = new CListenSocket(this, ssl);
 			pListenSocket->m_pThreadList = &m_ThreadArray;
-	
+
 			if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET) || !pListenSocket->Listen())
 			{
 				delete pListenSocket;
@@ -1309,7 +1309,7 @@ BOOL CServer::CreateListenSocket()
 			{
 				CListenSocket *pListenSocket = new CListenSocket(this, ssl);
 				pListenSocket->m_pThreadList = &m_ThreadArray;
-		
+
 				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET6) || !pListenSocket->Listen())
 				{
 					delete pListenSocket;
@@ -1336,7 +1336,7 @@ BOOL CServer::CreateListenSocket()
 				ipBindings = ipBindings.Mid(pos + 1);
 				CListenSocket *pListenSocket = new CListenSocket(this, ssl);
 				pListenSocket->m_pThreadList = &m_ThreadArray;
-				
+
 				int family;
 				if (ip.Find(':') != -1)
 					family = AF_INET6;

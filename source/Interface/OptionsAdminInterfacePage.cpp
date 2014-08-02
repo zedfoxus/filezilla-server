@@ -101,7 +101,7 @@ BOOL COptionsAdminInterfacePage::OnInitDialog()
 	m_cNewPass2.EnableWindow(m_bChangePass);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
+				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
 BOOL COptionsAdminInterfacePage::IsDataValid()

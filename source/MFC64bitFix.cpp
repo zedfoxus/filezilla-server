@@ -38,8 +38,8 @@ BOOL GetLength64(LPCTSTR filename, _int64 &size)
 	VERIFY(FindClose(hFind));
 
 	size=((_int64)findFileData.nFileSizeHigh<<32)+findFileData.nFileSizeLow;
-	
-	return TRUE;	
+
+	return TRUE;
 }
 
 BOOL PASCAL GetStatus64(LPCTSTR lpszFileName, CFileStatus64& rStatus)

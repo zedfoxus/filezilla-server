@@ -56,7 +56,7 @@ BEGIN_MESSAGE_MAP(CStatusView, CView)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Zeichnung CStatusView 
+// Zeichnung CStatusView
 
 void CStatusView::OnDraw(CDC* pDC)
 {
@@ -78,14 +78,14 @@ void CStatusView::Dump(CDumpContext& dc) const
 }
 #endif //_DEBUG
 
-int CStatusView::OnCreate(LPCREATESTRUCT lpCreateStruct) 
+int CStatusView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CView::OnCreate(lpCreateStruct) == -1)
 		return -1;
 
 	// Create the style
 	DWORD dwStyle = WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY | WS_VSCROLL | ES_AUTOVSCROLL | ES_NOHIDESEL;
-	
+
 	// Create the list control.  Don't worry about specifying
 	// correct coordinates.  That will be handled in OnSize()
 	VERIFY(AfxInitRichEdit());
@@ -96,10 +96,10 @@ int CStatusView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 
 // Override OnSize to resize the control to match the view
-void CStatusView::OnSize(UINT nType, int cx, int cy) 
+void CStatusView::OnSize(UINT nType, int cx, int cy)
 {
 	CView::OnSize(nType, cx, cy);
-	
+
 	if (::IsWindow(m_pStatusCtrl->m_hWnd))
 	m_pStatusCtrl->MoveWindow(0, 0, cx, cy, TRUE);
 }//OnSize

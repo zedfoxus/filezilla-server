@@ -26,7 +26,7 @@
 #include "..\Accounts.h"
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CGroupsDlgSharedFolders 
+// Dialogfeld CGroupsDlgSharedFolders
 class CGroupsDlg;
 class CGroupsDlgSharedFolders : public CSAPrefsSubDlg
 {
@@ -39,7 +39,7 @@ public:
 	BOOL SaveGroup(t_group *pGroup);
 	void SetCtrlState();
 	CString Validate();
-	
+
 protected:
 // Dialogfelddaten
 	//{{AFX_DATA(CGroupsDlgSharedFolders)
@@ -74,14 +74,14 @@ protected:
 	public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung
 protected:
 	CGroupsDlg *m_pOwner;
 	CImageList m_imagelist;
-	
+
 	// Generierte Nachrichtenzuordnungsfunktionen
 	//{{AFX_MSG(CGroupsDlgSharedFolders)
 	virtual BOOL OnInitDialog();

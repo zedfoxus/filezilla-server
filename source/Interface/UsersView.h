@@ -27,12 +27,12 @@
 class CUsersListCtrl;
 
 /////////////////////////////////////////////////////////////////////////////
-// Ansicht CUsersView 
+// Ansicht CUsersView
 
 class CUsersView : public CView
 {
 protected:
-	CUsersView();           // Dynamische Erstellung verwendet geschützten Konstruktor
+	CUsersView();		   // Dynamische Erstellung verwendet geschützten Konstruktor
 	DECLARE_DYNCREATE(CUsersView)
 
 // Attribute
@@ -46,7 +46,7 @@ public:
 	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen
 	//{{AFX_VIRTUAL(CUsersView)
 	protected:
-	virtual void OnDraw(CDC* pDC);      // Überschrieben zum Zeichnen dieser Ansicht
+	virtual void OnDraw(CDC* pDC);	  // Überschrieben zum Zeichnen dieser Ansicht
 	//}}AFX_VIRTUAL
 
 // Implementierung

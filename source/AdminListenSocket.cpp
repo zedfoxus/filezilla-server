@@ -30,7 +30,7 @@ void CAdminListenSocket::OnAccept(int nErrorCode)
 	SOCKADDR_IN sockAddr;
 	memset(&sockAddr, 0, sizeof(sockAddr));
 	int nSockAddrLen = sizeof(sockAddr);
-	
+
 	if (Accept(*pSocket))
 	{
 		//Validate IP address

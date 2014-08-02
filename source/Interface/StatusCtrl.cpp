@@ -63,14 +63,14 @@ BEGIN_MESSAGE_MAP(CStatusCtrl, CRichEditCtrl)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CStatusCtrl 
+// Behandlungsroutinen für Nachrichten CStatusCtrl
 
-BOOL CStatusCtrl::OnEraseBkgnd(CDC* pDC) 
+BOOL CStatusCtrl::OnEraseBkgnd(CDC* pDC)
 {
 	return TRUE;
 }
 
-void CStatusCtrl::OnContextMenu(CWnd* pWnd, CPoint point) 
+void CStatusCtrl::OnContextMenu(CWnd* pWnd, CPoint point)
 {
 	ClientToScreen(&point);
 
@@ -92,12 +92,12 @@ void CStatusCtrl::OnContextMenu(CWnd* pWnd, CPoint point)
 	hCursor = AfxGetApp()->LoadStandardCursor(IDC_ARROW);
 	m_doPopupCursor = TRUE;
 	SetCursor(hCursor);
-		
+
 	pPopup->TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON, point.x, point.y,
 		pWndPopupOwner);
 }
 
-BOOL CStatusCtrl::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message) 
+BOOL CStatusCtrl::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 {
 	if (!m_doPopupCursor)
 	{
@@ -112,7 +112,7 @@ BOOL CStatusCtrl::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 DWORD __stdcall CStatusCtrl::RichEditStreamInCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
 {
 	char* output = (char*)pbBuff;
-	
+
 	CStatusCtrl *pThis = (CStatusCtrl *)dwCookie;
 	if (pThis->m_headerPos != -1)
 	{
@@ -174,7 +174,7 @@ DWORD __stdcall CStatusCtrl::RichEditStreamInCallback(DWORD_PTR dwCookie, LPBYTE
 			LPCTSTR status = buffer.status;
 			LPCTSTR p = status + buffer.pos;
 			while (*p && cb > 9)
-			{	
+			{
 				switch (*p)
 				{
 				case '\\':
@@ -259,7 +259,7 @@ DWORD __stdcall CStatusCtrl::RichEditStreamInCallback(DWORD_PTR dwCookie, LPBYTE
 	return 0;
 }
 
-void CStatusCtrl::OnOutputcontextClearall() 
+void CStatusCtrl::OnOutputcontextClearall()
 {
 	t_buffer buffer;
 	buffer.status = _T("");
@@ -271,12 +271,12 @@ void CStatusCtrl::OnOutputcontextClearall()
 
 	SetSel(-1, -1);
 	LimitText(1000*1000);
-	
+
 	m_bEmpty = TRUE;
 	m_nMoveToBottom = 0;
 }
 
-void CStatusCtrl::OnOutputcontextCopytoclipboard() 
+void CStatusCtrl::OnOutputcontextCopytoclipboard()
 {
 	long nStart, nEnd;
 	GetSel(nStart, nEnd);
@@ -293,13 +293,13 @@ void CStatusCtrl::OnOutputcontextCopytoclipboard()
 }
 
 
-int CStatusCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct) 
+int CStatusCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CRichEditCtrl::OnCreate(lpCreateStruct) == -1)
 		return -1;
 
 	USES_CONVERSION;
-	
+
 	m_RTFHeader = "{\\rtf1\\ansi\\deff0";
 
 	HFONT hSysFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
@@ -310,7 +310,7 @@ int CStatusCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	LOGFONT m_lfFont;
 	pFont->GetLogFont(&m_lfFont);
-	
+
 	m_RTFHeader += "{\\fonttbl{\\f0\\fnil "+ CString(m_lfFont.lfFaceName)+";}}";
 	m_RTFHeader += "{\\colortbl ;";
 	for (int i=0; i<16; i++)
@@ -320,7 +320,7 @@ int CStatusCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		m_RTFHeader+=tmp;
 	}
 	m_RTFHeader += "}";
-	
+
 	int pointsize = (-m_lfFont.lfHeight*72/ GetDeviceCaps(GetDC()->GetSafeHdc(), LOGPIXELSY))*2;
 	CString tmp;
 	tmp.Format(_T("%d"), pointsize);
@@ -338,7 +338,7 @@ int CStatusCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	SetSel(-1, -1);
 	LimitText(1000*1000);
-	
+
 	return 0;
 }
 
@@ -354,7 +354,7 @@ void CStatusCtrl::ShowStatus(LPCTSTR status, int nType)
 	if (!m_runTimer)
 	{
 		Run();
-	    m_runTimer = SetTimer(1339, 250, 0);
+		m_runTimer = SetTimer(1339, 250, 0);
 	}
 
 	return;
@@ -370,16 +370,16 @@ void CStatusCtrl::Run()
 	CWnd *pFocusWnd = GetFocus();
 	if (pFocusWnd && pFocusWnd == this)
 		AfxGetMainWnd()->SetFocus();
-	
+
 	long nStart, nEnd;
 	GetSel(nStart, nEnd);
 	BOOL nScrollToEnd = FALSE;
-	
-	int num = 0;            //this is the number of visible lines
+
+	int num = 0;			//this is the number of visible lines
 	CRect rect;
 	GetRect(rect);
 	int height = rect.Height();
-	
+
 	for (int i = GetFirstVisibleLine();
 			i < GetLineCount() && GetCharPos(LineIndex(i)).y < height;
 			i++)
@@ -408,7 +408,7 @@ void CStatusCtrl::Run()
 	}
 
 	SetSel(nStart, nEnd);
-	
+
 	if (pFocusWnd && pFocusWnd == this)
 		SetFocus();
 
@@ -418,7 +418,7 @@ void CStatusCtrl::Run()
 		if (nStart != nEnd && (LineFromChar(nStart) >= GetFirstVisibleLine() && LineFromChar(nStart) <= GetFirstVisibleLine() + num ||
 							   LineFromChar(nEnd) >= GetFirstVisibleLine() && LineFromChar(nEnd) <= GetFirstVisibleLine() + num))
 			LineScroll(1);
-		else 
+		else
 		{
 			m_nMoveToBottom++;
 			if (!m_nTimerID)
@@ -427,7 +427,7 @@ void CStatusCtrl::Run()
 	}
 }
 
-void CStatusCtrl::OnTimer(UINT_PTR nIDEvent) 
+void CStatusCtrl::OnTimer(UINT_PTR nIDEvent)
 {
 	if (nIDEvent == m_nTimerID)
 	{
@@ -448,19 +448,19 @@ void CStatusCtrl::OnTimer(UINT_PTR nIDEvent)
 	CRichEditCtrl::OnTimer(nIDEvent);
 }
 
-void CStatusCtrl::OnRButtonUp(UINT nFlags, CPoint point) 
+void CStatusCtrl::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	ClientToScreen(&point);
 
 	CMenu menu;
 	menu.LoadMenu(IDR_OUTPUTCONTEXT);
-	
+
 	CMenu* pPopup = menu.GetSubMenu(0);
 	ASSERT(pPopup != NULL);
 	CWnd* pWndPopupOwner = this;
 	//while (pWndPopupOwner->GetStyle() & WS_CHILD)
 	//	pWndPopupOwner = pWndPopupOwner->GetParent();
-	
+
 	if (!GetLineCount())
 	{
 		pPopup->EnableMenuItem(ID_OUTPUTCONTEXT_COPYTOCLIPBOARD,MF_GRAYED);
@@ -470,12 +470,12 @@ void CStatusCtrl::OnRButtonUp(UINT nFlags, CPoint point)
 	hCursor = AfxGetApp()->LoadStandardCursor( IDC_ARROW );
 	m_doPopupCursor = TRUE;
 	SetCursor(hCursor);
-	
+
 	pPopup->TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON, point.x, point.y,
 		pWndPopupOwner);
 }
 
-BOOL CStatusCtrl::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt) 
+BOOL CStatusCtrl::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
 	OSVERSIONINFO info = {0};
 	info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
@@ -491,8 +491,8 @@ BOOL CStatusCtrl::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 void CStatusCtrl::DoStreamIn(int extraFlags)
 {
 	EDITSTREAM es;
-	es.dwCookie = (DWORD)this; // Pass a pointer to the CString to the callback function 
+	es.dwCookie = (DWORD)this; // Pass a pointer to the CString to the callback function
 	es.pfnCallback = RichEditStreamInCallback; // Specify the pointer to the callback function.
-	
+
 	StreamIn(extraFlags | SF_RTF, es); // Perform the streaming
 }

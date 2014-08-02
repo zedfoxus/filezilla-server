@@ -42,7 +42,7 @@ typedef struct
 } t_socketdata;
 
 /////////////////////////////////////////////////////////////////////////////
-// Thread CServerThread 
+// Thread CServerThread
 
 class CServerThread : public CThread
 {
@@ -73,13 +73,13 @@ public:
 	void SendNotification(WPARAM wParam, LPARAM lParam);
 
 	/*
-	 * The parameter should be an empty list, since m_pendingNotifications and 
+	 * The parameter should be an empty list, since m_pendingNotifications and
 	 * list get swapped to increase performance.
 	 */
 	void GetNotifications(std::list<CServerThread::t_Notification>& list);
 
 	void AntiHammerIncrease(const CStdString& ip);
-	
+
 	CHashThread& GetHashThread();
 
 protected:
@@ -93,8 +93,8 @@ protected:
 	void OnPermissionsUpdated();
 
 	virtual int OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam);
-	void OnTimer(WPARAM wParam, LPARAM lParam);	
-	
+	void OnTimer(WPARAM wParam, LPARAM lParam);
+
 	void ProcessControlMessage(t_controlmessage *msg);
 	CControlSocket * GetControlSocket(int userid);
 	std::map<int, CControlSocket *> m_LocalUserIDs;

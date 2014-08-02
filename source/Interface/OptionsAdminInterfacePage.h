@@ -26,7 +26,7 @@
 //
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsAdminInterfacePage 
+// Dialogfeld COptionsAdminInterfacePage
 
 class COptionsDlg;
 class COptionsAdminInterfacePage : public COptionsPage
@@ -40,7 +40,7 @@ public:
 	virtual void LoadData();
 
 	CString m_IpBindingsResult;
-	
+
 	// Dialogfelddaten
 	//{{AFX_DATA(COptionsAdminInterfacePage)
 	enum { IDD = IDD_OPTIONS_ADMININTERFACE };
@@ -59,7 +59,7 @@ public:
 	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen
 	//{{AFX_VIRTUAL(COptionsAdminInterfacePage)
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV-Unterstützung
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV-Unterstützung
 	//}}AFX_VIRTUAL
 
 // Implementierung
