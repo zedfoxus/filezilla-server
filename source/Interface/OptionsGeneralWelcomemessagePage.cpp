@@ -32,7 +32,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsGeneralWelcomemessagePage 
+// Dialogfeld COptionsGeneralWelcomemessagePage
 
 
 COptionsGeneralWelcomemessagePage::COptionsGeneralWelcomemessagePage(COptionsDlg *pOptionsDlg, CWnd* pParent /*=NULL*/)
@@ -63,7 +63,7 @@ BEGIN_MESSAGE_MAP(COptionsGeneralWelcomemessagePage, COptionsPage)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten COptionsGeneralWelcomemessagePage 
+// Behandlungsroutinen für Nachrichten COptionsGeneralWelcomemessagePage
 
 void COptionsGeneralWelcomemessagePage::LoadData()
 {
@@ -96,7 +96,7 @@ void COptionsGeneralWelcomemessagePage::SaveData()
 	if (line != _T(""))
 		msgLines.push_back(line);
 	msg = _T("");
-	for (std::list<CString>::iterator iter = msgLines.begin(); iter != msgLines.end(); iter++)
+	for (std::list<CString>::iterator iter = msgLines.begin(); iter != msgLines.end(); ++iter)
 		msg += *iter + _T("\r\n");
 	msg.TrimRight(_T("\r\n"));
 

@@ -28,11 +28,11 @@
 // CUsersDlgSpeedLimit dialog
 
 
-CUsersDlgSpeedLimit::CUsersDlgSpeedLimit(CUsersDlg* pOwner) 
+CUsersDlgSpeedLimit::CUsersDlgSpeedLimit(CUsersDlg* pOwner)
 	: CSAPrefsSubDlg(IDD)
 {
 	m_pOwner = pOwner;
-	
+
 	//{{AFX_DATA_INIT(CUsersDlgSpeedLimit)
 	m_DownloadSpeedLimitType = -1;
 	m_UploadSpeedLimitType = -1;
@@ -112,7 +112,7 @@ void CUsersDlgSpeedLimit::SetCtrlState()
 		m_DownloadRemoveCtrl.EnableWindow(FALSE);
 		m_DownloadDownCtrl.EnableWindow(FALSE);
 		m_DownloadAddCtrl.EnableWindow(FALSE);
-		
+
 		m_UploadValueCtrl.EnableWindow(FALSE);
 		m_UploadUpCtrl.EnableWindow(FALSE);
 		m_UploadRulesListCtrl.EnableWindow(FALSE);
@@ -140,7 +140,7 @@ void CUsersDlgSpeedLimit::SetCtrlState()
 		m_DownloadRemoveCtrl.EnableWindow(m_DownloadSpeedLimitType == 3);
 		m_DownloadDownCtrl.EnableWindow(m_DownloadSpeedLimitType == 3);
 		m_DownloadAddCtrl.EnableWindow(m_DownloadSpeedLimitType == 3);
-		
+
 		m_UploadValueCtrl.EnableWindow(m_UploadSpeedLimitType == 2);
 		m_UploadUpCtrl.EnableWindow(m_UploadSpeedLimitType == 3);
 		m_UploadRulesListCtrl.EnableWindow(m_UploadSpeedLimitType == 3);
@@ -162,10 +162,10 @@ void CUsersDlgSpeedLimit::SetCtrlState()
 	}
 }
 
-BOOL CUsersDlgSpeedLimit::OnInitDialog() 
+BOOL CUsersDlgSpeedLimit::OnInitDialog()
 {
 	CSAPrefsSubDlg::OnInitDialog();
-	
+
 	SetCtrlState();
 
 	ShowSpeedLimit( m_DownloadRulesListCtrl, m_DownloadSpeedLimits);
@@ -175,12 +175,12 @@ BOOL CUsersDlgSpeedLimit::OnInitDialog()
 	              // EXCEPTION: OCX Property Pages should return FALSE
 }
 
-void CUsersDlgSpeedLimit::OnRadio() 
+void CUsersDlgSpeedLimit::OnRadio()
 {
 	SetCtrlState();
 }
 
-void CUsersDlgSpeedLimit::OnSpeedlimitDownloadAdd() 
+void CUsersDlgSpeedLimit::OnSpeedlimitDownloadAdd()
 {
 	CSpeedLimitRuleDlg dlg;
 
@@ -199,41 +199,41 @@ void CUsersDlgSpeedLimit::ShowSpeedLimit(CListBox &listBox, SPEEDLIMITSLIST &lis
 	for (unsigned int i = 0; i < list.size(); i++)
 	{
 		CString str;
-		
+
 		str.Format(_T( "%dkB/s"), list[i].m_Speed);
 
 		CString help;
-		
+
 		if (list[i].m_DateCheck)
 		{
 			CTime t(list[i].m_Date.y, list[i].m_Date.m, list[i].m_Date.d, 0, 0, 0);
 			help += t.Format(_T("%x"));
 		}
-		
+
 		if (list[i].m_FromCheck)
 		{
 			if (help.GetLength() > 0)
 				help += _T( "; ");
-			
+
 			CTime t(2003, 1, 1, list[i].m_FromTime.h, list[i].m_FromTime.m, list[i].m_FromTime.s);
 			help += _T("F:") + t.Format( _T("%X"));
 		}
-		
+
 		if (list[i].m_ToCheck)
 		{
 			if (help.GetLength() > 0)
 				help += _T( "; ");
-			
+
 			CTime t(2003, 1, 1, list[i].m_ToTime.h, list[i].m_ToTime.m, list[i].m_ToTime.s);
 			help += _T("T:") + t.Format( _T("%X"));
 		}
-		
+
 		for (int j = 0; j < 7; j++)
 			if (!(list[i].m_Day & (1<<j)))
 			{
 				if (help.GetLength() > 0)
 					help += _T( "; ");
-				
+
 				bool was = false;
 				for ( int k = 0; k < 7; k++)
 				{
@@ -241,31 +241,31 @@ void CUsersDlgSpeedLimit::ShowSpeedLimit(CListBox &listBox, SPEEDLIMITSLIST &lis
 					{
 						if (was)
 							help += _T(", ");
-						
+
 						was = true;
-						
+
 						CTime time(2001, 1, k + 1, 0, 0, 0);
-						
+
 						help += time.Format(_T("%a"));
 					}
 				}
-				
+
 				break;
 			}
-		
+
 		str += _T(" [") + help + _T("]");
-		
+
 		listBox.AddString(str);
 	}
 }
 
-void CUsersDlgSpeedLimit::OnSpeedlimitDownloadRemove() 
+void CUsersDlgSpeedLimit::OnSpeedlimitDownloadRemove()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
 	if ( ( curSel >= 0) && ( curSel < (int)m_DownloadSpeedLimits.size()))
 	{
-		for (SPEEDLIMITSLIST::iterator iter=m_DownloadSpeedLimits.begin(); iter!=m_DownloadSpeedLimits.end(); iter++)
+		for (SPEEDLIMITSLIST::iterator iter=m_DownloadSpeedLimits.begin(); iter!=m_DownloadSpeedLimits.end(); ++iter)
 		{
 			if (!curSel)
 			{
@@ -279,7 +279,7 @@ void CUsersDlgSpeedLimit::OnSpeedlimitDownloadRemove()
 	}
 }
 
-void CUsersDlgSpeedLimit::OnSpeedlimitDownloadUp() 
+void CUsersDlgSpeedLimit::OnSpeedlimitDownloadUp()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
@@ -295,7 +295,7 @@ void CUsersDlgSpeedLimit::OnSpeedlimitDownloadUp()
 	}
 }
 
-void CUsersDlgSpeedLimit::OnSpeedlimitDownloadDown() 
+void CUsersDlgSpeedLimit::OnSpeedlimitDownloadDown()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
@@ -311,7 +311,7 @@ void CUsersDlgSpeedLimit::OnSpeedlimitDownloadDown()
 	}
 }
 
-void CUsersDlgSpeedLimit::OnDblclkSpeedlimitDownloadRulesList() 
+void CUsersDlgSpeedLimit::OnDblclkSpeedlimitDownloadRulesList()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
@@ -331,13 +331,13 @@ void CUsersDlgSpeedLimit::OnDblclkSpeedlimitDownloadRulesList()
 	}
 }
 
-void CUsersDlgSpeedLimit::OnSpeedlimitUploadRemove() 
+void CUsersDlgSpeedLimit::OnSpeedlimitUploadRemove()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 
 	if ( ( curSel >= 0) && ( curSel < (int)m_UploadSpeedLimits.size()))
 	{
-		for (SPEEDLIMITSLIST::iterator iter=m_UploadSpeedLimits.begin(); iter!=m_UploadSpeedLimits.end(); iter++)
+		for (SPEEDLIMITSLIST::iterator iter=m_UploadSpeedLimits.begin(); iter!=m_UploadSpeedLimits.end(); ++iter)
 		{
 			if (!curSel)
 			{
@@ -351,7 +351,7 @@ void CUsersDlgSpeedLimit::OnSpeedlimitUploadRemove()
 	}
 }
 
-void CUsersDlgSpeedLimit::OnSpeedlimitUploadUp() 
+void CUsersDlgSpeedLimit::OnSpeedlimitUploadUp()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 
@@ -367,7 +367,7 @@ void CUsersDlgSpeedLimit::OnSpeedlimitUploadUp()
 	}
 }
 
-void CUsersDlgSpeedLimit::OnSpeedlimitUploadDown() 
+void CUsersDlgSpeedLimit::OnSpeedlimitUploadDown()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 
@@ -383,7 +383,7 @@ void CUsersDlgSpeedLimit::OnSpeedlimitUploadDown()
 	}
 }
 
-void CUsersDlgSpeedLimit::OnSpeedlimitUploadAdd() 
+void CUsersDlgSpeedLimit::OnSpeedlimitUploadAdd()
 {
 	CSpeedLimitRuleDlg dlg;
 
@@ -395,7 +395,7 @@ void CUsersDlgSpeedLimit::OnSpeedlimitUploadAdd()
 	}
 }
 
-void CUsersDlgSpeedLimit::OnDblclkSpeedlimitUploadRulesList() 
+void CUsersDlgSpeedLimit::OnDblclkSpeedlimitUploadRulesList()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 

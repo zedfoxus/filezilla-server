@@ -34,14 +34,14 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CUsersDlgGeneral 
+// Dialogfeld CUsersDlgGeneral
 
-CUsersDlgGeneral::CUsersDlgGeneral(CUsersDlg* pOwner) 
+CUsersDlgGeneral::CUsersDlgGeneral(CUsersDlg* pOwner)
 	: CSAPrefsSubDlg(IDD)
 	, m_Comments(_T(""))
 {
 	m_pOwner = pOwner;
-	
+
 	//{{AFX_DATA_INIT(CUsersDlgGeneral)
 	m_bNeedpass = FALSE;
 	m_Pass = _T("");
@@ -98,18 +98,18 @@ BEGIN_MESSAGE_MAP(CUsersDlgGeneral, CSAPrefsSubDlg)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CUsersDlgGeneral 
+// Behandlungsroutinen für Nachrichten CUsersDlgGeneral
 
-BOOL CUsersDlgGeneral::OnInitDialog() 
+BOOL CUsersDlgGeneral::OnInitDialog()
 {
 	CSAPrefsSubDlg::OnInitDialog();
-	
+
 	m_bNeedpass = FALSE;
 	m_Pass = _T("");
 	UpdateData(FALSE);
-	
+
 	m_cGroup.AddString(_T("<none>"));
-	for (CUsersDlg::t_GroupsList::iterator iter = m_pOwner->m_GroupsList.begin(); iter != m_pOwner->m_GroupsList.end(); iter++)
+	for (CUsersDlg::t_GroupsList::iterator iter = m_pOwner->m_GroupsList.begin(); iter != m_pOwner->m_GroupsList.end(); ++iter)
 		m_cGroup.AddString(iter->group);
 
 	m_c8plus3.ShowWindow(SW_HIDE);
@@ -120,7 +120,7 @@ BOOL CUsersDlgGeneral::OnInitDialog()
 	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
-void CUsersDlgGeneral::OnNeedpass() 
+void CUsersDlgGeneral::OnNeedpass()
 {
 	UpdateData(TRUE);
 	m_cPass.EnableWindow(m_bNeedpass);
@@ -176,12 +176,12 @@ void CUsersDlgGeneral::SetCtrlState()
 		m_cIpLimit.EnableWindow(TRUE);
 		m_cComments.EnableWindow(TRUE);
 		m_cForceSsl.EnableWindow(TRUE);
-		
+
 		OnNeedpass();
 	}
 }
 
-void CUsersDlgGeneral::OnSelchangeGroup() 
+void CUsersDlgGeneral::OnSelchangeGroup()
 {
 	if (m_cGroup.GetCurSel() <= 0)
 	{
@@ -195,7 +195,7 @@ void CUsersDlgGeneral::OnSelchangeGroup()
 		UpdateData(FALSE);
 		m_cMaxUsersBypass.SetButtonStyle(BS_AUTOCHECKBOX);
 		m_cEnabled.SetButtonStyle(BS_AUTOCHECKBOX);
-		
+
 		m_pOwner->m_pSpeedLimitPage->UpdateData(TRUE);
 		CButton *pButton = reinterpret_cast<CButton *>(m_pOwner->m_pSpeedLimitPage->GetDlgItem(IDC_USERS_SPEEDLIMIT_SERVERBYPASS_DOWNLOAD));
 		if (pButton->GetCheck() == 2)
@@ -238,11 +238,11 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 
 		return TRUE;
 	}
-	
+
 	m_Pass = pUser->password;
 	m_cPass.SetModify(FALSE);
 	m_bNeedpass = pUser->password != _T("");
-	
+
 	if (pUser->group == _T("") || m_cGroup.SelectString(-1, pUser->group) == CB_ERR)
 	{
 		m_cMaxUsersBypass.SetButtonStyle(BS_AUTOCHECKBOX);
@@ -268,7 +268,7 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 	m_b8plus3 = pUser->b8plus3;
 
 	UpdateData(FALSE);
-	
+
 	return TRUE;
 }
 
@@ -276,7 +276,7 @@ BOOL CUsersDlgGeneral::SaveUser(t_user *pUser)
 {
 	if (!pUser)
 		return FALSE;
-	
+
 	pUser->nEnabled = m_nEnabled;
 	pUser->password = m_Pass;
 	if (!m_bNeedpass)
@@ -290,9 +290,9 @@ BOOL CUsersDlgGeneral::SaveUser(t_user *pUser)
 		char *res = md5.hex_digest();
 		CString hash = res;
 		delete [] res;
-		pUser->password = hash;	
+		pUser->password = hash;
 	}
-	
+
 	pUser->nBypassUserLimit = m_nMaxUsersBypass;
 	pUser->nUserLimit = _ttoi(m_MaxConnCount);
 	pUser->nIpLimit = _ttoi(m_IpLimit);
@@ -305,6 +305,6 @@ BOOL CUsersDlgGeneral::SaveUser(t_user *pUser)
 
 	pUser->forceSsl = m_nForceSsl;
 	pUser->b8plus3 = m_b8plus3 ? TRUE : FALSE;
-	
+
 	return TRUE;
 }

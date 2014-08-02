@@ -30,9 +30,9 @@
 // COptionsSpeedLimitPage dialog
 
 
-COptionsSpeedLimitPage::COptionsSpeedLimitPage(COptionsDlg *pOptionsDlg) 
+COptionsSpeedLimitPage::COptionsSpeedLimitPage(COptionsDlg *pOptionsDlg)
 	: COptionsPage(pOptionsDlg, IDD)
-{	
+{
 	//{{AFX_DATA_INIT(COptionsSpeedLimitPage)
 	m_DownloadSpeedLimitType = -1;
 	m_UploadSpeedLimitType = -1;
@@ -110,7 +110,7 @@ void COptionsSpeedLimitPage::SetCtrlState()
 	m_DownloadRemoveCtrl.EnableWindow(m_DownloadSpeedLimitType == 2);
 	m_DownloadDownCtrl.EnableWindow(m_DownloadSpeedLimitType == 2);
 	m_DownloadAddCtrl.EnableWindow(m_DownloadSpeedLimitType == 2);
-		
+
 	m_UploadValueCtrl.EnableWindow(m_UploadSpeedLimitType == 1);
 	m_UploadUpCtrl.EnableWindow(m_UploadSpeedLimitType == 2);
 	m_UploadRulesListCtrl.EnableWindow(m_UploadSpeedLimitType == 2);
@@ -119,10 +119,10 @@ void COptionsSpeedLimitPage::SetCtrlState()
 	m_UploadAddCtrl.EnableWindow(m_UploadSpeedLimitType == 2);
 }
 
-BOOL COptionsSpeedLimitPage::OnInitDialog() 
+BOOL COptionsSpeedLimitPage::OnInitDialog()
 {
 	COptionsPage::OnInitDialog();
-	
+
 	SetCtrlState();
 
 	ShowSpeedLimit( m_DownloadRulesListCtrl, m_DownloadSpeedLimits);
@@ -132,12 +132,12 @@ BOOL COptionsSpeedLimitPage::OnInitDialog()
 	              // EXCEPTION: OCX Property Pages should return FALSE
 }
 
-void COptionsSpeedLimitPage::OnRadio() 
+void COptionsSpeedLimitPage::OnRadio()
 {
 	SetCtrlState();
 }
 
-void COptionsSpeedLimitPage::OnSpeedlimitDownloadAdd() 
+void COptionsSpeedLimitPage::OnSpeedlimitDownloadAdd()
 {
 	CSpeedLimitRuleDlg dlg;
 
@@ -156,41 +156,41 @@ void COptionsSpeedLimitPage::ShowSpeedLimit(CListBox &listBox, SPEEDLIMITSLIST &
 	for (unsigned int i = 0; i < list.size(); i++)
 	{
 		CString str;
-		
+
 		str.Format(_T( "%dkB/s"), list[i].m_Speed);
 
 		CString help;
-		
+
 		if (list[i].m_DateCheck)
 		{
 			CTime t(list[i].m_Date.y, list[i].m_Date.m, list[i].m_Date.d, 0, 0, 0);
 			help += t.Format(_T("%x"));
 		}
-		
+
 		if (list[i].m_FromCheck)
 		{
 			if (help.GetLength() > 0)
 				help += _T( "; ");
-			
+
 			CTime t(2003, 1, 1, list[i].m_FromTime.h, list[i].m_FromTime.m, list[i].m_FromTime.s);
 			help += _T("F:") + t.Format( _T("%X"));
 		}
-		
+
 		if (list[i].m_ToCheck)
 		{
 			if (help.GetLength() > 0)
 				help += _T( "; ");
-			
+
 			CTime t(2003, 1, 1, list[i].m_ToTime.h, list[i].m_ToTime.m, list[i].m_ToTime.s);
 			help += _T("T:") + t.Format( _T("%X"));
 		}
-		
+
 		for (int j = 0; j < 7; j++)
 			if (!(list[i].m_Day & (1<<j)))
 			{
 				if (help.GetLength() > 0)
 					help += _T( "; ");
-				
+
 				bool was = false;
 				for ( int k = 0; k < 7; k++)
 				{
@@ -198,31 +198,31 @@ void COptionsSpeedLimitPage::ShowSpeedLimit(CListBox &listBox, SPEEDLIMITSLIST &
 					{
 						if (was)
 							help += _T(", ");
-						
+
 						was = true;
-						
+
 						CTime time(2001, 1, k + 1, 0, 0, 0);
-						
+
 						help += time.Format(_T("%a"));
 					}
 				}
-				
+
 				break;
 			}
-		
+
 		str += _T(" [") + help + _T("]");
-		
+
 		listBox.AddString(str);
 	}
 }
 
-void COptionsSpeedLimitPage::OnSpeedlimitDownloadRemove() 
+void COptionsSpeedLimitPage::OnSpeedlimitDownloadRemove()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
 	if ( ( curSel >= 0) && ( curSel < (int)m_DownloadSpeedLimits.size()))
 	{
-		for (SPEEDLIMITSLIST::iterator iter=m_DownloadSpeedLimits.begin(); iter!=m_DownloadSpeedLimits.end(); iter++)
+		for (SPEEDLIMITSLIST::iterator iter=m_DownloadSpeedLimits.begin(); iter!=m_DownloadSpeedLimits.end(); ++iter)
 		{
 			if (!curSel)
 			{
@@ -236,7 +236,7 @@ void COptionsSpeedLimitPage::OnSpeedlimitDownloadRemove()
 	}
 }
 
-void COptionsSpeedLimitPage::OnSpeedlimitDownloadUp() 
+void COptionsSpeedLimitPage::OnSpeedlimitDownloadUp()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
@@ -252,7 +252,7 @@ void COptionsSpeedLimitPage::OnSpeedlimitDownloadUp()
 	}
 }
 
-void COptionsSpeedLimitPage::OnSpeedlimitDownloadDown() 
+void COptionsSpeedLimitPage::OnSpeedlimitDownloadDown()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
@@ -268,7 +268,7 @@ void COptionsSpeedLimitPage::OnSpeedlimitDownloadDown()
 	}
 }
 
-void COptionsSpeedLimitPage::OnDblclkSpeedlimitDownloadRulesList() 
+void COptionsSpeedLimitPage::OnDblclkSpeedlimitDownloadRulesList()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
@@ -288,13 +288,13 @@ void COptionsSpeedLimitPage::OnDblclkSpeedlimitDownloadRulesList()
 	}
 }
 
-void COptionsSpeedLimitPage::OnSpeedlimitUploadRemove() 
+void COptionsSpeedLimitPage::OnSpeedlimitUploadRemove()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 
 	if ( ( curSel >= 0) && ( curSel < (int)m_UploadSpeedLimits.size()))
 	{
-		for (SPEEDLIMITSLIST::iterator iter=m_UploadSpeedLimits.begin(); iter!=m_UploadSpeedLimits.end(); iter++)
+		for (SPEEDLIMITSLIST::iterator iter=m_UploadSpeedLimits.begin(); iter!=m_UploadSpeedLimits.end(); ++iter)
 		{
 			if (!curSel)
 			{
@@ -308,7 +308,7 @@ void COptionsSpeedLimitPage::OnSpeedlimitUploadRemove()
 	}
 }
 
-void COptionsSpeedLimitPage::OnSpeedlimitUploadUp() 
+void COptionsSpeedLimitPage::OnSpeedlimitUploadUp()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 
@@ -324,7 +324,7 @@ void COptionsSpeedLimitPage::OnSpeedlimitUploadUp()
 	}
 }
 
-void COptionsSpeedLimitPage::OnSpeedlimitUploadDown() 
+void COptionsSpeedLimitPage::OnSpeedlimitUploadDown()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 
@@ -340,7 +340,7 @@ void COptionsSpeedLimitPage::OnSpeedlimitUploadDown()
 	}
 }
 
-void COptionsSpeedLimitPage::OnSpeedlimitUploadAdd() 
+void COptionsSpeedLimitPage::OnSpeedlimitUploadAdd()
 {
 	CSpeedLimitRuleDlg dlg;
 
@@ -352,7 +352,7 @@ void COptionsSpeedLimitPage::OnSpeedlimitUploadAdd()
 	}
 }
 
-void COptionsSpeedLimitPage::OnDblclkSpeedlimitUploadRulesList() 
+void COptionsSpeedLimitPage::OnDblclkSpeedlimitUploadRulesList()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 

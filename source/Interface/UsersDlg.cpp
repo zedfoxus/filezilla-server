@@ -37,7 +37,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CUsersDlg 
+// Dialogfeld CUsersDlg
 
 CUsersDlg::CUsersDlg(CWnd* pParent, bool localConnection)
 	: CSAPrefsDialog(IDD, pParent)
@@ -90,15 +90,15 @@ BEGIN_MESSAGE_MAP(CUsersDlg, CSAPrefsDialog)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CUsersDlg 
+// Behandlungsroutinen für Nachrichten CUsersDlg
 
-BOOL CUsersDlg::OnInitDialog() 
+BOOL CUsersDlg::OnInitDialog()
 {
 	CSAPrefsDialog::OnInitDialog();
 
 	m_olduser = LB_ERR;
-	
-	m_cUserlist.ResetContent();	
+
+	m_cUserlist.ResetContent();
 
 	for (unsigned int i=0;i<m_UsersList.size();i++)
 	{
@@ -111,7 +111,7 @@ BOOL CUsersDlg::OnInitDialog()
 		m_cUserlist.SetCurSel(0);
 		OnSelchangeUserlist();
 	}
-	
+
 	SetCtrlState();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -155,7 +155,7 @@ BOOL CUsersDlg::Validate()
 	return TRUE;
 }
 
-void CUsersDlg::OnSelchangeUserlist() 
+void CUsersDlg::OnSelchangeUserlist()
 {
 	m_insideSelchange = true;
 	if (!Validate())
@@ -195,17 +195,17 @@ void CUsersDlg::OnSelchangeUserlist()
 	SetCtrlState();
 }
 
-void CUsersDlg::OnOK() 
+void CUsersDlg::OnOK()
 {
 	if (!Validate())
 		return;
 	m_cUserlist.SetCurSel(-1);
 	OnSelchangeUserlist();
-	
+
 	CSAPrefsDialog::OnOK();
 }
 
-void CUsersDlg::OnContextMenu(CWnd* pWnd, CPoint point) 
+void CUsersDlg::OnContextMenu(CWnd* pWnd, CPoint point)
 {
 	if (pWnd == &m_cUserlist)
 	{
@@ -217,7 +217,7 @@ void CUsersDlg::OnContextMenu(CWnd* pWnd, CPoint point)
 		CWnd* pWndPopupOwner = this;
 		while (pWndPopupOwner->GetStyle() & WS_CHILD)
 			pWndPopupOwner = pWndPopupOwner->GetParent();
-		
+
 		if (m_cUserlist.GetCurSel() == LB_ERR)
 		{
 			pPopup->EnableMenuItem(ID_USERMENU_COPY, MF_GRAYED);
@@ -231,13 +231,13 @@ void CUsersDlg::OnContextMenu(CWnd* pWnd, CPoint point)
 	}
 }
 
-void CUsersDlg::OnUsermenuAdd() 
+void CUsersDlg::OnUsermenuAdd()
 {
 	if (!Validate())
 		return;
 
 	CNewUserDlg dlg;
-	for (t_GroupsList::iterator iter=m_GroupsList.begin(); iter!=m_GroupsList.end(); iter++)
+	for (t_GroupsList::iterator iter=m_GroupsList.begin(); iter!=m_GroupsList.end(); ++iter)
 		dlg.m_GroupList.push_back(iter->group);
 	if (dlg.DoModal()==IDOK)
 	{
@@ -282,12 +282,12 @@ void CUsersDlg::OnUsermenuAdd()
 			m_olduser++;
 		m_UsersList.push_back(user);
 		m_cUserlist.SetItemData(nItem, m_UsersList.size()-1);
-		m_cUserlist.SetCurSel(nItem);	
+		m_cUserlist.SetCurSel(nItem);
 		OnSelchangeUserlist();
 	}
 }
 
-void CUsersDlg::OnUsermenuCopy() 
+void CUsersDlg::OnUsermenuCopy()
 {
 	if (!Validate())
 		return;
@@ -314,29 +314,29 @@ void CUsersDlg::OnUsermenuCopy()
 				return;
 			}
 		}
-		
+
 		t_user user;
 		user.user=dlg.m_String;
 		user.nBypassUserLimit = m_UsersList[index].nBypassUserLimit;
 		user.nIpLimit = m_UsersList[index].nIpLimit;
 		user.nUserLimit = m_UsersList[index].nUserLimit;
 		user.password = m_UsersList[index].password;
-		for (std::vector<t_directory>::const_iterator iter=m_UsersList[index].permissions.begin(); iter!=m_UsersList[index].permissions.end(); iter++)
+		for (std::vector<t_directory>::const_iterator iter=m_UsersList[index].permissions.begin(); iter!=m_UsersList[index].permissions.end(); ++iter)
 			user.permissions.push_back(*iter);
-		
+
 		int nItem=m_cUserlist.AddString(user.user);
 		if (nItem<=m_olduser)
 			m_olduser++;
 		m_UsersList.push_back(user);
 		m_cUserlist.SetItemData(nItem, m_UsersList.size()-1);
-		m_cUserlist.SetCurSel(nItem);	
+		m_cUserlist.SetCurSel(nItem);
 
 		OnSelchangeUserlist();
-	}	
+	}
 }
 
 
-void CUsersDlg::OnUsermenuRemove() 
+void CUsersDlg::OnUsermenuRemove()
 {
 	int pos=m_cUserlist.GetCurSel();
 	if (pos==LB_ERR)
@@ -360,7 +360,7 @@ void CUsersDlg::OnUsermenuRemove()
 	OnSelchangeUserlist();
 }
 
-void CUsersDlg::OnUsermenuRename() 
+void CUsersDlg::OnUsermenuRename()
 {
 	if (!Validate())
 		return;
@@ -388,11 +388,11 @@ void CUsersDlg::OnUsermenuRename()
 				return;
 			}
 		}
-		
+
 		m_cUserlist.DeleteString(pos);
 		pos = m_cUserlist.AddString(dlg.m_String);
 		m_cUserlist.SetItemData(pos, index);
-		m_cUserlist.SetCurSel(pos);	
+		m_cUserlist.SetCurSel(pos);
 		m_olduser = pos;
 		m_UsersList[index].user = dlg.m_String;
 		OnSelchangeUserlist();
@@ -411,7 +411,7 @@ void CUsersDlg::SetCtrlState()
 	{
 		GetDlgItem(IDC_USERREMOVE)->EnableWindow(TRUE);
 		GetDlgItem(IDC_USERRENAME)->EnableWindow(TRUE);
-		GetDlgItem(IDC_USERCOPY)->EnableWindow(TRUE);	
+		GetDlgItem(IDC_USERCOPY)->EnableWindow(TRUE);
 	}
 	m_pGeneralPage->SetCtrlState();
 	m_pSpeedLimitPage->SetCtrlState();
@@ -419,22 +419,22 @@ void CUsersDlg::SetCtrlState()
 	m_pIpFilterPage->SetCtrlState();
 }
 
-void CUsersDlg::OnUseradd() 
+void CUsersDlg::OnUseradd()
 {
 	OnUsermenuAdd();
 }
 
-void CUsersDlg::OnUsercopy() 
+void CUsersDlg::OnUsercopy()
 {
 	OnUsermenuCopy();
 }
 
-void CUsersDlg::OnUserremove() 
+void CUsersDlg::OnUserremove()
 {
 	OnUsermenuRemove();
 }
 
-void CUsersDlg::OnUserrename() 
+void CUsersDlg::OnUserrename()
 {
 	OnUsermenuRename();
 }
@@ -447,11 +447,11 @@ BOOL CUsersDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	DWORD len = 4;
 
 	t_GroupsList::iterator groupiter;
-	for (groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++)
+	for (groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); ++groupiter)
 		len += groupiter->GetRequiredBufferLen();
 
 	t_UsersList::iterator iter;
-	for (iter=m_UsersList.begin(); iter!=m_UsersList.end(); iter++)
+	for (iter=m_UsersList.begin(); iter!=m_UsersList.end(); ++iter)
 		len += iter->GetRequiredBufferLen();
 
 	*pBuffer=new char[len];
@@ -459,7 +459,7 @@ BOOL CUsersDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 	*p++ = m_GroupsList.size()/256;
 	*p++ = m_GroupsList.size()%256;
-	for (groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++)
+	for (groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); ++groupiter)
 	{
 		p = groupiter->FillBuffer(p);
 		if (!p)
@@ -467,12 +467,12 @@ BOOL CUsersDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 			delete [] *pBuffer;
 			*pBuffer = NULL;
 			return FALSE;
-		}		
+		}
 	}
 
 	*p++ = m_UsersList.size()/256;
 	*p++ = m_UsersList.size()%256;
-	for (iter=m_UsersList.begin(); iter!=m_UsersList.end(); iter++)
+	for (iter=m_UsersList.begin(); iter!=m_UsersList.end(); ++iter)
 	{
 		p = iter->FillBuffer(p);
 		if (!p)
@@ -500,7 +500,7 @@ BOOL CUsersDlg::Init(unsigned char *pData, DWORD dwDataLength)
 	for (i=0; i<num; i++)
 	{
 		t_group group;
-		
+
 		p = group.ParseBuffer(p, dwDataLength-(p-pData));
 		if (!p)
 			return FALSE;
@@ -514,7 +514,7 @@ BOOL CUsersDlg::Init(unsigned char *pData, DWORD dwDataLength)
 	for (i=0; i<num; i++)
 	{
 		t_user user;
-		
+
 		p = user.ParseBuffer(p, dwDataLength-(p-pData));
 		if (!p)
 			return FALSE;
@@ -523,7 +523,7 @@ BOOL CUsersDlg::Init(unsigned char *pData, DWORD dwDataLength)
 	return TRUE;
 }
 
-BOOL CUsersDlg::PreTranslateMessage(MSG* pMsg) 
+BOOL CUsersDlg::PreTranslateMessage(MSG* pMsg)
 {
 	if (pMsg->message==WM_KEYDOWN)
 	{

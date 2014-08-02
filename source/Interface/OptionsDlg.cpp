@@ -48,7 +48,7 @@ static char THIS_FILE[] = __FILE__;
 #include "OptionsAutobanPage.h"
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsDlg 
+// Dialogfeld COptionsDlg
 
 COptionsDlg::COptionsDlg(COptions *pInterfaceOptions, bool localConnection)
 	: m_localConnection(localConnection)
@@ -114,7 +114,7 @@ COptionsDlg::COptionsDlg(COptions *pInterfaceOptions, bool localConnection)
 
 COptionsDlg::~COptionsDlg()
 {
-	for (std::list<COptionsPage *>::iterator iter = m_PageList.begin(); iter != m_PageList.end(); iter++)
+	for (std::list<COptionsPage *>::iterator iter = m_PageList.begin(); iter != m_PageList.end(); ++iter)
 		delete *iter;
 }
 
@@ -132,29 +132,29 @@ BEGIN_MESSAGE_MAP(COptionsDlg, CSAPrefsDialog)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten COptionsDlg 
+// Behandlungsroutinen für Nachrichten COptionsDlg
 
 BOOL COptionsDlg::Show()
 {
 	SetConstantText("FileZilla Server");
 
 	std::list<COptionsPage *>::iterator iter;
-	for (iter = m_PageList.begin(); iter != m_PageList.end(); iter++)
+	for (iter = m_PageList.begin(); iter != m_PageList.end(); ++iter)
 		(*iter)->LoadData();
 
 	if (DoModal()!=IDOK)
 		return FALSE;
 
-	for (iter = m_PageList.begin(); iter != m_PageList.end(); iter++)
+	for (iter = m_PageList.begin(); iter != m_PageList.end(); ++iter)
 		(*iter)->SaveData();
 
 	return TRUE;
 }
 
-BOOL COptionsDlg::OnInitDialog() 
+BOOL COptionsDlg::OnInitDialog()
 {
 	CSAPrefsDialog::OnInitDialog();
-		
+
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
@@ -183,21 +183,21 @@ __int64 COptionsDlg::GetOptionVal(int nOptionID)
 {
 	ASSERT(nOptionID>0 && nOptionID<=OPTIONS_NUM);
 	ASSERT(m_Options[nOptionID-1].nType == 1);
-	
+
 	return m_OptionsCache[nOptionID-1].value;
 }
 
-void COptionsDlg::OnOK() 
+void COptionsDlg::OnOK()
 {
 	if (!UpdateData(true))
 		return;
 	if (!GetCurPage()->UpdateData(TRUE))
 		return;
 
-	for (std::list<COptionsPage *>::iterator iter = m_PageList.begin(); iter != m_PageList.end(); iter++)
+	for (std::list<COptionsPage *>::iterator iter = m_PageList.begin(); iter != m_PageList.end(); ++iter)
 		if (!(*iter)->IsDataValid())
 			return;
-		
+
 	CSAPrefsDialog::OnOK();
 }
 
@@ -253,7 +253,7 @@ BOOL COptionsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 	p+=2;
 	if (num!=OPTIONS_NUM)
 		return FALSE;
-	
+
 	for (i=0; i<num; i++)
 	{
 		if (static_cast<DWORD>(p-pData) >= dwDataLength)
@@ -301,7 +301,7 @@ BOOL COptionsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 			return FALSE;
 		m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.push_back(limit);
 	}
-	
+
 	if (static_cast<DWORD>(p-pData+2) > dwDataLength)
 		return FALSE;
 	num = *p++ << 8;
@@ -337,9 +337,9 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	}
 	len += 4; //Number of rules
 	SPEEDLIMITSLIST::const_iterator iter;
-	for (iter = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.end(); iter++)
+	for (iter = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.end(); ++iter)
 		len += iter->GetRequiredBufferLen();
-	for (iter = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.end(); iter++)
+	for (iter = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.end(); ++iter)
 		len += iter->GetRequiredBufferLen();
 
 	*pBuffer = new char[len];
@@ -375,12 +375,12 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 	*p++ = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.size() >> 8;
 	*p++ = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.size() % 256;
-	for (iter = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.end(); iter++)
+	for (iter = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.end(); ++iter)
 		p = iter->FillBuffer(p);
-	
+
 	*p++ = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.size() >> 8;
 	*p++ = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.size() % 256;
-	for (iter = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.end(); iter++)
+	for (iter = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.end(); ++iter)
 		p = iter->FillBuffer(p);
 
 	*nBufferLength = len;

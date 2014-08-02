@@ -161,7 +161,7 @@ BOOL COptionsSslPage::IsDataValid()
 	}
 
 	m_sslports = _T("");
-	for (std::set<int>::const_iterator iter = portSet.begin(); iter != portSet.end(); iter++)
+	for (std::set<int>::const_iterator iter = portSet.begin(); iter != portSet.end(); ++iter)
 	{
 		CString tmp;
 		tmp.Format(_T("%d "), *iter);

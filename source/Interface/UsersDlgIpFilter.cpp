@@ -32,13 +32,13 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CUsersDlgIpFilter 
+// Dialogfeld CUsersDlgIpFilter
 
-CUsersDlgIpFilter::CUsersDlgIpFilter(CUsersDlg* pOwner) 
+CUsersDlgIpFilter::CUsersDlgIpFilter(CUsersDlg* pOwner)
 	: CSAPrefsSubDlg(IDD)
 {
 	m_pOwner = pOwner;
-	
+
 	m_pUser = 0;
 }
 
@@ -65,12 +65,12 @@ BEGIN_MESSAGE_MAP(CUsersDlgIpFilter, CSAPrefsSubDlg)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CUsersDlgIpFilter 
+// Behandlungsroutinen für Nachrichten CUsersDlgIpFilter
 
-BOOL CUsersDlgIpFilter::OnInitDialog() 
+BOOL CUsersDlgIpFilter::OnInitDialog()
 {
 	CSAPrefsSubDlg::OnInitDialog();
-	
+
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
@@ -123,13 +123,13 @@ BOOL CUsersDlgIpFilter::DisplayUser(t_user *pUser)
 	}
 
 	std::list<CString>::const_iterator iter;
-	for (iter = pUser->disallowedIPs.begin(); iter != pUser->disallowedIPs.end(); iter++)
+	for (iter = pUser->disallowedIPs.begin(); iter != pUser->disallowedIPs.end(); ++iter)
 		m_DisallowedAddresses += *iter + "\r\n";
-	for (iter = pUser->allowedIPs.begin(); iter != pUser->allowedIPs.end(); iter++)
+	for (iter = pUser->allowedIPs.begin(); iter != pUser->allowedIPs.end(); ++iter)
 		m_AllowedAddresses += *iter + "\r\n";
-	
+
 	UpdateData(FALSE);
-	
+
 	return TRUE;
 }
 
@@ -145,6 +145,6 @@ BOOL CUsersDlgIpFilter::SaveUser(t_user *pUser)
 
 	ParseIPFilter(m_DisallowedAddresses, &pUser->disallowedIPs);
 	ParseIPFilter(m_AllowedAddresses, &pUser->allowedIPs);
-	
+
 	return TRUE;
 }

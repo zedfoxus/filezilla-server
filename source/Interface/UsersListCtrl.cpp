@@ -62,7 +62,7 @@ public:
 	__int64 totalSize;
 	__int64 currentOffset;
 	unsigned int speed;
-	
+
 	int listIndex;
 	CString columnText[NUMCOLUMNS];
 	int itemImages[NUMCOLUMNS];
@@ -72,7 +72,7 @@ public:
 		*current_speed += bytes;
 		UpdateSpeed();
 	}
-	
+
 	inline void UpdateSpeed()
 	{
 		speed = 0;
@@ -121,7 +121,7 @@ CUsersListCtrl::CUsersListCtrl(CMainFrame *pOwner)
 
 CUsersListCtrl::~CUsersListCtrl()
 {
-	for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); iter++)
+	for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); ++iter)
 		delete *iter;
 }
 
@@ -140,13 +140,13 @@ BEGIN_MESSAGE_MAP(CUsersListCtrl, CListCtrl)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CUsersListCtrl 
+// Behandlungsroutinen für Nachrichten CUsersListCtrl
 
-int CUsersListCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct) 
+int CUsersListCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CListCtrl::OnCreate(lpCreateStruct) == -1)
 		return -1;
-	
+
 	m_ImageList.Create(IDB_TRANSFERINFO, 16, 6, RGB(255, 0, 255));
 	SetImageList(&m_ImageList, LVSIL_SMALL);
 
@@ -187,7 +187,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 
 	if (dwDataLength < 6)
 		return FALSE;
-	
+
 	if (op == USERCONTROL_CONNOP_ADD)
 	{
 		int userid;
@@ -292,7 +292,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 		CConnectionData *pConnectionData = iter->second;
 
 		m_connectionDataMap.erase(iter);
-		for (std::vector<CConnectionData*>::iterator iter2 = m_connectionDataArray.begin() + pConnectionData->listIndex + 1; iter2 != m_connectionDataArray.end(); iter2++)
+		for (std::vector<CConnectionData*>::iterator iter2 = m_connectionDataArray.begin() + pConnectionData->listIndex + 1; iter2 != m_connectionDataArray.end(); ++iter2)
 			(*iter2)->listIndex--;
 		m_connectionDataArray.erase(m_connectionDataArray.begin() + pConnectionData->listIndex);
 		delete pConnectionData;
@@ -382,7 +382,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 			// Filter out indicator bits
 			pConnectionData->transferMode &= 0x9F;
 		}
-			
+
 		pConnectionData->columnText[COLUMN_TRANSFERINIT] =  m_showPhysical ? pConnectionData->physicalFile : pConnectionData->logicalFile;
 		pConnectionData->itemImages[COLUMN_TRANSFERINIT] =  pConnectionData->transferMode;
 
@@ -409,7 +409,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 					break;
 				}
 
-				iter++;
+				++iter;
 			}
 			__int64* currentOffset = (__int64*)(p + 4);
 
@@ -433,7 +433,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 			else
 				str.Format(_T("%1.1f bytes/s"), (double)pConnectionData->speed);
 			pConnectionData->columnText[COLUMN_TRANSFERSPEED] =  str;
-			
+
 			p += 12;
 		}
 		RedrawItems(GetTopIndex(), GetTopIndex() + GetCountPerPage());
@@ -442,7 +442,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 	return TRUE;
 }
 
-void CUsersListCtrl::OnContextmenuKick() 
+void CUsersListCtrl::OnContextmenuKick()
 {
 	if (AfxMessageBox(_T("Do you really want to kick the selected user?"), MB_ICONQUESTION|MB_YESNO)!=IDYES)
 		return;
@@ -450,17 +450,17 @@ void CUsersListCtrl::OnContextmenuKick()
 	while (pos)
 	{
 		int nItem = GetNextSelectedItem(pos);
-		
+
 		CConnectionData *data = m_connectionDataArray[nItem];
-		
+
 		unsigned char buffer[5];
 		buffer[0]=USERCONTROL_KICK;
 		memcpy(buffer+1, &data->userid, 4);
 		m_pOwner->SendCommand(3, &buffer, 5);
-	}	
+	}
 }
 
-void CUsersListCtrl::OnContextmenuBan() 
+void CUsersListCtrl::OnContextmenuBan()
 {
 	if (AfxMessageBox(_T("Do you really want to kick the selected user and ban his IP address?"), MB_ICONQUESTION|MB_YESNO)!=IDYES)
 		return;
@@ -468,17 +468,17 @@ void CUsersListCtrl::OnContextmenuBan()
 	while (pos)
 	{
 		int nItem = GetNextSelectedItem(pos);
-		
+
 		CConnectionData *data = m_connectionDataArray[nItem];
-		
+
 		unsigned char buffer[5];
 		buffer[0] = USERCONTROL_BAN;
 		memcpy(buffer+1, &data->userid, 4);
 		m_pOwner->SendCommand(3, &buffer, 5);
-	}	
+	}
 }
 
-void CUsersListCtrl::OnContextMenu(CWnd* pWnd, CPoint point) 
+void CUsersListCtrl::OnContextMenu(CWnd* pWnd, CPoint point)
 {
 	CMenu menu;
 	menu.LoadMenu(IDR_USERVIEWCONTEXT);
@@ -495,7 +495,7 @@ void CUsersListCtrl::OnContextMenu(CWnd* pWnd, CPoint point)
 		pPopup->EnableMenuItem(ID_USERVIEWCONTEXT_KICK, MF_GRAYED);
 		pPopup->EnableMenuItem(ID_USERVIEWCONTEXT_BAN, MF_GRAYED);
 	}
-		
+
 	pPopup->TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON, point.x, point.y,
 		pWndPopupOwner);
 }
@@ -515,12 +515,12 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 			return FALSE;
 		else
 		{
-			for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); iter++)
+			for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); ++iter)
 				delete *iter;
 
 			m_connectionDataMap.clear();
 			m_connectionDataArray.clear();
-			
+
 			int num = pData[1] * 256 + pData[2];
 			unsigned int pos = 3;
 			for (int i = 0; i < num; i++)
@@ -544,16 +544,16 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 				pos += len;
 				pConnectionData->columnText[COLUMN_IP] = ConvFromNetwork(ip);
 				delete [] ip;
-				
+
 				if ((pos+6) > dwDataLength)
 				{
 					delete pConnectionData;
 					return FALSE;
 				}
 				memcpy(&pConnectionData->port, pData+pos, 4);
-				
+
 				pos+=4;
-				
+
 				len = pData[pos] * 256 + pData[pos+1];
 				pos+=2;
 				if ((pos + len + 1) > dwDataLength)
@@ -602,7 +602,7 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 					len = pData[pos] * 256 + pData[pos+1];
 					pos += 2;
 
-					
+
 					if ((pos+len) > dwDataLength)
 					{
 						delete pConnectionData;
@@ -651,7 +651,7 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 				else
 					pConnectionData->itemImages[COLUMN_ID] = 4;
 
-				
+
 				pConnectionData->itemImages[COLUMN_TRANSFERINIT] = pConnectionData->transferMode;
 				pConnectionData->columnText[COLUMN_TRANSFERINIT] = m_showPhysical ? pConnectionData->physicalFile : pConnectionData->logicalFile;
 			}
@@ -684,7 +684,7 @@ void CUsersListCtrl::SetDisplayPhysicalNames(bool showPhysical)
 	m_showPhysical = showPhysical;
 
 	// Iterate through all items and reset the transfer column text
-	for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); iter++)
+	for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); ++iter)
 	{
 		CConnectionData* pData = *iter;
 		pData->columnText[COLUMN_TRANSFERINIT] = showPhysical ? pData->physicalFile : pData->logicalFile;
@@ -697,7 +697,7 @@ void CUsersListCtrl::OnTimer(UINT_PTR nIDEvent)
 	if (nIDEvent != m_nSpeedinfoTimer)
 		return;
 
-	for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); iter++)
+	for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); ++iter)
 	{
 		CConnectionData* pConnectionData = *iter;
 		if (pConnectionData->transferMode)
@@ -734,7 +734,7 @@ void CUsersListCtrl::SetSortColumn(int sortColumn /*=-1*/, int dir /*=-1*/)
 
 		if (sortColumn < 0 || sortColumn > 2)
 			sortColumn = 0;
-		
+
 		CHeaderCtrl *header = GetHeaderCtrl();
 		if (header)
 		{
@@ -794,7 +794,7 @@ void CUsersListCtrl::QSortList(const unsigned int dir, int anf, int ende, int (*
 			l++;
 			r--;
 		}
-    } 
+    }
 	while (l<=r);
 
 	if (anf<r) QSortList(dir, anf, r, comp);
@@ -870,10 +870,10 @@ void CUsersListCtrl::OnGetdispinfo(NMHDR* pNMHDR, LRESULT* pResult)
 		pItem->iImage = m_connectionDataArray[pItem->iItem]->itemImages[pItem->iSubItem];
 }
 
-void CUsersListCtrl::OnColumnclick(NMHDR* pNMHDR, LRESULT* pResult) 
+void CUsersListCtrl::OnColumnclick(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
 	SetSortColumn(pNMListView->iSubItem);
-	
+
 	*pResult = 0;
 }

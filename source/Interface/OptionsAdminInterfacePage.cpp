@@ -33,7 +33,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsAdminInterfacePage 
+// Dialogfeld COptionsAdminInterfacePage
 
 
 COptionsAdminInterfacePage::COptionsAdminInterfacePage(COptionsDlg *pOptionsDlg, CWnd* pParent /*=NULL*/)
@@ -75,20 +75,20 @@ BEGIN_MESSAGE_MAP(COptionsAdminInterfacePage, COptionsPage)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten COptionsAdminInterfacePage 
+// Behandlungsroutinen für Nachrichten COptionsAdminInterfacePage
 
-void COptionsAdminInterfacePage::OnOptionsAdmininterfaceChangepass() 
+void COptionsAdminInterfacePage::OnOptionsAdmininterfaceChangepass()
 {
 	UpdateData(TRUE);
 
 	m_cNewPass.EnableWindow(m_bChangePass);
-	m_cNewPass2.EnableWindow(m_bChangePass);	
+	m_cNewPass2.EnableWindow(m_bChangePass);
 }
 
-BOOL COptionsAdminInterfacePage::OnInitDialog() 
+BOOL COptionsAdminInterfacePage::OnInitDialog()
 {
 	COptionsPage::OnInitDialog();
-	
+
 	if (m_NewPass != _T(""))
 	{
 		m_NewPass = _T("");
@@ -99,7 +99,7 @@ BOOL COptionsAdminInterfacePage::OnInitDialog()
 	}
 	m_cNewPass.EnableWindow(m_bChangePass);
 	m_cNewPass2.EnableWindow(m_bChangePass);
-	
+
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
@@ -139,15 +139,15 @@ BOOL COptionsAdminInterfacePage::IsDataValid()
 				//Parse IP
 				SOCKADDR_IN sockAddr;
 				memset(&sockAddr,0, sizeof(sockAddr));
-			
+
 				sockAddr.sin_family = AF_INET;
 				sockAddr.sin_addr.s_addr = inet_addr(T2A(sub));
-			
+
 				if (sockAddr.sin_addr.s_addr != INADDR_NONE)
 				{
 					sub = inet_ntoa(sockAddr.sin_addr);
 					std::list<CString>::iterator iter;
-					for (iter = ipBindList.begin(); iter != ipBindList.end(); iter++)
+					for (iter = ipBindList.begin(); iter != ipBindList.end(); ++iter)
 						if (*iter == sub)
 							break;
 					if (iter == ipBindList.end())
@@ -164,15 +164,15 @@ BOOL COptionsAdminInterfacePage::IsDataValid()
 		//Parse IP
 		SOCKADDR_IN sockAddr;
 		memset(&sockAddr, 0, sizeof(sockAddr));
-		
+
 		sockAddr.sin_family = AF_INET;
 		sockAddr.sin_addr.s_addr = inet_addr(T2A(sub));
-		
+
 		if (sockAddr.sin_addr.s_addr != INADDR_NONE)
 		{
 			sub = inet_ntoa(sockAddr.sin_addr);
 			std::list<CString>::iterator iter;
-			for (iter = ipBindList.begin(); iter != ipBindList.end(); iter++)
+			for (iter = ipBindList.begin(); iter != ipBindList.end(); ++iter)
 				if (*iter==sub)
 					break;
 			if (iter == ipBindList.end())
@@ -181,7 +181,7 @@ BOOL COptionsAdminInterfacePage::IsDataValid()
 		sub = _T("");
 	}
 	bindIPs = _T("");
-	for (std::list<CString>::iterator iter = ipBindList.begin(); iter!=ipBindList.end(); iter++)
+	for (std::list<CString>::iterator iter = ipBindList.begin(); iter!=ipBindList.end(); ++iter)
 		if (*iter != _T("127.0.0.1"))
 			bindIPs += *iter + _T(" ");
 

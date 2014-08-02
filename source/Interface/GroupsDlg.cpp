@@ -37,7 +37,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CGroupsDlg 
+// Dialogfeld CGroupsDlg
 
 CGroupsDlg::CGroupsDlg(CWnd* pParent, bool localConnection)
 	: CSAPrefsDialog(CGroupsDlg::IDD, pParent)
@@ -49,7 +49,7 @@ CGroupsDlg::CGroupsDlg(CWnd* pParent, bool localConnection)
 	m_pSpeedLimitPage = new CGroupsDlgSpeedLimit(this);
 	m_pSharedFoldersPage = new CGroupsDlgSharedFolders(this);
 	m_pIpFilterPage = new CGroupsDlgIpFilter(this);
-	
+
 	AddPage(*m_pGeneralPage, _T("General"));
 	AddPage(*m_pSharedFoldersPage, _T("Shared folders"));
 	AddPage(*m_pSpeedLimitPage, _T("Speed Limits"));
@@ -88,21 +88,21 @@ BEGIN_MESSAGE_MAP(CGroupsDlg, CSAPrefsDialog)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CGroupsDlg 
+// Behandlungsroutinen für Nachrichten CGroupsDlg
 
-BOOL CGroupsDlg::OnInitDialog() 
+BOOL CGroupsDlg::OnInitDialog()
 {
 	CSAPrefsDialog::OnInitDialog();
-	
+
 	m_oldgroup = LB_ERR;
-	m_cGrouplist.ResetContent();	
+	m_cGrouplist.ResetContent();
 	UpdateData(FALSE);
 	for (unsigned int i = 0; i < m_GroupsList.size(); i++)
 	{
 		int index = m_cGrouplist.AddString(m_GroupsList[i].group);
 		m_cGrouplist.SetItemData(index, i);
 	}
-				
+
 	if (m_GroupsList.size())
 	{
 		m_cGrouplist.SetCurSel(0);
@@ -140,7 +140,7 @@ BOOL CGroupsDlg::Validate()
 		m_cGrouplist.SetCurSel(m_oldgroup);
 		MessageBox(res);
 		return FALSE;
-	}		
+	}
 	res = m_pIpFilterPage->Validate();
 	if (res != _T(""))
 	{
@@ -148,11 +148,11 @@ BOOL CGroupsDlg::Validate()
 		m_cGrouplist.SetCurSel(m_oldgroup);
 		MessageBox(res);
 		return FALSE;
-	}	
+	}
 	return TRUE;
 }
 
-void CGroupsDlg::OnSelchangeGrouplist() 
+void CGroupsDlg::OnSelchangeGrouplist()
 {
 	m_insideSelchange = true;
 	if (!Validate())
@@ -190,17 +190,17 @@ void CGroupsDlg::OnSelchangeGrouplist()
 	SetCtrlState();
 }
 
-void CGroupsDlg::OnOK() 
+void CGroupsDlg::OnOK()
 {
 	if (!Validate())
 		return;
 	m_cGrouplist.SetCurSel(-1);
 	OnSelchangeGrouplist();
-	
+
 	CSAPrefsDialog::OnOK();
 }
 
-void CGroupsDlg::OnContextMenu(CWnd* pWnd, CPoint point) 
+void CGroupsDlg::OnContextMenu(CWnd* pWnd, CPoint point)
 {
 	if (pWnd==&m_cGrouplist)
 	{
@@ -212,7 +212,7 @@ void CGroupsDlg::OnContextMenu(CWnd* pWnd, CPoint point)
 		CWnd* pWndPopupOwner = this;
 		while (pWndPopupOwner->GetStyle() & WS_CHILD)
 			pWndPopupOwner = pWndPopupOwner->GetParent();
-		
+
 		if (m_cGrouplist.GetCurSel()==LB_ERR)
 		{
 			pPopup->EnableMenuItem(ID_GROUPMENU_COPY, MF_GRAYED);
@@ -226,7 +226,7 @@ void CGroupsDlg::OnContextMenu(CWnd* pWnd, CPoint point)
 	}
 }
 
-void CGroupsDlg::OnGroupAdd() 
+void CGroupsDlg::OnGroupAdd()
 {
 	if (!Validate())
 		return;
@@ -260,12 +260,12 @@ void CGroupsDlg::OnGroupAdd()
 			m_oldgroup++;
 		m_GroupsList.push_back(group);
 		m_cGrouplist.SetItemData(nItem, m_GroupsList.size()-1);
-		m_cGrouplist.SetCurSel(nItem);	
+		m_cGrouplist.SetCurSel(nItem);
 		OnSelchangeGrouplist();
 	}
 }
 
-void CGroupsDlg::OnGroupCopy() 
+void CGroupsDlg::OnGroupCopy()
 {
 	if (!Validate())
 		return;
@@ -292,30 +292,30 @@ void CGroupsDlg::OnGroupCopy()
 				return;
 			}
 		}
-		
+
 		t_group group = m_GroupsList[index];
 		group.group = dlg.m_String;
-		
+
 		int nItem = m_cGrouplist.AddString(group.group);
 		if (nItem <= m_oldgroup)
 			m_oldgroup++;
 		m_GroupsList.push_back(group);
 		m_cGrouplist.SetItemData(nItem, m_GroupsList.size()-1);
-		m_cGrouplist.SetCurSel(nItem);	
+		m_cGrouplist.SetCurSel(nItem);
 
 		OnSelchangeGrouplist();
-	}	
+	}
 }
 
 
-void CGroupsDlg::OnGroupRemove() 
+void CGroupsDlg::OnGroupRemove()
 {
 	int pos = m_cGrouplist.GetCurSel();
 	if (pos == LB_ERR)
 		return;
 	int index = m_cGrouplist.GetItemData(pos);
 	m_oldgroup = LB_ERR;
-	
+
 	unsigned int i = 0;
 	CString oldName;
 	m_cGrouplist.GetText(pos, oldName);
@@ -352,7 +352,7 @@ void CGroupsDlg::OnGroupRemove()
 			}
 		}
 	}
-	
+
 	i = 0;
 	for (t_GroupsList::iterator iter = m_GroupsList.begin(); iter != m_GroupsList.end(); iter++, i++)
 		if (i == index)
@@ -370,7 +370,7 @@ void CGroupsDlg::OnGroupRemove()
 	OnSelchangeGrouplist();
 }
 
-void CGroupsDlg::OnGroupRename() 
+void CGroupsDlg::OnGroupRename()
 {
 	if (!Validate())
 		return;
@@ -399,13 +399,13 @@ void CGroupsDlg::OnGroupRename()
 				return;
 			}
 		}
-		
+
 		CString oldName;
 		m_cGrouplist.GetText(pos, oldName);
 		m_cGrouplist.DeleteString(pos);
 		pos = m_cGrouplist.AddString(dlg.m_String);
 		m_cGrouplist.SetItemData(pos,index);
-		m_cGrouplist.SetCurSel(pos);	
+		m_cGrouplist.SetCurSel(pos);
 		m_oldgroup = pos;
 		m_GroupsList[index].group = dlg.m_String;
 
@@ -431,7 +431,7 @@ void CGroupsDlg::SetCtrlState()
 	{
 		GetDlgItem(IDC_GROUPS_REMOVEGROUP)->EnableWindow(TRUE);
 		GetDlgItem(IDC_GROUPS_RENAMEGROUP)->EnableWindow(TRUE);
-		GetDlgItem(IDC_GROUPS_COPYGROUP)->EnableWindow(TRUE);	
+		GetDlgItem(IDC_GROUPS_COPYGROUP)->EnableWindow(TRUE);
 	}
 	m_pGeneralPage->SetCtrlState();
 	m_pSpeedLimitPage->SetCtrlState();
@@ -447,11 +447,11 @@ BOOL CGroupsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	DWORD len = 4;
 
 	t_GroupsList::iterator groupiter;
-	for (groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++)
+	for (groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); ++groupiter)
 		len += groupiter->GetRequiredBufferLen();
 
 	t_UsersList::iterator iter;
-	for (iter=m_UsersList.begin(); iter!=m_UsersList.end(); iter++)
+	for (iter=m_UsersList.begin(); iter!=m_UsersList.end(); ++iter)
 		len += iter->GetRequiredBufferLen();
 
 	*pBuffer=new char[len];
@@ -459,7 +459,7 @@ BOOL CGroupsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 	*p++ = m_GroupsList.size()/256;
 	*p++ = m_GroupsList.size()%256;
-	for (groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++)
+	for (groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); ++groupiter)
 	{
 		p = groupiter->FillBuffer(p);
 		if (!p)
@@ -467,12 +467,12 @@ BOOL CGroupsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 			delete [] *pBuffer;
 			*pBuffer = NULL;
 			return FALSE;
-		}		
+		}
 	}
 
 	*p++ = m_UsersList.size()/256;
 	*p++ = m_UsersList.size()%256;
-	for (iter=m_UsersList.begin(); iter!=m_UsersList.end(); iter++)
+	for (iter=m_UsersList.begin(); iter!=m_UsersList.end(); ++iter)
 	{
 		p = iter->FillBuffer(p);
 		if (!p)
@@ -482,7 +482,7 @@ BOOL CGroupsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 			return FALSE;
 		}
 	}
-		
+
 	*nBufferLength = len;
 
 	return TRUE;
@@ -500,7 +500,7 @@ BOOL CGroupsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 	for (i=0; i<num; i++)
 	{
 		t_group group;
-		
+
 		p = group.ParseBuffer(p, dwDataLength-(p-pData));
 		if (!p)
 			return FALSE;
@@ -514,7 +514,7 @@ BOOL CGroupsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 	for (i=0; i<num; i++)
 	{
 		t_user user;
-		
+
 		p = user.ParseBuffer(p, dwDataLength-(p-pData));
 		if (!p)
 			return FALSE;
@@ -523,7 +523,7 @@ BOOL CGroupsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 	return TRUE;
 }
 
-BOOL CGroupsDlg::PreTranslateMessage(MSG* pMsg) 
+BOOL CGroupsDlg::PreTranslateMessage(MSG* pMsg)
 {
 	if (pMsg->message==WM_KEYDOWN)
 	{

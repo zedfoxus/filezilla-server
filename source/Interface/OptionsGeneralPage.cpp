@@ -33,7 +33,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptionsGeneralPage 
+// Dialogfeld COptionsGeneralPage
 
 
 COptionsGeneralPage::COptionsGeneralPage(COptionsDlg *pOptionsDlg, CWnd* pParent /*=NULL*/)
@@ -76,7 +76,7 @@ BEGIN_MESSAGE_MAP(COptionsGeneralPage, COptionsPage)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten COptionsGeneralPage 
+// Behandlungsroutinen für Nachrichten COptionsGeneralPage
 
 BOOL COptionsGeneralPage::IsDataValid()
 {
@@ -85,7 +85,7 @@ BOOL COptionsGeneralPage::IsDataValid()
 
 	std::set<int> portSet;
 	bool valid = true;
-	
+
 	CString ports = m_Port;
 	ports.TrimLeft(_T(" ,"));
 
@@ -130,7 +130,7 @@ BOOL COptionsGeneralPage::IsDataValid()
 	}
 
 	m_Port = _T("");
-	for (std::set<int>::const_iterator iter = portSet.begin(); iter != portSet.end(); iter++)
+	for (std::set<int>::const_iterator iter = portSet.begin(); iter != portSet.end(); ++iter)
 	{
 		CString tmp;
 		tmp.Format(_T("%d "), *iter);

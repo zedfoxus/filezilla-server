@@ -40,10 +40,10 @@ class CUsersDlg;
 class CGroupsDlg;
 class CMainFrame : public CFrameWnd
 {
-	
+
 public:
 	CMainFrame(COptions *pOptions);
-protected: 
+protected:
 	DECLARE_DYNAMIC(CMainFrame)
 
 // Attribute
@@ -90,7 +90,7 @@ protected:
 	CStatusView* m_pStatusPane;
 	CUsersView* m_pUsersPane;
 
-	void CMainFrame::SetStatusbarText(int nIndex,CString str);
+	void SetStatusbarText(int nIndex, CString str);
 	CLed m_SendLed;
 	CLed m_RecvLed;
 	CStatusBar  m_wndStatusBar;
@@ -100,7 +100,7 @@ protected:
 
 	//// Internal support functions
 	void SetupTrayIcon();
-	
+
 	//// Internal data
 	CSystemTray m_TrayIcon;
 	int nTrayNotificationMsg_;
@@ -136,7 +136,7 @@ protected:
 	afx_msg void OnEditSettings();
 	afx_msg void OnActive();
 	afx_msg void OnUpdateActive(CCmdUI* pCmdUI);
-	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);	
+	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnTrayExit();
 	afx_msg void OnTrayRestore();
 	afx_msg void OnLock();

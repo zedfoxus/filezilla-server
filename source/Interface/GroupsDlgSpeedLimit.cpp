@@ -28,11 +28,11 @@
 // CGroupsDlgSpeedLimit dialog
 
 
-CGroupsDlgSpeedLimit::CGroupsDlgSpeedLimit(CGroupsDlg* pOwner) 
+CGroupsDlgSpeedLimit::CGroupsDlgSpeedLimit(CGroupsDlg* pOwner)
 	: CSAPrefsSubDlg(IDD)
 {
 	m_pOwner = pOwner;
-	
+
 	//{{AFX_DATA_INIT(CGroupsDlgSpeedLimit)
 	m_DownloadSpeedLimitType = -1;
 	m_UploadSpeedLimitType = -1;
@@ -112,7 +112,7 @@ void CGroupsDlgSpeedLimit::SetCtrlState()
 		m_DownloadRemoveCtrl.EnableWindow(FALSE);
 		m_DownloadDownCtrl.EnableWindow(FALSE);
 		m_DownloadAddCtrl.EnableWindow(FALSE);
-		
+
 		m_UploadValueCtrl.EnableWindow(FALSE);
 		m_UploadUpCtrl.EnableWindow(FALSE);
 		m_UploadRulesListCtrl.EnableWindow(FALSE);
@@ -138,7 +138,7 @@ void CGroupsDlgSpeedLimit::SetCtrlState()
 		m_DownloadRemoveCtrl.EnableWindow(m_DownloadSpeedLimitType == 2);
 		m_DownloadDownCtrl.EnableWindow(m_DownloadSpeedLimitType == 2);
 		m_DownloadAddCtrl.EnableWindow(m_DownloadSpeedLimitType == 2);
-		
+
 		m_UploadValueCtrl.EnableWindow(m_UploadSpeedLimitType == 1);
 		m_UploadUpCtrl.EnableWindow(m_UploadSpeedLimitType == 2);
 		m_UploadRulesListCtrl.EnableWindow(m_UploadSpeedLimitType == 2);
@@ -152,16 +152,16 @@ void CGroupsDlgSpeedLimit::SetCtrlState()
 		GetDlgItem(IDC_SPEEDLIMIT_UPLOAD1)->EnableWindow(TRUE);
 		GetDlgItem(IDC_SPEEDLIMIT_UPLOAD2)->EnableWindow(TRUE);
 		GetDlgItem(IDC_SPEEDLIMIT_UPLOAD3)->EnableWindow(TRUE);
-	
+
 		((CButton *)GetDlgItem(IDC_GROUPS_SPEEDLIMIT_SERVERBYPASS_DOWNLOAD))->EnableWindow(TRUE);
 		((CButton *)GetDlgItem(IDC_GROUPS_SPEEDLIMIT_SERVERBYPASS_UPLOAD))->EnableWindow(TRUE);
 	}
 }
 
-BOOL CGroupsDlgSpeedLimit::OnInitDialog() 
+BOOL CGroupsDlgSpeedLimit::OnInitDialog()
 {
 	CSAPrefsSubDlg::OnInitDialog();
-	
+
 	SetCtrlState();
 
 	ShowSpeedLimit( m_DownloadRulesListCtrl, m_DownloadSpeedLimits);
@@ -171,12 +171,12 @@ BOOL CGroupsDlgSpeedLimit::OnInitDialog()
 	              // EXCEPTION: OCX Property Pages should return FALSE
 }
 
-void CGroupsDlgSpeedLimit::OnRadio() 
+void CGroupsDlgSpeedLimit::OnRadio()
 {
 	SetCtrlState();
 }
 
-void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadAdd() 
+void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadAdd()
 {
 	CSpeedLimitRuleDlg dlg;
 
@@ -195,41 +195,41 @@ void CGroupsDlgSpeedLimit::ShowSpeedLimit(CListBox &listBox, SPEEDLIMITSLIST &li
 	for (unsigned int i = 0; i < list.size(); i++)
 	{
 		CString str;
-		
+
 		str.Format(_T( "%dkB/s"), list[i].m_Speed);
 
 		CString help;
-		
+
 		if (list[i].m_DateCheck)
 		{
 			CTime t(list[i].m_Date.y, list[i].m_Date.m, list[i].m_Date.d, 0, 0, 0);
 			help += t.Format(_T("%x"));
 		}
-		
+
 		if (list[i].m_FromCheck)
 		{
 			if (help.GetLength() > 0)
 				help += _T( "; ");
-			
+
 			CTime t(2003, 1, 1, list[i].m_FromTime.h, list[i].m_FromTime.m, list[i].m_FromTime.s);
 			help += _T("F:") + t.Format( _T("%X"));
 		}
-		
+
 		if (list[i].m_ToCheck)
 		{
 			if (help.GetLength() > 0)
 				help += _T( "; ");
-			
+
 			CTime t(2003, 1, 1, list[i].m_ToTime.h, list[i].m_ToTime.m, list[i].m_ToTime.s);
 			help += _T("T:") + t.Format( _T("%X"));
 		}
-		
+
 		for (int j = 0; j < 7; j++)
 			if (!(list[i].m_Day & (1<<j)))
 			{
 				if (help.GetLength() > 0)
 					help += _T( "; ");
-				
+
 				bool was = false;
 				for ( int k = 0; k < 7; k++)
 				{
@@ -237,31 +237,31 @@ void CGroupsDlgSpeedLimit::ShowSpeedLimit(CListBox &listBox, SPEEDLIMITSLIST &li
 					{
 						if (was)
 							help += _T(", ");
-						
+
 						was = true;
-						
+
 						CTime time(2001, 1, k + 1, 0, 0, 0);
-						
+
 						help += time.Format(_T("%a"));
 					}
 				}
-				
+
 				break;
 			}
-		
+
 		str += _T(" [") + help + _T("]");
-		
+
 		listBox.AddString(str);
 	}
 }
 
-void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadRemove() 
+void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadRemove()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
 	if ( ( curSel >= 0) && ( curSel < (int)m_DownloadSpeedLimits.size()))
 	{
-		for (SPEEDLIMITSLIST::iterator iter=m_DownloadSpeedLimits.begin(); iter!=m_DownloadSpeedLimits.end(); iter++)
+		for (SPEEDLIMITSLIST::iterator iter=m_DownloadSpeedLimits.begin(); iter!=m_DownloadSpeedLimits.end(); ++iter)
 		{
 			if (!curSel)
 			{
@@ -275,7 +275,7 @@ void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadRemove()
 	}
 }
 
-void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadUp() 
+void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadUp()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
@@ -291,7 +291,7 @@ void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadUp()
 	}
 }
 
-void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadDown() 
+void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadDown()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
@@ -307,7 +307,7 @@ void CGroupsDlgSpeedLimit::OnSpeedlimitDownloadDown()
 	}
 }
 
-void CGroupsDlgSpeedLimit::OnDblclkSpeedlimitDownloadRulesList() 
+void CGroupsDlgSpeedLimit::OnDblclkSpeedlimitDownloadRulesList()
 {
 	int curSel = m_DownloadRulesListCtrl.GetCurSel();
 
@@ -327,13 +327,13 @@ void CGroupsDlgSpeedLimit::OnDblclkSpeedlimitDownloadRulesList()
 	}
 }
 
-void CGroupsDlgSpeedLimit::OnSpeedlimitUploadRemove() 
+void CGroupsDlgSpeedLimit::OnSpeedlimitUploadRemove()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 
 	if ( ( curSel >= 0) && ( curSel < (int)m_UploadSpeedLimits.size()))
 	{
-		for (SPEEDLIMITSLIST::iterator iter=m_UploadSpeedLimits.begin(); iter!=m_UploadSpeedLimits.end(); iter++)
+		for (SPEEDLIMITSLIST::iterator iter=m_UploadSpeedLimits.begin(); iter!=m_UploadSpeedLimits.end(); ++iter)
 		{
 			if (!curSel)
 			{
@@ -347,7 +347,7 @@ void CGroupsDlgSpeedLimit::OnSpeedlimitUploadRemove()
 	}
 }
 
-void CGroupsDlgSpeedLimit::OnSpeedlimitUploadUp() 
+void CGroupsDlgSpeedLimit::OnSpeedlimitUploadUp()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 
@@ -363,7 +363,7 @@ void CGroupsDlgSpeedLimit::OnSpeedlimitUploadUp()
 	}
 }
 
-void CGroupsDlgSpeedLimit::OnSpeedlimitUploadDown() 
+void CGroupsDlgSpeedLimit::OnSpeedlimitUploadDown()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 
@@ -379,7 +379,7 @@ void CGroupsDlgSpeedLimit::OnSpeedlimitUploadDown()
 	}
 }
 
-void CGroupsDlgSpeedLimit::OnSpeedlimitUploadAdd() 
+void CGroupsDlgSpeedLimit::OnSpeedlimitUploadAdd()
 {
 	CSpeedLimitRuleDlg dlg;
 
@@ -391,7 +391,7 @@ void CGroupsDlgSpeedLimit::OnSpeedlimitUploadAdd()
 	}
 }
 
-void CGroupsDlgSpeedLimit::OnDblclkSpeedlimitUploadRulesList() 
+void CGroupsDlgSpeedLimit::OnDblclkSpeedlimitUploadRulesList()
 {
 	int curSel = m_UploadRulesListCtrl.GetCurSel();
 
@@ -436,10 +436,10 @@ BOOL CGroupsDlgSpeedLimit::DisplayGroup(const t_group *pGroup)
 		m_UploadSpeedLimitType = pGroup->nSpeedLimitType[upload] - 1;
 		if (m_UploadSpeedLimitType == -1)
 			m_UploadSpeedLimitType = 0;
-		
+
 		m_DownloadSpeedLimits = pGroup->SpeedLimits[download];
 		m_UploadSpeedLimits = pGroup->SpeedLimits[upload];
-	
+
 		((CButton *)GetDlgItem(IDC_GROUPS_SPEEDLIMIT_SERVERBYPASS_DOWNLOAD))->SetCheck(pGroup->nBypassServerSpeedLimit[download] ? 1 : 0);
 		((CButton *)GetDlgItem(IDC_GROUPS_SPEEDLIMIT_SERVERBYPASS_UPLOAD))->SetCheck(pGroup->nBypassServerSpeedLimit[upload] ? 1 : 0);
 	}

@@ -164,7 +164,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			if (len != 4)
 			{
 				CString str;
-				str.Format(_T("Protocol error: Invalid server version length (%d)."), len);
+				str.Format(_T("Protocol error: Invalid server version length (%lu)."), len);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
 				return FALSE;
@@ -194,7 +194,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			if (len != 4)
 			{
 				CString str;
-				str.Format(_T("Protocol error: Invalid protocol version length (%d)."), len);
+				str.Format(_T("Protocol error: Invalid protocol version length (%lu)."), len);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
 				return FALSE;
@@ -324,7 +324,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			if (len > 0xFFFFFF)
 			{
 				CString str;
-				str.Format(_T("Protocol error: Invalid data length (%u) for command (%d:%d)"), len, nType, nID);
+				str.Format(_T("Protocol error: Invalid data length (%lu) for command (%d:%d)"), len, nType, nID);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
 				return FALSE;

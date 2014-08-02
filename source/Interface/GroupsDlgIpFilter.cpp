@@ -32,13 +32,13 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CGroupsDlgIpFilter 
+// Dialogfeld CGroupsDlgIpFilter
 
-CGroupsDlgIpFilter::CGroupsDlgIpFilter(CGroupsDlg* pOwner) 
+CGroupsDlgIpFilter::CGroupsDlgIpFilter(CGroupsDlg* pOwner)
 	: CSAPrefsSubDlg(IDD)
 {
 	m_pOwner = pOwner;
-	
+
 	m_pGroup = 0;
 }
 
@@ -65,12 +65,12 @@ BEGIN_MESSAGE_MAP(CGroupsDlgIpFilter, CSAPrefsSubDlg)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CGroupsDlgIpFilter 
+// Behandlungsroutinen für Nachrichten CGroupsDlgIpFilter
 
-BOOL CGroupsDlgIpFilter::OnInitDialog() 
+BOOL CGroupsDlgIpFilter::OnInitDialog()
 {
 	CSAPrefsSubDlg::OnInitDialog();
-	
+
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
@@ -123,13 +123,13 @@ BOOL CGroupsDlgIpFilter::DisplayGroup(t_group *pGroup)
 	}
 
 	std::list<CString>::const_iterator iter;
-	for (iter = pGroup->disallowedIPs.begin(); iter != pGroup->disallowedIPs.end(); iter++)
+	for (iter = pGroup->disallowedIPs.begin(); iter != pGroup->disallowedIPs.end(); ++iter)
 		m_DisallowedAddresses += *iter + _T("\r\n");
-	for (iter = pGroup->allowedIPs.begin(); iter != pGroup->allowedIPs.end(); iter++)
+	for (iter = pGroup->allowedIPs.begin(); iter != pGroup->allowedIPs.end(); ++iter)
 		m_AllowedAddresses += *iter + _T("\r\n");
-	
+
 	UpdateData(FALSE);
-	
+
 	return TRUE;
 }
 
@@ -145,6 +145,6 @@ BOOL CGroupsDlgIpFilter::SaveGroup(t_group *pGroup)
 
 	ParseIPFilter(m_DisallowedAddresses, &pGroup->disallowedIPs);
 	ParseIPFilter(m_AllowedAddresses, &pGroup->allowedIPs);
-	
+
 	return TRUE;
 }

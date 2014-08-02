@@ -30,7 +30,7 @@
 #define COLOUR_LIGHTGREY	15
 
 /////////////////////////////////////////////////////////////////////////////
-// Fenster CStatusCtrl 
+// Fenster CStatusCtrl
 
 class CStatusView;
 class CStatusCtrl : public CRichEditCtrl
@@ -44,14 +44,14 @@ public:
 	void ShowStatus(LPCTSTR status, int nType);
 	void Run();
 
-//	virtual BOOL Create( DWORD in_dwStyle, const RECT& in_rcRect, 
+//	virtual BOOL Create( DWORD in_dwStyle, const RECT& in_rcRect,
 //                         CWnd* in_pParentWnd, UINT in_nID );
 
 	// Generierte Nachrichtenzuordnungsfunktionen
 protected:
 
 	void DoStreamIn(int extraFlags = 0);
-	static DWORD __stdcall CStatusCtrl::RichEditStreamInCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb);
+	static DWORD __stdcall RichEditStreamInCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb);
 
 	struct t_buffer
 	{

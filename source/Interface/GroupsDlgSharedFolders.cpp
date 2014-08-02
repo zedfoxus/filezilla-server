@@ -35,14 +35,14 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CGroupsDlgSharedFolders 
+// Dialogfeld CGroupsDlgSharedFolders
 
 CGroupsDlgSharedFolders::CGroupsDlgSharedFolders(CGroupsDlg *pOwner)
 	: CSAPrefsSubDlg(CGroupsDlgSharedFolders::IDD)
 {
 	ASSERT(pOwner);
 	m_pOwner = pOwner;
-	
+
 	//{{AFX_DATA_INIT(CGroupsDlgSharedFolders)
 	m_bDirsCreate = FALSE;
 	m_bDirsDelete = FALSE;
@@ -109,16 +109,16 @@ BEGIN_MESSAGE_MAP(CGroupsDlgSharedFolders, CSAPrefsSubDlg)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CGroupsDlgSharedFolders 
+// Behandlungsroutinen für Nachrichten CGroupsDlgSharedFolders
 
-BOOL CGroupsDlgSharedFolders::OnInitDialog() 
+BOOL CGroupsDlgSharedFolders::OnInitDialog()
 {
 	CSAPrefsSubDlg::OnInitDialog();
-	
+
 	m_cDirs.InsertColumn(0, _T("Directories"), LVCFMT_LEFT, 120);
 	m_cDirs.InsertColumn(1, _T("Aliases"), LVCFMT_LEFT, 200);
 	UpdateData(FALSE);
-	
+
 	m_imagelist.Create(16, 16, ILC_MASK, 3, 3);
 	HICON icon;
 	icon = AfxGetApp()->LoadIcon(IDI_EMPTY);
@@ -127,11 +127,11 @@ BOOL CGroupsDlgSharedFolders::OnInitDialog()
 	icon = AfxGetApp()->LoadIcon(IDI_HOME);
 	m_imagelist.Add(icon);
 	DestroyIcon(icon);
-	
+
 	m_cDirs.SetImageList(&m_imagelist, LVSIL_SMALL);
 
 	m_cDirs.SetExtendedStyle(LVS_EX_FULLROWSELECT);
-			
+
 	SetCtrlState();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -141,13 +141,13 @@ BOOL CGroupsDlgSharedFolders::OnInitDialog()
 CString CGroupsDlgSharedFolders::Validate()
 {
 	//TODO: check for homedir
-	
+
 	UpdateData(TRUE);
 	t_group *pGroup = m_pOwner->GetCurrentGroup();
 	if (!pGroup)
 		return _T("");
 
-	for (std::vector<t_directory>::iterator iter = pGroup->permissions.begin(); iter != pGroup->permissions.end(); iter++)
+	for (std::vector<t_directory>::iterator iter = pGroup->permissions.begin(); iter != pGroup->permissions.end(); ++iter)
 	{
 		if (iter->dir == _T("") || iter->dir == _T("/") || iter->dir == _T("\\"))
 		{
@@ -158,11 +158,11 @@ CString CGroupsDlgSharedFolders::Validate()
 		if (iter->bIsHome)
 			iter->aliases.clear();
 	}
-	
+
 	return _T("");
 }
 
-void CGroupsDlgSharedFolders::OnContextMenu(CWnd* pWnd, CPoint point) 
+void CGroupsDlgSharedFolders::OnContextMenu(CWnd* pWnd, CPoint point)
 {
 	if (pWnd == &m_cDirs)
 	{
@@ -172,7 +172,7 @@ void CGroupsDlgSharedFolders::OnContextMenu(CWnd* pWnd, CPoint point)
 		CMenu* pPopup = menu.GetSubMenu(0);
 		ASSERT(pPopup != NULL);
 		CWnd* pWndPopupOwner = this;
-		
+
 		if (!m_cDirs.GetFirstSelectedItemPosition())
 		{
 			pPopup->EnableMenuItem(ID_DIRMENU_REMOVE, MF_GRAYED);
@@ -187,14 +187,14 @@ void CGroupsDlgSharedFolders::OnContextMenu(CWnd* pWnd, CPoint point)
 	}
 }
 
-void CGroupsDlgSharedFolders::OnItemchangedDirs(NMHDR* pNMHDR, LRESULT* pResult) 
+void CGroupsDlgSharedFolders::OnItemchangedDirs(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
-	
+
 	t_group *pGroup = m_pOwner->GetCurrentGroup();
 	if (!pGroup)
 		return;
-	
+
 	int nItem = pNMListView->iItem;
 	POSITION selpos = m_cDirs.GetFirstSelectedItemPosition();
 	if (selpos)
@@ -217,11 +217,11 @@ void CGroupsDlgSharedFolders::OnItemchangedDirs(NMHDR* pNMHDR, LRESULT* pResult)
 	}
 	UpdateData(FALSE);
 
-	SetCtrlState();	
+	SetCtrlState();
 	*pResult = 0;
 }
 
-void CGroupsDlgSharedFolders::OnItemchangingDirs(NMHDR* pNMHDR, LRESULT* pResult) 
+void CGroupsDlgSharedFolders::OnItemchangingDirs(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	*pResult = 0;
 	UpdateData(TRUE);
@@ -230,7 +230,7 @@ void CGroupsDlgSharedFolders::OnItemchangingDirs(NMHDR* pNMHDR, LRESULT* pResult
 	if (!pGroup)
 		return;
 
-		
+
 	POSITION selpos = m_cDirs.GetFirstSelectedItemPosition();
 	if (selpos)
 	{
@@ -277,7 +277,7 @@ void CGroupsDlgSharedFolders::SetCtrlState()
 	{
 		m_cDirs.EnableWindow(TRUE);
 		GetDlgItem(IDC_DIRADD)->EnableWindow(TRUE);
-		
+
 		if (m_cDirs.GetFirstSelectedItemPosition())
 		{
 			m_cFilesRead.EnableWindow(TRUE);
@@ -318,7 +318,7 @@ void CGroupsDlgSharedFolders::SetCtrlState()
 	}
 }
 
-void CGroupsDlgSharedFolders::OnDirmenuAdd() 
+void CGroupsDlgSharedFolders::OnDirmenuAdd()
 {
 	t_group *pGroup = m_pOwner->GetCurrentGroup();
 	if (!pGroup)
@@ -326,8 +326,8 @@ void CGroupsDlgSharedFolders::OnDirmenuAdd()
 
 	t_directory dir;
 	dir.bFileRead = dir.bDirList = dir.bDirSubdirs = TRUE;
-	dir.bDirCreate = dir.bDirDelete = 
-		dir.bFileAppend = dir.bFileDelete = 
+	dir.bDirCreate = dir.bDirDelete =
+		dir.bFileAppend = dir.bFileDelete =
 		dir.bFileWrite = dir.bIsHome =
 		dir.bAutoCreate = FALSE;
 	dir.dir = _T("");
@@ -337,15 +337,15 @@ void CGroupsDlgSharedFolders::OnDirmenuAdd()
 	int nItem = m_cDirs.InsertItem(LVIF_TEXT |LVIF_PARAM|LVIF_IMAGE, 0, _T("<new directory>"), 0, 0, dir.bIsHome?1:0, pGroup->permissions.size()-1);
 	m_cDirs.SetItemState(nItem, LVIS_SELECTED,LVIS_SELECTED);
 	m_cDirs.SetItemState(nItem, LVIS_SELECTED,LVIS_SELECTED);
-	OnDblclkDirs(0, 0);	
+	OnDblclkDirs(0, 0);
 }
 
-void CGroupsDlgSharedFolders::OnDirmenuRemove() 
+void CGroupsDlgSharedFolders::OnDirmenuRemove()
 {
 t_group *pGroup = m_pOwner->GetCurrentGroup();
 	if (!pGroup)
 		return;
-	
+
 	POSITION selpos;
 	selpos=m_cDirs.GetFirstSelectedItemPosition();
 	if (!selpos)
@@ -371,33 +371,33 @@ t_group *pGroup = m_pOwner->GetCurrentGroup();
 	SetCtrlState();
 }
 
-void CGroupsDlgSharedFolders::OnDirmenuRename() 
+void CGroupsDlgSharedFolders::OnDirmenuRename()
 {
 	t_group *pGroup = m_pOwner->GetCurrentGroup();
 	if (!pGroup)
 		return;
-	
+
 	POSITION selpos = m_cDirs.GetFirstSelectedItemPosition();
 	if (!selpos)
 		return;
 	int nItem = m_cDirs.GetNextSelectedItem(selpos);
-	
+
 	m_cDirs.SetFocus();
 	m_cDirs.EditLabel(nItem);
 }
 
-void CGroupsDlgSharedFolders::OnDirmenuSetashomedir() 
+void CGroupsDlgSharedFolders::OnDirmenuSetashomedir()
 {
 	t_group *pGroup = m_pOwner->GetCurrentGroup();
 	if (!pGroup)
 		return;
-	
+
 	POSITION selpos;
 	selpos=m_cDirs.GetFirstSelectedItemPosition();
 	if (!selpos)
 		return;
 	int nItem=m_cDirs.GetNextSelectedItem(selpos);
-	
+
 	for (unsigned int j=0; j<pGroup->permissions.size(); j++)
 	{
 		LVITEM item;
@@ -413,7 +413,7 @@ void CGroupsDlgSharedFolders::OnDirmenuSetashomedir()
 	pGroup->permissions[index].bIsHome = 1;
 }
 
-void CGroupsDlgSharedFolders::OnEndlabeleditDirs(NMHDR* pNMHDR, LRESULT* pResult) 
+void CGroupsDlgSharedFolders::OnEndlabeleditDirs(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	LV_DISPINFO* pDispInfo = (LV_DISPINFO*)pNMHDR;
 	if (pDispInfo->item.pszText)
@@ -428,11 +428,11 @@ void CGroupsDlgSharedFolders::OnEndlabeleditDirs(NMHDR* pNMHDR, LRESULT* pResult
 			t_group *pGroup = m_pOwner->GetCurrentGroup();
 			if (!pGroup)
 				return;
-						
+
 			pGroup->permissions[pDispInfo->item.lParam].dir = pDispInfo->item.pszText;
 			*pResult = TRUE;
 		}
-	
+
 	}
 	else
 	{
@@ -441,7 +441,7 @@ void CGroupsDlgSharedFolders::OnEndlabeleditDirs(NMHDR* pNMHDR, LRESULT* pResult
 			t_group *pGroup = m_pOwner->GetCurrentGroup();
 			if (!pGroup)
 				return;
-			
+
 			m_cDirs.DeleteItem(pDispInfo->item.iItem);
 			int i=0;
 			for (std::vector<t_directory>::iterator iter=pGroup->permissions.begin(); iter!=pGroup->permissions.end(); iter++, i++)
@@ -454,12 +454,12 @@ void CGroupsDlgSharedFolders::OnEndlabeleditDirs(NMHDR* pNMHDR, LRESULT* pResult
 	}
 }
 
-void CGroupsDlgSharedFolders::OnDblclkDirs(NMHDR* pNMHDR, LRESULT* pResult) 
+void CGroupsDlgSharedFolders::OnDblclkDirs(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	t_group *pGroup = m_pOwner->GetCurrentGroup();
 	if (!pGroup)
 		return;
-	
+
 	NMITEMACTIVATE *pItemActivate = (NMITEMACTIVATE *)pNMHDR;
 
 	POSITION selpos = m_cDirs.GetFirstSelectedItemPosition();
@@ -489,38 +489,38 @@ void CGroupsDlgSharedFolders::OnDblclkDirs(NMHDR* pNMHDR, LRESULT* pResult)
 	}
 	else
 		OnDirmenuEditAliases();
-	
+
 	if (pResult)
 		*pResult = 0;
 }
 
-void CGroupsDlgSharedFolders::OnFilesWrite() 
+void CGroupsDlgSharedFolders::OnFilesWrite()
 {
 	UpdateData(TRUE);
-	SetCtrlState();	
+	SetCtrlState();
 }
 
-void CGroupsDlgSharedFolders::OnDiradd() 
+void CGroupsDlgSharedFolders::OnDiradd()
 {
-	OnDirmenuAdd();	
+	OnDirmenuAdd();
 }
 
-void CGroupsDlgSharedFolders::OnDirremove() 
+void CGroupsDlgSharedFolders::OnDirremove()
 {
-	OnDirmenuRemove();	
+	OnDirmenuRemove();
 }
 
-void CGroupsDlgSharedFolders::OnDirrename() 
+void CGroupsDlgSharedFolders::OnDirrename()
 {
-	OnDirmenuRename();	
+	OnDirmenuRename();
 }
 
-void CGroupsDlgSharedFolders::OnDirsetashome() 
+void CGroupsDlgSharedFolders::OnDirsetashome()
 {
-	OnDirmenuSetashomedir();	
+	OnDirmenuSetashomedir();
 }
 
-BOOL CGroupsDlgSharedFolders::PreTranslateMessage(MSG* pMsg) 
+BOOL CGroupsDlgSharedFolders::PreTranslateMessage(MSG* pMsg)
 {
 	if (pMsg->message == WM_KEYDOWN)
 	{
@@ -548,9 +548,9 @@ BOOL CGroupsDlgSharedFolders::DisplayGroup(const t_group *pGroup)
 		m_bAutoCreate = FALSE;
 		return TRUE;
 	}
-	
+
 	UpdateData(FALSE);
-	
+
 	//Fill the dirs list
 	m_cDirs.DeleteAllItems();
 	for (unsigned int j = 0; j < pGroup->permissions.size(); j++)
@@ -566,7 +566,7 @@ BOOL CGroupsDlgSharedFolders::DisplayGroup(const t_group *pGroup)
 		m_cDirs.SetItem(&item);
 
 		CString aliases;
-		for (std::list<CString>::const_iterator iter = pGroup->permissions[j].aliases.begin(); iter != pGroup->permissions[j].aliases.end(); iter++)
+		for (std::list<CString>::const_iterator iter = pGroup->permissions[j].aliases.begin(); iter != pGroup->permissions[j].aliases.end(); ++iter)
 			aliases += *iter + _T("|");
 		aliases.TrimRight('|');
 		m_cDirs.SetItemText(nItem, 1, aliases);
@@ -579,7 +579,7 @@ BOOL CGroupsDlgSharedFolders::SaveGroup(t_group *pGroup)
 {
 	if (!pGroup)
 		return FALSE;
-		
+
 	POSITION selpos = m_cDirs.GetFirstSelectedItemPosition();
 	if (selpos)
 	{
@@ -594,7 +594,7 @@ BOOL CGroupsDlgSharedFolders::SaveGroup(t_group *pGroup)
 		pGroup->permissions[index].bDirList = m_bDirsList;
 		pGroup->permissions[index].bDirSubdirs = m_bDirsSubdirs;
 		pGroup->permissions[index].bAutoCreate = m_bAutoCreate;
-	}		
+	}
 	return TRUE;
 }
 
@@ -603,7 +603,7 @@ void CGroupsDlgSharedFolders::OnDirmenuEditAliases()
 	t_group *pGroup = m_pOwner->GetCurrentGroup();
 	if (!pGroup)
 		return;
-	
+
 	POSITION selpos = m_cDirs.GetFirstSelectedItemPosition();
 	if (!selpos)
 		return;
@@ -626,14 +626,14 @@ void CGroupsDlgSharedFolders::OnDirmenuEditAliases()
 		if( dlg.DoModal() != IDOK) {
 			return;
 		}
-		
+
 		aliases = dlg.m_String;
 		aliases.Replace('\\', '/');
 		while (aliases.Replace('//', '/'));
 		while (aliases.Replace(_T("||"), _T("|")));
 		aliases.TrimLeft(_T("|"));
 		aliases.TrimRight(_T("|"));
-		
+
 		std::list<CString> aliasList;
 		aliases += _T("|");
 		int pos;

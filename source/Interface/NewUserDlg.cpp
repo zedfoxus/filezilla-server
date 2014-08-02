@@ -30,7 +30,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-// Dialogfeld CNewUserDlg 
+// Dialogfeld CNewUserDlg
 
 
 CNewUserDlg::CNewUserDlg(CWnd* pParent /*=NULL*/)
@@ -60,31 +60,31 @@ BEGIN_MESSAGE_MAP(CNewUserDlg, CDialog)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten CNewUserDlg 
+// Behandlungsroutinen für Nachrichten CNewUserDlg
 
-void CNewUserDlg::OnChangeNewuserName() 
+void CNewUserDlg::OnChangeNewuserName()
 {
 	//Disable the OK button if the edit field is empty
 	UpdateData(TRUE);
 	m_cOkCtrl.EnableWindow(m_Name != _T("") ? TRUE : FALSE);
 }
 
-BOOL CNewUserDlg::OnInitDialog() 
+BOOL CNewUserDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	
-	m_cOkCtrl.EnableWindow(m_Name != _T("") ? TRUE : FALSE);	
+
+	m_cOkCtrl.EnableWindow(m_Name != _T("") ? TRUE : FALSE);
 
 	m_cGroup.AddString(_T("<none>"));
 	m_cGroup.SetCurSel(0);
-	for (std::list<CString>::iterator iter = m_GroupList.begin(); iter != m_GroupList.end(); iter++)
+	for (std::list<CString>::iterator iter = m_GroupList.begin(); iter != m_GroupList.end(); ++iter)
 		m_cGroup.AddString(*iter);
-	
+
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
 
-void CNewUserDlg::OnOK() 
+void CNewUserDlg::OnOK()
 {
 	if (m_cGroup.GetCurSel() > 0)
 		m_cGroup.GetLBText(m_cGroup.GetCurSel(), m_Group);
