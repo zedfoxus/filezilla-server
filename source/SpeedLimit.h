@@ -59,7 +59,7 @@ public:
 	int	m_Speed;
 	int m_Day;
 
-	void Save(TiXmlElement* pElement);
+	void Save(TiXmlElement* pElement) const;
 	bool Load(TiXmlElement* pElement);
 
 protected:

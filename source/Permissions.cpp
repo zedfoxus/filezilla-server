@@ -1386,8 +1386,7 @@ void CPermissions::SaveSpeedLimits(TiXmlElement *pXML, const t_group &group)
 	const CStdString prefixes[] = { _T("Dl"), _T("Ul") };
 	const char* names[] = { "Download", "Upload" };
 
-	for (int i = 0; i < 2; i++)
-	{
+	for (int i = 0; i < 2; ++i) {
 		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Type")).c_str(), group.nSpeedLimitType[i]);
 		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Limit")).c_str(), group.nSpeedLimit[i]);
 		pSpeedLimits->SetAttribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")).c_str(), group.nBypassServerSpeedLimit[i]);
@@ -1395,12 +1394,8 @@ void CPermissions::SaveSpeedLimits(TiXmlElement *pXML, const t_group &group)
 		TiXmlElement* pSpeedLimit = new TiXmlElement(names[i]);
 		pSpeedLimits->LinkEndChild(pSpeedLimit);
 
-		for (unsigned int j = 0; j < group.SpeedLimits[i].size(); j++)
-		{
-			CSpeedLimit limit = group.SpeedLimits[i][j];
-
+		for (auto const& limit : group.SpeedLimits[i]) {
 			TiXmlElement* pRule = pSpeedLimit->LinkEndChild(new TiXmlElement("Rule"))->ToElement();
-
 			limit.Save(pRule);
 		}
 	}

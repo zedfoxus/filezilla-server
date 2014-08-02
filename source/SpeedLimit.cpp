@@ -238,7 +238,7 @@ static void SaveTime(TiXmlElement* pElement, CSpeedLimit::t_time t)
 	pElement->SetAttribute("Second", t.s);
 }
 
-void CSpeedLimit::Save(TiXmlElement* pElement)
+void CSpeedLimit::Save(TiXmlElement* pElement) const
 {
 	pElement->SetAttribute("Speed", m_Speed);
 
@@ -247,22 +247,19 @@ void CSpeedLimit::Save(TiXmlElement* pElement)
 	TiXmlElement* pDays = pElement->LinkEndChild(new TiXmlElement("Days"))->ToElement();
 	XML::SetText(pDays, str);
 
-	if (m_DateCheck)
-	{
+	if (m_DateCheck) {
 		TiXmlElement* pDate = pElement->LinkEndChild(new TiXmlElement("Date"))->ToElement();
 		pDate->SetAttribute("Year", m_Date.y);
 		pDate->SetAttribute("Month", m_Date.m);
 		pDate->SetAttribute("Day", m_Date.d);
 	}
 
-	if (m_FromCheck)
-	{
+	if (m_FromCheck) {
 		TiXmlElement* pFrom = pElement->LinkEndChild(new TiXmlElement("From"))->ToElement();
 		SaveTime(pFrom, m_FromTime);
 	}
 
-	if (m_ToCheck)
-	{
+	if (m_ToCheck) {
 		TiXmlElement* pTo = pElement->LinkEndChild(new TiXmlElement("To"))->ToElement();
 		SaveTime(pTo, m_ToTime);
 	}
