@@ -461,49 +461,40 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 			LeaveCritSection(m_threadsync);
 		}
 	}
-	else if (wParam==m_nRateTimer)
-	{
-		if (m_nSendCount)
-		{
+	else if (wParam == m_nRateTimer) {
+		if (m_nSendCount) {
 			SendNotification(FSM_SEND, m_nSendCount);
 			m_nSendCount = 0;
 		}
-		if (m_nRecvCount)
-		{
+		if (m_nRecvCount) {
 			SendNotification(FSM_RECV, m_nRecvCount);
 			m_nRecvCount = 0;
 		}
 
-		if (m_bIsMaster)
-		{
+		if (m_bIsMaster) {
 			EnterCritSection(m_GlobalThreadsync);
 
-			std::list<CServerThread *>::iterator iter;
-
 			//Only update the speed limits from the rule set every 2 seconds to improve performance
-			if (!m_nLoopCount)
-			{
+			if (!m_nLoopCount) {
 				m_lastLimits[download] = m_pOptions->GetCurrentSpeedLimit(download);
 				m_lastLimits[upload] = m_pOptions->GetCurrentSpeedLimit(upload);
 			}
 			++m_nLoopCount %= 20;
 
 			// Gather transfer statistics if a speed limit is set
-			if (m_lastLimits[download] != -1 || m_lastLimits[upload] != -1)
-				for (iter = m_sInstanceList.begin(); iter != m_sInstanceList.end(); iter++)
-				{
-					CServerThread *pThread = *iter;
+			if (m_lastLimits[download] != -1 || m_lastLimits[upload] != -1) {
+				for (auto & pThread : m_sInstanceList) {
 					EnterCritSection(pThread->m_threadsync);
 					pThread->GatherTransferedBytes();
 					LeaveCritSection(pThread->m_threadsync);
 				}
+			}
 
 			for (int i = 0; i < 2; ++i) {
 				long long limit = m_lastLimits[i];
 
 				if (limit == -1) {
-					for (iter = m_sInstanceList.begin(); iter != m_sInstanceList.end(); iter++) {
-						CServerThread *pThread = *iter;
+					for (auto & pThread : m_sInstanceList) {
 						EnterCritSection(pThread->m_threadsync);
 						pThread->m_SlQuotas[i].nBytesAllowedToTransfer = -1;
 						pThread->m_SlQuotas[i].nTransferred = 0;
@@ -519,24 +510,20 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 
 				std::list<CServerThread *> fullUsageList;
 
-				for (iter = m_sInstanceList.begin(); iter != m_sInstanceList.end(); ++iter) {
-					CServerThread *pThread = *iter;
+				for (auto & pThread : m_sInstanceList) {
 					EnterCritSection(pThread->m_threadsync);
 					long long r = pThread->m_SlQuotas[i].nBytesAllowedToTransfer - pThread->m_SlQuotas[i].nTransferred;
-					if ( r > 0 && pThread->m_SlQuotas[i].nBytesAllowedToTransfer <= nThreadLimit)
-					{
+					if ( r > 0 && pThread->m_SlQuotas[i].nBytesAllowedToTransfer <= nThreadLimit) {
 						pThread->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 						nRemaining -= pThread->m_SlQuotas[i].nTransferred;
 						pThread->m_SlQuotas[i].nTransferred = 0;
 					}
-					else if (r > 0 && pThread->m_SlQuotas[i].nTransferred < nThreadLimit)
-					{
+					else if (r > 0 && pThread->m_SlQuotas[i].nTransferred < nThreadLimit) {
 						pThread->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 						nRemaining -= pThread->m_SlQuotas[i].nTransferred;
 						pThread->m_SlQuotas[i].nTransferred = 0;
 					}
-					else
-					{
+					else {
 						fullUsageList.push_back(pThread);
 						// Don't unlock thread here, do it later
 						continue;
@@ -544,19 +531,14 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 					LeaveCritSection(pThread->m_threadsync);
 				}
 
-				// fullUsageList now contains all threads which did use up its assigned quota
-				std::list<CServerThread *> fullUsageList2;
-				if (!fullUsageList.empty())
-				{
+				// fullUsageList now contains all threads which did use up their assigned quota
+				if (!fullUsageList.empty()) {
+					std::list<CServerThread *> fullUsageList2;
 					nThreadLimit = nRemaining / fullUsageList.size();
-					for (iter = fullUsageList.begin(); iter != fullUsageList.end(); iter++)
-					{
-						CServerThread *pThread = *iter;
-
+					for (auto & pThread : fullUsageList) {
 						// Thread has already been locked
 						long long r = pThread->m_SlQuotas[i].nBytesAllowedToTransfer - pThread->m_SlQuotas[i].nTransferred;
-						if (r > 0)
-						{
+						if (r > 0) {
 							if (pThread->m_SlQuotas[i].nTransferred > nThreadLimit)
 								pThread->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 							else
@@ -564,8 +546,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 							pThread->m_SlQuotas[i].nTransferred = 0;
 							nRemaining -= pThread->m_SlQuotas[i].nBytesAllowedToTransfer;
 						}
-						else
-						{
+						else {
 							fullUsageList2.push_back(pThread);
 							// Don't unlock thread here either, do it later
 							continue;
@@ -573,12 +554,9 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 						LeaveCritSection(pThread->m_threadsync);
 					}
 
-					if (!fullUsageList2.empty())
-					{
+					if (!fullUsageList2.empty()) {
 						nThreadLimit = nRemaining / fullUsageList2.size();
-						for (iter = fullUsageList2.begin(); iter != fullUsageList2.end(); iter++)
-						{
-							CServerThread *pThread = *iter;
+						for (auto & pThread : fullUsageList2) {
 							pThread->m_SlQuotas[i].nTransferred = 0;
 							pThread->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 
@@ -593,8 +571,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 		}
 		ProcessNewSlQuota();
 	}
-	else if (m_pExternalIpCheck && wParam == m_pExternalIpCheck->GetTimerID())
-	{
+	else if (m_pExternalIpCheck && wParam == m_pExternalIpCheck->GetTimerID()) {
 		EnterCritSection(m_threadsync);
 		m_pExternalIpCheck->OnTimer();
 		LeaveCritSection(m_threadsync);
@@ -694,15 +671,10 @@ void CServerThread::ProcessNewSlQuota()
 {
 	EnterCritSection(m_threadsync);
 
-	std::map<int, CControlSocket *>::iterator iter;
-
-	for (int i = 0; i < 2; i++)
-	{
-		if (m_SlQuotas[i].nBytesAllowedToTransfer == -1)
-		{
-			for (iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); iter++)
-			{
-				CControlSocket *pControlSocket = iter->second;
+	for (int i = 0; i < 2; ++i) {
+		if (m_SlQuotas[i].nBytesAllowedToTransfer == -1) {
+			for (auto & it : m_LocalUserIDs ) {
+				CControlSocket *pControlSocket = it.second;
 				pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer = -1;
 				pControlSocket->m_SlQuotas[i].nTransferred = 0;
 			}
@@ -714,46 +686,36 @@ void CServerThread::ProcessNewSlQuota()
 
 		std::list<CControlSocket *> fullUsageList;
 
-		for (iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); iter++)
-		{
-			CControlSocket *pControlSocket = iter->second;
+		for (auto & it : m_LocalUserIDs ) {
+			CControlSocket *pControlSocket = it.second;
 			long long r = pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer - pControlSocket->m_SlQuotas[i].nTransferred;
-			if (pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer == -1)
-			{
+			if (pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer == -1) {
 				pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 				pControlSocket->m_SlQuotas[i].nTransferred = 0;
 			}
-			else if (r > 0 && pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer <= nThreadLimit)
-			{
+			else if (r > 0 && pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer <= nThreadLimit) {
 				pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 				nRemaining -= pControlSocket->m_SlQuotas[i].nTransferred;
 				pControlSocket->m_SlQuotas[i].nTransferred = 0;
 			}
-			else if (r > 0 && pControlSocket->m_SlQuotas[i].nTransferred < nThreadLimit)
-			{
+			else if (r > 0 && pControlSocket->m_SlQuotas[i].nTransferred < nThreadLimit) {
 				pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 				nRemaining -= pControlSocket->m_SlQuotas[i].nTransferred;
 				pControlSocket->m_SlQuotas[i].nTransferred = 0;
 			}
-			else
-			{
+			else {
 				fullUsageList.push_back(pControlSocket);
 				continue;
 			}
 		}
 
-		std::list<CControlSocket *> fullUsageList2;
-		if (!fullUsageList.empty())
-		{
-			std::list<CControlSocket *>::iterator iter;
+		if (!fullUsageList.empty()) {
+			std::list<CControlSocket *> fullUsageList2;
 
 			nThreadLimit = nRemaining / fullUsageList.size();
-			for (iter = fullUsageList.begin(); iter != fullUsageList.end(); iter++)
-			{
-				CControlSocket *pControlSocket = *iter;
+			for (auto & pControlSocket : fullUsageList ) {
 				long long r = pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer - pControlSocket->m_SlQuotas[i].nTransferred;
-				if (r)
-				{
+				if (r) {
 					if (pControlSocket->m_SlQuotas[i].nTransferred > nThreadLimit)
 						pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 					else
@@ -761,19 +723,15 @@ void CServerThread::ProcessNewSlQuota()
 					pControlSocket->m_SlQuotas[i].nTransferred = 0;
 					nRemaining -= pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer;
 				}
-				else
-				{
+				else {
 					fullUsageList2.push_back(pControlSocket);
 					continue;
 				}
 			}
 
-			if (!fullUsageList2.empty())
-			{
+			if (!fullUsageList2.empty()) {
 				nThreadLimit = nRemaining / fullUsageList2.size();
-				for (iter = fullUsageList2.begin(); iter != fullUsageList2.end(); iter++)
-				{
-					CControlSocket *pControlSocket = *iter;
+				for (auto & pControlSocket : fullUsageList2 ) {
 					pControlSocket->m_SlQuotas[i].nTransferred = 0;
 					pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 				}
@@ -781,10 +739,8 @@ void CServerThread::ProcessNewSlQuota()
 		}
 	}
 
-	for (iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); iter++)
-	{
-		CControlSocket *pControlSocket = iter->second;
-		pControlSocket->Continue();
+	for (auto & it : m_LocalUserIDs) {
+		it.second->Continue();
 	}
 
 	LeaveCritSection(m_threadsync);
@@ -793,15 +749,15 @@ void CServerThread::ProcessNewSlQuota()
 void CServerThread::GatherTransferedBytes()
 {
 	EnterCritSection(m_threadsync);
-	for (std::map<int, CControlSocket *>::iterator iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); ++iter) {
+	for (auto & it : m_LocalUserIDs) {
 		for (int i = 0; i < 2; ++i) {
-			if (iter->second->m_SlQuotas[i].nBytesAllowedToTransfer > -1) {
-				if (iter->second->m_SlQuotas[i].bBypassed)
-					iter->second->m_SlQuotas[i].nTransferred = 0;
+			if (it.second->m_SlQuotas[i].nBytesAllowedToTransfer > -1) {
+				if (it.second->m_SlQuotas[i].bBypassed)
+					it.second->m_SlQuotas[i].nTransferred = 0;
 				else
-					m_SlQuotas[i].nTransferred += iter->second->m_SlQuotas[i].nTransferred;
+					m_SlQuotas[i].nTransferred += it.second->m_SlQuotas[i].nTransferred;
 			}
-			iter->second->m_SlQuotas[i].bBypassed = false;
+			it.second->m_SlQuotas[i].bBypassed = false;
 		}
 	}
 	LeaveCritSection(m_threadsync);

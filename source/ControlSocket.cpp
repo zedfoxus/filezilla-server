@@ -2448,16 +2448,16 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 
 void CControlSocket::Continue()
 {
-	if (m_SlQuotas[download].bContinue)
-	{
-		TriggerEvent(FD_WRITE);
+	if (m_SlQuotas[download].bContinue) {
+		if( m_nSendBufferLen ) {
+			TriggerEvent(FD_WRITE);
+		}
 		if (m_transferstatus.socket && m_transferstatus.socket->Started())
 			m_transferstatus.socket->TriggerEvent(FD_WRITE);
 		m_SlQuotas[download].bContinue = false;
 	}
 
-	if (m_SlQuotas[upload].bContinue)
-	{
+	if (m_SlQuotas[upload].bContinue) {
 		TriggerEvent(FD_READ);
 		if (m_transferstatus.socket && m_transferstatus.socket->Started())
 			m_transferstatus.socket->TriggerEvent(FD_READ);
@@ -2474,7 +2474,7 @@ long long CControlSocket::GetSpeedLimit(sltype mode)
 	if (nLimit > 0) {
 		nLimit *= 100;
 		if (m_SlQuotas[mode].nTransferred >= nLimit) {
-			m_SlQuotas[mode].bContinue = TRUE;
+			m_SlQuotas[mode].bContinue = true;
 			return 0;
 		}
 		else {
@@ -2484,14 +2484,14 @@ long long CControlSocket::GetSpeedLimit(sltype mode)
 	else
 		nLimit = -1;
 	if (m_status.user.BypassServerSpeedLimit(mode))
-		m_SlQuotas[mode].bBypassed = TRUE;
+		m_SlQuotas[mode].bBypassed = true;
 	else if (m_SlQuotas[mode].nBytesAllowedToTransfer > -1) {
 		if (nLimit == -1 || nLimit > (m_SlQuotas[mode].nBytesAllowedToTransfer - m_SlQuotas[mode].nTransferred))
 			nLimit = std::max(0ll, m_SlQuotas[mode].nBytesAllowedToTransfer - m_SlQuotas[mode].nTransferred);
 	}
 
 	if (!nLimit)
-		m_SlQuotas[mode].bContinue = TRUE;
+		m_SlQuotas[mode].bContinue = true;
 
 	return nLimit;
 }

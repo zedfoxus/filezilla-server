@@ -1572,7 +1572,7 @@ int CAsyncSocketEx::GetLastError()
 
 BOOL CAsyncSocketEx::TriggerEvent(long lEvent)
 {
-	if (m_SocketData.hSocket==INVALID_SOCKET)
+	if (m_SocketData.hSocket == INVALID_SOCKET)
 		return FALSE;
 
 	ASSERT(m_pLocalAsyncSocketExThreadData);
