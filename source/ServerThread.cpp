@@ -192,14 +192,12 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 
 	CStdString ip;
 	UINT port = 0;
-	if (socket->GetPeerName(ip, port))
-	{
+	if (socket->GetPeerName(ip, port)) {
 		if (socket->GetFamily() == AF_INET6)
 			ip = GetIPV6ShortForm(ip);
 		socket->m_RemoteIP = ip;
 	}
-	else
-	{
+	else {
 		socket->m_RemoteIP = _T("ip unknown");
 		socket->SendStatus(_T("Can't get remote IP, disconnected"), 1);
 		socket->Close();
@@ -208,8 +206,7 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 	}
 	EnterCritSection(m_GlobalThreadsync);
 	int userid = CalcUserID();
-	if (userid == -1)
-	{
+	if (userid == -1) {
 		LeaveCritSection(m_GlobalThreadsync);
 		socket->SendStatus(_T("Refusing connection, server too busy!"), 1);
 		socket->Send(_T("421 Server too busy, closing connection. Please retry later!"));
@@ -910,4 +907,16 @@ void CServerThread::OnPermissionsUpdated()
 		}
 	}
 	LeaveCritSection(m_threadsync);
+}
+
+long long CServerThread::GetInitialSpeedLimit(int mode)
+{
+	long long ret;
+	EnterCritSection(m_threadsync);
+	ret = m_SlQuotas[mode].nBytesAllowedToTransfer;
+	if( ret > -1 ) {
+		ret /= m_LocalUserIDs.size() + 1;
+	}
+	LeaveCritSection(m_threadsync);
+	return ret;
 }

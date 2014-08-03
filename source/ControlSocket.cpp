@@ -51,9 +51,9 @@ CControlSocket::CControlSocket(CServerThread & owner)
 
 	for (int i = 0; i < 2; ++i) {
 		m_SlQuotas[i].bContinue = false;
-		m_SlQuotas[i].nBytesAllowedToTransfer = -1;
+		m_SlQuotas[i].nBytesAllowedToTransfer = owner.GetInitialSpeedLimit(i);
 		m_SlQuotas[i].nTransferred = 0;
-		m_SlQuotas[i].bBypassed = true;
+		m_SlQuotas[i].bBypassed = false;
 	}
 
 	for (int i = 0; i < 3; i++)
@@ -2486,7 +2486,7 @@ long long CControlSocket::GetSpeedLimit(sltype mode)
 	if (m_status.user.BypassServerSpeedLimit(mode))
 		m_SlQuotas[mode].bBypassed = true;
 	else if (m_SlQuotas[mode].nBytesAllowedToTransfer > -1) {
-		if (nLimit == -1 || nLimit > (m_SlQuotas[mode].nBytesAllowedToTransfer - m_SlQuotas[mode].nTransferred))
+		if (nLimit <= -1 || nLimit > (m_SlQuotas[mode].nBytesAllowedToTransfer - m_SlQuotas[mode].nTransferred))
 			nLimit = std::max(0ll, m_SlQuotas[mode].nBytesAllowedToTransfer - m_SlQuotas[mode].nTransferred);
 	}
 
