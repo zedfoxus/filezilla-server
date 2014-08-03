@@ -96,7 +96,7 @@ struct t_Option
 	BOOL bOnlyLocal; //If TRUE, setting can only be changed from local connections
 };
 
-const DWORD SERVER_VERSION = 0x00094500;
+const DWORD SERVER_VERSION = 0x00094600;
 const DWORD PROTOCOL_VERSION = 0x00010F00;
 
 //												Name					Type		Not remotely

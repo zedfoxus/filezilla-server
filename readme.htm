@@ -1,4 +1,4 @@
-<p align="center"><b><u>FileZilla Server version 0.9.45 beta</u></b></p>
+<p align="center"><b><u>FileZilla Server version 0.9.46 beta</u></b></p>
 <p align="center">Copyright 2001-2014<br>
 by <a href="mailto:tim.kosse@filezilla-project.org">Tim Kosse</a><a href="https://filezilla-project.org/"><br>
 https://filezilla-project.org/</a></p>
@@ -67,6 +67,18 @@ as restoring it to normal size.</p>
 </table>
 <p align="left"><b><u>Version History:</u></b></p>
 <p>For a more detailed list of changes, please have a look at the SVN changelog located at <a href="https://filezilla-project.org/changelog.php?type=2">https://filezilla-project.org/changelog.php?type=2</a>.</p>
+<p><b>Version 0.9.46</b></p>
+<blockquote>
+  <u>New features and important changes:</u>
+  <ul>
+    <li>FTP over TLS: Disallow insecure and weak cipher suites. Algorithms no longer supported include 3DES, RC4, MD5</li>
+    <li>Small performance improvements</li>
+  </ul>
+  <u>Bug fixes:</u>
+  <ul>
+    <li>Fix stalling or improperly terminated connections when using FTP over TLS</li>
+    <li>Fix crash with enabled speed limits</li>
+  </ul>
 <p><b>Version 0.9.45</b></p>
 <blockquote>
   <u>New features and important changes:</u>
