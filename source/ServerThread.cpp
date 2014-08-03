@@ -181,7 +181,7 @@ int CServerThread::CalcUserID()
 
 void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 {
-	CControlSocket *socket = new CControlSocket(this);
+	CControlSocket *socket = new CControlSocket(*this);
 	if (!socket->Attach(sockethandle))
 	{
 		socket->SendStatus(_T("Failed to attach socket."), 1);

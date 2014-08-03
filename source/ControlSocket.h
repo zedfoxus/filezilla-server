@@ -19,12 +19,6 @@
 #if !defined(AFX_CONTROLSOCKET_H__17DD46FD_8A4A_4394_9F90_C14BA65F6BF6__INCLUDED_)
 #define AFX_CONTROLSOCKET_H__17DD46FD_8A4A_4394_9F90_C14BA65F6BF6__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-// ControlSocket.h : Header-Datei
-//
-
 #include "hash_thread.h"
 #include "Permissions.h"
 
@@ -53,22 +47,22 @@ public:
 
 // Operationen
 public:
-	CControlSocket(CServerThread *pOwner);
+	CControlSocket(CServerThread & owner);
 	virtual ~CControlSocket();
 
 // Überschreibungen
 public:
-	CServerThread * m_pOwner;
+	CServerThread & m_owner;
 	CStdString m_RemoteIP;
 	void WaitGoOffline(bool wait = true);
-	BOOL m_bWaitGoOffline;
+	BOOL m_bWaitGoOffline{};
 	void CheckForTimeout();
 	void ForceClose(int nReason);
 	CTransferSocket* GetTransferSocket();
 	void ProcessTransferMsg();
 	void ParseCommand();
 	t_command MapCommand(CStdString const& command, CStdString const& args);
-	int m_userid;
+	int m_userid{};
 	BOOL Send(LPCTSTR str, bool sendStatus = true);
 	void SendStatus(LPCTSTR status,int type);
 	BOOL GetCommand(CStdString &command, CStdString &args);
@@ -104,39 +98,41 @@ protected:
 
 	virtual int OnLayerCallback(std::list<t_callbackMsg>& callbacks);
 
-	CAsyncSslSocketLayer *m_pSslLayer;
+	CAsyncSslSocketLayer *m_pSslLayer{};
 
 	std::list<CStdStringA> m_RecvLineBuffer;
 	char m_RecvBuffer[2048];
-	int m_nRecvBufferPos;
-	char *m_pSendBuffer;
-	int m_nSendBufferLen;
+	int m_nRecvBufferPos{};
+	char *m_pSendBuffer{};
+	int m_nSendBufferLen{};
 
-	int m_nTelnetSkip;
-	BOOL m_bQuitCommand;
+	int m_nTelnetSkip{};
+	BOOL m_bQuitCommand{};
 	SYSTEMTIME m_LastCmdTime, m_LastTransferTime, m_LoginTime;
 	static std::map<CStdString, int> m_UserCount;
 	CStdString m_CurrentServerDir;
 	static CCriticalSectionWrapper m_Sync;
+
 	struct t_status
 	{
-		BOOL loggedon;
+		BOOL loggedon{};
 		CStdString username;
 		CUser user;
 		CStdString ip;
 
-		int hammerValue;
+		int hammerValue{};
 	} m_status;
+
 	struct t_transferstatus
 	{
-		int pasv;
-		_int64 rest;
-		int type;
+		int pasv{-1};
+		_int64 rest{0};
+		int type{-1};
 		CStdString ip;
-		int port;
-		CTransferSocket *socket;
-		bool usedResolvedIP;
-		int family;
+		int port{-1};
+		CTransferSocket *socket{};
+		bool usedResolvedIP{};
+		int family{AF_UNSPEC};
 		CStdString resource;
 	} m_transferstatus;
 
@@ -149,12 +145,12 @@ protected:
 		mode_zlib
 	};
 
-	TransferMode m_transferMode;
-	int m_zlibLevel;
+	TransferMode m_transferMode{mode_stream};
+	int m_zlibLevel{};
 
-	int m_antiHammeringWaitTime;
+	int m_antiHammeringWaitTime{};
 
-	bool m_bProtP;
+	bool m_bProtP{};
 
 	void ParseMlstOpts(CStdString args);
 	void ParseHashOpts(CStdString args);
@@ -162,9 +158,9 @@ protected:
 	// Enabled MLST facts
 	bool m_facts[4];
 
-	bool m_shutdown;
+	bool m_shutdown{};
 
-	int m_hash_id;
+	int m_hash_id{};
 
 	enum CHashThread::_algorithm m_hash_algorithm;
 

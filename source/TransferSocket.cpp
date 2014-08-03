@@ -59,7 +59,7 @@ CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 
 	m_hFile = INVALID_HANDLE_VALUE;
 
-	m_nBufSize = (int)m_pOwner->m_pOwner->m_pOptions->GetOptionVal(OPTION_BUFFERSIZE);
+	m_nBufSize = (int)m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_BUFFERSIZE);
 
 	m_useZlib = false;
 	memset(&m_zlibStream, 0, sizeof(m_zlibStream));
@@ -243,7 +243,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				if (nLimit > -1 && GetState() != aborted)
 					m_pOwner->m_SlQuotas[download].nTransferred += numsent;
 
-				((CServerThread *)m_pOwner->m_pOwner)->IncSendCount(numsent);
+				m_pOwner->m_owner.IncSendCount(numsent);
 				m_wasActiveSinceCheck = true;
 				m_nBufferPos += numsent;
 
@@ -287,7 +287,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				if (nLimit > -1 && GetState() != aborted)
 					m_pOwner->m_SlQuotas[download].nTransferred += numsent;
 
-				((CServerThread *)m_pOwner->m_pOwner)->IncSendCount(numsent);
+				m_pOwner->m_owner.IncSendCount(numsent);
 				m_wasActiveSinceCheck = true;
 				if (numsent < numsend)
 					m_nBufferPos += numsent;
@@ -431,7 +431,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				if (nLimit > -1 && GetState() != aborted)
 					m_pOwner->m_SlQuotas[download].nTransferred += numsent;
 
-				((CServerThread *)m_pOwner->m_pOwner)->IncSendCount(numsent);
+				m_pOwner->m_owner.IncSendCount(numsent);
 				m_wasActiveSinceCheck = true;
 				m_nBufferPos += numsent;
 
@@ -520,7 +520,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				if (nLimit > -1 && GetState() != aborted)
 					m_pOwner->m_SlQuotas[download].nTransferred += numsent;
 
-				((CServerThread *)m_pOwner->m_pOwner)->IncSendCount(numsent);
+				m_pOwner->m_owner.IncSendCount(numsent);
 				m_wasActiveSinceCheck = true;
 
 				//Check if there are other commands in the command queue.
@@ -564,7 +564,7 @@ void CTransferSocket::OnConnect(int nErrorCode)
 		return;
 	}
 
-	int size = (int)m_pOwner->m_pOwner->m_pOptions->GetOptionVal(OPTION_BUFFERSIZE2);
+	int size = (int)m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_BUFFERSIZE2);
 	if (size > 0)
 	{
 		if (m_nMode == TRANSFERMODE_RECEIVE)
@@ -644,7 +644,7 @@ void CTransferSocket::OnAccept(int nErrorCode)
 	Attach(socket);
 	m_bAccepted = TRUE;
 
-	int size = (int)m_pOwner->m_pOwner->m_pOptions->GetOptionVal(OPTION_BUFFERSIZE2);
+	int size = (int)m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_BUFFERSIZE2);
 	if (size > 0)
 	{
 		if (m_nMode == TRANSFERMODE_RECEIVE)
@@ -732,7 +732,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			EndTransfer(0);
 			return;
 		}
-		((CServerThread *)m_pOwner->m_pOwner)->IncRecvCount(numread);
+		m_pOwner->m_owner.IncRecvCount(numread);
 
 		if (nLimit != -1 && GetState() != aborted)
 			m_pOwner->m_SlQuotas[upload].nTransferred += numread;
@@ -823,7 +823,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		optStrictFilter = OPTION_NOOUTFXPSTRICT;
 	}
 
-	if (!m_pOwner->m_pOwner->m_pOptions->GetOptionVal(optAllowServerToServer))
+	if (!m_pOwner->m_owner.m_pOptions->GetOptionVal(optAllowServerToServer))
 	{ //Check if the IP of the remote machine is valid
 		CStdString OwnerIP, TransferIP;
 		UINT port = 0;
@@ -852,7 +852,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 				TransferIP = GetIPV6LongForm(TransferIP);
 			}
 
-			if (!m_pOwner->m_pOwner->m_pOptions->GetOptionVal(optStrictFilter))
+			if (!m_pOwner->m_owner.m_pOptions->GetOptionVal(optStrictFilter))
 			{
 				if (GetFamily() == AF_INET6)
 				{
@@ -889,7 +889,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 	{
 		ASSERT(m_Filename != _T(""));
 		int shareMode = FILE_SHARE_READ;
-		if (m_pOwner->m_pOwner->m_pOptions->GetOptionVal(OPTION_SHAREDWRITE))
+		if (m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_SHAREDWRITE))
 			shareMode |= FILE_SHARE_WRITE;
 		m_hFile = CreateFile(m_Filename, GENERIC_READ, shareMode, 0, OPEN_EXISTING, 0, 0);
 		if (m_hFile == INVALID_HANDLE_VALUE)
@@ -940,7 +940,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		{
 			ASSERT(m_Filename != _T(""));
 			int shareMode = FILE_SHARE_READ;
-			if (m_pOwner->m_pOwner->m_pOptions->GetOptionVal(OPTION_SHAREDWRITE))
+			if (m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_SHAREDWRITE))
 				shareMode |= FILE_SHARE_WRITE;
 			m_hFile = CreateFile(m_Filename, GENERIC_WRITE, shareMode, 0, OPEN_ALWAYS, 0, 0);
 			if (m_hFile == INVALID_HANDLE_VALUE)
@@ -973,7 +973,7 @@ BOOL CTransferSocket::CheckForTimeout()
 	if (!m_bReady)
 		return FALSE;
 
-	_int64 timeout = m_pOwner->m_pOwner->m_pOptions->GetOptionVal(OPTION_TIMEOUT);
+	_int64 timeout = m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TIMEOUT);
 
 	SYSTEMTIME sCurrentTime;
 	GetSystemTime(&sCurrentTime);
@@ -1111,7 +1111,7 @@ void CTransferSocket::EndTransfer(int status)
 
 	m_bSentClose = TRUE;
 	m_status = status;
-	m_pOwner->m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
+	m_pOwner->m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
 }
 
 void CTransferSocket::CloseFile()

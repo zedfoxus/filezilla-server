@@ -41,34 +41,13 @@ static char THIS_FILE[] = __FILE__;
 std::map<CStdString, int> CControlSocket::m_UserCount;
 CCriticalSectionWrapper CControlSocket::m_Sync;
 
-CControlSocket::CControlSocket(CServerThread *pOwner)
-	: m_hash_algorithm(CHashThread::SHA1)
+CControlSocket::CControlSocket(CServerThread & owner)
+	: m_owner(owner)
+	, m_hash_algorithm(CHashThread::SHA1)
 {
-	m_status.loggedon = FALSE;
-	m_status.hammerValue = 0;
-	m_transferstatus.socket = NULL;
-	m_transferstatus.ip = _T("");
-	m_transferstatus.port = -1;
-	m_transferstatus.pasv = -1;
-	m_transferstatus.rest = 0;
-	m_transferstatus.type = -1;
-	m_transferstatus.family = AF_UNSPEC;
-	m_bWaitGoOffline = FALSE;
 	GetSystemTime(&m_LastTransferTime);
 	GetSystemTime(&m_LastCmdTime);
 	GetSystemTime(&m_LoginTime);
-	m_bQuitCommand = FALSE;
-
-	ASSERT(pOwner);
-	m_pOwner = pOwner;
-
-	m_nTelnetSkip = 0;
-	m_nRecvBufferPos = 0;
-
-	m_pSendBuffer = NULL;
-	m_nSendBufferLen = 0;
-
-	m_pSslLayer = NULL;
 
 	for (int i = 0; i < 2; ++i) {
 		m_SlQuotas[i].bContinue = false;
@@ -77,37 +56,23 @@ CControlSocket::CControlSocket(CServerThread *pOwner)
 		m_SlQuotas[i].bBypassed = true;
 	}
 
-	m_transferMode = mode_stream;
-
-	m_zlibLevel = 8;
-
-	m_antiHammeringWaitTime = 0;
-	m_bProtP = false;
-
 	for (int i = 0; i < 3; i++)
 		m_facts[i] = true;
 	m_facts[fact_perm] = false;
-
-	m_shutdown = false;
-
-	m_hash_id = 0;
-
-	m_userid = 0;
 }
 
 CControlSocket::~CControlSocket()
 {
-	if (m_status.loggedon)
-	{
+	if (m_status.loggedon) {
 		DecUserCount(m_status.username);
-		m_pOwner->DecIpCount(m_status.ip);
+		m_owner.DecIpCount(m_status.ip);
 		m_status.loggedon = FALSE;
 	}
 	t_connop *op = new t_connop;
 	op->data = 0;
 	op->op = USERCONTROL_CONNOP_REMOVE;
 	op->userid = m_userid;
-	m_pOwner->SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
+	m_owner.SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
 	ResetTransferstatus(false);
 
 	delete [] m_pSendBuffer;
@@ -128,7 +93,7 @@ void CControlSocket::OnReceive(int nErrorCode)
 			//Control connection has been closed
 			Close();
 			SendStatus(_T("disconnected."), 0);
-			m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+			m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 		}
 		return;
 	}
@@ -148,7 +113,7 @@ void CControlSocket::OnReceive(int nErrorCode)
 		if (nLimit > -1)
 			m_SlQuotas[upload].nTransferred += numread;
 
-		m_pOwner->IncRecvCount(numread);
+		m_owner.IncRecvCount(numread);
 		//Parse all received bytes
 		for (int i = 0; i < numread; i++)
 		{
@@ -195,7 +160,7 @@ void CControlSocket::OnReceive(int nErrorCode)
 			//Control connection has been closed
 			Close();
 			SendStatus(_T("disconnected."), 0);
-			m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+			m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 
 			delete [] buffer;
 			return;
@@ -221,7 +186,7 @@ BOOL CControlSocket::GetCommand(CStdString &command, CStdString &args)
 
 	//Hide passwords if the server admin wants to.
 	if (!str2.Left(5).CompareNoCase(_T("PASS ")))
-	{	if (m_pOwner->m_pOptions->GetOptionVal(OPTION_LOGSHOWPASS))
+	{	if (m_owner.m_pOptions->GetOptionVal(OPTION_LOGSHOWPASS))
 			SendStatus(str2, 2);
 		else
 		{
@@ -280,7 +245,7 @@ void CControlSocket::SendStatus(LPCTSTR status, int type)
 	msg->type = type;
 	msg->status = new TCHAR[_tcslen(status) + 1];
 	_tcscpy(msg->status, status);
-	m_pOwner->SendNotification(FSM_STATUSMESSAGE, (LPARAM)msg);
+	m_owner.SendNotification(FSM_STATUSMESSAGE, (LPARAM)msg);
 }
 
 BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
@@ -298,7 +263,7 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 		if (utf8.empty()) {
 			Close();
 			SendStatus(_T("Failed to convert reply to UTF-8"), 1);
-			m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+			m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 
 			return false;
 		}
@@ -350,7 +315,7 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 		delete [] buffer;
 		Close();
 		SendStatus(_T("could not send reply, disconnected."), 0);
-		m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+		m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 		return FALSE;
 	}
 
@@ -375,7 +340,7 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 	}
 	delete [] buffer;
 
-	m_pOwner->IncSendCount(res);
+	m_owner.IncSendCount(res);
 	return TRUE;
 }
 
@@ -383,7 +348,7 @@ void CControlSocket::OnClose(int nErrorCode)
 {
 	Close();
 	SendStatus(_T("disconnected."), 0);
-	m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+	m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 	CAsyncSocketEx::OnClose(nErrorCode);
 }
 
@@ -499,14 +464,14 @@ t_command CControlSocket::MapCommand(CStdString const& command, CStdString const
 		if( it->second.bHasargs && args.empty() ) {
 			Send(_T("501 Syntax error"));
 			if (!m_RecvLineBuffer.empty()) {
-				m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
+				m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
 			}
 		}
 		//Can it be issued before logon?
 		else if( !m_status.loggedon && !it->second.bValidBeforeLogon) {
 			Send(_T("530 Please log in with USER and PASS first."));
 			if (!m_RecvLineBuffer.empty()) {
-				m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
+				m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
 			}
 		}
 		else {
@@ -518,7 +483,7 @@ t_command CControlSocket::MapCommand(CStdString const& command, CStdString const
 		//Command not recognized
 		Send(_T("500 Syntax error, command unrecognized."));
 		if (!m_RecvLineBuffer.empty())
-			m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
+			m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
 	}
 
 	return ret;
@@ -551,19 +516,19 @@ void CControlSocket::ParseCommand()
 			{
 				GetSystemTime(&m_LoginTime);
 				DecUserCount(m_status.username);
-				m_pOwner->DecIpCount(m_status.ip);
+				m_owner.DecIpCount(m_status.ip);
 				t_connop *op = new t_connop;
 				op->op = USERCONTROL_CONNOP_CHANGEUSER;
 				t_connectiondata_changeuser *conndata = new t_connectiondata_changeuser;
 				op->data = conndata;
 				op->userid = m_userid;
-				m_pOwner->SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
+				m_owner.SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
 
 				m_status.loggedon = FALSE;
 				m_CurrentServerDir = _T("");
 			}
-			if (m_pOwner->m_pOptions->GetOptionVal(OPTION_ENABLESSL) && m_pOwner->m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL) &&
-				m_pOwner->m_pOptions->GetOptionVal(OPTION_SSLFORCEEXPLICIT) && !m_pSslLayer)
+			if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLESSL) && m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL) &&
+				m_owner.m_pOptions->GetOptionVal(OPTION_SSLFORCEEXPLICIT) && !m_pSslLayer)
 			{
 				Send(_T("530 Have to use explicit SSL/TLS before logging on."));
 				break;
@@ -573,7 +538,7 @@ void CControlSocket::ParseCommand()
 			m_status.username = args;
 			UpdateUser();
 			if (!m_pSslLayer) {
-				if ( m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, _T(""), true) && m_status.user.ForceSsl()) {
+				if ( m_owner.m_pPermissions->CheckUserLogin(m_status.user, _T(""), true) && m_status.user.ForceSsl()) {
 					m_status.username = _T("");
 					UpdateUser();
 					Send(_T("530 SSL required"));
@@ -621,7 +586,7 @@ void CControlSocket::ParseCommand()
 				break;
 			}
 
-			int res = m_pOwner->m_pPermissions->ChangeCurrentDir(m_status.user, m_CurrentServerDir, args);
+			int res = m_owner.m_pPermissions->ChangeCurrentDir(m_status.user, m_CurrentServerDir, args);
 			if (!res)
 			{
 				CStdString str;
@@ -722,7 +687,7 @@ void CControlSocket::ParseCommand()
 				break;
 			}
 
-			if (m_pOwner->m_pOptions->GetOptionVal(OPTION_ACTIVE_IGNORELOCAL))
+			if (m_owner.m_pOptions->GetOptionVal(OPTION_ACTIVE_IGNORELOCAL))
 			{
 				CStdString peerAddr;
 				UINT peerPort = 0;
@@ -806,7 +771,7 @@ void CControlSocket::ParseCommand()
 		else if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1)) {
 			Send(_T("503 Bad sequence of commands."));
 		}
-		else if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP) {
+		else if (m_pSslLayer && m_owner.m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP) {
 			Send(_T("521 PROT P required"));
 		}
 		else {
@@ -874,7 +839,7 @@ void CControlSocket::ParseCommand()
 
 			std::list<t_dirlisting> result;
 			CStdString physicalDir, logicalDir;
-			int error = m_pOwner->m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, result, physicalDir, logicalDir
+			int error = m_owner.m_pPermissions->GetDirectoryListing(m_status.user, m_CurrentServerDir, args, result, physicalDir, logicalDir
 				, addFunc, m_facts);
 			if (error & PERMISSION_DENIED) {
 				Send(_T("550 Permission denied."));
@@ -954,7 +919,7 @@ void CControlSocket::ParseCommand()
 	case commands::CDUP:
 		{
 			CStdString dir = _T("..");
-			int res = m_pOwner->m_pPermissions->ChangeCurrentDir(m_status.user, m_CurrentServerDir, dir);
+			int res = m_owner.m_pPermissions->ChangeCurrentDir(m_status.user, m_CurrentServerDir, dir);
 			if (!res) {
 				CStdString str;
 				str.Format(_T("200 CDUP successful. \"%s\" is current directory."), m_CurrentServerDir);
@@ -975,7 +940,7 @@ void CControlSocket::ParseCommand()
 		else if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1)) {
 			Send(_T("503 Bad sequence of commands."));
 		}
-		else if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP) {
+		else if (m_pSslLayer && m_owner.m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP) {
 			Send(_T("521 PROT P required"));
 		}
 		else if (!UnquoteArgs(args)) {
@@ -983,7 +948,7 @@ void CControlSocket::ParseCommand()
 		}
 		else {
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_READ, physicalFile, logicalFile);
+			int error = m_owner.m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_READ, physicalFile, logicalFile);
 			if (error & PERMISSION_DENIED) {
 				Send(_T("550 Permission denied"));
 				ResetTransferstatus();
@@ -1049,7 +1014,7 @@ void CControlSocket::ParseCommand()
 		else if (!m_transferstatus.pasv && (m_transferstatus.ip == _T("") || m_transferstatus.port == -1)) {
 			Send(_T("503 Bad sequence of commands."));
 		}
-		else if (m_pSslLayer && m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP) {
+		else if (m_pSslLayer && m_owner.m_pOptions->GetOptionVal(OPTION_FORCEPROTP) && !m_bProtP) {
 			Send(_T("521 PROT P required"));
 		}
 		else if (!UnquoteArgs(args)) {
@@ -1057,7 +1022,7 @@ void CControlSocket::ParseCommand()
 		}
 		else {
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, (m_transferstatus.rest || cmd.id == commands::APPE) ? FOP_APPEND : FOP_WRITE, physicalFile, logicalFile);
+			int error = m_owner.m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, (m_transferstatus.rest || cmd.id == commands::APPE) ? FOP_APPEND : FOP_WRITE, physicalFile, logicalFile);
 			if (error & PERMISSION_DENIED) {
 				Send(_T("550 Permission denied"));
 				ResetTransferstatus();
@@ -1124,7 +1089,7 @@ void CControlSocket::ParseCommand()
 			}
 
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_LIST, physicalFile, logicalFile);
+			int error = m_owner.m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_LIST, physicalFile, logicalFile);
 			if (error & PERMISSION_DENIED)
 				Send(_T("550 Permission denied"));
 			else if (error & PERMISSION_INVALIDNAME)
@@ -1152,7 +1117,7 @@ void CControlSocket::ParseCommand()
 			}
 
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_DELETE, physicalFile, logicalFile);
+			int error = m_owner.m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_DELETE, physicalFile, logicalFile);
 			if (error & PERMISSION_DENIED)
 				Send(_T("550 Permission denied"));
 			else if (error & PERMISSION_INVALIDNAME)
@@ -1189,7 +1154,7 @@ void CControlSocket::ParseCommand()
 			}
 
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckDirectoryPermissions(m_status.user, args, m_CurrentServerDir, DOP_DELETE, physicalFile, logicalFile);
+			int error = m_owner.m_pPermissions->CheckDirectoryPermissions(m_status.user, args, m_CurrentServerDir, DOP_DELETE, physicalFile, logicalFile);
 			if (error & PERMISSION_DENIED)
 				Send(_T("550 Permission denied"));
 			else if (error & PERMISSION_INVALIDNAME)
@@ -1219,7 +1184,7 @@ void CControlSocket::ParseCommand()
 			}
 
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckDirectoryPermissions(m_status.user, args, m_CurrentServerDir, DOP_CREATE, physicalFile, logicalFile);
+			int error = m_owner.m_pPermissions->CheckDirectoryPermissions(m_status.user, args, m_CurrentServerDir, DOP_CREATE, physicalFile, logicalFile);
 			if (error & PERMISSION_DENIED)
 				Send(_T("550 Can't create directory. Permission denied"));
 			else if (error & PERMISSION_INVALIDNAME)
@@ -1274,7 +1239,7 @@ void CControlSocket::ParseCommand()
 			RenName = _T("");
 
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_DELETE, physicalFile, logicalFile);
+			int error = m_owner.m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_DELETE, physicalFile, logicalFile);
 			if (!error) {
 				RenName = physicalFile;
 				bRenFile = true;
@@ -1286,7 +1251,7 @@ void CControlSocket::ParseCommand()
 			else if (error & PERMISSION_INVALIDNAME)
 				Send(_T("550 Filename invalid."));
 			else {
-				int error2 = m_pOwner->m_pPermissions->CheckDirectoryPermissions(m_status.user, args, m_CurrentServerDir, DOP_DELETE, physicalFile, logicalFile);
+				int error2 = m_owner.m_pPermissions->CheckDirectoryPermissions(m_status.user, args, m_CurrentServerDir, DOP_DELETE, physicalFile, logicalFile);
 				if (!error2) {
 					RenName = physicalFile;
 					bRenFile = false;
@@ -1318,7 +1283,7 @@ void CControlSocket::ParseCommand()
 
 			if (bRenFile) {
 				CStdString physicalFile, logicalFile;
-				int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_CREATENEW, physicalFile, logicalFile);
+				int error = m_owner.m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_CREATENEW, physicalFile, logicalFile);
 				if (error)
 					RenName = _T("");
 				if (error & PERMISSION_DENIED)
@@ -1339,7 +1304,7 @@ void CControlSocket::ParseCommand()
 			}
 			else {
 				CStdString physicalFile, logicalFile;
-				int error = m_pOwner->m_pPermissions->CheckDirectoryPermissions(m_status.user, args, m_CurrentServerDir, DOP_CREATE, physicalFile, logicalFile);
+				int error = m_owner.m_pPermissions->CheckDirectoryPermissions(m_status.user, args, m_CurrentServerDir, DOP_CREATE, physicalFile, logicalFile);
 				if (error)
 					RenName = _T("");
 				if (error & PERMISSION_DENIED)
@@ -1387,7 +1352,7 @@ void CControlSocket::ParseCommand()
 			}
 
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_LIST, physicalFile, logicalFile);
+			int error = m_owner.m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_LIST, physicalFile, logicalFile);
 			if (error & PERMISSION_DENIED)
 				Send(_T("550 Permission denied"));
 			else if (error & PERMISSION_INVALIDNAME)
@@ -1462,7 +1427,7 @@ void CControlSocket::ParseCommand()
 			}
 			int protocol = _ttoi(args.Left(pos));
 
-			bool ipv6Allowed = m_pOwner->m_pOptions->GetOptionVal(OPTION_DISABLE_IPV6) == 0;
+			bool ipv6Allowed = m_owner.m_pOptions->GetOptionVal(OPTION_DISABLE_IPV6) == 0;
 			if (protocol != 1 && (protocol != 2 || !ipv6Allowed))
 			{
 				if (ipv6Allowed)
@@ -1549,7 +1514,7 @@ void CControlSocket::ParseCommand()
 					break;
 				}
 
-				if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_ENABLESSL) || !m_pOwner->m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL))
+				if (!m_owner.m_pOptions->GetOptionVal(OPTION_ENABLESSL) || !m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL))
 				{
 					Send(_T("502 SSL/TLS authentication not allowed"));
 					break;
@@ -1561,7 +1526,7 @@ void CControlSocket::ParseCommand()
 				if (res)
 				{
 					CString error;
-					int res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLCERTFILE)), ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYFILE)), ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYPASS)), &error);
+					int res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLCERTFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLKEYFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLKEYPASS)), &error);
 					if (res == SSL_FAILURE_LOADDLLS)
 						SendStatus(_T("Failed to load SSL libraries"), 1);
 					else if (res == SSL_FAILURE_INITSSL)
@@ -1644,7 +1609,7 @@ void CControlSocket::ParseCommand()
 			args.MakeUpper();
 			if (args == _T("C"))
 			{
-				if (m_pOwner->m_pOptions->GetOptionVal(OPTION_FORCEPROTP))
+				if (m_owner.m_pOptions->GetOptionVal(OPTION_FORCEPROTP))
 					Send(_T("534 This server requires an encrypted data connection with PROT P"));
 				else
 				{
@@ -1681,7 +1646,7 @@ void CControlSocket::ParseCommand()
 			break;
 		if (!Send(_T(" SIZE")))
 			break;
-		if (m_pOwner->m_pOptions->GetOptionVal(OPTION_MODEZ_USE))
+		if (m_owner.m_pOptions->GetOptionVal(OPTION_MODEZ_USE))
 		{
 			if (!Send(_T(" MODE Z")))
 				break;
@@ -1690,7 +1655,7 @@ void CControlSocket::ParseCommand()
 			break;
 		if (!Send(_T(" MLSD")))
 			break;
-		if (m_pOwner->m_pOptions->GetOptionVal(OPTION_ENABLESSL) && (m_pOwner->m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL) || m_pSslLayer))
+		if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLESSL) && (m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL) || m_pSslLayer))
 		{
 			if (!Send(_T(" AUTH SSL")))
 				break;
@@ -1707,7 +1672,7 @@ void CControlSocket::ParseCommand()
 			break;
 		if (!Send(_T(" MFMT")))
 			break;
-		if (m_pOwner->m_pOptions->GetOptionVal(OPTION_ENABLE_HASH))
+		if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLE_HASH))
 		{
 			CStdString hash = _T(" HASH ");
 			hash += _T("SHA-1");
@@ -1734,7 +1699,7 @@ void CControlSocket::ParseCommand()
 		}
 		else if (args == _T("Z") || args == _T("z"))
 		{
-			if (m_pOwner->m_pOptions->GetOptionVal(OPTION_MODEZ_USE) || m_transferMode == mode_zlib)
+			if (m_owner.m_pOptions->GetOptionVal(OPTION_MODEZ_USE) || m_transferMode == mode_zlib)
 			{
 				if (m_transferMode == mode_zlib || CheckIpForZlib())
 				{
@@ -1757,7 +1722,7 @@ void CControlSocket::ParseCommand()
 		if (args.Left(13) == _T("MODE Z LEVEL "))
 		{
 			int level = _ttoi(args.Mid(13));
-			if (m_zlibLevel == level || (level >= m_pOwner->m_pOptions->GetOptionVal(OPTION_MODEZ_LEVELMIN) && level <= m_pOwner->m_pOptions->GetOptionVal(OPTION_MODEZ_LEVELMAX)))
+			if (m_zlibLevel == level || (level >= m_owner.m_pOptions->GetOptionVal(OPTION_MODEZ_LEVELMIN) && level <= m_owner.m_pOptions->GetOptionVal(OPTION_MODEZ_LEVELMAX)))
 			{
 				m_zlibLevel = level;
 				CString str;
@@ -1823,7 +1788,7 @@ void CControlSocket::ParseCommand()
 		{
 			CStdString fact;
 			CStdString logicalName;
-			int res = m_pOwner->m_pPermissions->GetFact(m_status.user, m_CurrentServerDir, args, fact, logicalName, m_facts);
+			int res = m_owner.m_pPermissions->GetFact(m_status.user, m_CurrentServerDir, args, fact, logicalName, m_facts);
 			if (res & PERMISSION_DENIED)
 			{
 				Send(_T("550 Permission denied."));
@@ -1972,7 +1937,7 @@ void CControlSocket::ParseCommand()
 			}
 
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_LIST, physicalFile, logicalFile);
+			int error = m_owner.m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_LIST, physicalFile, logicalFile);
 			if (error & PERMISSION_DENIED)
 				Send(_T("550 Permission denied"));
 			else if (error & PERMISSION_INVALIDNAME)
@@ -1998,7 +1963,7 @@ void CControlSocket::ParseCommand()
 		break;
 	case commands::HASH:
 		{
-			if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_ENABLE_HASH))
+			if (!m_owner.m_pOptions->GetOptionVal(OPTION_ENABLE_HASH))
 			{
 				Send(_T("500 Syntax error, command unrecognized."));
 				break;
@@ -2011,7 +1976,7 @@ void CControlSocket::ParseCommand()
 			}
 
 			CStdString physicalFile, logicalFile;
-			int error = m_pOwner->m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_READ, physicalFile, logicalFile);
+			int error = m_owner.m_pPermissions->CheckFilePermissions(m_status.user, args, m_CurrentServerDir, FOP_READ, physicalFile, logicalFile);
 			if (error & PERMISSION_DENIED)
 			{
 				Send(_T("550 Permission denied"));
@@ -2029,7 +1994,7 @@ void CControlSocket::ParseCommand()
 			}
 			else
 			{
-				int hash_res = m_pOwner->GetHashThread().Hash(physicalFile, m_hash_algorithm, m_hash_id, m_pOwner);
+				int hash_res = m_owner.GetHashThread().Hash(physicalFile, m_hash_algorithm, m_hash_id, &m_owner);
 				if (hash_res == CHashThread::BUSY)
 					Send(_T("450 Another hash operation is already in progress."));
 				else if (hash_res != CHashThread::PENDING)
@@ -2042,7 +2007,7 @@ void CControlSocket::ParseCommand()
 	}
 
 	if (!m_RecvLineBuffer.empty())
-		m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
+		m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
 
 	return;
 }
@@ -2059,7 +2024,7 @@ void CControlSocket::ProcessTransferMsg()
 			GetSystemTime(&m_LastTransferTime);
 
 	if (status == 2 && m_transferstatus.pasv && m_transferstatus.usedResolvedIP)
-		m_pOwner->ExternalIPFailed();
+		m_owner.ExternalIPFailed();
 
 	int mode = m_transferstatus.socket->GetMode();
 	_int64 zlibBytesIn = 0;
@@ -2145,7 +2110,7 @@ void CControlSocket::ForceClose(int nReason)
 
 	if (m_shutdown && nReason == 1) {
 		Close();
-		m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+		m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 		return;
 	}
 
@@ -2172,7 +2137,7 @@ void CControlSocket::ForceClose(int nReason)
 			return;
 	}
 	Close();
-	m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+	m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 }
 
 void CControlSocket::IncUserCount(const CStdString &user)
@@ -2227,7 +2192,7 @@ void CControlSocket::CheckForTimeout()
 	if (m_shutdown)
 		timeout = 3;
 	else
-		timeout = m_pOwner->m_pOptions->GetOptionVal(OPTION_TIMEOUT);
+		timeout = m_owner.m_pOptions->GetOptionVal(OPTION_TIMEOUT);
 	if (!timeout)
 		return;
 	SYSTEMTIME sCurrentTime;
@@ -2244,7 +2209,7 @@ void CControlSocket::CheckForTimeout()
 	}
 	if (m_status.loggedon)
 	{ //Transfer timeout
-		_int64 nNoTransferTimeout=m_pOwner->m_pOptions->GetOptionVal(OPTION_NOTRANSFERTIMEOUT);
+		_int64 nNoTransferTimeout=m_owner.m_pOptions->GetOptionVal(OPTION_NOTRANSFERTIMEOUT);
 		if (!nNoTransferTimeout)
 			return;
 		SystemTimeToFileTime(&m_LastTransferTime, &fLastTime);
@@ -2257,7 +2222,7 @@ void CControlSocket::CheckForTimeout()
 	}
 	else
 	{ //Login timeout
-		_int64 nLoginTimeout=m_pOwner->m_pOptions->GetOptionVal(OPTION_LOGINTIMEOUT);
+		_int64 nLoginTimeout=m_owner.m_pOptions->GetOptionVal(OPTION_LOGINTIMEOUT);
 		if (!nLoginTimeout)
 			return;
 		SystemTimeToFileTime(&m_LoginTime, &fLastTime);
@@ -2340,7 +2305,7 @@ void CControlSocket::OnSend(int nErrorCode)
 		if (!numsent || numsent == SOCKET_ERROR) {
 			Close();
 			SendStatus(_T("could not send reply, disconnected."), 0);
-			m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+			m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 
 			delete [] m_pSendBuffer;
 			m_pSendBuffer = NULL;
@@ -2370,11 +2335,11 @@ void CControlSocket::OnSend(int nErrorCode)
 
 BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 {
-	if (!m_pOwner->m_pPermissions->CheckUserLogin(m_status.user, password, skipPass)) {
+	if (!m_owner.m_pPermissions->CheckUserLogin(m_status.user, password, skipPass)) {
 		AntiHammerIncrease(2);
-		m_pOwner->AntiHammerIncrease(m_RemoteIP);
+		m_owner.AntiHammerIncrease(m_RemoteIP);
 
-		if (m_pOwner->m_pAutoBanManager->RegisterAttempt(m_RemoteIP)) {
+		if (m_owner.m_pAutoBanManager->RegisterAttempt(m_RemoteIP)) {
 			Send(_T("421 Temporarily banned for too many failed login attempts"));
 			ForceClose(-1);
 			return FALSE;
@@ -2390,8 +2355,8 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 		return FALSE;
 	}
 	if (!m_status.user.BypassUserLimit()) {
-		int nMaxUsers = (int)m_pOwner->m_pOptions->GetOptionVal(OPTION_MAXUSERS);
-		if (m_pOwner->GetGlobalNumConnections() > nMaxUsers&&nMaxUsers) {
+		int nMaxUsers = (int)m_owner.m_pOptions->GetOptionVal(OPTION_MAXUSERS);
+		if (m_owner.GetGlobalNumConnections() > nMaxUsers&&nMaxUsers) {
 			SendStatus(_T("Refusing connection. Reason: Max. connection count reached."), 1);
 			Send(_T("421 Too many users are connected, please try again later."));
 			ForceClose(-1);
@@ -2428,7 +2393,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 		return FALSE;
 	}
 
-	int count = m_pOwner->GetIpCount(peerIP);
+	int count = m_owner.GetIpCount(peerIP);
 	if (m_status.user.GetIpLimit() && count >= m_status.user.GetIpLimit()) {
 		CStdString str;
 		if (count==1)
@@ -2441,7 +2406,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 		return FALSE;
 	}
 
-	m_CurrentServerDir = m_pOwner->m_pPermissions->GetHomeDir(m_status.user);
+	m_CurrentServerDir = m_owner.m_pPermissions->GetHomeDir(m_status.user);
 	if (m_CurrentServerDir == _T("")) {
 		Send(_T("550 Could not get home dir!"));
 		ForceClose(-1);
@@ -2461,13 +2426,13 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 		return FALSE;
 	}
 
-	m_pOwner->IncIpCount(peerIP);
+	m_owner.IncIpCount(peerIP);
 	IncUserCount(m_status.username);
 	m_status.loggedon = TRUE;
 
 	GetSystemTime(&m_LastTransferTime);
 
-	m_pOwner->m_pPermissions->AutoCreateDirs(m_status.user);
+	m_owner.m_pPermissions->AutoCreateDirs(m_status.user);
 
 	t_connectiondata_changeuser *conndata = new t_connectiondata_changeuser;
 	t_connop *op = new t_connop;
@@ -2476,7 +2441,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
 	op->userid = m_userid;
 	conndata->user = m_status.username;
 
-	m_pOwner->SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
+	m_owner.SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
 
 	return TRUE;
 }
@@ -2602,10 +2567,10 @@ bool CControlSocket::CheckIpForZlib()
 	if (!bResult)
 		return false;
 
-	if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_MODEZ_ALLOWLOCAL) && !IsRoutableAddress(peerIP))
+	if (!m_owner.m_pOptions->GetOptionVal(OPTION_MODEZ_ALLOWLOCAL) && !IsRoutableAddress(peerIP))
 		return false;
 
-	CStdString ips = m_pOwner->m_pOptions->GetOption(OPTION_MODEZ_DISALLOWED_IPS);
+	CStdString ips = m_owner.m_pOptions->GetOption(OPTION_MODEZ_DISALLOWED_IPS);
 	ips += " ";
 
 	int pos = ips.Find(' ');
@@ -2645,7 +2610,7 @@ void CControlSocket::SendTransferinfoNotification(const char transfermode, const
 	conndata->totalSize = totalSize;
 	op->data = conndata;
 
-	m_pOwner->SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
+	m_owner.SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
 }
 
 int CControlSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
@@ -2662,7 +2627,7 @@ int CControlSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 				{
 					delete [] iter->str;
 					Close();
-					m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+					m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 					return 0;
 				}
 				if (!m_bQuitCommand)
@@ -2709,7 +2674,7 @@ bool CControlSocket::InitImplicitSsl()
 	}
 
 	CString error;
-	res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLCERTFILE)), ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYFILE)), ConvToLocal(m_pOwner->m_pOptions->GetOption(OPTION_SSLKEYPASS)), &error);
+	res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLCERTFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLKEYFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLKEYPASS)), &error);
 	if (res == SSL_FAILURE_LOADDLLS)
 		SendStatus(_T("Failed to load SSL libraries"), 1);
 	else if (res == SSL_FAILURE_INITSSL)
@@ -2747,7 +2712,7 @@ bool CControlSocket::InitImplicitSsl()
 	//Close socket
 	Close();
 	SendStatus(_T("disconnected."), 0);
-	m_pOwner->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
+	m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 
 	return false;
 }
@@ -2772,7 +2737,7 @@ CStdString CControlSocket::GetPassiveIP()
 	BOOL bResult = GetPeerName(peerIP, peerPort);
 	if (bResult)
 	{
-		if (m_pOwner->m_pOptions->GetOptionVal(OPTION_NOEXTERNALIPONLOCAL) && !IsRoutableAddress(peerIP))
+		if (m_owner.m_pOptions->GetOptionVal(OPTION_NOEXTERNALIPONLOCAL) && !IsRoutableAddress(peerIP))
 		{
 			// Remote IP address from an unroutable subnet
 
@@ -2790,9 +2755,9 @@ CStdString CControlSocket::GetPassiveIP()
 		}
 	}
 
-	if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE))
+	if (m_owner.m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE))
 	{
-		CStdString pasvIP = m_pOwner->GetExternalIP(localIP);
+		CStdString pasvIP = m_owner.GetExternalIP(localIP);
 		if (pasvIP != _T("") && pasvIP != localIP)
 		{
 			m_transferstatus.usedResolvedIP = true;
@@ -3001,9 +2966,9 @@ bool CControlSocket::CreatePassiveTransferSocket()
 	unsigned int port = 0;
 	while (retries > 0) {
 		unsigned int port = 0;
-		if (m_pOwner->m_pOptions->GetOptionVal(OPTION_USECUSTOMPASVPORT)) {
-			unsigned int minPort = (unsigned int)m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMINPORT);
-			unsigned int maxPort = (unsigned int)m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMAXPORT);
+		if (m_owner.m_pOptions->GetOptionVal(OPTION_USECUSTOMPASVPORT)) {
+			unsigned int minPort = (unsigned int)m_owner.m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMINPORT);
+			unsigned int maxPort = (unsigned int)m_owner.m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMAXPORT);
 			if (minPort > maxPort) {
 				std::swap(minPort, maxPort);
 			}
@@ -3045,5 +3010,5 @@ bool CControlSocket::CreatePassiveTransferSocket()
 
 void CControlSocket::UpdateUser()
 {
-	m_status.user = m_pOwner->m_pPermissions->GetUser(m_status.username);
+	m_status.user = m_owner.m_pPermissions->GetUser(m_status.username);
 }
