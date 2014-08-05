@@ -25,7 +25,7 @@
 #include "mainfrm.h"
 #include "OutputFormat.h"
 
-#if defined(_DEBUG) && !defined(MMGR)
+#if defined(_DEBUG) 
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;

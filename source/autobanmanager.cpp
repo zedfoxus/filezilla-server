@@ -24,26 +24,23 @@ int CAutoBanManager::m_refCount = 0;
 std::map<CStdString, time_t> CAutoBanManager::m_banMap;
 std::map<CStdString, CAutoBanManager::t_attemptInfo> CAutoBanManager::m_attemptMap;
 
-CCriticalSectionWrapper CAutoBanManager::m_sync;
+std::recursive_mutex CAutoBanManager::m_mutex;
 
 CAutoBanManager::CAutoBanManager(COptions* pOptions)
 	: m_pOptions(pOptions)
 {
-	m_sync.Lock();
+	simple_lock lock(m_mutex);
 	m_refCount++;
-	m_sync.Unlock();
 }
 
 CAutoBanManager::~CAutoBanManager()
 {
-	m_sync.Lock();
+	simple_lock lock(m_mutex);
 	m_refCount--;
-	if (!m_refCount)
-	{
+	if (!m_refCount) {
 		m_banMap.clear();
 		m_attemptMap.clear();
 	}
-	m_sync.Unlock();
 }
 
 bool CAutoBanManager::IsBanned(const CStdString& ip)
@@ -52,11 +49,8 @@ bool CAutoBanManager::IsBanned(const CStdString& ip)
 	if (!enabled)
 		return false;
 
-	m_sync.Lock();
-	bool banned = m_banMap.find(ip) != m_banMap.end();
-	m_sync.Unlock();
-
-	return banned;
+	simple_lock lock(m_mutex);
+	return m_banMap.find(ip) != m_banMap.end();
 }
 
 bool CAutoBanManager::RegisterAttempt(const CStdString& ip)
@@ -68,42 +62,32 @@ bool CAutoBanManager::RegisterAttempt(const CStdString& ip)
 	const int maxAttempts = (int)m_pOptions->GetOptionVal(OPTION_AUTOBAN_ATTEMPTS);
 	const int banType = (int)m_pOptions->GetOptionVal(OPTION_AUTOBAN_TYPE);
 
-	m_sync.Lock();
-	if (m_banMap.find(ip) != m_banMap.end())
-	{
-		m_sync.Unlock();
+	simple_lock lock(m_mutex);
+	if (m_banMap.find(ip) != m_banMap.end()) {
 		return true;
 	}
 
 	std::map<CStdString, t_attemptInfo>::iterator iter = m_attemptMap.find(ip);
-	if (iter == m_attemptMap.end())
-	{
+	if (iter == m_attemptMap.end()) {
 		t_attemptInfo info;
 		info.attempts = 1;
 		info.time = time(0);
 		m_attemptMap[ip] = info;
 	}
-	else
-	{
-		if (++iter->second.attempts >= maxAttempts)
-		{
+	else {
+		if (++iter->second.attempts >= maxAttempts) {
 			m_attemptMap.erase(iter);
 
 			if (!banType)
 				m_banMap[ip] = time(0);
-			else
-			{
+			else {
 				// TODO
 			}
-
-			m_sync.Unlock();
 			return true;
 		}
 		else
 			iter->second.time = time(0);
 	}
-
-	m_sync.Unlock();
 
 	return false;
 }
@@ -114,13 +98,11 @@ void CAutoBanManager::PurgeOutdated()
 
 	time_t now = time(0);
 
-	m_sync.Lock();
+	simple_lock lock(m_mutex);
 	std::map<CStdString, time_t>::iterator iter = m_banMap.begin();
-	while (iter != m_banMap.end())
-	{
+	while (iter != m_banMap.end()) {
 		const time_t diff = now - iter->second;
-		if (diff > banTime)
-		{
+		if (diff > banTime) {
 			std::map<CStdString, time_t>::iterator remove = iter++;
 			m_banMap.erase(remove);
 		}
@@ -130,11 +112,9 @@ void CAutoBanManager::PurgeOutdated()
 
 	{
 		std::map<CStdString, t_attemptInfo>::iterator iter = m_attemptMap.begin();
-		while (iter != m_attemptMap.end())
-		{
+		while (iter != m_attemptMap.end()) {
 			const time_t diff = now - iter->second.time;
-			if (diff > banTime)
-			{
+			if (diff > banTime) {
 				std::map<CStdString, t_attemptInfo>::iterator remove = iter++;
 				m_attemptMap.erase(remove);
 			}
@@ -142,6 +122,4 @@ void CAutoBanManager::PurgeOutdated()
 				iter++;
 		}
 	}
-
-	m_sync.Unlock();
 }

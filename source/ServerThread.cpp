@@ -37,7 +37,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 std::map<int, t_socketdata> CServerThread::m_userids;
-CCriticalSectionWrapper CServerThread::m_GlobalThreadsync;
+std::recursive_mutex CServerThread::m_global_mutex;
 std::map<CStdString, int> CServerThread::m_userIPs;
 std::list<CServerThread*> CServerThread::m_sInstanceList;
 std::map<CStdString, int> CServerThread::m_antiHammerInfo;
@@ -64,11 +64,10 @@ BOOL CServerThread::InitInstance()
 	WORD wVersionRequested = MAKEWORD(1, 1);
 	int nResult = WSAStartup(wVersionRequested, &wsaData);
 	if (nResult != 0)
-		res=FALSE;
-	else if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1)
-	{
+		res = FALSE;
+	else if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1) {
 		WSACleanup();
-		res=FALSE;
+		res = FALSE;
 	}
 
 	m_timerid = SetTimer(0, 0, 1000, 0);
@@ -84,17 +83,18 @@ BOOL CServerThread::InitInstance()
 	m_pAutoBanManager = new CAutoBanManager(m_pOptions);
 	m_pPermissions = new CPermissions(std::bind(&CServerThread::OnPermissionsUpdated, this));
 
-	EnterCritSection(m_GlobalThreadsync);
-	if (m_sInstanceList.empty())
-		m_bIsMaster = TRUE;
-	else
-		m_bIsMaster = FALSE;
-	m_sInstanceList.push_back(this);
-	LeaveCritSection(m_GlobalThreadsync);
+	{
+		simple_lock lock(m_global_mutex);
+		if (m_sInstanceList.empty())
+			m_bIsMaster = TRUE;
+		else
+			m_bIsMaster = FALSE;
+		m_sInstanceList.push_back(this);
+	}
 
 	m_nLoopCount = 0;
 
-	EnterCritSection(m_threadsync);
+	simple_lock lock(m_mutex);
 	if (!m_bIsMaster)
 		m_pExternalIpCheck = NULL;
 	else
@@ -102,7 +102,6 @@ BOOL CServerThread::InitInstance()
 		m_pExternalIpCheck = new CExternalIpCheck(this);
 		m_hashThread = new CHashThread();
 	}
-	LeaveCritSection(m_threadsync);
 
 	m_throttled = 0;
 
@@ -113,11 +112,11 @@ DWORD CServerThread::ExitInstance()
 {
 	ASSERT(m_pPermissions);
 	delete m_pPermissions;
-	m_pPermissions=0;
+	m_pPermissions = 0;
 	delete m_pAutoBanManager;
 	m_pAutoBanManager = 0;
 	delete m_pOptions;
-	m_pOptions=0;
+	m_pOptions = 0;
 	KillTimer(0, m_timerid);
 	KillTimer(0, m_nRateTimer);
 	WSACleanup();
@@ -125,22 +124,19 @@ DWORD CServerThread::ExitInstance()
 
 	if (m_bIsMaster)
 	{
-		EnterCritSection(m_threadsync);
+		simple_lock lock(m_mutex);
 		delete m_pExternalIpCheck;
 		m_pExternalIpCheck = NULL;
-		LeaveCritSection(m_threadsync);
 	}
 
-	EnterCritSection(m_GlobalThreadsync);
+	simple_lock lock(m_global_mutex);
 	m_sInstanceList.remove(this);
 	if (!m_sInstanceList.empty())
 		m_sInstanceList.front()->m_bIsMaster = TRUE;
-	else
-	{
+	else {
 		delete m_hashThread;
 		m_hashThread = 0;
 	}
-	LeaveCritSection(m_GlobalThreadsync);
 
 	return 0;
 }
@@ -150,9 +146,8 @@ DWORD CServerThread::ExitInstance()
 
 const int CServerThread::GetNumConnections()
 {
-	EnterCritSection(m_threadsync);
+	simple_lock lock(m_mutex);
 	int num = m_LocalUserIDs.size();
-	LeaveCritSection(m_threadsync);
 	return num;
 }
 
@@ -204,10 +199,10 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 		delete socket;
 		return;
 	}
-	EnterCritSection(m_GlobalThreadsync);
+	scoped_lock glock(m_global_mutex);
 	int userid = CalcUserID();
 	if (userid == -1) {
-		LeaveCritSection(m_GlobalThreadsync);
+		glock.unlock();
 		socket->SendStatus(_T("Refusing connection, server too busy!"), 1);
 		socket->Send(_T("421 Server too busy, closing connection. Please retry later!"));
 		socket->Close();
@@ -224,10 +219,11 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 	std::map<CStdString, int>::const_iterator iter = m_antiHammerInfo.find(ip);
 	if (iter != m_antiHammerInfo.end() && iter->second > 10)
 		socket->AntiHammerIncrease(25); // ~6 secs delay
-	LeaveCritSection(m_GlobalThreadsync);
-	EnterCritSection(m_threadsync);
-	m_LocalUserIDs[userid] = socket;
-	LeaveCritSection(m_threadsync);
+	glock.unlock();
+	{
+		simple_lock lock(m_mutex);
+		m_LocalUserIDs[userid] = socket;
+	}
 
 	t_connectiondata_add *conndata = new t_connectiondata_add;
 	t_connop *op = new t_connop;
@@ -262,8 +258,7 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 		msg = _T("EXPERIMENTAL BUILD\nNOT FOR PRODUCTION USE\n\nImplementing draft-bryan-ftp-hash-06");
 	else
 		msg = m_pOptions->GetOption(OPTION_WELCOMEMESSAGE);
-	if (m_RawWelcomeMessage != msg)
-	{
+	if (m_RawWelcomeMessage != msg) {
 		m_RawWelcomeMessage = msg;
 		m_ParsedWelcomeMessage.clear();
 
@@ -302,38 +297,32 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 
 int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if (Msg == WM_FILEZILLA_THREADMSG)
-	{
+	if (Msg == WM_FILEZILLA_THREADMSG) {
 		if (wParam == FTM_NEWSOCKET) //Add a new socket to this thread
 			AddNewSocket((SOCKET)lParam, false);
 		else if (wParam == FTM_NEWSOCKET_SSL) //Add a new socket to this thread
 			AddNewSocket((SOCKET)lParam, true);
 		else if (wParam==FTM_DELSOCKET) //Remove a socket from this thread
 		{
-			CControlSocket *socket=GetControlSocket(lParam);
-			EnterCritSection(m_threadsync);
-			if (m_LocalUserIDs.find(lParam)!=m_LocalUserIDs.end())
-				m_LocalUserIDs.erase(m_LocalUserIDs.find(lParam));
-			LeaveCritSection(m_threadsync);
-			if (socket)
+			CControlSocket *socket = GetControlSocket(lParam);
 			{
+				simple_lock lock(m_mutex);
+				if (m_LocalUserIDs.find(lParam) != m_LocalUserIDs.end())
+					m_LocalUserIDs.erase(m_LocalUserIDs.find(lParam));
+			}
+			if (socket) {
 				socket->Close();
-				EnterCritSection(m_GlobalThreadsync);
+				simple_lock lock(m_global_mutex);
 				if (m_userids.find(lParam)!=m_userids.end())
 					m_userids.erase(m_userids.find(lParam));
-				LeaveCritSection(m_GlobalThreadsync);
 				delete socket;
 			}
-			EnterCritSection(m_threadsync);
-			if (m_bQuit)
-			{
-				int count=m_LocalUserIDs.size();
-				LeaveCritSection(m_threadsync);
-				if (!count)
+			simple_lock lock(m_mutex);
+			if (m_bQuit) {
+				if (!m_LocalUserIDs.size()) {
 					SendNotification(FSM_THREADCANQUIT, (LPARAM)this);
+				}
 			}
-			else
-				LeaveCritSection(m_threadsync);
 		}
 		else if (wParam==FTM_COMMAND)
 		{ //Process a command sent from a client
@@ -341,25 +330,20 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 			if (socket)
 				socket->ParseCommand();
 		}
-		else if (wParam==FTM_TRANSFERMSG)
-		{
+		else if (wParam == FTM_TRANSFERMSG) {
 			CControlSocket *socket=GetControlSocket(lParam);
 			if (socket)
 				socket->ProcessTransferMsg();
 		}
-		else if (wParam==FTM_GOOFFLINE)
-		{
-			EnterCritSection(m_threadsync);
+		else if (wParam == FTM_GOOFFLINE) {
+			simple_lock lock(m_mutex);
 			m_bQuit = TRUE;
 			int count = m_LocalUserIDs.size();
-			if (!count)
-			{
-				LeaveCritSection(m_threadsync);
+			if (!count) {
 				SendNotification(FSM_THREADCANQUIT, (LPARAM)this);
 				return 0;
 			}
 			if (lParam == 2) {
-				LeaveCritSection(m_threadsync);
 				return 0;
 			}
 
@@ -374,22 +358,19 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 					break;
 				}
 			}
-			LeaveCritSection(m_threadsync);
 		}
 		else if (wParam == FTM_CONTROL)
 			ProcessControlMessage((t_controlmessage *)lParam);
-		else if (wParam == FTM_HASHRESULT)
-		{
+		else if (wParam == FTM_HASHRESULT) {
 			CHashThread::_algorithm alg;
 			CStdString hash;
 			CStdString file;
 			int hash_res = GetHashThread().GetResult(lParam, alg, hash, file);
-			EnterCritSection(m_threadsync);
+			simple_lock lock(m_mutex);
 
 			for (auto & it : m_LocalUserIDs) {
 				it.second->ProcessHashResult(lParam, hash_res, alg, hash, file);
 			}
-			LeaveCritSection(m_threadsync);
 		}
 	}
 	else if (Msg == WM_TIMER)
@@ -399,10 +380,8 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 
 void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 {
-	if (wParam == m_timerid)
-	{
-		EnterCritSection(m_threadsync);
-
+	if (wParam == m_timerid) {
+		simple_lock lock(m_mutex);
 		/*
 		 * Check timeouts and collect transfer file offsets.
 		 * Do both in the same loop to save performance.
@@ -448,14 +427,9 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 			SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
 		}
 
-		LeaveCritSection(m_threadsync);
-
 		// Check if master thread has changed
-		if (m_bIsMaster && !m_pExternalIpCheck)
-		{
-			EnterCritSection(m_threadsync);
+		if (m_bIsMaster && !m_pExternalIpCheck) {
 			m_pExternalIpCheck = new CExternalIpCheck(this);
-			LeaveCritSection(m_threadsync);
 		}
 	}
 	else if (wParam == m_nRateTimer) {
@@ -469,7 +443,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 		}
 
 		if (m_bIsMaster) {
-			EnterCritSection(m_GlobalThreadsync);
+			simple_lock glock(m_global_mutex);
 
 			//Only update the speed limits from the rule set every 2 seconds to improve performance
 			if (!m_nLoopCount) {
@@ -481,9 +455,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 			// Gather transfer statistics if a speed limit is set
 			if (m_lastLimits[download] != -1 || m_lastLimits[upload] != -1) {
 				for (auto & pThread : m_sInstanceList) {
-					EnterCritSection(pThread->m_threadsync);
 					pThread->GatherTransferedBytes();
-					LeaveCritSection(pThread->m_threadsync);
 				}
 			}
 
@@ -492,10 +464,9 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 
 				if (limit == -1) {
 					for (auto & pThread : m_sInstanceList) {
-						EnterCritSection(pThread->m_threadsync);
+						simple_lock lock(pThread->m_mutex);
 						pThread->m_SlQuotas[i].nBytesAllowedToTransfer = -1;
 						pThread->m_SlQuotas[i].nTransferred = 0;
-						LeaveCritSection(pThread->m_threadsync);
 					}
 					continue;
 				}
@@ -508,7 +479,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 				std::list<CServerThread *> fullUsageList;
 
 				for (auto & pThread : m_sInstanceList) {
-					EnterCritSection(pThread->m_threadsync);
+					pThread->m_mutex.lock();
 					long long r = pThread->m_SlQuotas[i].nBytesAllowedToTransfer - pThread->m_SlQuotas[i].nTransferred;
 					if ( r > 0 && pThread->m_SlQuotas[i].nBytesAllowedToTransfer <= nThreadLimit) {
 						pThread->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
@@ -525,7 +496,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 						// Don't unlock thread here, do it later
 						continue;
 					}
-					LeaveCritSection(pThread->m_threadsync);
+					pThread->m_mutex.unlock();
 				}
 
 				// fullUsageList now contains all threads which did use up their assigned quota
@@ -548,7 +519,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 							// Don't unlock thread here either, do it later
 							continue;
 						}
-						LeaveCritSection(pThread->m_threadsync);
+						pThread->m_mutex.unlock();
 					}
 
 					if (!fullUsageList2.empty()) {
@@ -558,20 +529,17 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 							pThread->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 
 							// Finally unlock threads
-							LeaveCritSection(pThread->m_threadsync);
+							pThread->m_mutex.unlock();
 						}
 					}
 				}
 			}
-
-			LeaveCritSection(m_GlobalThreadsync);
 		}
 		ProcessNewSlQuota();
 	}
 	else if (m_pExternalIpCheck && wParam == m_pExternalIpCheck->GetTimerID()) {
-		EnterCritSection(m_threadsync);
+		simple_lock lock(m_mutex);
 		m_pExternalIpCheck->OnTimer();
-		LeaveCritSection(m_threadsync);
 	}
 	else if (wParam == m_antiHammerTimer && m_bIsMaster)
 		AntiHammerDecrease();
@@ -579,27 +547,23 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 
 const int CServerThread::GetGlobalNumConnections()
 {
-	EnterCritSection(m_GlobalThreadsync);
-	int num=m_userids.size();
-	LeaveCritSection(m_GlobalThreadsync);
-	return num;
+	simple_lock lock(m_global_mutex);
+	return m_userids.size();
 }
 
 CControlSocket * CServerThread::GetControlSocket(int userid)
 {
 	CControlSocket *ret=0;
-	EnterCritSection(m_threadsync);
+	simple_lock lock(m_mutex);
 	std::map<int, CControlSocket *>::iterator iter=m_LocalUserIDs.find(userid);
-	if (iter!=m_LocalUserIDs.end())
-		ret=iter->second;
-	LeaveCritSection(m_threadsync);
+	if (iter != m_LocalUserIDs.end())
+		ret = iter->second;
 	return ret;
 }
 
 void CServerThread::ProcessControlMessage(t_controlmessage *msg)
 {
-	if (msg->command == USERCONTROL_KICK)
-	{
+	if (msg->command == USERCONTROL_KICK) {
 		CControlSocket *socket = GetControlSocket(msg->socketid);
 		if (socket)
 			socket->ForceClose(4);
@@ -614,44 +578,37 @@ BOOL CServerThread::IsReady()
 
 int CServerThread::GetIpCount(const CStdString &ip) const
 {
-	int count=0;
-	EnterCritSection(m_GlobalThreadsync);
-	std::map<CStdString, int>::iterator iter=m_userIPs.find(ip);
-	if (iter!=m_userIPs.end())
-		count=iter->second;
-	LeaveCritSection(m_GlobalThreadsync);
+	int count = 0;
+	simple_lock lock(m_global_mutex);
+	std::map<CStdString, int>::iterator iter = m_userIPs.find(ip);
+	if (iter != m_userIPs.end())
+		count = iter->second;
 	return count;
 }
 
 void CServerThread::IncIpCount(const CStdString &ip)
 {
-	int count;
-	EnterCritSection(m_GlobalThreadsync);
+	simple_lock lock(m_global_mutex);
 	std::map<CStdString, int>::iterator iter=m_userIPs.find(ip);
-	if (iter!=m_userIPs.end())
-		count=iter->second++;
+	if (iter != m_userIPs.end())
+		++iter->second;
 	else
-		m_userIPs[ip]=1;
-	LeaveCritSection(m_GlobalThreadsync);
+		m_userIPs[ip] = 1;
 }
 
 void CServerThread::DecIpCount(const CStdString &ip)
 {
-	EnterCritSection(m_GlobalThreadsync);
+	simple_lock lock(m_global_mutex);
 	std::map<CStdString, int>::iterator iter=m_userIPs.find(ip);
-	ASSERT(iter!=m_userIPs.end());
-	if (iter==m_userIPs.end())
-	{
-		LeaveCritSection(m_GlobalThreadsync);
-		return;
+	ASSERT(iter != m_userIPs.end());
+	if (iter != m_userIPs.end()) {
+		ASSERT(iter->second > 0);
+		if (iter->second > 1)
+			--iter->second;
+		else {
+			m_userIPs.erase(iter);
+		}
 	}
-	else
-	{
-		ASSERT(iter->second);
-		if (iter->second)
-			iter->second--;
-	}
-	LeaveCritSection(m_GlobalThreadsync);
 }
 
 void CServerThread::IncSendCount(int count)
@@ -666,7 +623,7 @@ void CServerThread::IncRecvCount(int count)
 
 void CServerThread::ProcessNewSlQuota()
 {
-	EnterCritSection(m_threadsync);
+	simple_lock lock(m_mutex);
 
 	for (int i = 0; i < 2; ++i) {
 		if (m_SlQuotas[i].nBytesAllowedToTransfer == -1) {
@@ -739,13 +696,11 @@ void CServerThread::ProcessNewSlQuota()
 	for (auto & it : m_LocalUserIDs) {
 		it.second->Continue();
 	}
-
-	LeaveCritSection(m_threadsync);
 }
 
 void CServerThread::GatherTransferedBytes()
 {
-	EnterCritSection(m_threadsync);
+	simple_lock lock(m_mutex);
 	for (auto & it : m_LocalUserIDs) {
 		for (int i = 0; i < 2; ++i) {
 			if (it.second->m_SlQuotas[i].nBytesAllowedToTransfer > -1) {
@@ -757,58 +712,46 @@ void CServerThread::GatherTransferedBytes()
 			it.second->m_SlQuotas[i].bBypassed = false;
 		}
 	}
-	LeaveCritSection(m_threadsync);
 }
 
 CStdString CServerThread::GetExternalIP(const CStdString& localIP)
 {
-	CStdString ip;
-	EnterCritSection(m_threadsync);
-	if (m_pExternalIpCheck)
 	{
-		ip = m_pExternalIpCheck->GetIP(localIP);
-		LeaveCritSection(m_threadsync);
+		simple_lock lock(m_mutex);
+		if (m_pExternalIpCheck) {
+			return m_pExternalIpCheck->GetIP(localIP);
+		}
 	}
-	else
-	{
-		LeaveCritSection(m_threadsync);
-		EnterCritSection(m_GlobalThreadsync);
-		CServerThread *pThread = m_sInstanceList.front();
-		EnterCritSection(pThread->m_threadsync);
-		if (pThread != this && pThread->m_pExternalIpCheck)
-			ip = pThread->m_pExternalIpCheck->GetIP(localIP);
-		LeaveCritSection(pThread->m_threadsync);
-		LeaveCritSection(m_GlobalThreadsync);
-	}
+	
+	simple_lock glock(m_global_mutex);
+	CServerThread *pThread = m_sInstanceList.front();
+	simple_lock lock(pThread->m_mutex);
+	if (pThread != this && pThread->m_pExternalIpCheck)
+		return pThread->m_pExternalIpCheck->GetIP(localIP);
 
-	return ip;
+	return CStdString();
 }
 
 void CServerThread::ExternalIPFailed()
 {
-	CStdString ip;
-	EnterCritSection(m_threadsync);
-	if (m_pExternalIpCheck)
 	{
-		m_pExternalIpCheck->TriggerUpdate();
-		LeaveCritSection(m_threadsync);
+		simple_lock lock(m_mutex);
+		if (m_pExternalIpCheck) {
+			m_pExternalIpCheck->TriggerUpdate();
+			return;
+		}
 	}
-	else
-	{
-		LeaveCritSection(m_threadsync);
-		EnterCritSection(m_GlobalThreadsync);
-		CServerThread *pThread = m_sInstanceList.front();
-		EnterCritSection(pThread->m_threadsync);
-		if (pThread != this && pThread->m_pExternalIpCheck)
-			pThread->m_pExternalIpCheck->TriggerUpdate();
-		LeaveCritSection(pThread->m_threadsync);
-		LeaveCritSection(m_GlobalThreadsync);
-	}
+	
+	simple_lock glock(m_global_mutex);
+	CServerThread *pThread = m_sInstanceList.front();
+	simple_lock lock(pThread->m_mutex);
+	if (pThread != this && pThread->m_pExternalIpCheck)
+		pThread->m_pExternalIpCheck->TriggerUpdate();
 }
 
 void CServerThread::SendNotification(WPARAM wParam, LPARAM lParam)
 {
-	EnterCritSection(m_threadsync);
+	simple_lock lock(m_mutex);
 	t_Notification notification;
 	notification.wParam = wParam;
 	notification.lParam = lParam;
@@ -831,36 +774,29 @@ void CServerThread::SendNotification(WPARAM wParam, LPARAM lParam)
 		SetPriority(THREAD_PRIORITY_BELOW_NORMAL);
 		m_throttled = 1;
 	}
-
-	LeaveCritSection(m_threadsync);
 }
 
 void CServerThread::GetNotifications(std::list<CServerThread::t_Notification>& list)
 {
-	EnterCritSection(m_threadsync);
+	simple_lock lock(m_mutex);
 
 	m_pendingNotifications.swap(list);
 
 	if (m_throttled)
 		SetPriority(THREAD_PRIORITY_NORMAL);
-
-	LeaveCritSection(m_threadsync);
 }
 
 void CServerThread::AntiHammerIncrease(const CStdString& ip)
 {
-	EnterCritSection(m_GlobalThreadsync);
+	simple_lock lock(m_global_mutex);
 
 	std::map<CStdString, int>::iterator iter = m_antiHammerInfo.find(ip);
-	if (iter != m_antiHammerInfo.end())
-	{
+	if (iter != m_antiHammerInfo.end()) {
 		if (iter->second < 20)
 			iter->second++;
-		LeaveCritSection(m_GlobalThreadsync);
 		return;
 	}
-	if (m_antiHammerInfo.size() >= 1000)
-	{
+	else if (m_antiHammerInfo.size() >= 1000) {
 		std::map<CStdString, int>::iterator best = m_antiHammerInfo.begin();
 		for (iter = m_antiHammerInfo.begin(); iter != m_antiHammerInfo.end(); iter++)
 		{
@@ -870,27 +806,21 @@ void CServerThread::AntiHammerIncrease(const CStdString& ip)
 		m_antiHammerInfo.erase(best);
 	}
 	m_antiHammerInfo.insert(std::make_pair(ip, 1));
-
-	LeaveCritSection(m_GlobalThreadsync);
 }
 
 void CServerThread::AntiHammerDecrease()
 {
-	EnterCritSection(m_GlobalThreadsync);
+	simple_lock lock(m_global_mutex);
 
 	std::map<CStdString, int>::iterator iter = m_antiHammerInfo.begin();
-	while (iter != m_antiHammerInfo.end())
-	{
-		if (iter->second > 1)
-		{
+	while (iter != m_antiHammerInfo.end()) {
+		if (iter->second > 1) {
 			--(iter->second);
 			++iter;
 		}
 		else
 			m_antiHammerInfo.erase(iter++);
 	}
-
-	LeaveCritSection(m_GlobalThreadsync);
 }
 
 CHashThread& CServerThread::GetHashThread()
@@ -900,23 +830,21 @@ CHashThread& CServerThread::GetHashThread()
 
 void CServerThread::OnPermissionsUpdated()
 {
-	EnterCritSection(m_threadsync);
+	simple_lock lock(m_mutex);
 	for( auto & cs : m_userids ) {
 		if( cs.second.pSocket ) {
 			cs.second.pSocket->UpdateUser();
 		}
 	}
-	LeaveCritSection(m_threadsync);
 }
 
 long long CServerThread::GetInitialSpeedLimit(int mode)
 {
 	long long ret;
-	EnterCritSection(m_threadsync);
+	simple_lock lock(m_mutex);
 	ret = m_SlQuotas[mode].nBytesAllowedToTransfer;
 	if( ret > -1 ) {
 		ret /= m_LocalUserIDs.size() + 1;
 	}
-	LeaveCritSection(m_threadsync);
 	return ret;
 }

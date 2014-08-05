@@ -39,7 +39,7 @@ static char THIS_FILE[] = __FILE__;
 // CControlSocket
 
 std::map<CStdString, int> CControlSocket::m_UserCount;
-CCriticalSectionWrapper CControlSocket::m_Sync;
+std::recursive_mutex CControlSocket::m_mutex;
 
 CControlSocket::CControlSocket(CServerThread & owner)
 	: m_owner(owner)
@@ -1531,8 +1531,7 @@ void CControlSocket::ParseCommand()
 						SendStatus(_T("Failed to load SSL libraries"), 1);
 					else if (res == SSL_FAILURE_INITSSL)
 						SendStatus(_T("Failed to initialize SSL libraries"), 1);
-					else if (res == SSL_FAILURE_VERIFYCERT)
-					{
+					else if (res == SSL_FAILURE_VERIFYCERT) {
 						if (error != _T(""))
 							SendStatus(error, 1);
 						else
@@ -2143,9 +2142,8 @@ void CControlSocket::ForceClose(int nReason)
 void CControlSocket::IncUserCount(const CStdString &user)
 {
 	int curcount=GetUserCount(user)+1;
-	EnterCritSection(m_Sync);
-	m_UserCount[user]=curcount;
-	LeaveCritSection(m_Sync);
+	simple_lock lock(m_mutex);
+	m_UserCount[user] = curcount;
 }
 
 void CControlSocket::DecUserCount(const CStdString &user)
@@ -2153,29 +2151,25 @@ void CControlSocket::DecUserCount(const CStdString &user)
 	int curcount=GetUserCount(user)-1;
 	if (curcount<0)
 		return;
-	EnterCritSection(m_Sync);
-	m_UserCount[user]=curcount;
-	LeaveCritSection(m_Sync);
+	simple_lock lock(m_mutex);
+	m_UserCount[user] = curcount;
 }
 
 int CControlSocket::GetUserCount(const CStdString &user)
 {
-	EnterCritSection(m_Sync);
-	int count=0;
+	simple_lock lock(m_mutex);
+	int count = 0;
 	std::map<CStdString, int>::iterator iter = m_UserCount.find(user);
-	if (iter!=m_UserCount.end())
+	if (iter != m_UserCount.end())
 		count = iter->second;
-	LeaveCritSection(m_Sync);
 	return count;
 }
 
 void CControlSocket::CheckForTimeout()
 {
-	if (m_antiHammeringWaitTime)
-	{
+	if (m_antiHammeringWaitTime) {
 		m_antiHammeringWaitTime -= 1000;
-		if (m_antiHammeringWaitTime <= 0)
-		{
+		if (m_antiHammeringWaitTime <= 0) {
 			m_antiHammeringWaitTime = 0;
 			TriggerEvent(FD_FORCEREAD);
 		}
@@ -2183,8 +2177,7 @@ void CControlSocket::CheckForTimeout()
 	if (m_status.hammerValue > 0)
 		m_status.hammerValue--;
 
-	if (m_transferstatus.socket)
-	{
+	if (m_transferstatus.socket) {
 		if (m_transferstatus.socket->CheckForTimeout())
 			return;
 	}
@@ -2666,8 +2659,7 @@ bool CControlSocket::InitImplicitSsl()
 {
 	m_pSslLayer = new CAsyncSslSocketLayer;
 	int res = AddLayer(m_pSslLayer) ? 1 : 0;
-	if (!res)
-	{
+	if (!res) {
 		delete m_pSslLayer;
 		m_pSslLayer = 0;
 		return false;
@@ -2679,15 +2671,13 @@ bool CControlSocket::InitImplicitSsl()
 		SendStatus(_T("Failed to load SSL libraries"), 1);
 	else if (res == SSL_FAILURE_INITSSL)
 		SendStatus(_T("Failed to initialize SSL libraries"), 1);
-	else if (res == SSL_FAILURE_VERIFYCERT)
-	{
+	else if (res == SSL_FAILURE_VERIFYCERT) {
 		if (error != _T(""))
 			SendStatus(error, 1);
 		else
 			SendStatus(_T("Failed to set certificate and private key"), 1);
 	}
-	if (res)
-	{
+	if (res) {
 		RemoveAllLayers();
 		delete m_pSslLayer;
 		m_pSslLayer = NULL;
@@ -2963,7 +2953,6 @@ bool CControlSocket::CreatePassiveTransferSocket()
 	m_transferstatus.socket = new CTransferSocket(this);
 
 	unsigned int retries = 10;
-	unsigned int port = 0;
 	while (retries > 0) {
 		unsigned int port = 0;
 		if (m_owner.m_pOptions->GetOptionVal(OPTION_USECUSTOMPASVPORT)) {
@@ -2972,14 +2961,13 @@ bool CControlSocket::CreatePassiveTransferSocket()
 			if (minPort > maxPort) {
 				std::swap(minPort, maxPort);
 			}
-			EnterCritSection(m_Sync);
+			simple_lock lock(m_mutex);
 			static unsigned int customPort = 0;
 			if (customPort < minPort || customPort > maxPort) {
 				customPort = minPort;
 			}
 			port = customPort;
 			++customPort;
-			LeaveCritSection(m_Sync);
 		}
 		else {
 			port = 0;

@@ -71,46 +71,7 @@ to tim.kosse@filezilla-project.org
 #include "AsyncSocketExLayer.h"
 #endif //NOLAYERS
 
-#ifdef _DEBUG
-#undef THIS_FILE
-static char THIS_FILE[]=__FILE__;
-#endif
-
-#ifndef CCRITICALSECTIONWRAPPERINCLUDED
-class CCriticalSectionWrapper
-{
-public:
-	CCriticalSectionWrapper()
-	{
-		m_bInitialized = TRUE;
-		InitializeCriticalSection(&m_criticalSection);
-	}
-
-	~CCriticalSectionWrapper()
-	{
-		if (m_bInitialized)
-			DeleteCriticalSection(&m_criticalSection);
-		m_bInitialized = FALSE;
-	}
-
-	void Lock()
-	{
-		if (m_bInitialized)
-			EnterCriticalSection(&m_criticalSection);
-	}
-	void Unlock()
-	{
-		if (m_bInitialized)
-			LeaveCriticalSection(&m_criticalSection);
-	}
-protected:
-	CRITICAL_SECTION m_criticalSection;
-	BOOL m_bInitialized;
-};
-#define CCRITICALSECTIONWRAPPERINCLUDED
-#endif
-
-CCriticalSectionWrapper CAsyncSocketEx::m_sGlobalCriticalSection;
+std::recursive_mutex CAsyncSocketEx::m_mutex;
 CAsyncSocketEx::t_AsyncSocketExThreadDataList *CAsyncSocketEx::m_spAsyncSocketExThreadDataList = 0;
 
 #ifndef _AFX
@@ -819,8 +780,7 @@ BOOL CAsyncSocketEx::Create(UINT nSocketPort /*=0*/, int nSocketType /*=SOCK_STR
 			SOCKET hSocket = socket(m_SocketData.nFamily, nSocketType, 0);
 			if (hSocket == INVALID_SOCKET)
 				return FALSE;
-			m_SocketData.hSocket = hSocket;
-			AttachHandle(hSocket);
+			AttachHandle(hSocket, m_SocketData.nFamily);
 
 #ifndef NOLAYERS
 			if (m_pFirstLayer)
@@ -863,23 +823,23 @@ BOOL CAsyncSocketEx::Create(UINT nSocketPort /*=0*/, int nSocketType /*=SOCK_STR
 	}
 }
 
-void CAsyncSocketEx::OnReceive(int nErrorCode)
+void CAsyncSocketEx::OnReceive(int)
 {
 }
 
-void CAsyncSocketEx::OnSend(int nErrorCode)
+void CAsyncSocketEx::OnSend(int)
 {
 }
 
-void CAsyncSocketEx::OnConnect(int nErrorCode)
+void CAsyncSocketEx::OnConnect(int)
 {
 }
 
-void CAsyncSocketEx::OnAccept(int nErrorCode)
+void CAsyncSocketEx::OnAccept(int)
 {
 }
 
-void CAsyncSocketEx::OnClose(int nErrorCode)
+void CAsyncSocketEx::OnClose(int)
 {
 }
 
@@ -955,8 +915,11 @@ BOOL CAsyncSocketEx::Bind(const SOCKADDR* lpSockAddr, int nSockAddrLen)
 		return FALSE;
 }
 
-void CAsyncSocketEx::AttachHandle(SOCKET hSocket)
+void CAsyncSocketEx::AttachHandle(SOCKET hSocket, int family)
 {
+	m_SocketData.hSocket = hSocket;
+	m_SocketData.nFamily = family;
+
 	ASSERT(m_pLocalAsyncSocketExThreadData);
 	VERIFY(m_pLocalAsyncSocketExThreadData->m_pHelperWindow->AddSocket(this, m_SocketData.nSocketIndex));
 #ifndef NOSOCKETSTATES
@@ -964,8 +927,10 @@ void CAsyncSocketEx::AttachHandle(SOCKET hSocket)
 #endif //NOSOCKETSTATES
 }
 
-void CAsyncSocketEx::DetachHandle(SOCKET hSocket)
+void CAsyncSocketEx::DetachHandle()
 {
+	m_SocketData.hSocket = INVALID_SOCKET;
+
 	ASSERT(m_pLocalAsyncSocketExThreadData);
 	if (!m_pLocalAsyncSocketExThreadData)
 		return;
@@ -989,8 +954,7 @@ void CAsyncSocketEx::Close()
 #endif //NOLAYERS
 	if (m_SocketData.hSocket != INVALID_SOCKET) {
 		VERIFY((closesocket(m_SocketData.hSocket) != SOCKET_ERROR));
-		DetachHandle(m_SocketData.hSocket);
-		m_SocketData.hSocket = INVALID_SOCKET;
+		DetachHandle();
 	}
 	if (m_SocketData.addrInfo) {
 		freeaddrinfo(m_SocketData.addrInfo);
@@ -1020,7 +984,7 @@ BOOL CAsyncSocketEx::InitAsyncSocketExInstance()
 
 	DWORD id = GetCurrentThreadId();
 
-	m_sGlobalCriticalSection.Lock();
+	simple_lock lock(m_mutex);
 
 	//Get thread specific data
 	if (m_spAsyncSocketExThreadDataList) {
@@ -1058,7 +1022,6 @@ BOOL CAsyncSocketEx::InitAsyncSocketExInstance()
 		m_pLocalAsyncSocketExThreadData->m_pHelperWindow = new CAsyncSocketExHelperWindow(m_pLocalAsyncSocketExThreadData);
 		m_spAsyncSocketExThreadDataList->pThreadData = m_pLocalAsyncSocketExThreadData;
 	}
-	m_sGlobalCriticalSection.Unlock();
 	return TRUE;
 }
 
@@ -1080,7 +1043,7 @@ void CAsyncSocketEx::FreeAsyncSocketExInstance()
 	}
 
 	DWORD id=m_pLocalAsyncSocketExThreadData->nThreadId;
-	m_sGlobalCriticalSection.Lock();
+	simple_lock lock(m_mutex);
 
 	ASSERT(m_spAsyncSocketExThreadDataList);
 	t_AsyncSocketExThreadDataList *pList=m_spAsyncSocketExThreadDataList;
@@ -1114,8 +1077,6 @@ void CAsyncSocketEx::FreeAsyncSocketExInstance()
 		pList = pList->pNext;
 		ASSERT(pList);
 	}
-
-	m_sGlobalCriticalSection.Unlock();
 }
 
 int CAsyncSocketEx::Receive(void* lpBuf, int nBufLen, int nFlags /*=0*/)
@@ -1213,23 +1174,17 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 		for (m_SocketData.nextAddr = m_SocketData.addrInfo; m_SocketData.nextAddr; m_SocketData.nextAddr = m_SocketData.nextAddr->ai_next)
 		{
 			bool newSocket = false;
-			if (m_SocketData.nFamily == AF_UNSPEC)
-			{
+			if (m_SocketData.nFamily == AF_UNSPEC) {
 				newSocket = true;
-				m_SocketData.hSocket = socket(m_SocketData.nextAddr->ai_family, m_SocketData.nextAddr->ai_socktype, m_SocketData.nextAddr->ai_protocol);
-
-				if (m_SocketData.hSocket == INVALID_SOCKET)
+				SOCKET hSocket = socket(m_SocketData.nextAddr->ai_family, m_SocketData.nextAddr->ai_socktype, m_SocketData.nextAddr->ai_protocol);
+				if (hSocket == INVALID_SOCKET)
 					continue;
 
-				m_SocketData.nFamily = m_SocketData.nextAddr->ai_family;
-				AttachHandle(m_SocketData.hSocket);
-				if (!AsyncSelect(m_lEvent))
-				{
-					if (newSocket)
-					{
-						DetachHandle(m_SocketData.hSocket);
+				AttachHandle(hSocket, m_SocketData.nextAddr->ai_family);
+				if (!AsyncSelect(m_lEvent)) 	{
+					if (newSocket) {
 						closesocket(m_SocketData.hSocket);
-						m_SocketData.hSocket = INVALID_SOCKET;
+						DetachHandle();
 					}
 					continue;
 				}
@@ -1245,9 +1200,8 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 					if (newSocket)
 					{
 						m_SocketData.nFamily = AF_UNSPEC;
-						DetachHandle(m_SocketData.hSocket);
 						closesocket(m_SocketData.hSocket);
-						m_SocketData.hSocket = INVALID_SOCKET;
+						DetachHandle();
 					}
 					continue;
 				}
@@ -1260,21 +1214,18 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 				if (!Bind(m_nSocketPort, m_lpszSocketAddress))
 				{
 					m_SocketData.nFamily = AF_UNSPEC;
-					DetachHandle(m_SocketData.hSocket);
 					closesocket(m_SocketData.hSocket);
-					m_SocketData.hSocket = INVALID_SOCKET;
+					DetachHandle();
 					continue;
 				}
 			}
 
 			if (!(ret = CAsyncSocketEx::Connect(m_SocketData.nextAddr->ai_addr, m_SocketData.nextAddr->ai_addrlen)) && GetLastError() != WSAEWOULDBLOCK)
 			{
-				if (newSocket)
-				{
+				if (newSocket) {
 					m_SocketData.nFamily = AF_UNSPEC;
-					DetachHandle(m_SocketData.hSocket);
 					closesocket(m_SocketData.hSocket);
-					m_SocketData.hSocket = INVALID_SOCKET;
+					DetachHandle();
 				}
 				continue;
 			}
@@ -1460,31 +1411,27 @@ BOOL CAsyncSocketEx::ShutDown()
 SOCKET CAsyncSocketEx::Detach()
 {
 	SOCKET socket = m_SocketData.hSocket;
-	DetachHandle(socket);
-	m_SocketData.hSocket = INVALID_SOCKET;
+	DetachHandle();
 	m_SocketData.nFamily = AF_UNSPEC;
 	return socket;
 }
 
 BOOL CAsyncSocketEx::Attach(SOCKET hSocket, long lEvent /*= FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE*/)
 {
-	if (hSocket==INVALID_SOCKET || !hSocket)
+	if (hSocket == INVALID_SOCKET || !hSocket)
 		return FALSE;
 
 	VERIFY(InitAsyncSocketExInstance());
-	m_SocketData.hSocket = hSocket;
 
 	sockaddr_storage addr{};
 	int len = sizeof(addr);
-	if (getsockname(m_SocketData.hSocket, reinterpret_cast<sockaddr*>(&addr), &len) != 0)
+	if (getsockname(hSocket, reinterpret_cast<sockaddr*>(&addr), &len) != 0)
 		return FALSE;
-	m_SocketData.nFamily = addr.ss_family;
 
-	AttachHandle(hSocket);
+	AttachHandle(hSocket, addr.ss_family);
 
 #ifndef NOLAYERS
-	if (m_pFirstLayer)
-	{
+	if (m_pFirstLayer) {
 		m_lEvent = lEvent;
 		return !WSAAsyncSelect(m_SocketData.hSocket, GetHelperWindowHandle(), m_SocketData.nSocketIndex+WM_SOCKETEX_NOTIFY, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE);
 	}
@@ -1550,9 +1497,7 @@ BOOL CAsyncSocketEx::Accept( CAsyncSocketEx& rConnectedSocket, SOCKADDR* lpSockA
 		if (hTemp == INVALID_SOCKET)
 			return FALSE;
 		VERIFY(rConnectedSocket.InitAsyncSocketExInstance());
-		rConnectedSocket.m_SocketData.hSocket=hTemp;
-		rConnectedSocket.AttachHandle(hTemp);
-		rConnectedSocket.SetFamily(GetFamily());
+		rConnectedSocket.AttachHandle(hTemp, GetFamily());
 #ifndef NOSOCKETSTATES
 		rConnectedSocket.SetState(connected);
 #endif //NOSOCKETSTATES
@@ -1709,55 +1654,42 @@ bool CAsyncSocketEx::SetFamily(int nFamily)
 
 bool CAsyncSocketEx::TryNextProtocol()
 {
-	DetachHandle(m_SocketData.hSocket);
 	closesocket(m_SocketData.hSocket);
-	m_SocketData.hSocket = INVALID_SOCKET;
+	DetachHandle();
 
 	BOOL ret = FALSE;
-	for (; m_SocketData.nextAddr; m_SocketData.nextAddr = m_SocketData.nextAddr->ai_next)
-	{
-		m_SocketData.hSocket = socket(m_SocketData.nextAddr->ai_family, m_SocketData.nextAddr->ai_socktype, m_SocketData.nextAddr->ai_protocol);
-
-		if (m_SocketData.hSocket == INVALID_SOCKET)
+	for (; m_SocketData.nextAddr; m_SocketData.nextAddr = m_SocketData.nextAddr->ai_next) {
+		SOCKET hSocket = socket(m_SocketData.nextAddr->ai_family, m_SocketData.nextAddr->ai_socktype, m_SocketData.nextAddr->ai_protocol);
+		if (hSocket == INVALID_SOCKET)
 			continue;
 
-		AttachHandle(m_SocketData.hSocket);
-		m_SocketData.nFamily = m_SocketData.nextAddr->ai_family;
-		if (!AsyncSelect(m_lEvent))
-		{
-			DetachHandle(m_SocketData.hSocket);
+		AttachHandle(hSocket, m_SocketData.nextAddr->ai_family);
+		if (!AsyncSelect(m_lEvent)) {
 			closesocket(m_SocketData.hSocket);
-			m_SocketData.hSocket = INVALID_SOCKET;
+			DetachHandle();
 			continue;
 		}
 
 #ifndef NOLAYERS
-		if (m_pFirstLayer)
-		{
-			if (WSAAsyncSelect(m_SocketData.hSocket, GetHelperWindowHandle(), m_SocketData.nSocketIndex+WM_SOCKETEX_NOTIFY, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE))
-			{
-				DetachHandle(m_SocketData.hSocket);
+		if (m_pFirstLayer) {
+			if (WSAAsyncSelect(m_SocketData.hSocket, GetHelperWindowHandle(), m_SocketData.nSocketIndex+WM_SOCKETEX_NOTIFY, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE)) {
 				closesocket(m_SocketData.hSocket);
-				m_SocketData.hSocket = INVALID_SOCKET;
+				DetachHandle();
 				continue;
 			}
 		}
 #endif //NOLAYERS
 
-		if (!Bind(m_nSocketPort, m_lpszSocketAddress))
-		{
-			DetachHandle(m_SocketData.hSocket);
+		if (!Bind(m_nSocketPort, m_lpszSocketAddress)) {
 			closesocket(m_SocketData.hSocket);
-			m_SocketData.hSocket = INVALID_SOCKET;
+			DetachHandle();
 			continue;
 		}
 
 		ret = CAsyncSocketEx::Connect(m_SocketData.nextAddr->ai_addr, m_SocketData.nextAddr->ai_addrlen);
-		if (!ret && GetLastError() != WSAEWOULDBLOCK)
-		{
-			DetachHandle(m_SocketData.hSocket);
+		if (!ret && GetLastError() != WSAEWOULDBLOCK) {
 			closesocket(m_SocketData.hSocket);
-			m_SocketData.hSocket = INVALID_SOCKET;
+			DetachHandle();
 			continue;
 		}
 

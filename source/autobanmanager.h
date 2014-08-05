@@ -47,7 +47,7 @@ protected:
 	static std::map<CStdString, time_t> m_banMap;
 	static std::map<CStdString, t_attemptInfo> m_attemptMap;
 
-	static CCriticalSectionWrapper m_sync;
+	static std::recursive_mutex m_mutex;
 
 	COptions* m_pOptions;
 };

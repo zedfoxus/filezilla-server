@@ -34,7 +34,7 @@ This class only has a couple of public functions:
 			unsigned char* locality, unsigned char* organization, unsigned char* unit, unsigned char* cname,
 			unsigned char *email, CString& err);
   Creates a new self-signed SSL certificate and stores it in the given file
-- SendRaw(const void* lpBuf, int nBufLen, int nFlags = 0)
+- SendRaw(const void* lpBuf, int nBufLen)
   Sends a raw, unencrypted message. This may be useful after successful initialization to tell the other
   side that can use SSL.
 
@@ -136,7 +136,6 @@ enum class ShutDownState
 	shutDown
 };
 
-class CCriticalSectionWrapper;
 class CAsyncSslSocketLayer final : public CAsyncSocketExLayer
 {
 public:
@@ -158,7 +157,7 @@ public:
 
 	// Send raw text, useful to send a confirmation after the ssl connection
 	// has been initialized
-	int SendRaw(const void* lpBuf, int nBufLen, int nFlags = 0);
+	int SendRaw(const void* lpBuf, int nBufLen);
 
 	void* GetContext() { return m_ssl_ctx; }
 
@@ -175,6 +174,7 @@ private:
 	virtual BOOL ShutDown();
 	BOOL DoShutDown();
 
+	bool CreateContext();
 	void ResetSslSession();
 	void PrintSessionInfo();
 	int InitSSL();
@@ -195,8 +195,8 @@ private:
 	bool m_bUseSSL{};
 	BOOL m_bFailureSent{};
 
-	//Critical section for thread synchronization
-	static CCriticalSectionWrapper m_sCriticalSection;
+	//Mutex for thread synchronization
+	static std::recursive_mutex m_mutex;
 
 	// Status variables
 	static int m_nSslRefCount;

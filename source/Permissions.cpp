@@ -112,7 +112,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 // CPermissions
 
-CCriticalSectionWrapper CPermissions::m_sync;
+std::recursive_mutex CPermissions::m_mutex;
 CPermissions::t_UsersList CPermissions::m_sUsersList;
 CPermissions::t_GroupsList CPermissions::m_sGroupsList;
 std::list<CPermissions *> CPermissions::m_sInstanceList;
@@ -129,24 +129,21 @@ CPermissions::CPermissions(std::function<void()> const& updateCallback)
 
 CPermissions::~CPermissions()
 {
-	EnterCritSection(m_sync);
+	simple_lock lock(m_mutex);
 	std::list<CPermissions *>::iterator instanceIter;
-	for (instanceIter=m_sInstanceList.begin(); instanceIter!=m_sInstanceList.end(); instanceIter++)
+	for (instanceIter=m_sInstanceList.begin(); instanceIter!=m_sInstanceList.end(); ++instanceIter)
 		if (*instanceIter==this)
 			break;
 	ASSERT(instanceIter != m_sInstanceList.end());
 	if (instanceIter != m_sInstanceList.end())
 		m_sInstanceList.erase(instanceIter);
-	LeaveCritSection(m_sync);
-	if (m_pPermissionsHelperWindow)
-		delete m_pPermissionsHelperWindow;
+	delete m_pPermissionsHelperWindow;
 }
 
-void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *)
+void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char*, bool *)
 {
 	CFileStatus64 status;
-	if (!pTime && GetStatus64(directory.dir, status))
-	{
+	if (!pTime && GetStatus64(directory.dir, status)) {
 		size = status.m_size;
 		pTime = &status.m_mtime;
 	}
@@ -237,7 +234,7 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 	result.back().buffer[result.back().len++] = '\n';
 }
 
-void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts)
+void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char*, bool *enabledFacts)
 {
 	CFileStatus64 status;
 	if (!pTime && GetStatus64(directory.dir, status))
@@ -328,7 +325,7 @@ void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool is
 	result.back().len += sprintf(result.back().buffer + result.back().len, " %s\r\n", name);
 }
 
-void CPermissions::AddShortListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *)
+void CPermissions::AddShortListingEntry(std::list<t_dirlisting> &result, bool, const char* name, const t_directory&, __int64, FILETIME*, const char* dirToDisplay, bool *)
 {
 	unsigned int nameLen = strlen(name);
 	unsigned int dirToDisplayLen = strlen(dirToDisplay);
@@ -598,7 +595,7 @@ int CPermissions::CheckDirectoryPermissions(CUser const& user, CStdString dirnam
 	if (!res2 && op&DOP_CREATE)
 		res |= PERMISSION_DOESALREADYEXIST;
 	else if (!(res2 & PERMISSION_NOTFOUND)) {
-		if (op&DOP_DELETE && user.GetAliasTarget(directory.dir, logicalDir + _T("/"), realDirname) != _T(""))
+		if (op&DOP_DELETE && user.GetAliasTarget(logicalDir + _T("/")) != _T(""))
 			res |= PERMISSION_DENIED;
 		return res | res2;
 	}
@@ -652,7 +649,7 @@ int CPermissions::CheckFilePermissions(CUser const& user, CStdString filename, C
 		res |= PERMISSION_DENIED;
 	if ((!directory.bDirList || (!directory.bDirSubdirs && !truematch)) && op&FOP_LIST)
 		res |= PERMISSION_DENIED;
-	if (op&FOP_DELETE && user.GetAliasTarget(directory.dir, logicalFile + _T("/"), filename) != _T(""))
+	if (op&FOP_DELETE && user.GetAliasTarget(logicalFile + _T("/")) != _T(""))
 		res |= PERMISSION_DENIED;
 
 	physicalFile = directory.dir + "\\" + filename;
@@ -736,10 +733,8 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 
 	CStdString virtualPath = _T("/");
 	// Go through all pieces
-	for (std::list<CStdString>::const_iterator iter = PathPieces.begin(); iter != PathPieces.end(); iter++)
-	{
+	for (auto const& piece : PathPieces) {
 		// Check if piece exists
-		const CStdString& piece = *iter;
 		virtualPath += piece + _T("/");
 		DWORD nAttributes = GetFileAttributes(path + _T("\\") + piece);
 		if (nAttributes != 0xFFFFFFFF)
@@ -752,12 +747,10 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 		else
 		{
 			// Physical path did not exist, check aliases
-			const CStdString& target = user.GetAliasTarget(path, virtualPath, piece);
+			const CStdString& target = user.GetAliasTarget(virtualPath);
 
-			if (target != _T(""))
-			{
-				if (target.Right(1) != _T(":"))
-				{
+			if (!target.empty()) {
+				if (target.Right(1) != _T(":")) {
 					nAttributes = GetFileAttributes(target);
 					if (nAttributes == 0xFFFFFFFF)
 						return PERMISSION_NOTFOUND;
@@ -902,16 +895,13 @@ bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswo
 
 void CPermissions::UpdateInstances()
 {
-	EnterCritSection(m_sync);
-	for (std::list<CPermissions *>::iterator iter=m_sInstanceList.begin(); iter!=m_sInstanceList.end(); iter++)
-	{
-		if (*iter != this)
-		{
+	simple_lock lock(m_mutex);
+	for (std::list<CPermissions *>::iterator iter=m_sInstanceList.begin(); iter!=m_sInstanceList.end(); ++iter) {
+		if (*iter != this) {
 			ASSERT((*iter)->m_pPermissionsHelperWindow);
 			::PostMessage((*iter)->m_pPermissionsHelperWindow->GetHwnd(), WM_USER, 0, 0);
 		}
 	}
-	LeaveCritSection(m_sync);
 }
 
 void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, LPCTSTR value)
@@ -972,12 +962,12 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	if (!pBuffer || !nBufferLength)
 		return FALSE;
 
-	EnterCritSection(m_sync);
+	simple_lock lock(m_mutex);
 
 	// First calculate the required buffer length
 	DWORD len = 4;
 	t_GroupsList::iterator groupiter;
-	for (groupiter = m_sGroupsList.begin(); groupiter != m_sGroupsList.end(); groupiter++)
+	for (groupiter = m_sGroupsList.begin(); groupiter != m_sGroupsList.end(); ++groupiter)
 		len += groupiter->GetRequiredBufferLen();
 
 	for (auto const& iter : m_sUsersList ) {
@@ -991,14 +981,11 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	// Write groups to buffer
 	*p++ = m_sGroupsList.size()/256;
 	*p++ = m_sGroupsList.size()%256;
-	for (groupiter = m_sGroupsList.begin(); groupiter != m_sGroupsList.end(); groupiter++)
-	{
+	for (groupiter = m_sGroupsList.begin(); groupiter != m_sGroupsList.end(); ++groupiter) {
 		p = groupiter->FillBuffer(p);
-		if (!p)
-		{
+		if (!p) {
 			delete [] *pBuffer;
 			*pBuffer = NULL;
-			LeaveCritSection(m_sync);
 			return FALSE;
 		}
 	}
@@ -1008,16 +995,13 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	*p++ = m_sUsersList.size()%256;
 	for (auto const& iter : m_sUsersList ) {
 		p = iter.second.FillBuffer(p);
-		if (!p)
-		{
+		if (!p) {
 			delete [] *pBuffer;
 			*pBuffer = NULL;
-			LeaveCritSection(m_sync);
 			return FALSE;
 		}
 	}
 
-	LeaveCritSection(m_sync);
 	*nBufferLength = len;
 
 	return TRUE;
@@ -1128,10 +1112,11 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	}
 
 	// Update the account list
-	EnterCritSection(m_sync);
-	m_sGroupsList = groupsList;
-	m_sUsersList = usersList;
-	LeaveCritSection(m_sync);
+	{
+		simple_lock lock(m_mutex);
+		m_sGroupsList = groupsList;
+		m_sUsersList = usersList;
+	}
 	UpdatePermissions(true);
 	UpdateInstances();
 
@@ -1203,7 +1188,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 
 bool CPermissions::Init()
 {
-	EnterCritSection(m_sync);
+	simple_lock lock(m_mutex);
 	m_pPermissionsHelperWindow = new CPermissionsHelperWindow(this);
 	if (m_sInstanceList.empty() && m_sUsersList.empty() && m_sGroupsList.empty()) {
 		// It's the first time Init gets called after application start, read
@@ -1218,7 +1203,6 @@ bool CPermissions::Init()
 			break;
 	if (instanceIter == m_sInstanceList.end())
 		m_sInstanceList.push_back(this);
-	LeaveCritSection(m_sync);
 
 	return TRUE;
 }
@@ -1757,15 +1741,15 @@ void CUser::PrepareAliasMap()
 	}
 }
 
-CStdString CUser::GetAliasTarget(const CStdString& path, const CStdString& virtualPath, const CStdString& name) const
+CStdString CUser::GetAliasTarget(CStdString const& virtualPath) const
 {
 	// Find the target for the alias with the specified path and name
-	for (std::map<CStdString, CStdString>::const_iterator iter2 = virtualAliases.begin(); iter2 != virtualAliases.end(); iter2++) {
-		if (!iter2->first.CompareNoCase(virtualPath))
-			return iter2->second;
+	for (auto const& alias : virtualAliases) {
+		if (!alias.first.CompareNoCase(virtualPath))
+			return alias.second;
 	}
 
-	return _T("");
+	return CStdString();
 }
 
 void CPermissions::ReadSettings()
@@ -1774,7 +1758,8 @@ void CPermissions::ReadSettings()
 	if (!pXML)
 		return;
 
-	EnterCritSection(m_sync);
+	simple_lock lock(m_mutex);
+
 	m_sGroupsList.clear();
 	m_sUsersList.clear();
 
@@ -1933,8 +1918,6 @@ void CPermissions::ReadSettings()
 		}
 	}
 	COptions::FreeXML(pXML, false);
-
-	LeaveCritSection(m_sync);
 }
 
 // Replace :u and :g (if a group it exists)
@@ -1997,31 +1980,31 @@ bool CPermissions::WildcardMatch(CStdString string, CStdString pattern) const
 
 void CPermissions::UpdatePermissions(bool notifyOwner)
 {
-	EnterCritSection(m_sync);
+	{
+		simple_lock lock(m_mutex);
 
-	// Clear old group data and copy over the new data
-	m_GroupsList.clear();
-	for (auto const& group : m_sGroupsList ) {
-		m_GroupsList.push_back(group);
-	}
+		// Clear old group data and copy over the new data
+		m_GroupsList.clear();
+		for (auto const& group : m_sGroupsList ) {
+			m_GroupsList.push_back(group);
+		}
 
-	// Clear old user data and copy over the new data
-	m_UsersList.clear();
-	for (auto const& it : m_sUsersList ) {
-		CUser user = it.second;
-		user.pOwner = NULL;
-		if (user.group != _T("")) {	// Set owner
-			for (auto const& group : m_GroupsList ) {
-				if (group.group == user.group) {
-					user.pOwner = &group;
-					break;
+		// Clear old user data and copy over the new data
+		m_UsersList.clear();
+		for (auto const& it : m_sUsersList ) {
+			CUser user = it.second;
+			user.pOwner = NULL;
+			if (user.group != _T("")) {	// Set owner
+				for (auto const& group : m_GroupsList ) {
+					if (group.group == user.group) {
+						user.pOwner = &group;
+						break;
+					}
 				}
 			}
+			m_UsersList[it.first] = user;
 		}
-		m_UsersList[it.first] = user;
 	}
-
-	LeaveCritSection(m_sync);
 
 	if( notifyOwner && updateCallback_ ) {
 		updateCallback_();

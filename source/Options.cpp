@@ -33,9 +33,9 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 std::list<COptions *> COptions::m_InstanceList;
-CCriticalSectionWrapper COptions::m_Sync;
+std::recursive_mutex COptions::m_mutex;
 COptions::t_OptionsCache COptions::m_sOptionsCache[OPTIONS_NUM];
-BOOL COptions::m_bInitialized=FALSE;
+BOOL COptions::m_bInitialized = FALSE;
 
 SPEEDLIMITSLIST COptions::m_sSpeedLimits[2];
 
@@ -45,11 +45,9 @@ CStdString GetExecutableDirectory()
 	CStdString ret;
 
 	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	if (GetModuleFileName(0, buffer, MAX_PATH) > 0)
-	{
+	if (GetModuleFileName(0, buffer, MAX_PATH) > 0) {
 		LPTSTR pos = _tcsrchr(buffer, '\\');
-		if (pos)
-		{
+		if (pos) {
 			*++pos = 0;
 			ret = buffer;
 		}
@@ -72,22 +70,22 @@ public:
 
 		//Create window
 		WNDCLASSEX wndclass;
-		wndclass.cbSize=sizeof wndclass;
-		wndclass.style=0;
-		wndclass.lpfnWndProc=WindowProc;
-		wndclass.cbClsExtra=0;
-		wndclass.cbWndExtra=0;
-		wndclass.hInstance=GetModuleHandle(0);
-		wndclass.hIcon=0;
-		wndclass.hCursor=0;
-		wndclass.hbrBackground=0;
-		wndclass.lpszMenuName=0;
-		wndclass.lpszClassName=_T("COptions Helper Window");
-		wndclass.hIconSm=0;
+		wndclass.cbSize = sizeof(wndclass);
+		wndclass.style = 0;
+		wndclass.lpfnWndProc = WindowProc;
+		wndclass.cbClsExtra = 0;
+		wndclass.cbWndExtra = 0;
+		wndclass.hInstance = GetModuleHandle(0);
+		wndclass.hIcon = 0;
+		wndclass.hCursor = 0;
+		wndclass.hbrBackground = 0;
+		wndclass.lpszMenuName = 0;
+		wndclass.lpszClassName = _T("COptions Helper Window");
+		wndclass.hIconSm = 0;
 
 		RegisterClassEx(&wndclass);
 
-		m_hWnd=CreateWindow(_T("COptions Helper Window"), _T("COptions Helper Window"), 0, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(0));
+		m_hWnd = CreateWindow(_T("COptions Helper Window"), _T("COptions Helper Window"), 0, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(0));
 		ASSERT(m_hWnd);
 		SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG)this);
 	};
@@ -95,10 +93,9 @@ public:
 	virtual ~COptionsHelperWindow()
 	{
 		//Destroy window
-		if (m_hWnd)
-		{
+		if (m_hWnd) {
 			DestroyWindow(m_hWnd);
-			m_hWnd=0;
+			m_hWnd = 0;
 		}
 	}
 
@@ -110,8 +107,7 @@ public:
 protected:
 	static LRESULT CALLBACK WindowProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 	{
-		if (message==WM_USER)
-		{
+		if (message == WM_USER) {
 			COptionsHelperWindow *pWnd=(COptionsHelperWindow *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 			if (!pWnd)
 				return 0;
@@ -119,10 +115,9 @@ protected:
 			ASSERT(pWnd->m_pOptions);
 			for (int i=0;i<OPTIONS_NUM;i++)
 				pWnd->m_pOptions->m_OptionsCache[i].bCached = FALSE;
-			EnterCritSection(COptions::m_Sync);
+			simple_lock lock(COptions::m_mutex);
 			pWnd->m_pOptions->m_SpeedLimits[0] = COptions::m_sSpeedLimits[0];
 			pWnd->m_pOptions->m_SpeedLimits[1] = COptions::m_sSpeedLimits[1];
-			LeaveCritSection(COptions::m_Sync);
 		}
 		return ::DefWindowProc(hWnd, message, wParam, lParam);
 	}
@@ -137,32 +132,33 @@ private:
 
 COptions::COptions()
 {
-	for (int i=0;i<OPTIONS_NUM;i++)
-		m_OptionsCache[i].bCached=FALSE;
-	m_pOptionsHelperWindow=new COptionsHelperWindow(this);
-	EnterCritSection(m_Sync);
+	for (int i = 0; i < OPTIONS_NUM; ++i)
+		m_OptionsCache[i].bCached = FALSE;
+	m_pOptionsHelperWindow = new COptionsHelperWindow(this);
+	simple_lock lock(m_mutex);
 #ifdef _DEBUG
-	for (std::list<COptions *>::iterator iter=m_InstanceList.begin(); iter!=m_InstanceList.end(); iter++)
-		ASSERT(*iter!=this);
+	for (std::list<COptions *>::iterator iter=m_InstanceList.begin(); iter != m_InstanceList.end(); ++iter)
+		ASSERT(*iter != this);
 #endif _DEBUG
 	m_InstanceList.push_back(this);
 	m_SpeedLimits[0] = m_sSpeedLimits[0];
 	m_SpeedLimits[1] = m_sSpeedLimits[1];
-	LeaveCritSection(m_Sync);
 }
 
 COptions::~COptions()
 {
-	EnterCritSection(m_Sync);
-	std::list<COptions *>::iterator iter;
-	for (iter=m_InstanceList.begin(); iter!=m_InstanceList.end(); iter++)
-		if (*iter==this)
-			break;
+	{
+		simple_lock lock(m_mutex);
+		std::list<COptions *>::iterator iter;
+		for (iter=m_InstanceList.begin(); iter != m_InstanceList.end(); ++iter) {
+			if (*iter == this)
+				break;
+		}
 
-	ASSERT(iter!=m_InstanceList.end());
-	if (iter != m_InstanceList.end())
-		m_InstanceList.erase(iter);
-	LeaveCritSection(m_Sync);
+		ASSERT(iter != m_InstanceList.end());
+		if (iter != m_InstanceList.end())
+			m_InstanceList.erase(iter);
+	}
 
 	if (m_pOptionsHelperWindow)
 		delete m_pOptionsHelperWindow;
@@ -174,45 +170,45 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 	switch (nOptionID)
 	{
 	case OPTION_MAXUSERS:
-		if (value<0)
-			value=0;
+		if (value < 0)
+			value = 0;
 		break;
 	case OPTION_THREADNUM:
-		if (value<1)
-			value=2;
-		else if (value>50)
-			value=2;
+		if (value < 1)
+			value = 2;
+		else if (value > 50)
+			value = 2;
 		break;
 	case OPTION_TIMEOUT:
-		if (value<0)
-			value=120;
-		else if (value>9999)
-			value=120;
+		if (value < 0)
+			value = 120;
+		else if (value > 9999)
+			value = 120;
 		break;
 	case OPTION_NOTRANSFERTIMEOUT:
-		if (value<600 && value != 0)
-			value=600;
-		else if (value>9999)
-			value=600;
+		if (value < 600 && value != 0)
+			value = 600;
+		else if (value > 9999)
+			value = 600;
 		break;
 	case OPTION_LOGINTIMEOUT:
-		if (value<0)
-			value=60;
-		else if (value>9999)
-			value=60;
+		if (value < 0)
+			value = 60;
+		else if (value > 9999)
+			value = 60;
 		break;
 	case OPTION_ADMINPORT:
-		if (value>65535)
-			value=14147;
-		else if (value<1)
-			value=14147;
+		if (value > 65535)
+			value = 14147;
+		else if (value < 1)
+			value = 14147;
 		break;
 	case OPTION_LOGTYPE:
-		if (value!=0 && value!=1)
+		if (value != 0 && value != 1)
 			value = 0;
 		break;
 	case OPTION_LOGLIMITSIZE:
-		if ((value > 999999 || value < 10) && value!=0)
+		if ((value > 999999 || value < 10) && value != 0)
 			value = 100;
 		break;
 	case OPTION_LOGDELETETIME:
@@ -275,13 +271,13 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 
 	Init();
 
-	EnterCritSection(m_Sync);
-	m_sOptionsCache[nOptionID-1].nType = 1;
-	m_sOptionsCache[nOptionID-1].value = value;
-	m_sOptionsCache[nOptionID-1].bCached = TRUE;
-	m_OptionsCache[nOptionID-1] = m_sOptionsCache[nOptionID-1];
-
-	LeaveCritSection(m_Sync);
+	{
+		simple_lock lock(m_mutex);
+		m_sOptionsCache[nOptionID-1].nType = 1;
+		m_sOptionsCache[nOptionID-1].value = value;
+		m_sOptionsCache[nOptionID-1].bCached = TRUE;
+		m_OptionsCache[nOptionID-1] = m_sOptionsCache[nOptionID - 1];
+	}
 
 	if (!save)
 		return;
@@ -308,8 +304,7 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
 
 	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
-	{
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
 		if (!pName)
 			continue;
@@ -533,12 +528,14 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 			str = _T("http://ip.filezilla-project.org/ip.php");
 		break;
 	}
-	EnterCritSection(m_Sync);
-	m_sOptionsCache[nOptionID-1].bCached = TRUE;
-	m_sOptionsCache[nOptionID-1].nType = 0;
-	m_sOptionsCache[nOptionID-1].str = str;
-	m_OptionsCache[nOptionID-1]=m_sOptionsCache[nOptionID-1];
-	LeaveCritSection(m_Sync);
+
+	{
+		simple_lock lock(m_mutex);
+		m_sOptionsCache[nOptionID-1].bCached = TRUE;
+		m_sOptionsCache[nOptionID-1].nType = 0;
+		m_sOptionsCache[nOptionID-1].str = str;
+		m_OptionsCache[nOptionID-1]=m_sOptionsCache[nOptionID-1];
+	}
 
 	if (!save)
 		return;
@@ -593,10 +590,9 @@ CStdString COptions::GetOption(int nOptionID)
 	if (m_OptionsCache[nOptionID-1].bCached)
 		return m_OptionsCache[nOptionID-1].str;
 
-	EnterCritSection(m_Sync);
+	simple_lock lock(m_mutex);
 
-	if (!m_sOptionsCache[nOptionID-1].bCached)
-	{
+	if (!m_sOptionsCache[nOptionID-1].bCached) {
 		//Default values
 		switch (nOptionID)
 		{
@@ -625,7 +621,6 @@ CStdString COptions::GetOption(int nOptionID)
 		m_sOptionsCache[nOptionID-1].nType = 0;
 	}
 	m_OptionsCache[nOptionID-1] = m_sOptionsCache[nOptionID - 1];
-	LeaveCritSection(m_Sync);
 	return m_OptionsCache[nOptionID-1].str;
 }
 
@@ -638,10 +633,9 @@ _int64 COptions::GetOptionVal(int nOptionID)
 	if (m_OptionsCache[nOptionID-1].bCached)
 		return m_OptionsCache[nOptionID-1].value;
 
-	EnterCritSection(m_Sync);
+	simple_lock lock(m_mutex);
 
-	if (!m_sOptionsCache[nOptionID-1].bCached)
-	{
+	if (!m_sOptionsCache[nOptionID-1].bCached) {
 		//Default values
 		switch (nOptionID)
 		{
@@ -708,64 +702,52 @@ _int64 COptions::GetOptionVal(int nOptionID)
 		m_sOptionsCache[nOptionID-1].nType=1;
 	}
 	m_OptionsCache[nOptionID-1]=m_sOptionsCache[nOptionID-1];
-	LeaveCritSection(m_Sync);
 	return m_OptionsCache[nOptionID-1].value;
 }
 
 void COptions::UpdateInstances()
 {
-	EnterCritSection(m_Sync);
-	for (std::list<COptions *>::iterator iter=m_InstanceList.begin(); iter!=m_InstanceList.end(); iter++)
-	{
-		ASSERT((*iter)->m_pOptionsHelperWindow);
-		::PostMessage((*iter)->m_pOptionsHelperWindow->GetHwnd(), WM_USER, 0, 0);
+	simple_lock lock(m_mutex);
+	for (auto const& pOptions : m_InstanceList) {
+		ASSERT(pOptions->m_pOptionsHelperWindow);
+		::PostMessage(pOptions->m_pOptionsHelperWindow->GetHwnd(), WM_USER, 0, 0);
 	}
-	LeaveCritSection(m_Sync);
 }
 
 void COptions::Init()
 {
 	if (m_bInitialized)
 		return;
-	EnterCritSection(m_Sync);
+	simple_lock lock(m_mutex);
 	m_bInitialized = TRUE;
 
-	for (int i = 0; i < OPTIONS_NUM; i++)
+	for (int i = 0; i < OPTIONS_NUM; ++i)
 		m_sOptionsCache[i].bCached = FALSE;
 
 	USES_CONVERSION;
 	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 	char* bufferA = T2A(xmlFileName);
-	if (!bufferA)
-	{
-		LeaveCritSection(m_Sync);
+	if (!bufferA) {
 		return;
 	}
 
 	TiXmlDocument document;
 
 	CFileStatus64 status;
-	if (!GetStatus64(xmlFileName, status) )
-	{
+	if (!GetStatus64(xmlFileName, status) ) {
 		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
 		document.SaveFile(bufferA);
 	}
-	else if (status.m_attribute & FILE_ATTRIBUTE_DIRECTORY)
-	{
-		LeaveCritSection(m_Sync);
+	else if (status.m_attribute & FILE_ATTRIBUTE_DIRECTORY) {
 		return;
 	}
 
-	if (!document.LoadFile(bufferA))
-	{
-		LeaveCritSection(m_Sync);
+	if (!document.LoadFile(bufferA)) {
 		return;
 	}
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot)
-	{
-		LeaveCritSection(m_Sync);
+	if (!pRoot) {
 		return;
 	}
 
@@ -774,8 +756,7 @@ void COptions::Init()
 		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
 
 	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
-	{
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
 		if (!pName)
 			continue;
@@ -793,23 +774,19 @@ void COptions::Init()
 		else if (type == _T("numeric"))
 			continue;
 
-		for (int i = 0; i < OPTIONS_NUM; i++)
-		{
-			if (!_tcscmp(name, m_Options[i].name))
-			{
+		for (int i = 0; i < OPTIONS_NUM; ++i) {
+			if (!_tcscmp(name, m_Options[i].name)) {
 				if (m_sOptionsCache[i].bCached)
 					break;
 
-				if (type == _T("numeric"))
-				{
+				if (type == _T("numeric")) {
 					if (m_Options[i].nType != 1)
 						break;
 					_int64 value64 = _ttoi64(value);
 					if (IsNumeric(value))
 						SetOption(i + 1, value64, false);
 				}
-				else
-				{
+				else {
 					if (m_Options[i].nType != 0)
 						break;
 					SetOption(i + 1, value, false);
@@ -820,9 +797,7 @@ void COptions::Init()
 	}
 	ReadSpeedLimits(pSettings);
 
-	LeaveCritSection(m_Sync);
 	UpdateInstances();
-	return;
 }
 
 bool COptions::IsNumeric(LPCTSTR str)
@@ -843,33 +818,30 @@ bool COptions::IsNumeric(LPCTSTR str)
 
 TiXmlElement *COptions::GetXML()
 {
-	EnterCritSection(m_Sync);
+	simple_lock lock(m_mutex);
 
 	USES_CONVERSION;
 	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 	char* bufferA = T2A(xmlFileName);
-	if (!bufferA)
-	{
-		LeaveCritSection(m_Sync);
+	if (!bufferA) {
 		return 0;
 	}
 
 	TiXmlDocument *pDocument = new TiXmlDocument;
 
-	if (!pDocument->LoadFile(bufferA))
-	{
-		LeaveCritSection(m_Sync);
+	if (!pDocument->LoadFile(bufferA)) {
 		delete pDocument;
 		return NULL;
 	}
 
 	TiXmlElement* pElement = pDocument->FirstChildElement("FileZillaServer");
-	if (!pElement)
-	{
-		LeaveCritSection(m_Sync);
+	if (!pElement) {
 		delete pDocument;
 		return NULL;
 	}
+
+	// Must call FreeXML
+	m_mutex.lock();
 
 	return pElement;
 }
@@ -880,32 +852,30 @@ BOOL COptions::FreeXML(TiXmlElement *pXML, bool save)
 	if (!pXML)
 		return FALSE;
 
-	if (!save)
-	{
+	simple_lock lock(m_mutex);
+
+	// As locked by GetXML
+	m_mutex.unlock();
+
+	if (!save) {
 		delete pXML->GetDocument();
-		LeaveCritSection(m_Sync);
 		return FALSE;
 	}
 
 	USES_CONVERSION;
 	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 	char* bufferA = T2A(xmlFileName);
-	if (!bufferA)
-	{
+	if (!bufferA) {
 		delete pXML->GetDocument();
-		LeaveCritSection(m_Sync);
 		return FALSE;
 	}
 
-	if (!pXML->GetDocument()->SaveFile(bufferA))
-	{
+	if (!pXML->GetDocument()->SaveFile(bufferA)) {
 		delete pXML->GetDocument();
-		LeaveCritSection(m_Sync);
 		return FALSE;
 	}
 
 	delete pXML->GetDocument();
-	LeaveCritSection(m_Sync);
 	return TRUE;
 }
 
@@ -914,9 +884,8 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	int i;
 	DWORD len = 2;
 
-	EnterCritSection(m_Sync);
-	for (i=0; i<OPTIONS_NUM; i++)
-	{
+	simple_lock lock(m_mutex);
+	for (i=0; i<OPTIONS_NUM; ++i) {
 		len+=1;
 		if (!m_Options[i].nType)
 		{
@@ -943,10 +912,9 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 	*pBuffer=new char[len];
 	char *p=*pBuffer;
-	*p++ = OPTIONS_NUM/256;
-	*p++ = OPTIONS_NUM%256;
-	for (i=0; i<OPTIONS_NUM; i++)
-	{
+	*p++ = OPTIONS_NUM / 256;
+	*p++ = OPTIONS_NUM % 256;
+	for (i=0; i<OPTIONS_NUM; ++i) {
 		*p++ = m_Options[i].nType;
 		switch(m_Options[i].nType) {
 		case 0:
@@ -984,15 +952,12 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 		}
 	}
 
-	for (i = 0; i < 2; i++)
-	{
+	for (i = 0; i < 2; ++i) {
 		*p++ = m_sSpeedLimits[i].size() << 8;
 		*p++ = m_sSpeedLimits[i].size() %256;
 		for (iter = m_sSpeedLimits[i].begin(); iter != m_sSpeedLimits[i].end(); iter++)
 			p = iter->FillBuffer(p);
 	}
-
-	LeaveCritSection(m_Sync);
 
 	*nBufferLength = len;
 
@@ -1008,8 +973,7 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 		return FALSE;
 
 	int i;
-	for (i = 0; i < num; i++)
-	{
+	for (i = 0; i < num; ++i) {
 		if ((DWORD)(p-pData)>=dwDataLength)
 			return FALSE;
 		int nType = *p++;
@@ -1048,22 +1012,19 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 		return FALSE;
 	num = *p++ << 8;
 	num |= *p++;
-	EnterCritSection(m_Sync);
-	for (i=0; i<num; i++)
-	{
+
+	simple_lock lock(m_mutex);
+
+	for (i=0; i<num; ++i) {
 		CSpeedLimit limit;
 		p = limit.ParseBuffer(p, dwDataLength - (p - pData));
-		if (!p)
-		{
-			LeaveCritSection(m_Sync);
+		if (!p) {
 			return FALSE;
 		}
 		dl.push_back(limit);
 	}
 
-	if ((DWORD)(p-pData+2)>dwDataLength)
-	{
-		LeaveCritSection(m_Sync);
+	if ((DWORD)(p-pData+2)>dwDataLength) {
 		return FALSE;
 	}
 	num = *p++ << 8;
@@ -1072,9 +1033,7 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 	{
 		CSpeedLimit limit;
 		p = limit.ParseBuffer(p, dwDataLength - (p - pData));
-		if (!p)
-		{
-			LeaveCritSection(m_Sync);
+		if (!p) {
 			return FALSE;
 		}
 		ul.push_back(limit);
@@ -1084,8 +1043,6 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 	m_sSpeedLimits[1] = ul;
 
 	SaveOptions();
-
-	LeaveCritSection(m_Sync);
 
 	UpdateInstances();
 
@@ -1188,7 +1145,7 @@ int COptions::GetCurrentSpeedLimit(int nMode)
 
 void COptions::ReloadConfig()
 {
-	EnterCritSection(m_Sync);
+	simple_lock lock(m_mutex);
 
 	m_bInitialized = TRUE;
 
@@ -1198,36 +1155,27 @@ void COptions::ReloadConfig()
 	USES_CONVERSION;
 	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 	char* bufferA = T2A(xmlFileName);
-	if (!bufferA)
-	{
-		LeaveCritSection(m_Sync);
+	if (!bufferA) {
 		return;
 	}
 
 	TiXmlDocument document;
 
 	CFileStatus64 status;
-	if (!GetStatus64(xmlFileName, status) )
-	{
+	if (!GetStatus64(xmlFileName, status) ) {
 		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
 		document.SaveFile(bufferA);
 	}
-	else if (status.m_attribute & FILE_ATTRIBUTE_DIRECTORY)
-	{
-		LeaveCritSection(m_Sync);
+	else if (status.m_attribute & FILE_ATTRIBUTE_DIRECTORY) {
 		return;
 	}
 
-	if (!document.LoadFile(bufferA))
-	{
-		LeaveCritSection(m_Sync);
+	if (!document.LoadFile(bufferA)) {
 		return;
 	}
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot)
-	{
-		LeaveCritSection(m_Sync);
+	if (!pRoot) {
 		return;
 	}
 
@@ -1236,8 +1184,7 @@ void COptions::ReloadConfig()
 		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
 
 	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
-	{
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
 		if (!pName)
 			continue;
@@ -1252,23 +1199,19 @@ void COptions::ReloadConfig()
 		CStdString value = ConvFromNetwork(textNode->Value());
 
 
-		for (int i = 0;i < OPTIONS_NUM; i++)
-		{
-			if (!_tcscmp(name, m_Options[i].name))
-			{
+		for (int i = 0;i < OPTIONS_NUM; ++i) {
+			if (!_tcscmp(name, m_Options[i].name)) {
 				if (m_sOptionsCache[i].bCached)
 					break;
 
-				if (type == _T("numeric"))
-				{
+				if (type == _T("numeric")) {
 					if (m_Options[i].nType != 1)
 						break;
 					_int64 value64 = _ttoi64(value);
 					if (IsNumeric(value))
 						SetOption(i + 1, value64, false);
 				}
-				else
-				{
+				else {
 					if (m_Options[i].nType != 0)
 						break;
 					SetOption(i  +1, value, false);
@@ -1279,7 +1222,6 @@ void COptions::ReloadConfig()
 	}
 	ReadSpeedLimits(pSettings);
 
-	LeaveCritSection(m_Sync);
 	UpdateInstances();
 }
 

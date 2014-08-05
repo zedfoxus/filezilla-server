@@ -55,10 +55,6 @@
 #include <assert.h>
 #include <iostream>
 
-#ifdef MMGR
-#include "../misc/mmgr.h"
-#endif
-
 #include "misc\saprefsdialog.h"
 #include "misc\saprefssubdlg.h"
 

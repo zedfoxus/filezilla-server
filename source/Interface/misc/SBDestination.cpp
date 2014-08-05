@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "SBDestination.h"
 
-#if defined(_DEBUG) && !defined(MMGR)
+#if defined(_DEBUG) 
 #undef THIS_FILE
 static char THIS_FILE[]=__FILE__;
 #define new DEBUG_NEW

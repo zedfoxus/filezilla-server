@@ -21,17 +21,17 @@ CHashThread::CHashThread()
 	m_algorithm = SHA512;
 
 	m_hThread = CreateThread(0, 0, &CHashThread::ThreadFunc, this, 0, 0);
-
 }
 
 CHashThread::~CHashThread()
 {
-	m_sync.Lock();
-	m_quit = true;
-	m_server_thread = 0;
-	delete [] m_filename;
-	delete [] m_hash;
-	m_sync.Unlock();
+	{
+		simple_lock lock(m_mutex);
+		m_quit = true;
+		m_server_thread = 0;
+		delete [] m_filename;
+		delete [] m_hash;
+	}
 
 	WaitForSingleObject(m_hThread, INFINITE);
 
@@ -79,15 +79,14 @@ void CHashThread::DoHash()
 	LPCTSTR file = m_filename;
 	m_filename = 0;
 
-	m_sync.Unlock();
+	m_mutex.unlock();
 
 	int shareMode = FILE_SHARE_READ;
 	HANDLE hFile = CreateFile(file, GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	delete [] file;
 
-	if (hFile == INVALID_HANDLE_VALUE)
-	{
-		m_sync.Lock();
+	if (hFile == INVALID_HANDLE_VALUE) {
+		m_mutex.lock();
 		m_result = FAILURE_OPEN;
 		if (m_server_thread)
 			m_server_thread->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_HASHRESULT, m_active_id);
@@ -130,28 +129,23 @@ void CHashThread::DoHash()
 			break;
 		}
 
-		m_sync.Lock();
-		if (!m_server_thread)
-		{
+		m_mutex.lock();
+		if (!m_server_thread) {
 			CloseHandle(hFile);
 			return;
 		}
-		m_sync.Unlock();
+		m_mutex.unlock();
 	}
 
 	CloseHandle(hFile);
 
-
-	if (!res)
-	{
-		m_sync.Lock();
+	m_mutex.lock();
+	if (!res) {
 		m_result = FAILURE_READ;
 		if (m_server_thread)
 			m_server_thread->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_HASHRESULT, m_active_id);
 		return;
 	}
-
-	m_sync.Lock();
 
 	switch (alg)
 	{
@@ -181,22 +175,20 @@ void CHashThread::DoHash()
 
 void CHashThread::Loop()
 {
-	m_sync.Lock();
-	while (!m_quit)
-	{
+	m_mutex.lock();
+	while (!m_quit) {
 		DoHash();
-		m_sync.Unlock();
+		m_mutex.unlock();
 		Sleep(100);
-		m_sync.Lock();
+		m_mutex.lock();
 	}
+	m_mutex.unlock();
 }
 
 enum CHashThread::_result CHashThread::Hash(LPCTSTR file, enum _algorithm algorithm, int& id, CServerThread* server_thread)
 {
-	m_sync.Lock();
-	if (m_active_id)
-	{
-		m_sync.Unlock();
+	simple_lock lock(m_mutex);
+	if (m_active_id) {
 		return BUSY;
 	}
 
@@ -218,8 +210,6 @@ enum CHashThread::_result CHashThread::Hash(LPCTSTR file, enum _algorithm algori
 
 	m_result = PENDING;
 
-	m_sync.Unlock();
-
 	return PENDING;
 }
 
@@ -228,17 +218,13 @@ enum CHashThread::_result CHashThread::GetResult(int id, CHashThread::_algorithm
 	if (id <= 0)
 		return FAILURE_MASK;
 
-	m_sync.Lock();
+	simple_lock lock(m_mutex);
 
-	if (id != m_active_id)
-	{
-		m_sync.Unlock();
+	if (id != m_active_id) {
 		return BUSY;
 	}
 
-	if (m_result == PENDING)
-	{
-		m_sync.Unlock();
+	if (m_result == PENDING) {
 		return PENDING;
 	}
 
@@ -250,24 +236,19 @@ enum CHashThread::_result CHashThread::GetResult(int id, CHashThread::_algorithm
 
 	m_active_id = 0;
 
-	if (m_result == OK)
-	{
+	if (m_result == OK) {
 		hash = m_hash;
 		delete [] m_hash;
 		m_hash = 0;
-		m_sync.Unlock();
 		return OK;
 	}
-
-	m_sync.Unlock();
 
 	return m_result;
 }
 
 void CHashThread::Stop(CServerThread* server_thread)
 {
-	m_sync.Lock();
+	simple_lock lock(m_mutex);
 	if (m_server_thread == server_thread)
 		m_server_thread = 0;
-	m_sync.Unlock();
 }

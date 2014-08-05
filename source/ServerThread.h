@@ -107,8 +107,8 @@ protected:
 	UINT m_nRateTimer{};
 	BOOL m_bQuit{};
 
-	CCriticalSectionWrapper m_threadsync;
-	static CCriticalSectionWrapper m_GlobalThreadsync;
+	std::recursive_mutex m_mutex;
+	static std::recursive_mutex m_global_mutex;
 	unsigned int m_timerid{};
 
 	//Speed limit code

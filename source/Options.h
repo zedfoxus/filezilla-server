@@ -53,7 +53,7 @@ public:
 
 protected:
 
-	static CCriticalSectionWrapper m_Sync;
+	static std::recursive_mutex m_mutex;
 	static std::list<COptions *> m_InstanceList;
 	static bool IsNumeric(LPCTSTR str);
 
@@ -65,8 +65,7 @@ protected:
 	static SPEEDLIMITSLIST m_sSpeedLimits[2];
 	SPEEDLIMITSLIST m_SpeedLimits[2];
 
-	struct t_OptionsCache
-	{
+	struct t_OptionsCache {
 		BOOL bCached;
 		int nType;
 		CStdString str;

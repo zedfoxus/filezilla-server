@@ -33,7 +33,7 @@ This class only has a couple of public functions:
 			unsigned char* locality, unsigned char* organization, unsigned char* unit, unsigned char* cname,
 			unsigned char *email, CString& err);
   Creates a new self-signed SSL certificate and stores it in the given file
-- SendRaw(const void* lpBuf, int nBufLen, int nFlags = 0)
+- SendRaw(const void* lpBuf, int nBufLen)
   Sends a raw, unencrypted message. This may be useful after successful initialization to tell the other
   side that can use SSL.
 
@@ -215,45 +215,9 @@ def(BIO_METHOD *, BIO_s_mem, (void));
 def(int, i2d_PrivateKey, (EVP_PKEY *a, unsigned char **pp));
 def(int, BIO_test_flags, (const BIO *b, int flags));
 
-
-// Critical section wrapper class
-#ifndef CCRITICALSECTIONWRAPPERINCLUDED
-class CCriticalSectionWrapper
-{
-public:
-	CCriticalSectionWrapper()
-	{
-		m_bInitialized = TRUE;
-		InitializeCriticalSection(&m_criticalSection);
-	}
-
-	~CCriticalSectionWrapper()
-	{
-		if (m_bInitialized)
-			DeleteCriticalSection(&m_criticalSection);
-		m_bInitialized = FALSE;
-	}
-
-	void Lock()
-	{
-		if (m_bInitialized)
-			EnterCriticalSection(&m_criticalSection);
-	}
-	void Unlock()
-	{
-		if (m_bInitialized)
-			LeaveCriticalSection(&m_criticalSection);
-	}
-protected:
-	CRITICAL_SECTION m_criticalSection;
-	BOOL m_bInitialized;
-};
-#define CCRITICALSECTIONWRAPPERINCLUDED
-#endif
-
 /////////////////////////////////////////////////////////////////////////////
 // CAsyncSslSocketLayer
-CCriticalSectionWrapper CAsyncSslSocketLayer::m_sCriticalSection;
+std::recursive_mutex CAsyncSslSocketLayer::m_mutex;
 
 CAsyncSslSocketLayer::t_SslLayerList* CAsyncSslSocketLayer::m_pSslLayerList = 0;
 int CAsyncSslSocketLayer::m_nSslRefCount = 0;
@@ -274,17 +238,14 @@ int CAsyncSslSocketLayer::InitSSL()
 	if (m_bSslInitialized)
 		return 0;
 
-	m_sCriticalSection.Lock();
+	simple_lock lock(m_mutex);
 
 	if (!m_nSslRefCount) {
-		m_hSslDll2=
-			LoadLibrary(_T("libeay32.dll"));
+		m_hSslDll2 = LoadLibrary(_T("libeay32.dll"));
 		if (!m_hSslDll2) {
 			if (m_hSslDll1)
 				FreeLibrary(m_hSslDll1);
-			m_hSslDll1=0;
-
-			m_sCriticalSection.Unlock();
+			m_hSslDll1 = 0;
 			return SSL_FAILURE_LOADDLLS;
 		}
 
@@ -347,8 +308,6 @@ int CAsyncSslSocketLayer::InitSSL()
 			m_hSslDll1 = 0;
 			FreeLibrary(m_hSslDll2);
 			m_hSslDll2 = 0;
-
-			m_sCriticalSection.Unlock();
 			return SSL_FAILURE_LOADDLLS;
 		}
 
@@ -357,8 +316,6 @@ int CAsyncSslSocketLayer::InitSSL()
 			if (m_hSslDll2)
 				FreeLibrary(m_hSslDll2);
 			m_hSslDll2 = NULL;
-
-			m_sCriticalSection.Unlock();
 			return SSL_FAILURE_LOADDLLS;
 		}
 		load(m_hSslDll1, SSL_state_string_long);
@@ -408,8 +365,6 @@ int CAsyncSslSocketLayer::InitSSL()
 			if (m_hSslDll2)
 				FreeLibrary(m_hSslDll2);
 			m_hSslDll2=0;
-
-			m_sCriticalSection.Unlock();
 			return SSL_FAILURE_LOADDLLS;
 		}
 
@@ -419,14 +374,11 @@ int CAsyncSslSocketLayer::InitSSL()
 			m_hSslDll1=0;
 			FreeLibrary(m_hSslDll2);
 			m_hSslDll2=0;
-
-			m_sCriticalSection.Unlock();
 			return SSL_FAILURE_INITSSL;
 		}
 	}
 
-	m_nSslRefCount++;
-	m_sCriticalSection.Unlock();
+	++m_nSslRefCount;
 
 	m_bSslInitialized = true;
 
@@ -904,34 +856,26 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /
 	if (res)
 		return res;
 
-	m_sCriticalSection.Lock();
+	scoped_lock lock(m_mutex);
 	if ((SSL_CTX*)pSslContext) {
 		if (m_ssl_ctx) {
-			m_sCriticalSection.Unlock();
 			ResetSslSession();
 			return SSL_FAILURE_INITSSL;
 		}
 
-		std::map<SSL_CTX *, int>::iterator& iter = m_contextRefCount.find((SSL_CTX*)pSslContext);
+		auto iter = m_contextRefCount.find((SSL_CTX*)pSslContext);
 		if (iter == m_contextRefCount.end() || iter->second < 1) {
-			m_sCriticalSection.Unlock();
 			ResetSslSession();
 			return SSL_FAILURE_INITSSL;
 		}
 		m_ssl_ctx = (SSL_CTX*)pSslContext;
-		iter->second++;
+		++iter->second;
 	}
 	else if (!m_ssl_ctx) {
-		// Create new context if none given
-		if (!(m_ssl_ctx = pSSL_CTX_new( pSSLv23_method()))) {
-			m_sCriticalSection.Unlock();
+		if (!CreateContext() ) {
 			ResetSslSession();
 			return SSL_FAILURE_INITSSL;
 		}
-		m_contextRefCount[m_ssl_ctx] = 1;
-
-		long options = pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, 0, NULL);
-		pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3, NULL);
 
 		if (clientMode) {
 			USES_CONVERSION;
@@ -942,7 +886,6 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /
 
 	//Create new SSL session
 	if (!(m_ssl = pSSL_new(m_ssl_ctx))) {
-		m_sCriticalSection.Unlock();
 		ResetSslSession();
 		return SSL_FAILURE_INITSSL;
 	}
@@ -955,7 +898,8 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /
 	m_pSslLayerList = new t_SslLayerList;
 	m_pSslLayerList->pNext = tmp;
 	m_pSslLayerList->pLayer = this;
-	m_sCriticalSection.Unlock();
+
+	lock.unlock();
 
 	//Create bios
 	m_sslbio = pBIO_new(pBIO_f_ssl());
@@ -1026,17 +970,17 @@ void CAsyncSslSocketLayer::ResetSslSession()
 	pSSL_free(m_ssl);
 	m_ssl = 0;
 
-	m_sCriticalSection.Lock();
+	simple_lock lock(m_mutex);
 
 	if (m_ssl_ctx) {
-		std::map<SSL_CTX *, int>::iterator& iter = m_contextRefCount.find(m_ssl_ctx);
+		auto iter = m_contextRefCount.find(m_ssl_ctx);
 		if (iter != m_contextRefCount.end()) {
 			if (iter->second <= 1) {
 				pSSL_CTX_free(m_ssl_ctx);
 				m_contextRefCount.erase(iter);
 			}
 			else
-				iter->second--;
+				--iter->second;
 		}
 		m_ssl_ctx = 0;
 	}
@@ -1060,7 +1004,6 @@ void CAsyncSslSocketLayer::ResetSslSession()
 		prev = cur;
 		cur = cur->pNext;
 	}
-	m_sCriticalSection.Unlock();
 }
 
 bool CAsyncSslSocketLayer::IsUsingSSL()
@@ -1121,14 +1064,14 @@ BOOL CAsyncSslSocketLayer::DoShutDown()
 void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int ret)
 {
 	CAsyncSslSocketLayer *pLayer = 0;
-	m_sCriticalSection.Lock();
+	m_mutex.lock();
 	for (t_SslLayerList *cur = m_pSslLayerList; cur; cur = cur->pNext) {
 		if (cur->pLayer->m_ssl == s) {
 			pLayer = cur->pLayer;
 			break;
 		}
 	}
-	m_sCriticalSection.Unlock();
+	m_mutex.unlock();
 
 	// Called while unloading?
 	if (!pLayer || !pLayer->m_bUseSSL)
@@ -1231,24 +1174,19 @@ void CAsyncSslSocketLayer::UnloadSSL()
 
 	m_bSslInitialized = false;
 
-	m_sCriticalSection.Lock();
+	simple_lock lock(m_mutex);
 	m_nSslRefCount--;
-	if (m_nSslRefCount)
-	{
-		m_sCriticalSection.Unlock();
+	if (m_nSslRefCount) {
 		return;
 	}
 
 	if (m_hSslDll1)
 		FreeLibrary(m_hSslDll1);
-	if (m_hSslDll2)
-	{
-		FreeLibrary(m_hSslDll2);
+	if (m_hSslDll2) {
 		FreeLibrary(m_hSslDll2);
 	}
 	m_hSslDll1 = NULL;
 	m_hSslDll2 = NULL;
-	m_sCriticalSection.Unlock();
 }
 
 namespace {
@@ -1523,7 +1461,8 @@ int CAsyncSslSocketLayer::verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 
 	// Lookup CAsyncSslSocketLayer instance
 	CAsyncSslSocketLayer *pLayer = 0;
-	m_sCriticalSection.Lock();
+	
+	scoped_lock lock(m_mutex);
 	t_SslLayerList *cur = m_pSslLayerList;
 	while (cur) {
 		if (cur->pLayer->m_ssl == ssl)
@@ -1531,12 +1470,11 @@ int CAsyncSslSocketLayer::verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 		cur = cur->pNext;
 	}
 	if (!cur) {
-		m_sCriticalSection.Unlock();
 		return 1;
 	}
 	else
 		pLayer = cur->pLayer;
-	m_sCriticalSection.Unlock();
+	lock.unlock();
 
 	/*
 	 * Catch a too long certificate chain. The depth limit set using
@@ -1779,18 +1717,9 @@ int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, cons
 	if (res)
 		return res;
 
-	m_sCriticalSection.Lock();
-
-	if (!m_ssl_ctx) {
-		// Create new context
-		if (!(m_ssl_ctx = pSSL_CTX_new( pSSLv23_method()))) {
-			m_sCriticalSection.Unlock();
-			return SSL_FAILURE_INITSSL;
-		}
-		m_contextRefCount[m_ssl_ctx] = 1;
-
-		long options = pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, 0, NULL);
-		pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options | SSL_OP_NO_SSLv2, NULL);
+	simple_lock lock(m_mutex);
+	if (!CreateContext()) {
+		return SSL_FAILURE_INITSSL;
 	}
 
 	pSSL_CTX_set_default_passwd_cb(m_ssl_ctx, pem_passwd_cb);
@@ -1809,12 +1738,10 @@ int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, cons
 
 	pSSL_CTX_set_default_passwd_cb_userdata(m_ssl_ctx, 0);
 
-	m_sCriticalSection.Unlock();
-
 	return res;
 }
 
-int CAsyncSslSocketLayer::SendRaw(const void* lpBuf, int nBufLen, int nFlags)
+int CAsyncSslSocketLayer::SendRaw(const void* lpBuf, int nBufLen)
 {
 	if (!m_bUseSSL) {
 		SetLastError(WSANOTINITIALISED);
@@ -1891,7 +1818,7 @@ void CAsyncSslSocketLayer::TriggerEvents()
 		TriggerEvent(FD_CLOSE, 0, TRUE);
 }
 
-int CAsyncSslSocketLayer::pem_passwd_cb(char *buf, int size, int rwflag, void *userdata)
+int CAsyncSslSocketLayer::pem_passwd_cb(char *buf, int size, int, void *userdata)
 {
 	CAsyncSslSocketLayer* pThis = (CAsyncSslSocketLayer*)userdata;
 
@@ -1906,4 +1833,20 @@ int CAsyncSslSocketLayer::pem_passwd_cb(char *buf, int size, int rwflag, void *u
 	buf[len] = 0;
 
 	return len;
+}
+
+bool CAsyncSslSocketLayer::CreateContext()
+{
+	if (m_ssl_ctx)
+		return true;
+
+	if (!(m_ssl_ctx = pSSL_CTX_new( pSSLv23_method()))) {
+		return false;
+	}
+	m_contextRefCount[m_ssl_ctx] = 1;
+
+	long options = pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, 0, NULL);
+	pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3, NULL);
+
+	return true;
 }

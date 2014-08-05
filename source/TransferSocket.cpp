@@ -828,40 +828,30 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		CStdString OwnerIP, TransferIP;
 		UINT port = 0;
 
-		SOCKADDR_IN sockAddr;
-		memset(&sockAddr, 0, sizeof(sockAddr));
-		int nSockAddrLen = sizeof(sockAddr);
-		if (!m_pOwner->GetSockName(OwnerIP, port))
-		{
+		if (!m_pOwner->GetSockName(OwnerIP, port)) {
 			EndTransfer(5);
 			return FALSE;
 		}
 
-		if (!GetSockName(TransferIP, port))
-		{
+		if (!GetSockName(TransferIP, port)) {
 			EndTransfer(5);
 			return FALSE;
 		}
 
-		if (!IsLocalhost(OwnerIP) && !IsLocalhost(TransferIP))
-		{
+		if (!IsLocalhost(OwnerIP) && !IsLocalhost(TransferIP)) {
 
-			if (GetFamily() == AF_INET6)
-			{
+			if (GetFamily() == AF_INET6) {
 				OwnerIP = GetIPV6LongForm(OwnerIP);
 				TransferIP = GetIPV6LongForm(TransferIP);
 			}
 
-			if (!m_pOwner->m_owner.m_pOptions->GetOptionVal(optStrictFilter))
-			{
-				if (GetFamily() == AF_INET6)
-				{
+			if (!m_pOwner->m_owner.m_pOptions->GetOptionVal(optStrictFilter)) {
+				if (GetFamily() == AF_INET6) {
 					// Assume a /64
 					OwnerIP = OwnerIP.Left(20);
 					TransferIP = TransferIP.Left(20);
 				}
-				else
-				{
+				else {
 					// Assume a /24
 					OwnerIP = OwnerIP.Left(OwnerIP.ReverseFind('.'));
 					TransferIP = TransferIP.Left(TransferIP.ReverseFind('.'));

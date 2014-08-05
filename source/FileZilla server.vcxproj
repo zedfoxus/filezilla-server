@@ -5,10 +5,6 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Memcheck|Win32">
-      <Configuration>Memcheck</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -20,10 +16,6 @@
     <RootNamespace>Service</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'" Label="Configuration">
-    <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -49,10 +41,6 @@
     <IncludePath>$(zlib_include);$(openssl_include);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LibraryPath>$(zlib_lib_debug);$(LibraryPath)</LibraryPath>
-    <IncludePath>$(zlib_include);$(openssl_include);$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
     <LibraryPath>$(zlib_lib_debug);$(LibraryPath)</LibraryPath>
     <IncludePath>$(zlib_include);$(openssl_include);$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -200,78 +188,6 @@ GOTO:EOF
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
-    <Midl>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/FileZilla server.tlb</TypeLibraryName>
-      <HeaderFileName />
-    </Midl>
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>ZLIB_WINAPI;WIN32;_DEBUG;_WINDOWS;MMGR;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <MinimalRebuild>true</MinimalRebuild>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-    </ClCompile>
-    <ResourceCompile />
-    <PreLinkEvent>
-      <Message>Terminate service...</Message>
-      <Command>if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /stop
-if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /compat /stop
-if EXIST "$(OutDir)FileZilla Server.exe" "$(OutDir)FileZilla Server.exe" /uninstall
-EXIT 0</Command>
-    </PreLinkEvent>
-    <Link>
-      <AdditionalDependencies>zlibstat.lib;version.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <GenerateMapFile>true</GenerateMapFile>
-      <SubSystem>Windows</SubSystem>
-      <DataExecutionPrevention />
-    </Link>
-    <PostBuildEvent>
-      <Command>"$(OutDir)FileZilla Server.exe" /stop
-"$(OutDir)FileZilla Server.exe" /uninstall
-EXIT 0</Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>rem Copy ssleay32.dll and libeay32.dll from openssl lib directory to output directory
-
-CALL:copyChanged "$(openssl_lib)\ssleay32.dll" "$(OUTDIR)\ssleay32.dll"
-CALL:copyChanged "$(openssl_lib)\libeay32.dll" "$(OUTDIR)\libeay32.dll"
-CALL:copyChanged "$(openssl_lib)\ssleay32.pdb" "$(OUTDIR)\ssleay32.pdb" 1
-CALL:copyChanged "$(openssl_lib)\libeay32.pdb" "$(OUTDIR)\libeay32.pdb" 1
-
-GOTO:EOF
-
-:copyChanged
-
-SET SOURCE=%1
-SET TARGET=%2
-
-IF "%3" == "1" IF NOT EXIST %SOURCE% GOTO:EOF
-
-FOR %%i IN (%SOURCE%) DO SET SOURCEDATE=%%~ti
-FOR %%i IN (%TARGET%) DO SET TARGETDATE=%%~ti
-
-IF "%SOURCEDATE%"=="%TARGETDATE%" GOTO:EOF
-copy /B /Y %SOURCE% %TARGET%
-IF ERRORLEVEL 1 (
-  echo Could not copy %SOURCE% to %TARGET%
-  EXIT 1
-)
-
-GOTO:EOF
-</Command>
-    </PreBuildEvent>
-  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Accounts.cpp" />
     <ClCompile Include="AdminInterface.cpp" />
@@ -290,7 +206,6 @@ GOTO:EOF
     <ClCompile Include="ListenSocket.cpp" />
     <ClCompile Include="misc\md5.cpp" />
     <ClCompile Include="MFC64bitFix.cpp" />
-    <ClCompile Include="misc\mmgr.cpp" />
     <ClCompile Include="Options.cpp" />
     <ClCompile Include="Permissions.cpp" />
     <ClCompile Include="Server.cpp" />

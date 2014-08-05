@@ -350,8 +350,7 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 			}
 
 			if (m_nFamily == AF_UNSPEC) {
-				m_pOwnerSocket->m_SocketData.hSocket = hSocket;
-				m_pOwnerSocket->AttachHandle(hSocket);
+				m_pOwnerSocket->AttachHandle(hSocket, res1->ai_family);
 				if (!m_pOwnerSocket->AsyncSelect(m_lEvent)) {
 					m_pOwnerSocket->Close();
 					res = FALSE;
@@ -745,16 +744,13 @@ BOOL CAsyncSocketExLayer::CreateNext(UINT nSocketPort, int nSocketType, long lEv
 	}
 	else
 	{
-		SOCKET hSocket=socket(nFamily, nSocketType, 0);
-		if (hSocket == INVALID_SOCKET)
-		{
+		SOCKET hSocket = socket(nFamily, nSocketType, 0);
+		if (hSocket == INVALID_SOCKET) {
 			m_pOwnerSocket->Close();
 			return FALSE;
 		}
-		m_pOwnerSocket->m_SocketData.hSocket=hSocket;
-		m_pOwnerSocket->AttachHandle(hSocket);
-		if (!m_pOwnerSocket->AsyncSelect(lEvent))
-		{
+		m_pOwnerSocket->AttachHandle(hSocket, nFamily);
+		if (!m_pOwnerSocket->AsyncSelect(lEvent)) {
 			m_pOwnerSocket->Close();
 			return FALSE;
 		}
@@ -844,9 +840,7 @@ BOOL CAsyncSocketExLayer::AcceptNext( CAsyncSocketEx& rConnectedSocket, SOCKADDR
 		if (hTemp == INVALID_SOCKET)
 			return FALSE;
 		VERIFY(rConnectedSocket.InitAsyncSocketExInstance());
-		rConnectedSocket.m_SocketData.hSocket=hTemp;
-		rConnectedSocket.AttachHandle(hTemp);
-		rConnectedSocket.SetFamily(GetFamily());
+		rConnectedSocket.AttachHandle(hTemp, GetFamily());
 #ifndef NOSOCKETSTATES
 		rConnectedSocket.SetState(connected);
 #endif //NOSOCKETSTATES
@@ -898,35 +892,29 @@ bool CAsyncSocketExLayer::SetFamily(int nFamily)
 
 bool CAsyncSocketExLayer::TryNextProtocol()
 {
-	m_pOwnerSocket->DetachHandle(m_pOwnerSocket->m_SocketData.hSocket);
 	closesocket(m_pOwnerSocket->m_SocketData.hSocket);
-	m_pOwnerSocket->m_SocketData.hSocket = INVALID_SOCKET;
+	m_pOwnerSocket->DetachHandle();
 
 	BOOL ret = FALSE;
-	for (; m_nextAddr; m_nextAddr = m_nextAddr->ai_next)
-	{
-		m_pOwnerSocket->m_SocketData.hSocket = socket(m_nextAddr->ai_family, m_nextAddr->ai_socktype, m_nextAddr->ai_protocol);
+	for (; m_nextAddr; m_nextAddr = m_nextAddr->ai_next) {
+		SOCKET hSocket = socket(m_nextAddr->ai_family, m_nextAddr->ai_socktype, m_nextAddr->ai_protocol);
 
-		if (m_pOwnerSocket->m_SocketData.hSocket == INVALID_SOCKET)
+		if (hSocket == INVALID_SOCKET)
 			continue;
 
-		m_pOwnerSocket->AttachHandle(m_pOwnerSocket->m_SocketData.hSocket);
-		if (!m_pOwnerSocket->AsyncSelect(m_lEvent))
-		{
-			m_pOwnerSocket->DetachHandle(m_pOwnerSocket->m_SocketData.hSocket);
+		m_pOwnerSocket->AttachHandle(hSocket, m_nextAddr->ai_family);
+		if (!m_pOwnerSocket->AsyncSelect(m_lEvent)) {
 			closesocket(m_pOwnerSocket->m_SocketData.hSocket);
-			m_pOwnerSocket->m_SocketData.hSocket = INVALID_SOCKET;
+			m_pOwnerSocket->DetachHandle();
 			continue;
 		}
 
 #ifndef NOLAYERS
-		if (m_pOwnerSocket->m_pFirstLayer)
-		{
+		if (m_pOwnerSocket->m_pFirstLayer) {
 			if (WSAAsyncSelect(m_pOwnerSocket->m_SocketData.hSocket, m_pOwnerSocket->GetHelperWindowHandle(), m_pOwnerSocket->m_SocketData.nSocketIndex+WM_SOCKETEX_NOTIFY, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE))
 			{
-				m_pOwnerSocket->DetachHandle(m_pOwnerSocket->m_SocketData.hSocket);
 				closesocket(m_pOwnerSocket->m_SocketData.hSocket);
-				m_pOwnerSocket->m_SocketData.hSocket = INVALID_SOCKET;
+				m_pOwnerSocket->DetachHandle();
 				continue;
 			}
 		}
@@ -936,17 +924,14 @@ bool CAsyncSocketExLayer::TryNextProtocol()
 		m_nFamily = m_nextAddr->ai_family;
 		if (!m_pOwnerSocket->Bind(m_nSocketPort, m_lpszSocketAddress))
 		{
-			m_pOwnerSocket->DetachHandle(m_pOwnerSocket->m_SocketData.hSocket);
 			closesocket(m_pOwnerSocket->m_SocketData.hSocket);
-			m_pOwnerSocket->m_SocketData.hSocket = INVALID_SOCKET;
+			m_pOwnerSocket->DetachHandle();
 			continue;
 		}
 
-		if (connect(m_pOwnerSocket->GetSocketHandle(), m_nextAddr->ai_addr, m_nextAddr->ai_addrlen) == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK)
-		{
-			m_pOwnerSocket->DetachHandle(m_pOwnerSocket->m_SocketData.hSocket);
+		if (connect(m_pOwnerSocket->GetSocketHandle(), m_nextAddr->ai_addr, m_nextAddr->ai_addrlen) == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK) {
 			closesocket(m_pOwnerSocket->m_SocketData.hSocket);
-			m_pOwnerSocket->m_SocketData.hSocket = INVALID_SOCKET;
+			m_pOwnerSocket->DetachHandle();
 			continue;
 		}
 

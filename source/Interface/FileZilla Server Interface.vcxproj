@@ -5,10 +5,6 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Memcheck|Win32">
-      <Configuration>Memcheck</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -21,11 +17,6 @@
     <Keyword>MFCProj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'" Label="Configuration">
-    <PlatformToolset>v120</PlatformToolset>
-    <UseOfMfc>Static</UseOfMfc>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
     <UseOfMfc>Static</UseOfMfc>
@@ -54,10 +45,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(openssl_include);$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
-    <IncludePath>$(openssl_include);$(IncludePath)</IncludePath>
-    <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -125,37 +112,6 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Memcheck|Win32'">
-    <Midl>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/FileZilla Server Interface.tlb</TypeLibraryName>
-      <HeaderFileName />
-    </Midl>
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;MMGR;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ResourceCompile>
-    <Link>
-      <AdditionalOptions>/FORCE %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>Shlwapi.lib;version.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <GenerateMapFile>true</GenerateMapFile>
-      <SubSystem>Windows</SubSystem>
-      <DataExecutionPrevention />
-    </Link>
-  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Accounts.cpp" />
     <ClCompile Include="AdminSocket.cpp" />
@@ -179,7 +135,6 @@
     <ClCompile Include="misc\Led.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="..\misc\md5.cpp" />
-    <ClCompile Include="..\misc\mmgr.cpp" />
     <ClCompile Include="NewUserDlg.cpp" />
     <ClCompile Include="OfflineAskDlg.cpp" />
     <ClCompile Include="Options.cpp" />

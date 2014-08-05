@@ -111,7 +111,7 @@ protected:
 	SYSTEMTIME m_LastCmdTime, m_LastTransferTime, m_LoginTime;
 	static std::map<CStdString, int> m_UserCount;
 	CStdString m_CurrentServerDir;
-	static CCriticalSectionWrapper m_Sync;
+	static std::recursive_mutex m_mutex;
 
 	struct t_status
 	{

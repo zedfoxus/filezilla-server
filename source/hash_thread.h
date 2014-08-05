@@ -40,7 +40,7 @@ private:
 	LPTSTR m_filename;
 	CServerThread* m_server_thread;
 
-	CCriticalSectionWrapper m_sync;
+	std::recursive_mutex m_mutex;
 
 	bool m_quit;
 

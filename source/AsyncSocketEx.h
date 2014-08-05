@@ -64,10 +64,6 @@ to tim.kosse@filezilla-project.org
 #if !defined(AFX_ASYNCSOCKETEX_H__AA9E4531_63B1_442F_9A71_09B2FEEDF34E__INCLUDED_)
 #define AFX_ASYNCSOCKETEX_H__AA9E4531_63B1_442F_9A71_09B2FEEDF34E__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-
 #ifdef _AFX
 #define CStdString CString
 #define CStdStringW CStringW
@@ -75,6 +71,8 @@ to tim.kosse@filezilla-project.org
 #endif //_AFX
 
 #define FD_FORCEREAD (1<<15)
+
+#include <mutex>
 
 #include <winsock2.h>
 #include <Ws2tcpip.h>
@@ -107,7 +105,6 @@ enum SocketState
 	attached
 };
 
-class CCriticalSectionWrapper;
 class CAsyncSocketEx
 {
 public:
@@ -258,13 +255,12 @@ protected:
 	HWND GetHelperWindowHandle();
 
 	//Attaches socket handle to helper window
-	void AttachHandle(SOCKET hSocket);
+	void AttachHandle(SOCKET hSocket, int family);
 
 	//Detaches socket handle to helper window
-	void DetachHandle(SOCKET hSocket);
+	void DetachHandle();
 
-	//Critical section for thread synchronization
-	static CCriticalSectionWrapper m_sGlobalCriticalSection;
+	static std::recursive_mutex m_mutex;
 
 	//Pointer to the data of the local thread
 	struct t_AsyncSocketExThreadData
@@ -333,6 +329,9 @@ private:
 	BOOL GetPeerName( SOCKADDR* lpSockAddr, int* lpSockAddrLen );
 	BOOL GetSockName( SOCKADDR* lpSockAddr, int* lpSockAddrLen );
 };
+
+typedef std::lock_guard<std::recursive_mutex> simple_lock;
+typedef std::unique_lock<std::recursive_mutex> scoped_lock;
 
 #ifndef NOLAYERS
 #define LAYERCALLBACK_STATECHANGE 0

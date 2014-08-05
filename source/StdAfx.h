@@ -24,14 +24,7 @@
 #if !defined(AFX_STDAFX_H__0D7D6CEC_E1AA_4287_BB10_A97FA4D444B6__INCLUDED_)
 #define AFX_STDAFX_H__0D7D6CEC_E1AA_4287_BB10_A97FA4D444B6__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-
 #define WIN32_LEAN_AND_MEAN		// Selten verwendete Teile der Windows-Header nicht einbinden
-
-#pragma warning (disable : 4786)
-
 #define NOMINMAX
 
 #include <windows.h>
@@ -49,14 +42,11 @@
 #include "misc\stdstring.h"
 
 #include "MFC64bitFix.h"
-#include <map>
 #include <list>
-#include <vector>
+#include <map>
+#include <mutex>
 #include <set>
-
-#ifdef MMGR
-#include "misc/mmgr.h"
-#endif
+#include <vector>
 
 #include "conversion.h"
 
@@ -95,13 +85,13 @@ const UINT WM_FILEZILLA_THREADMSG = ::RegisterWindowMessage(FILEZILLA_THREAD_MES
 #define USERCONTROL_CONNOP_TRANSFERINIT 3
 #define USERCONTROL_CONNOP_TRANSFEROFFSETS 4
 
-typedef struct
+struct t_controlmessage
 {
 	int command;
 	int socketid;
-} t_controlmessage;
+};
 
-typedef struct
+struct t_statusmsg
 {
 	TCHAR ip[40];
 	LPTSTR user;
@@ -109,10 +99,10 @@ typedef struct
 	UINT userid;
 	int type;
 	LPTSTR status;
-} t_statusmsg;
+};
 
 class CServerThread;
-typedef struct
+struct t_connectiondata
 {
 	int userid;
 
@@ -130,7 +120,7 @@ typedef struct
 	CStdString logicalFile;
 	__int64 currentOffset;
 	__int64 totalSize;
-} t_connectiondata;
+};
 
 struct t_connectiondata_add
 {
@@ -167,42 +157,8 @@ typedef struct
 } t_connop;
 
 extern HWND hMainWnd;
-#ifndef CCRITICALSECTIONWRAPPERINCLUDED
-class CCriticalSectionWrapper
-{
-public:
-	CCriticalSectionWrapper();
-	~CCriticalSectionWrapper();
 
-	void Lock();
-	void Unlock();
-
-#ifndef DEADLOCKDEBUG
-protected:
-#else
-public:
-#endif
-	CRITICAL_SECTION m_criticalSection;
-	BOOL m_bInitialized;
-#ifdef DEBUG
-	int m_lockCount;
-#endif
-
-};
-#define CCRITICALSECTIONWRAPPERINCLUDED
-#endif
-
-#ifndef DEADLOCKDEBUG
-#define EnterCritSection(section) section.Lock()
-#define LeaveCritSection(section) section.Unlock()
-#else
-void EnterCritSectionDebug(CCriticalSectionWrapper &section, const char *pFile, int line);
-void LeaveCritSectionDebug(CCriticalSectionWrapper &section, const char *pFile, int line);
-#define EnterCritSection(section) EnterCritSectionDebug(section, __FILE__, __LINE__)
-#define LeaveCritSection(section) LeaveCritSectionDebug(section, __FILE__, __LINE__)
-#endif
-
-//{{AFX_INSERT_LOCATION}}
-// Microsoft Visual C++ fügt unmittelbar vor der vorhergehenden Zeile zusätzliche Deklarationen ein.
+typedef std::lock_guard<std::recursive_mutex> simple_lock;
+typedef std::unique_lock<std::recursive_mutex> scoped_lock;
 
 #endif // !defined(AFX_STDAFX_H__0D7D6CEC_E1AA_4287_BB10_A97FA4D444B6__INCLUDED_)

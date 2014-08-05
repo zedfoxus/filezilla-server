@@ -73,8 +73,8 @@ public:
 	void PrepareAliasMap();
 
 	// GetAliasTarget returns the target of the alias with the specified
-	// path and name or returns an empty string if the alias can't be found.
-	CStdString GetAliasTarget(const CStdString& path, const CStdString& virtualPath, const CStdString& name) const;
+	// path or returns an empty string if the alias can't be found.
+	CStdString GetAliasTarget(const CStdString& virtualPath) const;
 
 	std::map<CStdString, CStdString> virtualAliases;
 	std::multimap<CStdString, CStdString> virtualAliasNames;
@@ -171,7 +171,7 @@ protected:
 
 	int GetRealDirectory(CStdString directory, const CUser &user, t_directory &ret, BOOL &truematch);
 
-	static CCriticalSectionWrapper m_sync;
+	static std::recursive_mutex m_mutex;
 
 	bool WildcardMatch(CStdString string, CStdString pattern) const;
 
