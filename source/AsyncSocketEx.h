@@ -5,7 +5,7 @@
 Introduction:
 -------------
 
-CAsyncSocketEx is a replacement for the MFC class CAsyncSocket.
+CAsyncSocketEx used to be a replacement for the MFC class CAsyncSocket.
 This class was written because CAsyncSocket is not the fastest WinSock
 wrapper and it's very hard to add new functionality to CAsyncSocket
 derived classes. This class offers the same functionality as CAsyncSocket.
@@ -14,7 +14,7 @@ CAsyncSocket without some tricks.
 
 How do I use it?
 ----------------
-Basically exactly like CAsyncSocket.
+Basically similar to CAsyncSocket.
 To use CAsyncSocketEx, just replace all occurrences of CAsyncSocket in your
 code with CAsyncSocketEx. If you did not enhance CAsyncSocket yourself in
 any way, you won't have to change anything else in your code.
@@ -326,8 +326,8 @@ protected:
 #endif // NOLAYERS
 
 private:
-	BOOL GetPeerName( SOCKADDR* lpSockAddr, int* lpSockAddrLen );
-	BOOL GetSockName( SOCKADDR* lpSockAddr, int* lpSockAddrLen );
+	BOOL GetPeerName(sockaddr_storage & sockAddr);
+	BOOL GetSockName(sockaddr_storage & sockAddr);
 };
 
 typedef std::lock_guard<std::recursive_mutex> simple_lock;
@@ -340,17 +340,6 @@ typedef std::unique_lock<std::recursive_mutex> scoped_lock;
 
 #define _sntprintf _snwprintf
 
-inline TCHAR* Inet6AddrToString(in6_addr& addr)
-{
-	LPTSTR buf = new TCHAR[512];
-
-	_sntprintf(buf, 512, _T("%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x"),
-			 addr.s6_bytes[0], addr.s6_bytes[1], addr.s6_bytes[2], addr.s6_bytes[3],
-			 addr.s6_bytes[4], addr.s6_bytes[5], addr.s6_bytes[6], addr.s6_bytes[7],
-			 addr.s6_bytes[8], addr.s6_bytes[9], addr.s6_bytes[10], addr.s6_bytes[11],
-			 addr.s6_bytes[12], addr.s6_bytes[13], addr.s6_bytes[14], addr.s6_bytes[15]);
-
-	return buf ;
-}
+CStdString Inet6AddrToString(in6_addr& addr);
 
 #endif // !defined(AFX_ASYNCSOCKETEX_H__AA9E4531_63B1_442F_9A71_09B2FEEDF34E__INCLUDED_)

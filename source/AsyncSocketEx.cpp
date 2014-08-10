@@ -1263,69 +1263,35 @@ BOOL CAsyncSocketEx::Connect(const SOCKADDR* lpSockAddr, int nSockAddrLen)
 	return res;
 }
 
-BOOL CAsyncSocketEx::GetPeerName( CStdString& rPeerAddress, UINT& rPeerPort )
+BOOL CAsyncSocketEx::GetPeerName(CStdString& rPeerAddress, UINT& rPeerPort)
 {
-#ifndef NOLAYERS
-	if (m_pFirstLayer)
-		return m_pFirstLayer->GetPeerName(rPeerAddress, rPeerPort);
-#endif NOLAYERS
+	sockaddr_storage sockAddr{ 0 };
+	BOOL bResult = GetPeerName(sockAddr);
 
-	SOCKADDR* sockAddr = 0;
-	int nSockAddrLen = 0;
-
-	if (m_SocketData.nFamily == AF_INET6)
-	{
-		sockAddr = (SOCKADDR*)new SOCKADDR_IN6;
-		nSockAddrLen = sizeof(SOCKADDR_IN6);
-	} 
-	else if (m_SocketData.nFamily == AF_INET)
-	{
-		sockAddr = (SOCKADDR*)new SOCKADDR_IN;
-		nSockAddrLen = sizeof(SOCKADDR_IN);
-	}
-	else
-	{
-		WSASetLastError(WSAEOPNOTSUPP);
-		return FALSE;
-	}
-
-	memset(sockAddr, 0, nSockAddrLen);
-
-	BOOL bResult = GetPeerName(sockAddr, &nSockAddrLen);
-
-	if (bResult)
-	{
-		if (m_SocketData.nFamily == AF_INET6)
-		{
-			rPeerPort = ntohs(((SOCKADDR_IN6*)sockAddr)->sin6_port);
-			LPTSTR buf = Inet6AddrToString(((SOCKADDR_IN6*)sockAddr)->sin6_addr);
-			rPeerAddress = buf;
-			delete [] buf;
+	if (bResult) {
+		if (sockAddr.ss_family == AF_INET6) {
+			sockaddr_in6 &in = reinterpret_cast<sockaddr_in6&>(sockAddr);
+			rPeerPort = ntohs(in.sin6_port);
+			rPeerAddress = Inet6AddrToString(in.sin6_addr);
 		}
-		else if (m_SocketData.nFamily == AF_INET)
-		{
-			rPeerPort = ntohs(((SOCKADDR_IN*)sockAddr)->sin_port);
-			rPeerAddress = inet_ntoa(((SOCKADDR_IN*)sockAddr)->sin_addr);
+		else if (m_SocketData.nFamily == AF_INET) {
+			sockaddr_in &in = reinterpret_cast<sockaddr_in&>(sockAddr);
+			rPeerPort = ntohs(in.sin_port);
+			rPeerAddress = inet_ntoa(in.sin_addr);
 		}
-		else
-		{
-			delete sockAddr;
+		else {
+			WSASetLastError(WSAEPFNOSUPPORT);
 			return FALSE;
 		}
 	}
-	delete sockAddr;
 
 	return bResult;
 }
 
-BOOL CAsyncSocketEx::GetPeerName( SOCKADDR* lpSockAddr, int* lpSockAddrLen )
+BOOL CAsyncSocketEx::GetPeerName(sockaddr_storage & sockAddr)
 {
-#ifndef NOLAYERS
-	if (m_pFirstLayer)
-		return m_pFirstLayer->GetPeerName(lpSockAddr, lpSockAddrLen);
-#endif //NOLAYERS
-
-	if (!getpeername(m_SocketData.hSocket, lpSockAddr, lpSockAddrLen))
+	int len = sizeof(sockAddr);
+	if (!getpeername(m_SocketData.hSocket, reinterpret_cast<sockaddr*>(&sockAddr), &len))
 		return TRUE;
 	else
 		return FALSE;
@@ -1333,57 +1299,33 @@ BOOL CAsyncSocketEx::GetPeerName( SOCKADDR* lpSockAddr, int* lpSockAddrLen )
 
 BOOL CAsyncSocketEx::GetSockName(CStdString& rSocketAddress, UINT& rSocketPort)
 {
-	SOCKADDR* sockAddr = 0;
-	int nSockAddrLen = 0;
+	sockaddr_storage sockAddr{0};
+	BOOL bResult = GetSockName(sockAddr);
 
-	if (m_SocketData.nFamily == AF_INET6)
-	{
-		sockAddr = (SOCKADDR*)new SOCKADDR_IN6;
-		nSockAddrLen = sizeof(SOCKADDR_IN6);
-	}
-	else if (m_SocketData.nFamily == AF_INET)
-	{
-		sockAddr = (SOCKADDR*)new SOCKADDR_IN;
-		nSockAddrLen = sizeof(SOCKADDR_IN);
-	}
-	else
-	{
-		WSASetLastError(WSAEOPNOTSUPP);
-		return FALSE;
-	}
-
-	memset(sockAddr, 0, nSockAddrLen);
-
-	BOOL bResult = GetSockName(sockAddr, &nSockAddrLen);
-
-	if (bResult)
-	{
-		if (m_SocketData.nFamily == AF_INET6)
-		{
-			rSocketPort = ntohs(((SOCKADDR_IN6*)sockAddr)->sin6_port);
-			LPTSTR buf = Inet6AddrToString(((SOCKADDR_IN6*)sockAddr)->sin6_addr);
-			rSocketAddress = buf;
-			delete [] buf;
+	if (bResult) {
+		if (sockAddr.ss_family == AF_INET6) {
+			sockaddr_in6 &in = reinterpret_cast<sockaddr_in6&>(sockAddr);
+			rSocketPort = ntohs(in.sin6_port);
+			rSocketAddress = Inet6AddrToString(in.sin6_addr);
 		}
-		else if (m_SocketData.nFamily == AF_INET)
-		{
-			rSocketPort = ntohs(((SOCKADDR_IN*)sockAddr)->sin_port);
-			rSocketAddress = inet_ntoa(((SOCKADDR_IN*)sockAddr)->sin_addr);
+		else if (m_SocketData.nFamily == AF_INET) {
+			sockaddr_in &in = reinterpret_cast<sockaddr_in&>(sockAddr);
+			rSocketPort = ntohs(in.sin_port);
+			rSocketAddress = inet_ntoa(in.sin_addr);
 		}
-		else
-		{
-			delete sockAddr;
+		else {
+			WSASetLastError(WSAEPFNOSUPPORT);
 			return FALSE;
 		}
 	}
-	delete sockAddr;
 
 	return bResult;
 }
 
-BOOL CAsyncSocketEx::GetSockName( SOCKADDR* lpSockAddr, int* lpSockAddrLen )
+BOOL CAsyncSocketEx::GetSockName(sockaddr_storage& sockAddr)
 {
-	if ( !getsockname(m_SocketData.hSocket, lpSockAddr, lpSockAddrLen) )
+	int len = sizeof(sockAddr);
+	if (!getsockname(m_SocketData.hSocket, reinterpret_cast<sockaddr*>(&sockAddr), &len))
 		return TRUE;
 	else
 		return FALSE;
@@ -1739,4 +1681,19 @@ bool CAsyncSocketEx::SetNodelay(bool nodelay)
 {
 	BOOL value = nodelay ? TRUE : FALSE;
 	return SetSockOpt(TCP_NODELAY, &value, sizeof(value), IPPROTO_TCP) == TRUE;
+}
+
+
+
+CStdString Inet6AddrToString(in6_addr& addr)
+{
+	TCHAR buf[512];
+
+	_sntprintf(buf, 512, _T("%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x"),
+		addr.s6_bytes[0], addr.s6_bytes[1], addr.s6_bytes[2], addr.s6_bytes[3],
+		addr.s6_bytes[4], addr.s6_bytes[5], addr.s6_bytes[6], addr.s6_bytes[7],
+		addr.s6_bytes[8], addr.s6_bytes[9], addr.s6_bytes[10], addr.s6_bytes[11],
+		addr.s6_bytes[12], addr.s6_bytes[13], addr.s6_bytes[14], addr.s6_bytes[15]);
+
+	return buf;
 }

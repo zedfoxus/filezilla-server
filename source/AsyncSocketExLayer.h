@@ -95,10 +95,6 @@ protected:
 							FD_CONNECT | FD_CLOSE,
 				LPCTSTR lpszSocketAddress = NULL, int nFamily = AF_INET,
 				bool reusable = false);
-	virtual BOOL GetPeerName( SOCKADDR* lpSockAddr, int* lpSockAddrLen );
-	virtual BOOL GetSockName( SOCKADDR* lpSockAddr, int* lpSockAddrLen );
-	virtual BOOL GetPeerName( CStdString& rPeerAddress, UINT& rPeerPort );
-	virtual BOOL GetSockName( CStdString& rPeerAddress, UINT& rPeerPort );
 	virtual BOOL Listen( int nConnectionBacklog);
 	virtual int Receive(void* lpBuf, int nBufLen, int nFlags = 0);
 	virtual int Send(const void* lpBuf, int nBufLen, int nFlags = 0);
@@ -111,10 +107,6 @@ protected:
 	BOOL ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort);
 	BOOL ConnectNext( const SOCKADDR* lpSockAddr, int nSockAddrLen );
 	BOOL CreateNext(UINT nSocketPort, int nSocketType, long lEvent, LPCTSTR lpszSocketAddress, int nFamily = AF_INET, bool reusable = false);
-	BOOL GetPeerNameNext( SOCKADDR* lpSockAddr, int* lpSockAddrLen );
-	BOOL GetSockNameNext( SOCKADDR* lpSockAddr, int* lpSockAddrLen );
-	BOOL GetPeerNameNext( CStdString& rPeerAddress, UINT& rPeerPort );
-	BOOL GetSockNameNext( CStdString& rPeerAddress, UINT& rPeerPort );
 	BOOL ListenNext( int nConnectionBacklog);
 	int ReceiveNext(void *lpBuf, int nBufLen, int nFlags = 0);
 	int SendNext(const void *lpBuf, int nBufLen, int nFlags = 0);
