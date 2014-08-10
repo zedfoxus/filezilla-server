@@ -14,20 +14,14 @@ void CAdminListenSocket::OnAccept(int nErrorCode)
 {
 	CAdminSocket *pSocket = new CAdminSocket(&m_adminInterface);
 
-	SOCKADDR_IN sockAddr;
-	memset(&sockAddr, 0, sizeof(sockAddr));
-	int nSockAddrLen = sizeof(sockAddr);
-
 	if (Accept(*pSocket)) {
 		//Validate IP address
 		CStdString ip;
 		UINT port = 0;
 
 		bool allowed = false;
-		if (pSocket->GetPeerName(ip, port))
-		{
-			if (!IsLocalhost(ip))
-			{
+		if (pSocket->GetPeerName(ip, port)) {
+			if (!IsLocalhost(ip)) {
 				COptions options;
 
 				// Get the list of IP filter rules.
