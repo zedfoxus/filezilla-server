@@ -63,9 +63,6 @@ to tim.kosse@filezilla-project.org
 
 #include "stdafx.h"
 #include "AsyncSocketEx.h"
-#include "wtypes.h"
-#include "oleauto.h"
-#include "atlconv.h"
 
 #ifndef NOLAYERS
 #include "AsyncSocketExLayer.h"

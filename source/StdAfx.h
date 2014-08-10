@@ -31,10 +31,6 @@
 #include <crtdbg.h>
 #include <stddef.h>
 
-#include <wtypes.h>
-#include <oleauto.h>
-#include "atlconv.h"
-
 #include "shlobj.h"
 
 #include "config.h"

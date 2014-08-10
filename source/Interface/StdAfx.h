@@ -44,7 +44,6 @@
 
 //#include <afxsock.h>		// MFC-Socket-Erweiterungen
 #include "afxcview.h"
-#include "atlconv.h"
 
 #include "Shlwapi.h"
 
