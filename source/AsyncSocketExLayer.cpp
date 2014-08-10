@@ -291,21 +291,18 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 
 		ASSERT(lpszHostAddress != NULL);
 
-		SOCKADDR_IN sockAddr;
-		memset(&sockAddr,0,sizeof(sockAddr));
+		SOCKADDR_IN sockAddr{};
 
 		LPSTR lpszAscii = T2A((LPTSTR)lpszHostAddress);
 		sockAddr.sin_family = AF_INET;
 		sockAddr.sin_addr.s_addr = inet_addr(lpszAscii);
 
-		if (sockAddr.sin_addr.s_addr == INADDR_NONE)
-		{
+		if (sockAddr.sin_addr.s_addr == INADDR_NONE) {
 			LPHOSTENT lphost;
 			lphost = gethostbyname(lpszAscii);
 			if (lphost != NULL)
 				sockAddr.sin_addr.s_addr = ((LPIN_ADDR)lphost->h_addr)->s_addr;
-			else
-			{
+			else {
 				WSASetLastError(WSAEINVAL);
 				res = FALSE;
 			}
@@ -320,7 +317,7 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 
 		ASSERT(lpszHostAddress != NULL);
 
-		addrinfo hints, *res0, *res1;
+		addrinfo hints{}, *res0{}, *res1{};
 		SOCKET hSocket;
 		int error;
 		char port[10];
@@ -329,10 +326,8 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 		m_nextAddr = 0;
 		m_addrInfo = 0;
 
-		memset(&hints, 0, sizeof(addrinfo));
 		hints.ai_family = m_nFamily;
 		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_flags = 0;
 		_snprintf(port, 9, "%lu", nHostPort);
 		error = getaddrinfo(T2CA(lpszHostAddress), port, &hints, &res0);
 		if (error)

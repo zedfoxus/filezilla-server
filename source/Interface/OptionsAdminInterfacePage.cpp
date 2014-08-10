@@ -137,14 +137,11 @@ BOOL COptionsAdminInterfacePage::IsDataValid()
 			if (sub != _T(""))
 			{
 				//Parse IP
-				SOCKADDR_IN sockAddr;
-				memset(&sockAddr,0, sizeof(sockAddr));
-
+				SOCKADDR_IN sockAddr{};
 				sockAddr.sin_family = AF_INET;
 				sockAddr.sin_addr.s_addr = inet_addr(T2A(sub));
 
-				if (sockAddr.sin_addr.s_addr != INADDR_NONE)
-				{
+				if (sockAddr.sin_addr.s_addr != INADDR_NONE) {
 					sub = inet_ntoa(sockAddr.sin_addr);
 					std::list<CString>::iterator iter;
 					for (iter = ipBindList.begin(); iter != ipBindList.end(); ++iter)
@@ -159,17 +156,13 @@ BOOL COptionsAdminInterfacePage::IsDataValid()
 		else
 			sub += cur;
 	}
-	if (sub != _T(""))
-	{
+	if (!sub.IsEmpty()) {
 		//Parse IP
-		SOCKADDR_IN sockAddr;
-		memset(&sockAddr, 0, sizeof(sockAddr));
-
+		SOCKADDR_IN sockAddr{};
 		sockAddr.sin_family = AF_INET;
 		sockAddr.sin_addr.s_addr = inet_addr(T2A(sub));
 
-		if (sockAddr.sin_addr.s_addr != INADDR_NONE)
-		{
+		if (sockAddr.sin_addr.s_addr != INADDR_NONE) {
 			sub = inet_ntoa(sockAddr.sin_addr);
 			std::list<CString>::iterator iter;
 			for (iter = ipBindList.begin(); iter != ipBindList.end(); ++iter)

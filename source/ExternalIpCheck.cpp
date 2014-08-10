@@ -47,9 +47,8 @@ CExternalIpCheck::CExternalIpCheck(CServerThread *pOwner)
 	else if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 1)
 	{
 		CStdString hostname = m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIP);
-		SOCKADDR_IN sockAddr;
-		memset(&sockAddr, 0, sizeof(sockAddr));
 
+		SOCKADDR_IN sockAddr{};
 		sockAddr.sin_family = AF_INET;
 		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname));
 
@@ -139,8 +138,7 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 		p++;
 	*p = 0;
 
-	SOCKADDR_IN sockAddr;
-	memset(&sockAddr,0,sizeof(sockAddr));
+	SOCKADDR_IN sockAddr{};
 
 	sockAddr.sin_family = AF_INET;
 	sockAddr.sin_addr.s_addr = inet_addr(ip);
@@ -224,8 +222,7 @@ void CExternalIpCheck::OnTimer()
 		m_bActive = FALSE;
 
 		CStdString hostname = m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIP);
-		SOCKADDR_IN sockAddr;
-		memset(&sockAddr,0,sizeof(sockAddr));
+		SOCKADDR_IN sockAddr{};
 
 		sockAddr.sin_family = AF_INET;
 		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname));
