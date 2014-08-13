@@ -16,21 +16,14 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#pragma once
+#ifndef FZS_MFC64BITFIX_HEADER
+#define FZS_MFC64BITFIX_HEADER
 
-BOOL GetLength64(LPCTSTR filename, _int64 &size);
+_int64 GetLength64(LPCTSTR filename);
+_int64 GetLength64(WIN32_FILE_ATTRIBUTE_DATA & data);
 
-struct CFileStatus64
-{
-	FILETIME m_ctime;					// creation date/time of file
-	FILETIME m_mtime;					// last modification date/time of file
-	FILETIME m_atime;					// last access date/time of file
-	_int64 m_size;						// logical size of file in bytes
-	BYTE m_attribute;					// logical OR of CFile::Attribute enum values
-	//BYTE _m_padding;					// pad the structure to a WORD
-	//TCHAR m_szFullName[_MAX_PATH];	// absolute path name
-};
-
-BOOL PASCAL GetStatus64(LPCTSTR lpszFileName, CFileStatus64& rStatus);
+bool GetStatus64(LPCTSTR lpszFileName, WIN32_FILE_ATTRIBUTE_DATA & rStatus);
 
 _int64 GetPosition64(HANDLE hFile);
+
+#endif

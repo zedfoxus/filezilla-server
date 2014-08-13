@@ -733,12 +733,12 @@ void COptions::Init()
 
 	TiXmlDocument document;
 
-	CFileStatus64 status;
+	WIN32_FILE_ATTRIBUTE_DATA status{};
 	if (!GetStatus64(xmlFileName, status) ) {
 		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
 		document.SaveFile(bufferA);
 	}
-	else if (status.m_attribute & FILE_ATTRIBUTE_DIRECTORY) {
+	else if (status.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 		return;
 	}
 
@@ -1161,12 +1161,12 @@ void COptions::ReloadConfig()
 
 	TiXmlDocument document;
 
-	CFileStatus64 status;
+	WIN32_FILE_ATTRIBUTE_DATA status{};
 	if (!GetStatus64(xmlFileName, status) ) {
 		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
 		document.SaveFile(bufferA);
 	}
-	else if (status.m_attribute & FILE_ATTRIBUTE_DIRECTORY) {
+	else if (status.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 		return;
 	}
 

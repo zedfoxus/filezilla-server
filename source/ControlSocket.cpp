@@ -998,9 +998,7 @@ void CControlSocket::ParseCommand()
 					m_transferstatus.socket->PasvTransfer();
 				}
 
-				__int64 totalSize;
-				if (!GetLength64(physicalFile, totalSize))
-					totalSize = -1;
+				__int64 totalSize = GetLength64(physicalFile);
 				SendTransferinfoNotification(TRANSFERMODE_SEND, physicalFile, logicalFile, m_transferstatus.rest, totalSize);
 				GetSystemTime(&m_LastTransferTime);
 			}
@@ -1037,8 +1035,8 @@ void CControlSocket::ParseCommand()
 			}
 			else {
 				if( cmd.id == commands::APPE ) {
-					m_transferstatus.rest = 0;
-					if (!GetLength64(physicalFile, m_transferstatus.rest)) {
+					m_transferstatus.rest = GetLength64(physicalFile);
+					if( m_transferstatus.rest < 0 ) {
 						m_transferstatus.rest = 0;
 					}
 				}
@@ -1099,8 +1097,8 @@ void CControlSocket::ParseCommand()
 			else
 			{
 				CStdString str;
-				_int64 length;
-				if (GetLength64(physicalFile, length))
+				_int64 length = GetLength64(physicalFile);
+				if (length >= 0)
 					str.Format(_T("213 %I64d"), length);
 				else
 					str = _T("550 File not found");
@@ -1359,13 +1357,12 @@ void CControlSocket::ParseCommand()
 				Send(_T("550 Filename invalid."));
 			else if (error & 2)
 				Send(_T("550 File not found"));
-			else
-			{
-				CFileStatus64 status;
+			else {
+				WIN32_FILE_ATTRIBUTE_DATA status{};
 				if (GetStatus64(physicalFile, status)) {
 					CStdString str;
 					SYSTEMTIME time;
-					FileTimeToSystemTime(&status.m_mtime, &time);
+					FileTimeToSystemTime(&status.ftLastWriteTime, &time);
 					str.Format(_T("213 %04d%02d%02d%02d%02d%02d"),
 								time.wYear,
 								time.wMonth,

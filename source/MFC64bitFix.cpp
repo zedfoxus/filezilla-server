@@ -29,45 +29,39 @@
 	return size;
 }*/
 
-BOOL GetLength64(LPCTSTR filename, _int64 &size)
+_int64 GetLength64(LPCTSTR filename)
 {
-	WIN32_FIND_DATA findFileData;
-	HANDLE hFind = FindFirstFile(filename, &findFileData);
-	if (hFind == INVALID_HANDLE_VALUE)
-		return FALSE;
-	VERIFY(FindClose(hFind));
+	WIN32_FILE_ATTRIBUTE_DATA data{};
+	if (!GetStatus64(filename, data) ) {
+		return -1;
+	}
 
-	size=((_int64)findFileData.nFileSizeHigh<<32)+findFileData.nFileSizeLow;
-
-	return TRUE;
+	return GetLength64(data);
 }
 
-BOOL PASCAL GetStatus64(LPCTSTR lpszFileName, CFileStatus64& rStatus)
+_int64 GetLength64(WIN32_FILE_ATTRIBUTE_DATA & data)
 {
-	WIN32_FIND_DATA findFileData;
-	HANDLE hFind = FindFirstFile((LPTSTR)lpszFileName, &findFileData);
-	if (hFind == INVALID_HANDLE_VALUE)
-		return FALSE;
-	VERIFY(FindClose(hFind));
+	return (static_cast<_int64>(data.nFileSizeHigh) << 32) + data.nFileSizeLow;
+}
 
-	// strip attribute of NORMAL bit, our API doesn't have a "normal" bit.
-	rStatus.m_attribute = (BYTE)
-		(findFileData.dwFileAttributes & ~FILE_ATTRIBUTE_NORMAL);
+bool GetStatus64(LPCTSTR lpszFileName, WIN32_FILE_ATTRIBUTE_DATA & rStatus)
+{
+	if (!GetFileAttributesEx(lpszFileName, GetFileExInfoStandard, &rStatus)) {
+		return false;
+	}
 
-	rStatus.m_size = ((_int64)findFileData.nFileSizeHigh<<32)+findFileData.nFileSizeLow;
+	if (!rStatus.ftCreationTime.dwHighDateTime && !rStatus.ftCreationTime.dwLowDateTime) {
+		rStatus.ftCreationTime = rStatus.ftLastWriteTime;
+	}
+	else if (!rStatus.ftLastWriteTime.dwHighDateTime && !rStatus.ftLastWriteTime.dwLowDateTime) {
+		rStatus.ftLastWriteTime = rStatus.ftCreationTime;
+	}
 
-	// convert times as appropriate
-	rStatus.m_ctime = findFileData.ftCreationTime;
-	rStatus.m_atime = findFileData.ftLastAccessTime;
-	rStatus.m_mtime = findFileData.ftLastWriteTime;
+	if (!rStatus.ftLastAccessTime.dwHighDateTime && !rStatus.ftLastAccessTime.dwLowDateTime) {
+		rStatus.ftLastAccessTime = rStatus.ftLastWriteTime;
+	}
 
-	if (rStatus.m_ctime.dwHighDateTime == rStatus.m_ctime.dwLowDateTime == 0)
-		rStatus.m_ctime = rStatus.m_mtime;
-
-	if (rStatus.m_atime.dwHighDateTime == rStatus.m_atime.dwLowDateTime == 0)
-		rStatus.m_atime = rStatus.m_mtime;
-
-	return TRUE;
+	return true;
 }
 
 _int64 GetPosition64(HANDLE hFile)

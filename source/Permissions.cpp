@@ -142,10 +142,10 @@ CPermissions::~CPermissions()
 
 void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char*, bool *)
 {
-	CFileStatus64 status;
+	WIN32_FILE_ATTRIBUTE_DATA status{};
 	if (!pTime && GetStatus64(directory.dir, status)) {
-		size = status.m_size;
-		pTime = &status.m_mtime;
+		size = GetLength64(status);
+		pTime = &status.ftLastWriteTime;
 	}
 
 	unsigned int nameLen = strlen(name);
@@ -155,24 +155,20 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 		result.push_back(t_dirlisting());
 	}
 
-	if (isDir)
-	{
+	if (isDir) {
 		memcpy(result.back().buffer + result.back().len, "drwxr-xr-x", 10);
 		result.back().len += 10;
 	}
-	else
-	{
+	else {
 		result.back().buffer[result.back().len++] = '-';
 		result.back().buffer[result.back().len++] = directory.bFileRead ? 'r' : '-';
 		result.back().buffer[result.back().len++] = directory.bFileWrite ? 'w' : '-';
 
 		BOOL isexe = FALSE;
-		if (nameLen > 4)
-		{
+		if (nameLen > 4) {
 			CStdStringA ext = name + nameLen - 4;
 			ext.MakeLower();
-			if (ext.ReverseFind('.')!=-1)
-			{
+			if (ext.ReverseFind('.') != -1) {
 				if (ext == ".exe")
 					isexe = TRUE;
 				else if (ext == ".bat")
@@ -236,11 +232,10 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 
 void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char*, bool *enabledFacts)
 {
-	CFileStatus64 status;
-	if (!pTime && GetStatus64(directory.dir, status))
-	{
-		size = status.m_size;
-		pTime = &status.m_mtime;
+	WIN32_FILE_ATTRIBUTE_DATA status{};
+	if (!pTime && GetStatus64(directory.dir, status)) {
+		size = GetLength64(status);
+		pTime = &status.ftLastWriteTime;
 	}
 
 	unsigned int nameLen = strlen(name);
@@ -250,15 +245,12 @@ void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool is
 		result.push_back(t_dirlisting());
 	}
 
-	if (!enabledFacts || enabledFacts[0])
-	{
-		if (isDir)
-		{
+	if (!enabledFacts || enabledFacts[0]) {
+		if (isDir) {
 			memcpy(result.back().buffer + result.back().len, "type=dir;", 9);
 			result.back().len += 9;
 		}
-		else
-		{
+		else {
 			memcpy(result.back().buffer + result.back().len, "type=file;", 10);
 			result.back().len += 10;
 		}
@@ -276,10 +268,8 @@ void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool is
 	else
 		mtime = fTime;
 
-	if (!enabledFacts || enabledFacts[2])
-	{
-		if (mtime.dwHighDateTime || mtime.dwLowDateTime)
-		{
+	if (!enabledFacts || enabledFacts[2]) {
+		if (mtime.dwHighDateTime || mtime.dwLowDateTime) {
 			SYSTEMTIME time;
 			FileTimeToSystemTime(&mtime, &time);
 			CStdStringA str;
@@ -296,19 +286,16 @@ void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool is
 		}
 	}
 
-	if (!enabledFacts || enabledFacts[1])
-	{
+	if (!enabledFacts || enabledFacts[1]) {
 		if (!isDir)
 			result.back().len += sprintf(result.back().buffer + result.back().len, "size=%I64d;", size);
 	}
 
-	if (enabledFacts && enabledFacts[fact_perm])
-	{
+	if (enabledFacts && enabledFacts[fact_perm]) {
 		// TODO: a, d,f,p,r,w
 		memcpy(result.back().buffer + result.back().len, "perm=", 5);
 		result.back().len += 5;
-		if (isDir)
-		{
+		if (isDir) {
 			if (directory.bFileWrite)
 				result.back().buffer[result.back().len++] = 'c';
 			result.back().buffer[result.back().len++] = 'e';
@@ -316,9 +303,6 @@ void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool is
 				result.back().buffer[result.back().len++] = 'l';
 			if (directory.bFileDelete || directory.bDirDelete)
 				result.back().buffer[result.back().len++] = 'p';
-		}
-		else
-		{
 		}
 	}
 
@@ -346,8 +330,7 @@ void CPermissions::AddShortListingEntry(std::list<t_dirlisting> &result, bool, c
 bool is8dot3(const CStdString& file)
 {
 	int i;
-	for (i = 0; i < 8; i++)
-	{
+	for (i = 0; i < 8; ++i) {
 		if (!file[i])
 			return true;
 
@@ -1596,8 +1579,7 @@ int CPermissions::GetFact(CUser const& user, CStdString const& currentDir, CStdS
 	t_directory directory;
 	BOOL bTruematch;
 	int res = GetRealDirectory(dir, user, directory, bTruematch);
-	if (res == PERMISSION_FILENOTDIR)
-	{
+	if (res == PERMISSION_FILENOTDIR) {
 		if (dir == _T("/"))
 			return res;
 
@@ -1628,8 +1610,7 @@ int CPermissions::GetFact(CUser const& user, CStdString const& currentDir, CStdS
 	}
 	else if (res)
 		return res;
-	else
-	{
+	else {
 		if (!directory.bDirList)
 			return PERMISSION_DENIED;
 
@@ -1644,24 +1625,18 @@ int CPermissions::GetFact(CUser const& user, CStdString const& currentDir, CStdS
 			fact = _T("");
 	}
 
-	CFileStatus64 status;
-	if (GetStatus64(file, status))
-	{
-		if (enabledFacts[1] && !(status.m_attribute & FILE_ATTRIBUTE_DIRECTORY))
-		{
+	WIN32_FILE_ATTRIBUTE_DATA status{};
+	if (GetStatus64(file, status)) {
+		if (enabledFacts[1] && !(status.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
 			CStdString str;
-			str.Format(_T("size=%I64d;"), status.m_size);
+			str.Format(_T("size=%I64d;"), GetLength64(status));
 			fact += str;
 		}
 
-		if (enabledFacts[2])
-		{
+		if (enabledFacts[2]) {
 			// Get last modification time
-			FILETIME ftime = status.m_mtime;
-			if (!ftime.dwHighDateTime && !ftime.dwLowDateTime)
-				ftime = status.m_ctime;
-			if (ftime.dwHighDateTime || ftime.dwLowDateTime)
-			{
+			FILETIME ftime = status.ftLastWriteTime;
+			if (ftime.dwHighDateTime || ftime.dwLowDateTime) {
 				SYSTEMTIME time;
 				FileTimeToSystemTime(&ftime, &time);
 				CStdString str;
