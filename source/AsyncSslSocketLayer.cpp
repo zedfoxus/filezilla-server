@@ -115,8 +115,8 @@ static char THIS_FILE[] = __FILE__;
 	static t##n p##n;
 
 // Macro to load the given macro from a dll:
-#define load(dll, n) \
-	p##n = (t##n) GetProcAddress(dll, #n); \
+#define proc(dll, n) \
+	p##n = (t##n) GetProcAddress(dll.get(), #n); \
 	if (!p##n) \
 		bError = true;
 
@@ -221,8 +221,8 @@ std::recursive_mutex CAsyncSslSocketLayer::m_mutex;
 
 CAsyncSslSocketLayer::t_SslLayerList* CAsyncSslSocketLayer::m_pSslLayerList = 0;
 int CAsyncSslSocketLayer::m_nSslRefCount = 0;
-HMODULE CAsyncSslSocketLayer::m_hSslDll1 = 0;
-HMODULE CAsyncSslSocketLayer::m_hSslDll2 = 0;
+DLL CAsyncSslSocketLayer::m_sslDll1;
+DLL CAsyncSslSocketLayer::m_sslDll2;
 std::map<SSL_CTX *, int> CAsyncSslSocketLayer::m_contextRefCount;
 
 CAsyncSslSocketLayer::~CAsyncSslSocketLayer()
@@ -241,139 +241,124 @@ int CAsyncSslSocketLayer::InitSSL()
 	simple_lock lock(m_mutex);
 
 	if (!m_nSslRefCount) {
-		m_hSslDll2 = LoadLibrary(_T("libeay32.dll"));
-		if (!m_hSslDll2) {
-			if (m_hSslDll1)
-				FreeLibrary(m_hSslDll1);
-			m_hSslDll1 = 0;
+		if (!m_sslDll2.load(_T("libeay32.dll"))) {
 			return SSL_FAILURE_LOADDLLS;
 		}
 
 		bool bError = false;
-		load(m_hSslDll2, BIO_ctrl_pending);
-		load(m_hSslDll2, BIO_read);
-		load(m_hSslDll2, BIO_ctrl);
-		load(m_hSslDll2, BIO_write);
-		load(m_hSslDll2, BIO_ctrl_get_write_guarantee);
-		load(m_hSslDll2, BIO_new_bio_pair);
-		load(m_hSslDll2, BIO_new);
-		load(m_hSslDll2, BIO_free);
-		load(m_hSslDll2, i2t_ASN1_OBJECT);
-		load(m_hSslDll2, OBJ_obj2nid);
-		load(m_hSslDll2, X509_NAME_ENTRY_get_object);
-		load(m_hSslDll2, X509_NAME_get_entry);
-		load(m_hSslDll2, X509_NAME_entry_count);
-		load(m_hSslDll2, X509_get_subject_name);
-		load(m_hSslDll2, X509_get_issuer_name);
-		load(m_hSslDll2, OBJ_nid2sn);
-		load(m_hSslDll2, X509_NAME_ENTRY_get_data);
-		load(m_hSslDll2, X509_STORE_CTX_set_error);
-		load(m_hSslDll2, X509_digest);
-		load(m_hSslDll2, EVP_sha1);
-		load(m_hSslDll2, X509_STORE_CTX_get_current_cert);
-		load(m_hSslDll2, X509_STORE_CTX_get_error);
-		load(m_hSslDll2, X509_free);
-		load(m_hSslDll2, X509_get_pubkey);
-		load(m_hSslDll2, BN_num_bits);
-		load(m_hSslDll2, EVP_PKEY_free);
-		load(m_hSslDll2, X509_STORE_CTX_get_ex_data);
-		load(m_hSslDll2, X509_NAME_oneline);
-		load(m_hSslDll2, X509_verify_cert_error_string);
-		load(m_hSslDll2, X509_STORE_CTX_get_error_depth);
-		load(m_hSslDll2, ERR_get_error);
-		load(m_hSslDll2, ERR_error_string);
-		load(m_hSslDll2, ASN1_STRING_to_UTF8);
-		load(m_hSslDll2, CRYPTO_free);
-		load(m_hSslDll2, RSA_generate_key);
-		load(m_hSslDll2, X509_set_version);
-		load(m_hSslDll2, X509_gmtime_adj);
-		load(m_hSslDll2, X509_set_pubkey);
-		load(m_hSslDll2, X509_NAME_add_entry_by_txt);
-		load(m_hSslDll2, X509_NAME_add_entry_by_NID);
-		load(m_hSslDll2, X509_set_issuer_name);
-		load(m_hSslDll2, X509_sign);
-		load(m_hSslDll2, EVP_PKEY_new);
-		load(m_hSslDll2, EVP_PKEY_assign);
-		load(m_hSslDll2, X509_new);
-		load(m_hSslDll2, ASN1_INTEGER_set);
-		load(m_hSslDll2, X509_get_serialNumber);
-		load(m_hSslDll2, PEM_ASN1_write_bio);
-		load(m_hSslDll2, i2d_X509);
-		load(m_hSslDll2, BIO_s_mem);
-		load(m_hSslDll2, i2d_PrivateKey);
-		load(m_hSslDll2, BIO_test_flags);
+		proc(m_sslDll2, BIO_ctrl_pending);
+		proc(m_sslDll2, BIO_read);
+		proc(m_sslDll2, BIO_ctrl);
+		proc(m_sslDll2, BIO_write);
+		proc(m_sslDll2, BIO_ctrl_get_write_guarantee);
+		proc(m_sslDll2, BIO_new_bio_pair);
+		proc(m_sslDll2, BIO_new);
+		proc(m_sslDll2, BIO_free);
+		proc(m_sslDll2, i2t_ASN1_OBJECT);
+		proc(m_sslDll2, OBJ_obj2nid);
+		proc(m_sslDll2, X509_NAME_ENTRY_get_object);
+		proc(m_sslDll2, X509_NAME_get_entry);
+		proc(m_sslDll2, X509_NAME_entry_count);
+		proc(m_sslDll2, X509_get_subject_name);
+		proc(m_sslDll2, X509_get_issuer_name);
+		proc(m_sslDll2, OBJ_nid2sn);
+		proc(m_sslDll2, X509_NAME_ENTRY_get_data);
+		proc(m_sslDll2, X509_STORE_CTX_set_error);
+		proc(m_sslDll2, X509_digest);
+		proc(m_sslDll2, EVP_sha1);
+		proc(m_sslDll2, X509_STORE_CTX_get_current_cert);
+		proc(m_sslDll2, X509_STORE_CTX_get_error);
+		proc(m_sslDll2, X509_free);
+		proc(m_sslDll2, X509_get_pubkey);
+		proc(m_sslDll2, BN_num_bits);
+		proc(m_sslDll2, EVP_PKEY_free);
+		proc(m_sslDll2, X509_STORE_CTX_get_ex_data);
+		proc(m_sslDll2, X509_NAME_oneline);
+		proc(m_sslDll2, X509_verify_cert_error_string);
+		proc(m_sslDll2, X509_STORE_CTX_get_error_depth);
+		proc(m_sslDll2, ERR_get_error);
+		proc(m_sslDll2, ERR_error_string);
+		proc(m_sslDll2, ASN1_STRING_to_UTF8);
+		proc(m_sslDll2, CRYPTO_free);
+		proc(m_sslDll2, RSA_generate_key);
+		proc(m_sslDll2, X509_set_version);
+		proc(m_sslDll2, X509_gmtime_adj);
+		proc(m_sslDll2, X509_set_pubkey);
+		proc(m_sslDll2, X509_NAME_add_entry_by_txt);
+		proc(m_sslDll2, X509_NAME_add_entry_by_NID);
+		proc(m_sslDll2, X509_set_issuer_name);
+		proc(m_sslDll2, X509_sign);
+		proc(m_sslDll2, EVP_PKEY_new);
+		proc(m_sslDll2, EVP_PKEY_assign);
+		proc(m_sslDll2, X509_new);
+		proc(m_sslDll2, ASN1_INTEGER_set);
+		proc(m_sslDll2, X509_get_serialNumber);
+		proc(m_sslDll2, PEM_ASN1_write_bio);
+		proc(m_sslDll2, i2d_X509);
+		proc(m_sslDll2, BIO_s_mem);
+		proc(m_sslDll2, i2d_PrivateKey);
+		proc(m_sslDll2, BIO_test_flags);
 
 		if (bError) {
-			FreeLibrary(m_hSslDll1);
-			m_hSslDll1 = 0;
-			FreeLibrary(m_hSslDll2);
-			m_hSslDll2 = 0;
+			m_sslDll2.clear();
 			return SSL_FAILURE_LOADDLLS;
 		}
 
-		m_hSslDll1 = LoadLibrary(_T("ssleay32.dll"));
-		if (!m_hSslDll1) {
-			if (m_hSslDll2)
-				FreeLibrary(m_hSslDll2);
-			m_hSslDll2 = NULL;
+		if (!m_sslDll1.load(_T("ssleay32.dll"))) {
+			m_sslDll2.clear();
 			return SSL_FAILURE_LOADDLLS;
 		}
-		load(m_hSslDll1, SSL_state_string_long);
-		load(m_hSslDll1, SSL_state);
-		load(m_hSslDll1, SSL_set_info_callback);
-		load(m_hSslDll1, SSL_set_bio);
-		load(m_hSslDll1, SSL_set_connect_state);
-		load(m_hSslDll1, SSL_set_session);
-		load(m_hSslDll1, BIO_f_ssl);
-		load(m_hSslDll1, SSL_new);
-		load(m_hSslDll1, SSL_CTX_new);
-		load(m_hSslDll1, SSLv23_method);
-		load(m_hSslDll1, SSL_load_error_strings);
-		load(m_hSslDll1, SSL_library_init);
-		load(m_hSslDll1, SSL_CTX_free);
-		load(m_hSslDll1, SSL_free);
-		load(m_hSslDll1, SSL_get_error);
-		load(m_hSslDll1, SSL_shutdown);
-		load(m_hSslDll1, SSL_get_shutdown);
-		load(m_hSslDll1, SSL_alert_type_string_long);
-		load(m_hSslDll1, SSL_alert_desc_string_long);
-		load(m_hSslDll1, SSL_CTX_set_verify);
-		load(m_hSslDll1, SSL_CTX_get_cert_store);
-		load(m_hSslDll1, SSL_get_verify_result);
-		load(m_hSslDll1, SSL_get_peer_certificate);
-		load(m_hSslDll1, SSL_get_version);
-		load(m_hSslDll1, SSL_get_current_cipher);
-		load(m_hSslDll1, SSL_CIPHER_get_name);
-		load(m_hSslDll1, SSL_CIPHER_get_version);
-		load(m_hSslDll1, SSL_get_ex_data_X509_STORE_CTX_idx);
-		load(m_hSslDll1, SSL_CTX_load_verify_locations);
-		load(m_hSslDll1, SSL_ctrl);
-		load(m_hSslDll1, SSL_set_accept_state);
-		load(m_hSslDll1, SSL_CTX_use_PrivateKey_file);
-		load(m_hSslDll1, SSL_CTX_use_certificate_file);
-		load(m_hSslDll1, SSL_CTX_check_private_key);
-		load(m_hSslDll1, SSL_CTX_set_default_passwd_cb_userdata);
-		load(m_hSslDll1, SSL_CTX_set_default_passwd_cb);
-		load(m_hSslDll1, SSL_CTX_use_certificate_chain_file);
-		load(m_hSslDll1, SSL_CTX_ctrl);
-		load(m_hSslDll1, SSL_get_cipher_list);
-		load(m_hSslDll1, SSL_set_cipher_list);
+		proc(m_sslDll1, SSL_state_string_long);
+		proc(m_sslDll1, SSL_state);
+		proc(m_sslDll1, SSL_set_info_callback);
+		proc(m_sslDll1, SSL_set_bio);
+		proc(m_sslDll1, SSL_set_connect_state);
+		proc(m_sslDll1, SSL_set_session);
+		proc(m_sslDll1, BIO_f_ssl);
+		proc(m_sslDll1, SSL_new);
+		proc(m_sslDll1, SSL_CTX_new);
+		proc(m_sslDll1, SSLv23_method);
+		proc(m_sslDll1, SSL_load_error_strings);
+		proc(m_sslDll1, SSL_library_init);
+		proc(m_sslDll1, SSL_CTX_free);
+		proc(m_sslDll1, SSL_free);
+		proc(m_sslDll1, SSL_get_error);
+		proc(m_sslDll1, SSL_shutdown);
+		proc(m_sslDll1, SSL_get_shutdown);
+		proc(m_sslDll1, SSL_alert_type_string_long);
+		proc(m_sslDll1, SSL_alert_desc_string_long);
+		proc(m_sslDll1, SSL_CTX_set_verify);
+		proc(m_sslDll1, SSL_CTX_get_cert_store);
+		proc(m_sslDll1, SSL_get_verify_result);
+		proc(m_sslDll1, SSL_get_peer_certificate);
+		proc(m_sslDll1, SSL_get_version);
+		proc(m_sslDll1, SSL_get_current_cipher);
+		proc(m_sslDll1, SSL_CIPHER_get_name);
+		proc(m_sslDll1, SSL_CIPHER_get_version);
+		proc(m_sslDll1, SSL_get_ex_data_X509_STORE_CTX_idx);
+		proc(m_sslDll1, SSL_CTX_load_verify_locations);
+		proc(m_sslDll1, SSL_ctrl);
+		proc(m_sslDll1, SSL_set_accept_state);
+		proc(m_sslDll1, SSL_CTX_use_PrivateKey_file);
+		proc(m_sslDll1, SSL_CTX_use_certificate_file);
+		proc(m_sslDll1, SSL_CTX_check_private_key);
+		proc(m_sslDll1, SSL_CTX_set_default_passwd_cb_userdata);
+		proc(m_sslDll1, SSL_CTX_set_default_passwd_cb);
+		proc(m_sslDll1, SSL_CTX_use_certificate_chain_file);
+		proc(m_sslDll1, SSL_CTX_ctrl);
+		proc(m_sslDll1, SSL_get_cipher_list);
+		proc(m_sslDll1, SSL_set_cipher_list);
 
 		if (bError) {
-			FreeLibrary(m_hSslDll1);
-			m_hSslDll1=0;
-			if (m_hSslDll2)
-				FreeLibrary(m_hSslDll2);
-			m_hSslDll2=0;
+			m_sslDll1.clear();
+			m_sslDll2.clear();
 			return SSL_FAILURE_LOADDLLS;
 		}
 
 		pSSL_load_error_strings();
 		if (!pSSL_library_init()) {
-			FreeLibrary(m_hSslDll1);
-			m_hSslDll1=0;
-			FreeLibrary(m_hSslDll2);
-			m_hSslDll2=0;
+			m_sslDll1.clear();
+			m_sslDll2.clear();
 			return SSL_FAILURE_INITSSL;
 		}
 	}
@@ -1180,13 +1165,8 @@ void CAsyncSslSocketLayer::UnloadSSL()
 		return;
 	}
 
-	if (m_hSslDll1)
-		FreeLibrary(m_hSslDll1);
-	if (m_hSslDll2) {
-		FreeLibrary(m_hSslDll2);
-	}
-	m_hSslDll1 = NULL;
-	m_hSslDll2 = NULL;
+	m_sslDll1.clear();
+	m_sslDll2.clear();
 }
 
 namespace {
@@ -1580,8 +1560,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	int days = 365;
 
 	CAsyncSslSocketLayer layer;
-	if (layer.InitSSL())
-	{
+	if (layer.InitSSL()) {
 		err = _T("Failed to initialize SSL library");
 		return false;
 	}
@@ -1591,22 +1570,19 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	RSA *rsa;
 	X509_NAME *name = NULL;
 
-	if ((pk = pEVP_PKEY_new()) == NULL)
-	{
+	if ((pk = pEVP_PKEY_new()) == NULL) {
 		err = _T("Could not create key object");
 		return false;
 	}
 
-	if ((x = pX509_new()) == NULL)
-	{
+	if ((x = pX509_new()) == NULL) {
 		err = _T("Could not create certificate object");
 		return false;
 	}
 
 	rsa = pRSA_generate_key(bits, RSA_F4, 0/*callback*/, NULL);
 
-	if (!pEVP_PKEY_assign(pk, EVP_PKEY_RSA, (char *)(rsa)))
-	{
+	if (!pEVP_PKEY_assign(pk, EVP_PKEY_RSA, (char *)(rsa))) {
 		err = _T("Failed to assign rsa key to key object");
 		return false;
 	}

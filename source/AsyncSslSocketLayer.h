@@ -99,9 +99,10 @@ Version 2.0:
 
 #include "AsyncSocketExLayer.h"
 #include <openssl/ssl.h>
+#include "misc/dll.h"
 
 // Details of SSL certificate, can be used by app to verify if certificate is valid
-struct t_SslCertData
+struct t_SslCertData final
 {
 	struct t_Contact
 	{
@@ -115,7 +116,7 @@ struct t_SslCertData
 		TCHAR Other[1024];
 	} subject, issuer;
 
-	struct t_validTime
+	struct t_validTime final
 	{
 		//Year, Month, day, hour, minute, second
 		int y,M,d,h,m,s;
@@ -216,8 +217,8 @@ private:
 	} *m_pSslLayerList;
 
 	// Handles to the SLL libraries
-	static HMODULE m_hSslDll1;
-	static HMODULE m_hSslDll2;
+	static DLL m_sslDll1;
+	static DLL m_sslDll2;
 
 	// SSL data
 	SSL_CTX* m_ssl_ctx{};	// SSL context

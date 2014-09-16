@@ -204,6 +204,7 @@ GOTO:EOF
     <ClCompile Include="hash_thread.cpp" />
     <ClCompile Include="iputils.cpp" />
     <ClCompile Include="ListenSocket.cpp" />
+    <ClCompile Include="misc\dll.cpp" />
     <ClCompile Include="misc\md5.cpp" />
     <ClCompile Include="MFC64bitFix.cpp" />
     <ClCompile Include="Options.cpp" />
@@ -254,6 +255,7 @@ GOTO:EOF
     <ClInclude Include="iputils.h" />
     <ClInclude Include="ListenSocket.h" />
     <ClInclude Include="MFC64bitFix.h" />
+    <ClInclude Include="misc\dll.h" />
     <ClInclude Include="OptionLimits.h" />
     <ClInclude Include="Options.h" />
     <ClInclude Include="OptionTypes.h" />

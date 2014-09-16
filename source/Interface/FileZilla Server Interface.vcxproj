@@ -114,6 +114,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Accounts.cpp" />
+    <ClCompile Include="..\misc\dll.cpp" />
     <ClCompile Include="AdminSocket.cpp" />
     <ClCompile Include="..\AsyncSocketEx.cpp" />
     <ClCompile Include="..\AsyncSocketExLayer.cpp" />
@@ -194,6 +195,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Accounts.h" />
+    <ClInclude Include="..\misc\dll.h" />
     <ClInclude Include="AdminSocket.h" />
     <ClInclude Include="..\AsyncSocketEx.h" />
     <ClInclude Include="..\AsyncSocketExLayer.h" />
