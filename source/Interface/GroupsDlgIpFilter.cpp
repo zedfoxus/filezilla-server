@@ -53,8 +53,8 @@ void CGroupsDlgIpFilter::DoDataExchange(CDataExchange* pDX)
 	//{{AFX_DATA_MAP(CGroupsDlgIpFilter)
 	DDX_Text(pDX, IDC_GROUPS_IPFILTER_ALLOWED, m_AllowedAddresses);
 	DDX_Text(pDX, IDC_GROUPS_IPFILTER_DISALLOWED, m_DisallowedAddresses);
-	DDV_MaxChars(pDX, m_AllowedAddresses, 20000);
-	DDV_MaxChars(pDX, m_DisallowedAddresses, 20000);
+	DDV_MaxChars(pDX, m_AllowedAddresses, 32000);
+	DDV_MaxChars(pDX, m_DisallowedAddresses, 32000);
 	//}}AFX_DATA_MAP
 }
 
