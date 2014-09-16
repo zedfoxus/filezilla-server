@@ -161,6 +161,8 @@ def(int, SSL_CTX_use_certificate_chain_file, (SSL_CTX *ctx, const char *file));
 def(long, SSL_CTX_ctrl, (SSL_CTX *ctx, int cmd, long larg, void *parg));
 def(int, SSL_set_cipher_list, (SSL *ssl, const char *str));
 def(const char*, SSL_get_cipher_list, (const SSL *ssl, int priority));
+def(void, CRYPTO_set_locking_callback, (void (*func)(int mode, int type, char const* file, int line)));
+def(int, CRYPTO_num_locks, (void));
 
 def(size_t, BIO_ctrl_pending, (BIO *b));
 def(int, BIO_read, (BIO *b, void *data, int len));
@@ -226,12 +228,34 @@ DLL CAsyncSslSocketLayer::m_sslDll1;
 DLL CAsyncSslSocketLayer::m_sslDll2;
 std::map<SSL_CTX *, int> CAsyncSslSocketLayer::m_contextRefCount;
 
+//Used internally by openssl via callbacks
+static std::recursive_mutex *openssl_mutexes;
+
 CAsyncSslSocketLayer::~CAsyncSslSocketLayer()
 {
 	UnloadSSL();
 	delete [] m_pNetworkSendBuffer;
 	delete [] m_pRetrySendBuffer;
 	delete [] m_pKeyPassword;
+}
+
+extern "C" static void locking_callback(int mode, int type, char const*, int)
+{
+	if (mode & CRYPTO_LOCK) {
+		openssl_mutexes[type].lock();
+	}
+	else {
+		openssl_mutexes[type].unlock();
+	}
+}
+
+void clear_locking_callback()
+{
+	if (openssl_mutexes) {
+		pCRYPTO_set_locking_callback(0);
+		delete [] openssl_mutexes;
+		openssl_mutexes = 0;
+	}
 }
 
 int CAsyncSslSocketLayer::InitSSL()
@@ -300,13 +324,19 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll2, BIO_s_mem);
 		proc(m_sslDll2, i2d_PrivateKey);
 		proc(m_sslDll2, BIO_test_flags);
+		proc(m_sslDll2, CRYPTO_set_locking_callback);
+		proc(m_sslDll2, CRYPTO_num_locks);
 
 		if (bError) {
 			m_sslDll2.clear();
 			return SSL_FAILURE_LOADDLLS;
 		}
 
+		openssl_mutexes = new std::recursive_mutex[pCRYPTO_num_locks()];
+		pCRYPTO_set_locking_callback(&locking_callback);
+
 		if (!m_sslDll1.load(_T("ssleay32.dll"))) {
+			clear_locking_callback();
 			m_sslDll2.clear();
 			return SSL_FAILURE_LOADDLLS;
 		}
@@ -352,6 +382,7 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll1, SSL_set_cipher_list);
 
 		if (bError) {
+			clear_locking_callback();
 			m_sslDll1.clear();
 			m_sslDll2.clear();
 			return SSL_FAILURE_LOADDLLS;
@@ -359,6 +390,7 @@ int CAsyncSslSocketLayer::InitSSL()
 
 		pSSL_load_error_strings();
 		if (!pSSL_library_init()) {
+			clear_locking_callback();
 			m_sslDll1.clear();
 			m_sslDll2.clear();
 			return SSL_FAILURE_INITSSL;
@@ -1167,6 +1199,7 @@ void CAsyncSslSocketLayer::UnloadSSL()
 		return;
 	}
 
+	clear_locking_callback();
 	m_sslDll1.clear();
 	m_sslDll2.clear();
 }
