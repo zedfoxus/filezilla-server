@@ -182,6 +182,7 @@ def(ASN1_STRING*, X509_NAME_ENTRY_get_data, (X509_NAME_ENTRY *ne));
 def(void, X509_STORE_CTX_set_error, (X509_STORE_CTX *ctx, int s));
 def(int, X509_digest, (const X509 *data, const EVP_MD *type, unsigned char *md, unsigned int *len));
 def(const EVP_MD*, EVP_sha1, (void));
+def(const EVP_MD*, EVP_sha256, (void));
 def(X509*, X509_STORE_CTX_get_current_cert, (X509_STORE_CTX *ctx));
 def(int, X509_STORE_CTX_get_error, (X509_STORE_CTX *ctx));
 def(void, X509_free, (X509 *a));
@@ -266,6 +267,7 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll2, X509_STORE_CTX_set_error);
 		proc(m_sslDll2, X509_digest);
 		proc(m_sslDll2, EVP_sha1);
+		proc(m_sslDll2, EVP_sha256);
 		proc(m_sslDll2, X509_STORE_CTX_get_current_cert);
 		proc(m_sslDll2, X509_STORE_CTX_get_error);
 		proc(m_sslDll2, X509_free);
@@ -1616,8 +1618,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	 */
 	pX509_set_issuer_name(x,name);
 
-	if (!pX509_sign(x, pk, pEVP_sha1()))
-	{
+	if (!pX509_sign(x, pk, pEVP_sha256())) {
 		err = _T("Failed to sign certificate");
 		return false;
 	}
