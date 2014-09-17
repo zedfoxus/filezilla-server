@@ -446,20 +446,10 @@ void CHyperLink::SetDefaultCursor()
 {
 	if (g_hLinkCursor == NULL)		// No cursor handle - load our own
 	{
-		// Get the windows directory
-		CString strWndDir;
-		GetWindowsDirectory(strWndDir.GetBuffer(MAX_PATH), MAX_PATH);
-		strWndDir.ReleaseBuffer();
-
-		strWndDir += _T("\\winhlp32.exe");
 		// This retrieves cursor #106 from winhlp32.exe, which is a hand pointer
-		HMODULE hModule = LoadLibrary(strWndDir);
-		if (hModule) {
-			HCURSOR hHandCursor = ::LoadCursor(hModule, MAKEINTRESOURCE(106));
-			if (hHandCursor)
-				g_hLinkCursor = CopyCursor(hHandCursor);
-			FreeLibrary(hModule);
-		}
+		HCURSOR hHandCursor = ::LoadCursor(0, MAKEINTRESOURCE(IDC_HAND));
+		if (hHandCursor)
+			g_hLinkCursor = CopyCursor(hHandCursor);
 	}
 }
 
