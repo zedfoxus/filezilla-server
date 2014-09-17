@@ -271,15 +271,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="res\FileZilla server.rc2" />
-    <None Include="CreateCertificateDlg.htm">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="res\manifest.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ReadMe.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
