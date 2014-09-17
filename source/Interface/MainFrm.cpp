@@ -221,8 +221,6 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	if (!m_pOptions->GetOptionVal(IOPTION_ALWAYS) && dlg.DoModal() != IDOK)
 		return 0;
 
-	m_pAdminSocket = new CAdminSocket(this);
-	ShowStatus("Connecting to server...", 0);
 	DoConnect();
 
 	return 0;
@@ -667,9 +665,6 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 
 		if (m_pAdminSocket)
 			return;
-
-		m_pAdminSocket = new CAdminSocket(this);
-		ShowStatus("Reconnecting to server...", 0);
 		DoConnect();
 	}
 
@@ -1104,11 +1099,8 @@ void CMainFrame::OnFileConnect()
 		if (AfxMessageBox(_T("Do you really want to close the current connection?"), MB_ICONQUESTION|MB_YESNO) != IDYES)
 			return;
 	CConnectDialog dlg(m_pOptions);
-	if (dlg.DoModal() == IDOK)
-	{
+	if (dlg.DoModal() == IDOK) {
 		CloseAdminSocket(false);
-		m_pAdminSocket = new CAdminSocket(this);
-		ShowStatus("Connecting to server...", 0);
 		DoConnect();
 	}
 }
@@ -1330,17 +1322,28 @@ void CMainFrame::OnUpdateDisplaySortByIP(CCmdUI* pCmdUI)
 
 void CMainFrame::DoConnect()
 {
+	CStdString address = m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS);
+	unsigned int port = static_cast<unsigned int>(m_pOptions->GetOptionVal(IOPTION_LASTSERVERPORT));
+
 	int family;
-	if (!GetIPV6LongForm(m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS)).IsEmpty())
+	if (!GetIPV6LongForm(address).IsEmpty()) {
+		if (address.Left(1) != '[') {
+			address = _T("[") + address + _T("]");
+		}
 		family = AF_INET6;
+	}
 	else
 		family = AF_INET;
 
+	CString msg;
+	msg.Format(_T("Connecting to server %s:%u..."), address, port);
+	ShowStatus(msg, 0);
+
+	m_pAdminSocket = new CAdminSocket(this);
 	m_pAdminSocket->Create(0, SOCK_STREAM, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE, 0, family);
 
 	m_pAdminSocket->m_Password = m_pOptions->GetOption(IOPTION_LASTSERVERPASS);
-	if (!m_pAdminSocket->Connect(m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS), (UINT)m_pOptions->GetOptionVal(IOPTION_LASTSERVERPORT)) && WSAGetLastError() != WSAEWOULDBLOCK)
-	{
+	if (!m_pAdminSocket->Connect(address, (UINT)port) && WSAGetLastError() != WSAEWOULDBLOCK) {
 		ShowStatus(_T("Error, could not connect to server"), 1);
 		CloseAdminSocket();
 	}
