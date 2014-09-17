@@ -106,8 +106,9 @@ bool CListenSocket::AccessAllowed(CAsyncSocketEx &socket) const
 		return true;
 
 	if (m_server.m_pAutoBanManager) {
-		if (m_server.m_pAutoBanManager->IsBanned(peerIP))
+		if (m_server.m_pAutoBanManager->IsBanned((peerIP.Find(':') == -1) ? peerIP : GetIPV6ShortForm(peerIP))) {
 			return false;
+		}
 	}
 
 	bool disallowed = false;
