@@ -52,6 +52,8 @@ public:
 	void SetOption(int nOptionID, __int64 value);
 
 protected:
+	CString GetFileName(bool for_saving);
+
 	static bool IsNumeric(LPCTSTR str);
 
 	struct t_OptionsCache

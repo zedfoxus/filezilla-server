@@ -31,15 +31,35 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-BOOL COptions::m_bInitialized=FALSE;
+BOOL COptions::m_bInitialized = FALSE;
+
+namespace {
+bool Load(TiXmlDocument& doc, CString const& file)
+{
+	USES_CONVERSION;
+	char* bufferA = T2A(file);
+	if (!bufferA || !*bufferA)
+		return false;
+	return doc.LoadFile(bufferA);
+}
+
+bool Save(TiXmlDocument& doc, CString const& file)
+{
+	USES_CONVERSION;
+	char* bufferA = T2A(file);
+	if (!bufferA || !*bufferA)
+		return false;
+	return doc.SaveFile(bufferA);
+}
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // Dialogfeld COptions
 
 COptions::COptions()
 {
-	for (int i=0;i<IOPTIONS_NUM;i++)
-		m_OptionsCache[i].bCached=FALSE;
+	for (int i = 0; i < IOPTIONS_NUM; ++i)
+		m_OptionsCache[i].bCached = FALSE;
 }
 
 COptions::~COptions()
@@ -65,28 +85,19 @@ void COptions::SetOption(int nOptionID, __int64 value)
 {
 	Init();
 
-	m_OptionsCache[nOptionID-1].bCached = TRUE;
-	m_OptionsCache[nOptionID-1].nType = 1;
-	m_OptionsCache[nOptionID-1].value = value;
+	m_OptionsCache[nOptionID - 1].bCached = TRUE;
+	m_OptionsCache[nOptionID - 1].nType = 1;
+	m_OptionsCache[nOptionID - 1].value = value;
 
 	CString valuestr;
 	valuestr.Format( _T("%I64d"), value);
 
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server Interface.xml"));
-
-	USES_CONVERSION;
-	char* bufferA = T2A(buffer);
-	if (!bufferA)
-		return;
+	CString const file = GetFileName(true);
 
 	TiXmlDocument document;
-	if (!document.LoadFile(bufferA))
-		return;
+	if (!Load(document, file)) {
+		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
+	}
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
 	if (!pRoot)
@@ -97,13 +108,12 @@ void COptions::SetOption(int nOptionID, __int64 value)
 		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
 
 	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
-	{
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
 		if (!pName)
 			continue;
 		CString name(pName);
-		if (name != m_Options[nOptionID-1].name)
+		if (name != m_Options[nOptionID - 1].name)
 			continue;
 
 		break;
@@ -112,36 +122,27 @@ void COptions::SetOption(int nOptionID, __int64 value)
 	if (!pItem)
 		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
 	pItem->Clear();
-	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name).c_str());
+	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID - 1].name).c_str());
 	pItem->SetAttribute("type", "numeric");
 	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr).c_str()));
 
-	document.SaveFile(bufferA);
+	Save(document, file);
 }
 
 void COptions::SetOption(int nOptionID, CString value)
 {
 	Init();
 
-	m_OptionsCache[nOptionID-1].bCached = TRUE;
-	m_OptionsCache[nOptionID-1].nType = 0;
-	m_OptionsCache[nOptionID-1].str = value;
+	m_OptionsCache[nOptionID - 1].bCached = TRUE;
+	m_OptionsCache[nOptionID - 1].nType = 0;
+	m_OptionsCache[nOptionID - 1].str = value;
 
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server Interface.xml"));
-
-	USES_CONVERSION;
-	char* bufferA = T2A(buffer);
-	if (!bufferA)
-		return;
+	CString const file = GetFileName(true);
 
 	TiXmlDocument document;
-	if (!document.LoadFile(bufferA))
-		return;
+	if (!Load(document, file)) {
+		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
+	}
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
 	if (!pRoot)
@@ -152,13 +153,12 @@ void COptions::SetOption(int nOptionID, CString value)
 		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
 
 	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
-	{
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
 		if (!pName)
 			continue;
 		CString name(pName);
-		if (name != m_Options[nOptionID-1].name)
+		if (name != m_Options[nOptionID - 1].name)
 			continue;
 
 		break;
@@ -171,88 +171,107 @@ void COptions::SetOption(int nOptionID, CString value)
 	pItem->SetAttribute("type", "string");
 	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value).c_str()));
 
-	document.SaveFile(bufferA);
+	Save(document, file);
 }
 
 CString COptions::GetOption(int nOptionID)
 {
 	ASSERT(nOptionID>0 && nOptionID<=IOPTIONS_NUM);
-	ASSERT(!m_Options[nOptionID-1].nType);
+	ASSERT(!m_Options[nOptionID - 1].nType);
 	Init();
 
-	if (m_OptionsCache[nOptionID-1].bCached)
-		return m_OptionsCache[nOptionID-1].str;
+	if (m_OptionsCache[nOptionID - 1].bCached)
+		return m_OptionsCache[nOptionID - 1].str;
 
 	//Verification
 	switch (nOptionID)
 	{
 	case IOPTION_LASTSERVERADDRESS:
-		m_OptionsCache[nOptionID-1].str = _T("127.0.0.1");
+		m_OptionsCache[nOptionID - 1].str = _T("[::1]");
 		break;
 	default:
-		m_OptionsCache[nOptionID-1].str="";
+		m_OptionsCache[nOptionID - 1].str = "";
 		break;
 	}
-	m_OptionsCache[nOptionID-1].bCached=TRUE;
-	m_OptionsCache[nOptionID-1].nType=0;
-	return m_OptionsCache[nOptionID-1].str;
+	m_OptionsCache[nOptionID - 1].bCached = TRUE;
+	m_OptionsCache[nOptionID - 1].nType = 0;
+	return m_OptionsCache[nOptionID - 1].str;
 }
 
 __int64 COptions::GetOptionVal(int nOptionID)
 {
 	ASSERT(nOptionID>0 && nOptionID<=IOPTIONS_NUM);
-	ASSERT(m_Options[nOptionID-1].nType == 1);
+	ASSERT(m_Options[nOptionID - 1].nType == 1);
 	Init();
 
-	if (m_OptionsCache[nOptionID-1].bCached)
-		return m_OptionsCache[nOptionID-1].value;
+	if (m_OptionsCache[nOptionID - 1].bCached)
+		return m_OptionsCache[nOptionID - 1].value;
 
-	switch (nOptionID)
-	{
+	switch (nOptionID) {
 	case IOPTION_LASTSERVERPORT:
-		m_OptionsCache[nOptionID-1].value=14147;
+		m_OptionsCache[nOptionID - 1].value = 14147;
 		break;
 	default:
-		m_OptionsCache[nOptionID-1].value=0;
+		m_OptionsCache[nOptionID - 1].value=0;
 	}
-	m_OptionsCache[nOptionID-1].bCached=TRUE;
-	m_OptionsCache[nOptionID-1].nType=0;
-	return m_OptionsCache[nOptionID-1].value;
+	m_OptionsCache[nOptionID - 1].bCached = TRUE;
+	m_OptionsCache[nOptionID - 1].nType = 0;
+	return m_OptionsCache[nOptionID - 1].value;
+}
+
+CString COptions::GetFileName(bool for_saving)
+{
+	CString ret;
+
+	PWSTR str = 0;
+	if (SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, 0, &str) == S_OK && str && *str) {
+		CString path = str;
+		path += _T("\\FileZilla Server\\");
+
+		if (for_saving) {
+			CreateDirectory(path, 0);
+		}
+		path += _T("FileZilla Server Interface.xml");
+		
+		if (!for_saving) {
+			CFileStatus status;
+			if (CFile::GetStatus(path, status)) {
+				ret = path;
+			}
+		}
+		else {
+			ret = path;
+		}
+
+		CoTaskMemFree(str);
+	}
+
+	if (ret.IsEmpty() && !for_saving) {
+		TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
+		GetModuleFileName(0, buffer, MAX_PATH);
+		LPTSTR pos = _tcsrchr(buffer, '\\');
+		if (pos)
+			*++pos = 0;
+		ret = buffer;
+		ret += _T("FileZilla Server Interface.xml");
+	}
+
+	return ret;
 }
 
 void COptions::Init()
 {
 	if (m_bInitialized)
 		return;
-	m_bInitialized=TRUE;
-	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
-	GetModuleFileName( 0, buffer, MAX_PATH );
-	LPTSTR pos=_tcsrchr(buffer, '\\');
-	if (pos)
-		*++pos=0;
-	_tcscat(buffer, _T("FileZilla Server Interface.xml"));
-
+	m_bInitialized = TRUE;
+		
 	for (int i = 0; i < IOPTIONS_NUM; i++)
 		m_OptionsCache[i].bCached = FALSE;
 
-	USES_CONVERSION;
-	char* bufferA = T2A(buffer);
-	if (!bufferA)
-		return;
-
 	TiXmlDocument document;
-
-	CFileStatus status;
-	if (!CFile::GetStatus(buffer, status) )
-	{
-		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
-		document.SaveFile(bufferA);
+	if (!Load(document, GetFileName(false))) {
+		return;
 	}
-	else if (status.m_attribute&FILE_ATTRIBUTE_DIRECTORY)
-		return;
-
-	if (!document.LoadFile(bufferA))
-		return;
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
 	if (!pRoot)
@@ -263,8 +282,7 @@ void COptions::Init()
 		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
 
 	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
-	{
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
 		if (!pName)
 			continue;
@@ -278,21 +296,17 @@ void COptions::Init()
 			continue;
 		CString value = ConvFromNetwork(textNode->Value());
 
-		for (int i = 0; i < IOPTIONS_NUM; i++)
-		{
+		for (int i = 0; i < IOPTIONS_NUM; ++i) {
 			if (name != m_Options[i].name)
 				continue;
 
-			if (m_OptionsCache[i].bCached)
-			{
+			if (m_OptionsCache[i].bCached) {
 				::AfxTrace( _T("Item '%s' is already in cache, ignoring item\n"), name);
 				break;
 			}
 
-			if (type == "numeric")
-			{
-				if (m_Options[i].nType != 1)
-				{
+			if (type == "numeric") {
+				if (m_Options[i].nType != 1) {
 					::AfxTrace( _T("Type mismatch for option '%s'. Type is %d, should be %d"), name, m_Options[i].nType, 1);
 					break;
 				}
@@ -312,8 +326,7 @@ void COptions::Init()
 
 				m_OptionsCache[i].value = value64;
 			}
-			else
-			{
+			else {
 				if (type != "string")
 					::AfxTrace( _T("Unknown option type '%s' for item '%s', assuming string\n"), type, name);
 				if (m_Options[i].nType != 0)
@@ -334,11 +347,9 @@ bool COptions::IsNumeric(LPCTSTR str)
 {
 	if (!str)
 		return false;
-	LPCTSTR p=str;
-	while(*p)
-	{
-		if (*p<'0' || *p>'9')
-		{
+	LPCTSTR p = str;
+	while (*p) {
+		if (*p < '0' || *p > '9') {
 			return false;
 		}
 		p++;
