@@ -18,7 +18,7 @@ DLL::~DLL()
 bool DLL::load(CString const& s)
 {
 	clear();
-	hModule = LoadLibrary(s);
+	hModule = LoadLibraryEx(s, 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
 	return hModule != 0;
 }
 
