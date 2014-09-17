@@ -1238,7 +1238,7 @@ BOOL CServer::CreateAdminListenSocket()
 			else
 				family = AF_INET;
 
-			if (!pAdminListenSocket->Create(nAdminPort, SOCK_STREAM, FD_ACCEPT, ip, family) || !pAdminListenSocket->Listen())
+			if (!pAdminListenSocket->Create(nAdminPort, SOCK_STREAM, FD_ACCEPT, ip, family) || !pAdminListenSocket->Listen(16))
 			{
 				delete pAdminListenSocket;
 				error += _T("\n") + ip;
@@ -1293,7 +1293,7 @@ BOOL CServer::CreateListenSocket()
 		{
 			CListenSocket *pListenSocket = new CListenSocket(*this, m_ThreadArray, ssl);
 
-			if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET) || !pListenSocket->Listen()) {
+			if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET) || !pListenSocket->Listen(16)) {
 				delete pListenSocket;
 				pListenSocket = NULL;
 				str.Format(_T("Failed to create listen socket on port %d for IPv4"), nPort);
@@ -1305,7 +1305,7 @@ BOOL CServer::CreateListenSocket()
 			if (!m_pOptions->GetOptionVal(OPTION_DISABLE_IPV6)) {
 				CListenSocket *pListenSocket = new CListenSocket(*this, m_ThreadArray, ssl);
 
-				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET6) || !pListenSocket->Listen()) {
+				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET6) || !pListenSocket->Listen(16)) {
 					delete pListenSocket;
 					pListenSocket = NULL;
 					str.Format(_T("Failed to create listen socket on port %d for IPv6"), nPort);
@@ -1334,7 +1334,7 @@ BOOL CServer::CreateListenSocket()
 				else
 					family = AF_INET;
 
-				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, ip, family) || !pListenSocket->Listen()) {
+				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, ip, family) || !pListenSocket->Listen(16)) {
 					delete pListenSocket;
 					bError = TRUE;
 					str += _T(" ") + ip;
