@@ -188,7 +188,7 @@ BOOL CAsyncSocketExLayer::TriggerEvent(long lEvent, int nErrorCode, BOOL bPassTh
 	ASSERT(m_pOwnerSocket->m_SocketData.nSocketIndex!=-1);
 	t_LayerNotifyMsg *pMsg = new t_LayerNotifyMsg;
 	pMsg->hSocket = m_pOwnerSocket->m_SocketData.hSocket;
-	pMsg->lEvent = ( lEvent % 0xffff ) + ( nErrorCode << 16);
+	pMsg->lEvent = ( lEvent & 0xffff ) + ( nErrorCode << 16);
 	pMsg->pLayer = bPassThrough ? m_pPrevLayer : this;
 	BOOL res = PostMessage(m_pOwnerSocket->GetHelperWindowHandle(), WM_USER, (WPARAM)m_pOwnerSocket->m_SocketData.nSocketIndex, (LPARAM)pMsg);
 	if (!res)

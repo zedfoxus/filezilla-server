@@ -208,18 +208,18 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 	_int64 offset = tzInfo.Bias+((tzRes==TIME_ZONE_ID_DAYLIGHT)?tzInfo.DaylightBias:tzInfo.StandardBias);
 	offset *= 60 * 10000000;
 
-	_int64 t1 = ((_int64)mtime.dwHighDateTime<<32) + mtime.dwLowDateTime;
+	long long t1 = (static_cast<long long>(mtime.dwHighDateTime) << 32) + mtime.dwLowDateTime;
 	t1 -= offset;
-	mtime.dwHighDateTime = (DWORD)(t1>>32);
-	mtime.dwLowDateTime = (DWORD)(t1%0xFFFFFFFF);
+	mtime.dwHighDateTime = static_cast<DWORD>(t1 >> 32);
+	mtime.dwLowDateTime = static_cast<DWORD>(t1 & 0xFFFFFFFF);
 
 	SYSTEMTIME sFileTime;
 	FileTimeToSystemTime(&mtime, &sFileTime);
 
-	_int64 t2 = ((_int64)fTime.dwHighDateTime<<32) + fTime.dwLowDateTime;
+	long long t2 = (static_cast<long long>(fTime.dwHighDateTime) << 32) + fTime.dwLowDateTime;
 	const char months[][4]={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 	result.back().len += sprintf(result.back().buffer + result.back().len, " %s %02d ", months[sFileTime.wMonth-1], sFileTime.wDay);
-	if (t1 > t2 || (t2-t1) > ((_int64)1000000*60*60*24*350))
+	if (t1 > t2 || (t2-t1) > (1000000ll*60*60*24*350))
 		result.back().len += sprintf(result.back().buffer + result.back().len, " %d ", sFileTime.wYear);
 	else
 		result.back().len += sprintf(result.back().buffer + result.back().len, "%02d:%02d ", sFileTime.wHour, sFileTime.wMinute);
