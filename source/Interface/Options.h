@@ -16,17 +16,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#if !defined(AFX_OPTIONS_H__3E60F2D3_99F3_4271_92A3_2CF71AF62731__INCLUDED_)
-#define AFX_OPTIONS_H__3E60F2D3_99F3_4271_92A3_2CF71AF62731__INCLUDED_
-
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-// Options.h : Header-Datei
-//
-
-/////////////////////////////////////////////////////////////////////////////
-// Dialogfeld COptions
+#ifndef FILEZILLA_SERVER_INTERFACE_OPTIONS_HEADER
+#define FILEZILLA_SERVER_INTERFACE_OPTIONS_HEADER
 
 #define IOPTION_STARTMINIMIZED 1
 #define IOPTION_LASTSERVERADDRESS 2
@@ -39,37 +30,33 @@
 #define IOPTIONS_NUM 7
 
 class COptionsDlg;
-class COptions
+class COptions final
 {
 	friend COptionsDlg;
-// Konstruktion
+
 public:
 	CString GetOption(int nOptionID);
 	__int64 GetOptionVal(int nOptionID);
-	COptions();   // Standardkonstruktor
-	virtual ~COptions();
-	void SetOption(int nOptionID, CString value);
+	void SetOption(int nOptionID, CString const& value);
 	void SetOption(int nOptionID, __int64 value);
 
 protected:
 	CString GetFileName(bool for_saving);
 
+	void SaveOption(int nOptionID, CString const& value);
+
 	static bool IsNumeric(LPCTSTR str);
 
-	struct t_OptionsCache
+	struct t_OptionsCache final
 	{
-		BOOL bCached;
+		BOOL bCached{};
 		CTime createtime;
-		int nType;
+		int nType{};
 		CString str;
-		_int64 value;
+		_int64 value{};
 	} m_OptionsCache[IOPTIONS_NUM];
 	void Init();
 	static BOOL m_bInitialized;
 };
 
-
-//{{AFX_INSERT_LOCATION}}
-// Microsoft Visual C++ fügt unmittelbar vor der vorhergehenden Zeile zusätzliche Deklarationen ein.
-
-#endif // AFX_OPTIONS_H__3E60F2D3_99F3_4271_92A3_2CF71AF62731__INCLUDED_
+#endif

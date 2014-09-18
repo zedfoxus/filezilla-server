@@ -51,35 +51,43 @@ bool Save(TiXmlDocument& doc, CString const& file)
 		return false;
 	return doc.SaveFile(bufferA);
 }
+
+TiXmlElement* GetSettings(TiXmlDocument& document)
+{
+	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
+	if (!pRoot) {
+		if (document.FirstChildElement()) {
+			return 0;
+		}
+		pRoot = document.LinkEndChild(new TiXmlElement("FileZillaServer"))->ToElement();
+	}
+
+	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	if (!pSettings)
+		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+
+	return pSettings;
+}
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // Dialogfeld COptions
 
-COptions::COptions()
-{
-	for (int i = 0; i < IOPTIONS_NUM; ++i)
-		m_OptionsCache[i].bCached = FALSE;
-}
-
-COptions::~COptions()
-{
-}
-
-struct t_Option
+struct t_Option final
 {
 	TCHAR name[30];
 	int nType;
 };
 
-static const t_Option m_Options[IOPTIONS_NUM]={	_T("Start Minimized"),			1,
-												_T("Last Server Address"),		0,
-												_T("Last Server Port"),			1,
-												_T("Last Server Password"),		0,
-												_T("Always use last server"),	1,
-												_T("User Sorting"),				1,
-												_T("Filename Display"),			1
-												};
+static const t_Option m_Options[IOPTIONS_NUM] = {
+	{ _T("Start Minimized"),        1 },
+	{ _T("Last Server Address"),    0 },
+	{ _T("Last Server Port"),       1 },
+	{ _T("Last Server Password"),   0 },
+	{ _T("Always use last server"), 1 },
+	{ _T("User Sorting"),           1 },
+	{ _T("Filename Display"),       1 }
+};
 
 void COptions::SetOption(int nOptionID, __int64 value)
 {
@@ -90,46 +98,12 @@ void COptions::SetOption(int nOptionID, __int64 value)
 	m_OptionsCache[nOptionID - 1].value = value;
 
 	CString valuestr;
-	valuestr.Format( _T("%I64d"), value);
+	valuestr.Format(_T("%I64d"), value);
 
-	CString const file = GetFileName(true);
-
-	TiXmlDocument document;
-	if (!Load(document, file)) {
-		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
-	}
-
-	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot)
-		return;
-
-	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
-	if (!pSettings)
-		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
-
-	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
-		const char* pName = pItem->Attribute("name");
-		if (!pName)
-			continue;
-		CString name(pName);
-		if (name != m_Options[nOptionID - 1].name)
-			continue;
-
-		break;
-	}
-
-	if (!pItem)
-		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
-	pItem->Clear();
-	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID - 1].name).c_str());
-	pItem->SetAttribute("type", "numeric");
-	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr).c_str()));
-
-	Save(document, file);
+	SaveOption(nOptionID, valuestr);
 }
 
-void COptions::SetOption(int nOptionID, CString value)
+void COptions::SetOption(int nOptionID, CString const& value)
 {
 	Init();
 
@@ -137,20 +111,19 @@ void COptions::SetOption(int nOptionID, CString value)
 	m_OptionsCache[nOptionID - 1].nType = 0;
 	m_OptionsCache[nOptionID - 1].str = value;
 
+	SaveOption(nOptionID, value);
+}
+
+void COptions::SaveOption(int nOptionID, CString const& value)
+{
 	CString const file = GetFileName(true);
 
 	TiXmlDocument document;
-	if (!Load(document, file)) {
-		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
-	}
+	Load(document, file);
 
-	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot)
-		return;
-
-	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	TiXmlElement* pSettings = GetSettings(document);
 	if (!pSettings)
-		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+		return;
 
 	TiXmlElement* pItem;
 	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
@@ -168,7 +141,7 @@ void COptions::SetOption(int nOptionID, CString value)
 		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
 	pItem->Clear();
 	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID - 1].name).c_str());
-	pItem->SetAttribute("type", "string");
+	pItem->SetAttribute("type", m_OptionsCache[nOptionID - 1].nType ? "numeric" : "string");
 	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value).c_str()));
 
 	Save(document, file);
@@ -176,7 +149,7 @@ void COptions::SetOption(int nOptionID, CString value)
 
 CString COptions::GetOption(int nOptionID)
 {
-	ASSERT(nOptionID>0 && nOptionID<=IOPTIONS_NUM);
+	ASSERT(nOptionID > 0 && nOptionID <= IOPTIONS_NUM);
 	ASSERT(!m_Options[nOptionID - 1].nType);
 	Init();
 
@@ -273,13 +246,9 @@ void COptions::Init()
 		return;
 	}
 
-	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot)
-		return;
-
-	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
+	TiXmlElement* pSettings = GetSettings(document);
 	if (!pSettings)
-		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+		return;
 
 	TiXmlElement* pItem;
 	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
