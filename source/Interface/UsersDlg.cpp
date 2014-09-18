@@ -444,40 +444,37 @@ BOOL CUsersDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	if (!pBuffer)
 		return FALSE;
 
-	DWORD len = 4;
+	DWORD len = 3 * 2;
+	for (auto const& group : m_GroupsList) {
+		len += group.GetRequiredBufferLen();
+	}
 
-	t_GroupsList::iterator groupiter;
-	for (groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); ++groupiter)
-		len += groupiter->GetRequiredBufferLen();
+	for (auto const& user : m_UsersList) {
+		len += user.GetRequiredBufferLen();
+	}
 
-	t_UsersList::iterator iter;
-	for (iter=m_UsersList.begin(); iter!=m_UsersList.end(); ++iter)
-		len += iter->GetRequiredBufferLen();
+	*pBuffer = new char[len];
+	char *p = *pBuffer;
 
-	*pBuffer=new char[len];
-	char *p=*pBuffer;
-
-	*p++ = m_GroupsList.size()/256;
-	*p++ = m_GroupsList.size()%256;
-	for (groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); ++groupiter)
-	{
-		p = groupiter->FillBuffer(p);
-		if (!p)
-		{
-			delete [] *pBuffer;
+	*p++ = (m_GroupsList.size() / 256) / 256;
+	*p++ = m_GroupsList.size() / 256;
+	*p++ = m_GroupsList.size() % 256;
+	for (auto const& group : m_GroupsList) {
+		p = group.FillBuffer(p);
+		if (!p) {
+			delete[] * pBuffer;
 			*pBuffer = NULL;
 			return FALSE;
 		}
 	}
 
-	*p++ = m_UsersList.size()/256;
-	*p++ = m_UsersList.size()%256;
-	for (iter=m_UsersList.begin(); iter!=m_UsersList.end(); ++iter)
-	{
-		p = iter->FillBuffer(p);
-		if (!p)
-		{
-			delete [] *pBuffer;
+	*p++ = (m_UsersList.size() / 256) / 256;
+	*p++ = m_UsersList.size() / 256;
+	*p++ = m_UsersList.size() % 256;
+	for (auto const& user : m_UsersList) {
+		p = user.FillBuffer(p);
+		if (!p) {
+			delete[] * pBuffer;
 			*pBuffer = NULL;
 			return FALSE;
 		}
@@ -490,32 +487,28 @@ BOOL CUsersDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 BOOL CUsersDlg::Init(unsigned char *pData, DWORD dwDataLength)
 {
-	unsigned char *p=pData;
-	unsigned int i;
+	unsigned char *p = pData;
+	unsigned char const* const endMarker = p + dwDataLength;
 
-	if (dwDataLength < 2)
+	if ((endMarker - p) < 3)
 		return FALSE;
-	unsigned int num = *p * 256 + p[1];
-	p+=2;
-	for (i=0; i<num; i++)
-	{
+	unsigned int num = *p * 256 * 256 + p[1] * 256 + p[2];
+	p += 3;
+	for (unsigned int i = 0; i < num; ++i) {
 		t_group group;
-
-		p = group.ParseBuffer(p, dwDataLength-(p-pData));
+		p = group.ParseBuffer(p, endMarker - p);
 		if (!p)
 			return FALSE;
 		m_GroupsList.push_back(group);
 	}
 
-	if ((UINT)(p-pData+2)>dwDataLength)
+	if ((endMarker - p) < 3)
 		return FALSE;
-	num = *p * 256 + p[1];
-	p+=2;
-	for (i=0; i<num; i++)
-	{
+	num = *p * 256 * 256 + p[1] * 256 + p[2];
+	p += 3;
+	for (unsigned i = 0; i < num; ++i) {
 		t_user user;
-
-		p = user.ParseBuffer(p, dwDataLength-(p-pData));
+		p = user.ParseBuffer(p, endMarker - p);
 		if (!p)
 			return FALSE;
 		m_UsersList.push_back(user);

@@ -1181,12 +1181,10 @@ LRESULT CMainFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		else if ((m_nEdit & 0x19) == 0x09)
 		{
 			m_nEdit |= 0x10;
-			if (m_pUsersDlg->DoModal() == IDOK)
-			{
+			if (m_pUsersDlg->DoModal() == IDOK) {
 				char *pBuffer;
 				DWORD dwBufferLength;
-				if (m_pUsersDlg->GetAsCommand(&pBuffer, &dwBufferLength))
-				{
+				if (m_pUsersDlg->GetAsCommand(&pBuffer, &dwBufferLength)) {
 					SendCommand(6, pBuffer, dwBufferLength);
 					ShowStatus(_T("Sending account settings, please wait..."), 0);
 					delete [] pBuffer;
@@ -1199,12 +1197,10 @@ LRESULT CMainFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		else if ((m_nEdit & 0x1A) == 0x0A)
 		{
 			m_nEdit |= 0x10;
-			if (m_pGroupsDlg->DoModal() == IDOK)
-			{
+			if (m_pGroupsDlg->DoModal() == IDOK) {
 				char *pBuffer;
 				DWORD dwBufferLength;
-				if (m_pGroupsDlg->GetAsCommand(&pBuffer, &dwBufferLength))
-				{
+				if (m_pGroupsDlg->GetAsCommand(&pBuffer, &dwBufferLength)) {
 					SendCommand(6, pBuffer, dwBufferLength);
 					ShowStatus(_T("Sending account settings, please wait..."), 0);
 					delete [] pBuffer;

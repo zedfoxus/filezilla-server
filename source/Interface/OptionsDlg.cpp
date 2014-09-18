@@ -248,19 +248,21 @@ bool COptionsDlg::IsNumeric(LPCTSTR str)
 BOOL COptionsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 {
 	unsigned char *p = pData;
-	int i;
+	unsigned char const* const endMarker = pData + dwDataLength;
+
+	if ((endMarker - p) < 2)
+		return FALSE;
 	int num = *p * 256 + p[1];
-	p+=2;
-	if (num!=OPTIONS_NUM)
+	p += 2;
+
+	if (num != OPTIONS_NUM)
 		return FALSE;
 
-	for (i=0; i<num; i++)
-	{
+	for (int i = 0; i < num; ++i) {
 		if (static_cast<DWORD>(p-pData) >= dwDataLength)
 			return FALSE;
 		int nType = *p++;
-		if (!nType)
-		{
+		if (!nType) {
 			if (static_cast<DWORD>(p-pData+3) >= dwDataLength)
 				return 2;
 			int len= *p * 256 * 256 + p[1] * 256 + p[2];
@@ -277,24 +279,23 @@ BOOL COptionsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 
 			delete [] tmp;
 		}
-		else if (nType == 1)
-		{
+		else if (nType == 1) {
 			if (static_cast<DWORD>(p-pData+8)>dwDataLength)
 				return FALSE;
 			m_OptionsCache[i].nType = 1;
 			memcpy(&m_OptionsCache[i].value, p, 8);
-			p+=8;
+			p += 8;
 		}
 		else
 			return FALSE;
 	}
 
-	if (static_cast<DWORD>(p-pData+2) > dwDataLength)
+	if ((endMarker - p) < 2)
 		return FALSE;
-	num = *p++ << 8;
-	num |= *p++;
-	for (i=0; i<num; i++)
-	{
+	num = *p * 256 + p[1];
+	p += 2;
+
+	for (int i = 0; i < num; ++i) {
 		CSpeedLimit limit;
 		p = limit.ParseBuffer(p, dwDataLength - (p - pData));
 		if (!p)
@@ -302,12 +303,12 @@ BOOL COptionsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 		m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.push_back(limit);
 	}
 
-	if (static_cast<DWORD>(p-pData+2) > dwDataLength)
+	if ((endMarker - p) < 2)
 		return FALSE;
-	num = *p++ << 8;
-	num |= *p++;
-	for (i=0; i<num; i++)
-	{
+	num = *p * 256 + p[1];
+	p += 2;
+
+	for (int i = 0; i < num; ++i) {
 		CSpeedLimit limit;
 		p = limit.ParseBuffer(p, dwDataLength - (p - pData));
 		if (!p)
@@ -321,38 +322,37 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 {
 	DWORD len = 2;
 	int i;
-	for (i = 0; i < OPTIONS_NUM; i++)
-	{
-		len+=1;
-		if (!m_Options[i].nType)
-		{
-			int l = ConvToNetwork(GetOption(i+1)).size();
-			if (l > 0xFFFFFF)
+	for (i = 0; i < OPTIONS_NUM; ++i) {
+		++len;
+		if (!m_Options[i].nType) {
+			int strlen = ConvToNetwork(GetOption(i + 1)).size();
+			if (strlen > 0xFFFFFF)
 				return FALSE;
-			len += l;
+			len += strlen;
 			len += 3;
 		}
 		else
-			len+=8;
+			len += 8;
 	}
 	len += 4; //Number of rules
-	SPEEDLIMITSLIST::const_iterator iter;
-	for (iter = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.end(); ++iter)
-		len += iter->GetRequiredBufferLen();
-	for (iter = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.end(); ++iter)
-		len += iter->GetRequiredBufferLen();
+	for (auto const& limit : m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits) {
+		len += limit.GetRequiredBufferLen();
+	}
+	for (auto const& limit : m_pOptionsSpeedLimitPage->m_UploadSpeedLimits) {
+		len += limit.GetRequiredBufferLen();
+	}
 
 	*pBuffer = new char[len];
-	char *p=*pBuffer;
-	*p++ = OPTIONS_NUM/256;
-	*p++ = OPTIONS_NUM%256;
-	for (i=0; i<OPTIONS_NUM; i++)
+	char *p = *pBuffer;
+	*p++ = OPTIONS_NUM / 256;
+	*p++ = OPTIONS_NUM % 256;
+	for (i = 0; i < OPTIONS_NUM; ++i)
 	{
 		*p++ = m_Options[i].nType;
-		switch(m_Options[i].nType) {
+		switch (m_Options[i].nType) {
 		case 0:
 			{
-				auto utf8 = ConvToNetwork(GetOption(i+1));
+				auto utf8 = ConvToNetwork(GetOption(i + 1));
 				int slen = utf8.size();
 				*p++ = (slen / 256) / 256;
 				*p++ = slen / 256;
@@ -375,13 +375,15 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 	*p++ = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.size() >> 8;
 	*p++ = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.size() % 256;
-	for (iter = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.end(); ++iter)
-		p = iter->FillBuffer(p);
+	for (auto const& limit : m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits) {
+		p = limit.FillBuffer(p);
+	}
 
 	*p++ = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.size() >> 8;
 	*p++ = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.size() % 256;
-	for (iter = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.begin(); iter != m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.end(); ++iter)
-		p = iter->FillBuffer(p);
+	for (auto const& limit : m_pOptionsSpeedLimitPage->m_UploadSpeedLimits) {
+		p = limit.FillBuffer(p);
+	}
 
 	*nBufferLength = len;
 

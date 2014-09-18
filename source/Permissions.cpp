@@ -948,12 +948,11 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	simple_lock lock(m_mutex);
 
 	// First calculate the required buffer length
-	DWORD len = 4;
-	t_GroupsList::iterator groupiter;
-	for (groupiter = m_sGroupsList.begin(); groupiter != m_sGroupsList.end(); ++groupiter)
-		len += groupiter->GetRequiredBufferLen();
-
-	for (auto const& iter : m_sUsersList ) {
+	DWORD len = 3 * 2;
+	for (auto const& group : m_sGroupsList) {
+		len += group.GetRequiredBufferLen();
+	}
+	for (auto const& iter : m_sUsersList) {
 		len += iter.second.GetRequiredBufferLen();
 	}
 
@@ -962,10 +961,11 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	char* p  = *pBuffer;
 
 	// Write groups to buffer
-	*p++ = m_sGroupsList.size()/256;
-	*p++ = m_sGroupsList.size()%256;
-	for (groupiter = m_sGroupsList.begin(); groupiter != m_sGroupsList.end(); ++groupiter) {
-		p = groupiter->FillBuffer(p);
+	*p++ = (m_sGroupsList.size() / 256) / 256;
+	*p++ = m_sGroupsList.size() / 256;
+	*p++ = m_sGroupsList.size() % 256;
+	for (auto const& group : m_sGroupsList) {
+		p = group.FillBuffer(p);
 		if (!p) {
 			delete [] *pBuffer;
 			*pBuffer = NULL;
@@ -974,8 +974,9 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	}
 
 	// Write users to buffer
-	*p++ = m_sUsersList.size()/256;
-	*p++ = m_sUsersList.size()%256;
+	*p++ = (m_sUsersList.size() / 256) / 256;
+	*p++ = m_sUsersList.size() / 256;
+	*p++ = m_sUsersList.size() % 256;
 	for (auto const& iter : m_sUsersList ) {
 		p = iter.second.FillBuffer(p);
 		if (!p) {
@@ -998,21 +999,19 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	unsigned char *p = pData;
 	unsigned char* endMarker = pData + dwDataLength;
 
-	if (dwDataLength < 2)
+	if (dwDataLength < 3)
 		return FALSE;
-	int num = *p * 256 + p[1];
-	p+=2;
+	int num = *p * 256 * 256 + p[1] * 256 + p[2];
+	p += 3;
 
 	int i;
-	for (i = 0; i < num; i++)
-	{
+	for (i = 0; i < num; ++i) {
 		t_group group;
 		p = group.ParseBuffer(p, endMarker - p);
 		if (!p)
 			return FALSE;
 
-		if (group.group != _T(""))
-		{
+		if (group.group != _T("")) {
 			//Set a home dir if no home dir could be read
 			BOOL bGotHome = FALSE;
 			for (unsigned int dir = 0; dir < group.permissions.size(); dir++)
@@ -1029,12 +1028,12 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		}
 	}
 
-	if ((endMarker - p) < 2)
+	if ((endMarker - p) < 3)
 		return FALSE;
+	num = *p * 256 * 256 + p[1] * 256 + p[2];
+	p += 3;
 
-	num = *p * 256 + p[1];
-	p+=2;
-	for (i = 0; i < num; i++) {
+	for (i = 0; i < num; ++i) {
 		CUser user;
 
 		p = user.ParseBuffer(p, endMarker - p);
