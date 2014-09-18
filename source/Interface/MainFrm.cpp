@@ -1313,7 +1313,7 @@ void CMainFrame::OnUpdateDisplaySortByAccount(CCmdUI* pCmdUI)
 
 void CMainFrame::OnUpdateDisplaySortByIP(CCmdUI* pCmdUI)
 {
-	pCmdUI->SetRadio(GetUsersPane()->m_pListCtrl->GetSortColumn() == 3);
+	pCmdUI->SetRadio(GetUsersPane()->m_pListCtrl->GetSortColumn() == 2);
 }
 
 void CMainFrame::DoConnect()
