@@ -1468,7 +1468,7 @@ BOOL CAsyncSocketEx::TriggerEvent(long lEvent)
 	{
 		CAsyncSocketExLayer::t_LayerNotifyMsg *pMsg = new CAsyncSocketExLayer::t_LayerNotifyMsg;
 		pMsg->hSocket = m_SocketData.hSocket;
-		pMsg->lEvent=lEvent%0xFFFF;
+		pMsg->lEvent= lEvent & 0xFFFF;
 		pMsg->pLayer=0;
 		BOOL res=PostMessage(GetHelperWindowHandle(), WM_USER, (WPARAM)m_SocketData.nSocketIndex, (LPARAM)pMsg);
 		if (!res)
@@ -1477,7 +1477,7 @@ BOOL CAsyncSocketEx::TriggerEvent(long lEvent)
 	}
 	else
 #endif //NOLAYERS
-		return PostMessage(GetHelperWindowHandle(), m_SocketData.nSocketIndex+WM_SOCKETEX_NOTIFY, m_SocketData.hSocket, lEvent%0xFFFF);
+		return PostMessage(GetHelperWindowHandle(), m_SocketData.nSocketIndex+WM_SOCKETEX_NOTIFY, m_SocketData.hSocket, lEvent & 0xFFFF);
 
 }
 
