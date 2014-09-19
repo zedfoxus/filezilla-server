@@ -1,4 +1,4 @@
-<p align="center"><b><u>FileZilla Server version 0.9.46 beta</u></b></p>
+<p align="center"><b><u>FileZilla Server version 0.9.47 beta</u></b></p>
 <p align="center">Copyright 2001-2014<br>
 by <a href="mailto:tim.kosse@filezilla-project.org">Tim Kosse</a><a href="https://filezilla-project.org/"><br>
 https://filezilla-project.org/</a></p>
@@ -67,6 +67,24 @@ as restoring it to normal size.</p>
 </table>
 <p align="left"><b><u>Version History:</u></b></p>
 <p>For a more detailed list of changes, please have a look at the SVN changelog located at <a href="https://filezilla-project.org/changelog.php?type=2">https://filezilla-project.org/changelog.php?type=2</a>.</p>
+<p><b>Version 0.9.47</b></p>
+<blockquote>
+  <u>New features and important changes:</u>
+  <ul>
+    <li>Self-signed certificates created with FileZilla Server are now signed using SHA-256</li>
+    <li>Interface settings (as opposed to server settings) are now stored in %APPDATA%/FileZilla Server</li>
+    <li>Increased maximum IP filter size for users and groups by 50%</li>
+    <li>The administration protocol now allows up to 16 million users and groups</li>
+  </ul>
+  <u>Bug fixes:</u>
+  <ul>
+    <li>Fix sporadic crashes when using FTP over TLS</li>
+    <li>Fix timestamps in LIST output being off up to 7 minutes in extreme cases</li>
+    <li>Speed up querying file attributes</li>
+    <li>Auoban did not work over IPv6</li>
+    <li>Fixed selection in user list sort dropdown behind the corresponding toolbar button</li>
+  </ul>
+</blockquote>
 <p><b>Version 0.9.46</b></p>
 <blockquote>
   <u>New features and important changes:</u>
@@ -79,6 +97,7 @@ as restoring it to normal size.</p>
     <li>Fix stalling or improperly terminated connections when using FTP over TLS</li>
     <li>Fix crash with enabled speed limits</li>
   </ul>
+</blockquote>
 <p><b>Version 0.9.45</b></p>
 <blockquote>
   <u>New features and important changes:</u>
