@@ -400,7 +400,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 			{
 				str = _T("%v");
 				str += _T("\r\nwritten by Tim Kosse (tim.kosse@filezilla-project.org)");
-				str += _T("\r\nPlease visit http://sourceforge.net/projects/filezilla/");
+				str += _T("\r\nPlease visit https://filezilla-project.org/");
 			}
 		}
 		break;
@@ -602,7 +602,7 @@ CStdString COptions::GetOption(int nOptionID)
 		case OPTION_WELCOMEMESSAGE:
 			m_sOptionsCache[nOptionID-1].str = _T("%v");
 			m_sOptionsCache[nOptionID-1].str += _T("\r\nwritten by Tim Kosse (tim.kosse@filezilla-project.org)");
-			m_sOptionsCache[nOptionID-1].str += _T("\r\nPlease visit http://sourceforge.net/projects/filezilla/");
+			m_sOptionsCache[nOptionID-1].str += _T("\r\nPlease visit https://filezilla-project.org/");
 			break;
 		case OPTION_CUSTOMPASVIPSERVER:
 			m_sOptionsCache[nOptionID-1].str = _T("http://ip.filezilla-project.org/ip.php");
