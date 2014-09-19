@@ -44,23 +44,20 @@ CExternalIpCheck::CExternalIpCheck(CServerThread *pOwner)
 
 	if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 2)
 		Start();
-	else if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 1)
-	{
+	else if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 1) {
 		CStdString hostname = m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIP);
 
 		SOCKADDR_IN sockAddr{};
 		sockAddr.sin_family = AF_INET;
 		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname));
 
-		if (sockAddr.sin_addr.s_addr == INADDR_NONE)
-		{
+		if (sockAddr.sin_addr.s_addr == INADDR_NONE) {
 			LPHOSTENT lphost;
 			lphost = gethostbyname(ConvToLocal(hostname));
-			if (lphost != NULL)
-
+			if (lphost != NULL) {
 				sockAddr.sin_addr.s_addr = ((LPIN_ADDR)lphost->h_addr)->s_addr;
-			else
-			{
+			}
+			else {
 				Close();
 				m_nRetryCount++;
 				m_bActive = FALSE;
@@ -87,8 +84,7 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 	if (!m_bActive)
 		return;
 
-	if (nErrorCode)
-	{
+	if (nErrorCode) {
 		m_bActive = FALSE;
 		Close();
 		m_nRetryCount++;
@@ -97,8 +93,7 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 	char buffer[1000];
 	int len = Receive(buffer, 999);
 
-	if (len == SOCKET_ERROR)
-	{
+	if (len == SOCKET_ERROR) {
 		if (GetLastError() == WSAEWOULDBLOCK)
 			return;
 
@@ -109,48 +104,47 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 	}
 
 	buffer[len] = 0;
+
+	// Look for end of response header
 	char *p = strstr(buffer, "\r\n\r\n");
 	if (!p)
 		p = strstr(buffer, "\n\n");
 
-	if (!p)
-	{
+	if (!p) {
 		Close();
 		m_nRetryCount++;
 		m_bActive = FALSE;
 		return;
 	}
 
+	// Remove leading whitespace
+	while (*p && (*p == '\n' || *p == '\r' || *p == ' ' || *p == '\t'))
+		++p;
 
-	while (*p && (*p == '\n' || *p == '\r'))
-		p++;
-
-	if (!*p)
-	{
+	if (!*p) {
 		Close();
 		m_nRetryCount++;
 		m_bActive = FALSE;
 		return;
 	}
 
+	// Keep everything up to the next whitespace
 	char * ip = p;
-	while (*p && *p != '\n' && *p != '\r')
-		p++;
+	while (*p && *p != '\n' && *p != '\r' && *p != ' ' && *p != '\t')
+		++p;
 	*p = 0;
 
+	// Parse address
 	SOCKADDR_IN sockAddr{};
-
 	sockAddr.sin_family = AF_INET;
 	sockAddr.sin_addr.s_addr = inet_addr(ip);
 
-	if (sockAddr.sin_addr.s_addr == INADDR_NONE)
-	{
+	if (sockAddr.sin_addr.s_addr == INADDR_NONE) {
 		LPHOSTENT lphost;
 		lphost = gethostbyname(ip);
 		if (lphost != NULL)
 			sockAddr.sin_addr.s_addr = ((LPIN_ADDR)lphost->h_addr)->s_addr;
-		else
-		{
+		else {
 			Close();
 			m_nRetryCount++;
 			m_bActive = FALSE;
@@ -160,8 +154,7 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 
 	ip = inet_ntoa(sockAddr.sin_addr);
 
-	if (!ip)
-	{
+	if (!ip) {
 		Close();
 		m_nRetryCount++;
 		m_bActive = FALSE;
