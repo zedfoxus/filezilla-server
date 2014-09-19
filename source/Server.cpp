@@ -1074,7 +1074,7 @@ void CServer::ShowStatus(DWORD eventDateHigh, DWORD eventDateLow, LPCTSTR msg, i
 
 	char *pBuffer = new char[utf8.size() + 1 + 8];
 	*pBuffer = nType;
-	memcpy(pBuffer + 1, &eventDateHigh, 8);
+	memcpy(pBuffer + 1, &eventDateHigh, 4);
 	memcpy(pBuffer + 5, &eventDateLow, 4);
 	memcpy(pBuffer + 1 + 8, utf8.c_str(), utf8.size());
 	if (m_pAdminInterface)
