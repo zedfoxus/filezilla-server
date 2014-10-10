@@ -441,7 +441,7 @@ std::map<CStdString, t_command> const command_map = {
 	{_T("PROT"), {commands::PROT, true,  true}},
 	{_T("FEAT"), {commands::FEAT, false, true}},
 	{_T("MODE"), {commands::MODE, true,  false}},
-	{_T("OPTS"), {commands::OPTS, true,  false}},
+	{_T("OPTS"), {commands::OPTS, true,  true}},
 	{_T("HELP"), {commands::HELP, false, true}},
 	{_T("ALLO"), {commands::ALLO, false, false}},
 	{_T("MLST"), {commands::MLST, false, false}},
