@@ -266,8 +266,7 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 		msg.Replace(_T("\r\n"), _T("\n"));
 		int pos = msg.Find(_T("\n"));
 		CStdString line;
-		while (pos != -1)
-		{
+		while (pos != -1) {
 			ASSERT(pos);
 			m_ParsedWelcomeMessage.push_back(_T("220-") +  msg.Mid(oldpos, pos-oldpos) );
 			oldpos = pos + 1;
@@ -277,17 +276,19 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 		line = msg.Mid(oldpos);
 		if (line != _T(""))
 			m_ParsedWelcomeMessage.push_back(_T("220 ") + line);
-		else
-		{
+		else {
 			m_ParsedWelcomeMessage.back()[3] = 0;
 		}
 	}
 
 	bool hideStatus = m_pOptions->GetOptionVal(OPTION_WELCOMEMESSAGE_HIDE) != 0;
 	ASSERT(!m_ParsedWelcomeMessage.empty());
-	for (std::list<CStdString>::iterator iter = m_ParsedWelcomeMessage.begin(); iter != m_ParsedWelcomeMessage.end(); iter++)
-		if (!socket->Send(*iter, !hideStatus))
-			break;
+
+	CStdString reply;
+	for (auto const& line : m_ParsedWelcomeMessage) {
+		reply += socket->PrepareSend(line, !hideStatus);
+	}
+	socket->Send(reply, false, false);
 }
 
 int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)

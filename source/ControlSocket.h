@@ -63,8 +63,9 @@ public:
 	void ParseCommand();
 	t_command MapCommand(CStdString const& command, CStdString const& args);
 	int m_userid{};
-	BOOL Send(LPCTSTR str, bool sendStatus = true);
+	BOOL Send(LPCTSTR str, bool sendStatus = true, bool newline = true);
 	void SendStatus(LPCTSTR status,int type);
+	CStdString PrepareSend(CStdString const& str, bool sendStatus = true);
 	BOOL GetCommand(CStdString &command, CStdString &args);
 	bool InitImplicitSsl();
 

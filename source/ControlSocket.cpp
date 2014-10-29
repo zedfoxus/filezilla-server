@@ -243,7 +243,7 @@ void CControlSocket::SendStatus(LPCTSTR status, int type)
 	m_owner.SendNotification(FSM_STATUSMESSAGE, (LPARAM)msg);
 }
 
-BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
+BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus, bool newline)
 {
 	if (!*str)
 		return false;
@@ -265,8 +265,13 @@ BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus /*=true*/)
 
 		buffer = new char[utf8.size() + 3];
 		strcpy(buffer, utf8.c_str());
-		strcpy(buffer + utf8.size(), "\r\n");
-		len = utf8.size() + 2;
+		if (newline) {
+			strcpy(buffer + utf8.size(), "\r\n");
+			len = utf8.size() + 2;
+		}
+		else {
+			len = utf8.size();
+		}
 	}
 
 	//Add line to back of send buffer if it's not empty
@@ -1629,42 +1634,26 @@ void CControlSocket::ParseCommand()
 		break;
 	case commands::FEAT:
 		{
-		if (!Send(_T("211-Features:")))
-			break;
-		if (!Send(_T(" MDTM")))
-			break;
-		if (!Send(_T(" REST STREAM")))
-			break;
-		if (!Send(_T(" SIZE")))
-			break;
-		if (m_owner.m_pOptions->GetOptionVal(OPTION_MODEZ_USE))
-		{
-			if (!Send(_T(" MODE Z")))
-				break;
+		CStdString reply;
+		reply += PrepareSend(_T("211-Features:"));
+		reply += PrepareSend(_T(" MDTM"));
+		reply += PrepareSend(_T(" REST STREAM"));
+		reply += PrepareSend(_T(" SIZE"));
+		if (m_owner.m_pOptions->GetOptionVal(OPTION_MODEZ_USE)) {
+			reply += PrepareSend(_T(" MODE Z"));
 		}
-		if (!Send(_T(" MLST type*;size*;modify*;")))
-			break;
-		if (!Send(_T(" MLSD")))
-			break;
-		if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLESSL) && (m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL) || m_pSslLayer))
-		{
-			if (!Send(_T(" AUTH SSL")))
-				break;
-			if (!Send(_T(" AUTH TLS")))
-				break;
-			if (!Send(_T(" PROT")))
-				break;
-			if (!Send(_T(" PBSZ")))
-				break;
+		reply += PrepareSend(_T(" MLST type*;size*;modify*;"));
+		reply += PrepareSend(_T(" MLSD"));
+		if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLESSL) && (m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL) || m_pSslLayer)) {
+			reply += PrepareSend(_T(" AUTH SSL"));
+			reply += PrepareSend(_T(" AUTH TLS"));
+			reply += PrepareSend(_T(" PROT"));
+			reply += PrepareSend(_T(" PBSZ"));
 		}
-		if (!Send(_T(" UTF8")))
-			break;
-		if (!Send(_T(" CLNT")))
-			break;
-		if (!Send(_T(" MFMT")))
-			break;
-		if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLE_HASH))
-		{
+		reply += PrepareSend(_T(" UTF8"));
+		reply += PrepareSend(_T(" CLNT"));
+		reply += PrepareSend(_T(" MFMT"));
+		if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLE_HASH)) {
 			CStdString hash = _T(" HASH ");
 			hash += _T("SHA-1");
 			if (m_hash_algorithm == CHashThread::SHA1)
@@ -1675,15 +1664,13 @@ void CControlSocket::ParseCommand()
 			hash += _T(";MD5");
 			if (m_hash_algorithm == CHashThread::MD5)
 				hash += _T("*");
-			if (!Send(hash))
-				break;
+			reply += PrepareSend(hash);
 		}
-		if (!Send(_T(" EPSV")))
-			break;
-		if (!Send(_T(" EPRT")))
-			break;
-		if (!Send(_T("211 End")))
-			break;
+		reply += PrepareSend(_T(" EPSV"));
+		reply += PrepareSend(_T(" EPRT"));
+		reply += PrepareSend(_T("211 End"));
+
+		Send(reply, false, false);
 		break;
 		}
 	case commands::MODE:
@@ -1739,8 +1726,7 @@ void CControlSocket::ParseCommand()
 			Send(_T("501 Option not understood"));
 		break;
 	case commands::HELP:
-		if (args == _T(""))
-		{
+		if (args.empty()) {
 			Send(_T("214-The following commands are recognized:"));
 			CString str;
 			int i = 0;
@@ -1754,12 +1740,11 @@ void CControlSocket::ParseCommand()
 					str = _T("");
 				}
 			}
-			if (str != _T(""))
+			if (!str.empty())
 				Send(str);
 			Send(_T("214 Have a nice day."));
 		}
-		else
-		{
+		else {
 			args.MakeUpper();
 
 			auto const& it = command_map.find(args);
@@ -2981,4 +2966,12 @@ bool CControlSocket::CreatePassiveTransferSocket()
 void CControlSocket::UpdateUser()
 {
 	m_status.user = m_owner.m_pPermissions->GetUser(m_status.username);
+}
+
+CStdString CControlSocket::PrepareSend(CStdString const& str, bool sendStatus)
+{
+	if (!sendStatus) {
+		SendStatus(str, 3);
+	}
+	return str + _T("\r\n");
 }
