@@ -968,24 +968,25 @@ BOOL CTransferSocket::CheckForTimeout()
 	SYSTEMTIME sCurrentTime;
 	GetSystemTime(&sCurrentTime);
 	FILETIME fCurrentTime;
-	SystemTimeToFileTime(&sCurrentTime, &fCurrentTime);
+	if (!SystemTimeToFileTime(&sCurrentTime, &fCurrentTime)) {
+		return FALSE;
+	}
 	FILETIME fLastTime;
-	if (m_wasActiveSinceCheck)
-	{
+	if (m_wasActiveSinceCheck) {
 		m_wasActiveSinceCheck = false;
 		GetSystemTime(&m_LastActiveTime);
 		return TRUE;
 	}
 
-	SystemTimeToFileTime(&m_LastActiveTime, &fLastTime);
+	if (!SystemTimeToFileTime(&m_LastActiveTime, &fLastTime)) {
+		return FALSE;
+	}
 	_int64 elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
-	if (timeout && elapsed > (timeout*10000000))
-	{
+	if (timeout && elapsed > (timeout*10000000)) {
 		EndTransfer(4);
 		return TRUE;
 	}
-	else if (!m_bStarted && elapsed > (10 * 10000000))
-	{
+	else if (!m_bStarted && elapsed > (10 * 10000000)) {
 		EndTransfer(2);
 		return TRUE;
 	}

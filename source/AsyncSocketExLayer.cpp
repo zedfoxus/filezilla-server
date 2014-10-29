@@ -329,6 +329,7 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 		hints.ai_family = m_nFamily;
 		hints.ai_socktype = SOCK_STREAM;
 		_snprintf(port, 9, "%lu", nHostPort);
+		port[9] = 0;
 		error = getaddrinfo(T2CA(lpszHostAddress), port, &hints, &res0);
 		if (error)
 			return FALSE;

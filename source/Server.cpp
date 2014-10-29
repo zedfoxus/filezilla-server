@@ -1082,13 +1082,14 @@ void CServer::ShowStatus(DWORD eventDateHigh, DWORD eventDateLow, LPCTSTR msg, i
 	delete [] pBuffer;
 
 	//Log string
-	if (m_pFileLogger)
-	{
+	if (m_pFileLogger) {
 		FILETIME fFileTime;
 		SYSTEMTIME sFileTime;
 		fFileTime.dwHighDateTime = eventDateHigh;
 		fFileTime.dwLowDateTime = eventDateLow;
-		FileTimeToSystemTime(&fFileTime, &sFileTime);
+		if (!FileTimeToSystemTime(&fFileTime, &sFileTime)) {
+			return;
+		}
 		TCHAR text[80];
 		if (!GetDateFormat(
 			LOCALE_USER_DEFAULT,			// locale for which date is to be formatted

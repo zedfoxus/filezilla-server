@@ -163,14 +163,13 @@ public:
 		}
 
 		//Increase socket storage if too small
-		if (m_nSocketCount>=(m_nWindowDataSize-10))
-		{
-			int nOldWindowDataSize=m_nWindowDataSize;
-			ASSERT(m_nWindowDataSize<MAX_SOCKETS);
-			m_nWindowDataSize+=512;
-			if (m_nWindowDataSize>MAX_SOCKETS)
-				m_nWindowDataSize=MAX_SOCKETS;
-			t_AsyncSocketExWindowData *tmp=m_pAsyncSocketExWindowData;
+		if (m_nSocketCount >= (m_nWindowDataSize - 10)) {
+			int nOldWindowDataSize = m_nWindowDataSize;
+			ASSERT(m_nWindowDataSize < MAX_SOCKETS);
+			m_nWindowDataSize += 512;
+			if (m_nWindowDataSize > MAX_SOCKETS)
+				m_nWindowDataSize = MAX_SOCKETS;
+			t_AsyncSocketExWindowData *tmp = m_pAsyncSocketExWindowData;
 			m_pAsyncSocketExWindowData = new t_AsyncSocketExWindowData[m_nWindowDataSize];
 			memcpy(m_pAsyncSocketExWindowData, tmp, nOldWindowDataSize * sizeof(t_AsyncSocketExWindowData));
 			memset(m_pAsyncSocketExWindowData+nOldWindowDataSize, 0, (m_nWindowDataSize-nOldWindowDataSize)*sizeof(t_AsyncSocketExWindowData));
@@ -178,14 +177,12 @@ public:
 		}
 
 		//Search for free slot
-		for (int i=m_nWindowDataPos;i<(m_nWindowDataSize+m_nWindowDataPos);i++)
-		{
-			if (!m_pAsyncSocketExWindowData[i%m_nWindowDataSize].m_pSocket)
-			{
-				m_pAsyncSocketExWindowData[i%m_nWindowDataSize].m_pSocket=pSocket;
-				nSocketIndex=i%m_nWindowDataSize;
-				m_nWindowDataPos=(i+1)%m_nWindowDataSize;
-				m_nSocketCount++;
+		for (int i = m_nWindowDataPos; i < (m_nWindowDataSize + m_nWindowDataPos); ++i) {
+			if (!m_pAsyncSocketExWindowData[i % m_nWindowDataSize].m_pSocket) {
+				m_pAsyncSocketExWindowData[i % m_nWindowDataSize].m_pSocket = pSocket;
+				nSocketIndex = i % m_nWindowDataSize;
+				m_nWindowDataPos = (i + 1) % m_nWindowDataSize;
+				++m_nSocketCount;
 				return TRUE;
 			}
 		}
@@ -868,6 +865,7 @@ BOOL CAsyncSocketEx::Bind(UINT nSocketPort, LPCTSTR lpszSocketAddress)
 		hints.ai_family = m_SocketData.nFamily;
 		hints.ai_socktype = SOCK_STREAM;
 		_snprintf(port, 9, "%lu", nSocketPort);
+		port[9] = 0;
 		error = getaddrinfo(lpszAscii, port, &hints, &res0);
 		if (error)
 			return FALSE;
@@ -1164,6 +1162,7 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 		hints.ai_family = m_SocketData.nFamily;
 		hints.ai_socktype = SOCK_STREAM;
 		_snprintf(port, 9, "%lu", nHostPort);
+		port[9] = 0;
 		error = getaddrinfo(T2CA(lpszHostAddress), port, &hints, &m_SocketData.addrInfo);
 		if (error)
 			return FALSE;

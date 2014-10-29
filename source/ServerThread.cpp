@@ -725,9 +725,11 @@ CStdString CServerThread::GetExternalIP(const CStdString& localIP)
 	
 	simple_lock glock(m_global_mutex);
 	CServerThread *pThread = m_sInstanceList.front();
-	simple_lock lock(pThread->m_mutex);
-	if (pThread != this && pThread->m_pExternalIpCheck)
-		return pThread->m_pExternalIpCheck->GetIP(localIP);
+	if (pThread && pThread != this) {
+		simple_lock lock(pThread->m_mutex);
+		if (pThread->m_pExternalIpCheck)
+			return pThread->m_pExternalIpCheck->GetIP(localIP);
+	}
 
 	return CStdString();
 }
@@ -744,9 +746,11 @@ void CServerThread::ExternalIPFailed()
 	
 	simple_lock glock(m_global_mutex);
 	CServerThread *pThread = m_sInstanceList.front();
-	simple_lock lock(pThread->m_mutex);
-	if (pThread != this && pThread->m_pExternalIpCheck)
-		pThread->m_pExternalIpCheck->TriggerUpdate();
+	if (pThread && pThread != this) {
+		simple_lock lock(pThread->m_mutex);
+		if (pThread->m_pExternalIpCheck)
+			pThread->m_pExternalIpCheck->TriggerUpdate();
+	}
 }
 
 void CServerThread::SendNotification(WPARAM wParam, LPARAM lParam)

@@ -23,7 +23,9 @@ CStdString GetVersionString()
 {
 	//Fill the version info
 	TCHAR fullpath[MAX_PATH + 10];
-	GetModuleFileName(0, fullpath, MAX_PATH + 10);
+	if (!GetModuleFileName(0, fullpath, MAX_PATH + 10)) {
+		return _T("Unknown");
+	}
 
 	TCHAR *str = new TCHAR[_tcslen(fullpath) + 1];
 	_tcscpy(str, fullpath);
