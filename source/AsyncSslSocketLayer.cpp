@@ -1537,7 +1537,7 @@ int CAsyncSslSocketLayer::GetLastSslError(CString& e)
 		USES_CONVERSION;
 
 		int err = pERR_get_error();
-		char *buffer = new char[512];
+		char buffer[512];
 		pERR_error_string(err, buffer);
 		e = A2CT(buffer);
 	}
@@ -1736,7 +1736,7 @@ int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, cons
 	delete [] m_pKeyPassword;
 	m_pKeyPassword = 0;
 
-	if (pass) {
+	if (pass && *pass) {
 		size_t len = strlen(pass);
 		m_pKeyPassword = new char[len + 1];
 		strcpy(m_pKeyPassword, pass);
