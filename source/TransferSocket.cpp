@@ -1011,46 +1011,34 @@ bool CTransferSocket::UseSSL(void* sslContext)
 	return true;
 }
 
-int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
+int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 {
-	for (std::list<t_callbackMsg>::iterator iter = callbacks.begin(); iter != callbacks.end(); iter++) {
-		if (m_pSslLayer && iter->pLayer == m_pSslLayer) {
-			if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO && iter->nParam2 == SSL_INFO_SHUTDOWNCOMPLETE) {
+	for (auto const& cb : callbacks) {
+		if (m_pSslLayer && cb.pLayer == m_pSslLayer) {
+			if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_INFO && cb.nParam2 == SSL_INFO_SHUTDOWNCOMPLETE) {
 				EndTransfer(0);
-
-				do {
-					delete [] iter->str;
-					iter++;
-				} while (iter != callbacks.end());
-
 				return 0;
 			}
-			else if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_VERBOSE_WARNING)
-			{
-				if (iter->str)
-				{
+			else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_VERBOSE_WARNING) {
+				if (cb.str) {
 					CStdString str = "Data connection SSL warning: ";
-					str += iter->str;
+					str += cb.str;
 
 					m_pOwner->SendStatus(str, 1);
 				}
 			}
 #if SSL_VERBOSE_INFO
 			// Verbose info for debugging
-			else if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_VERBOSE_INFO)
-			{
-				if (iter->str)
-				{
+			else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_VERBOSE_INFO) {
+				if (cb.str) {
 					CStdString str = "SSL info: ";
-					str += iter->str;
+					str += cb.str;
 
 					m_pOwner->SendStatus(str, 0);
 				}
 			}
 #endif
-			else if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO_ESTABLISHED)
-			{
-				delete [] iter->str;
+			else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_INFO_ESTABLISHED) {
 				m_waitingForSslHandshake = false;
 				m_pOwner->SendStatus(_T("SSL connection for data connection established"), 0);
 
@@ -1059,7 +1047,6 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
 				return 0;
 			}
 		}
-		delete [] iter->str;
 	}
 	return 0;
 }

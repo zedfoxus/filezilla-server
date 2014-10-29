@@ -2604,53 +2604,37 @@ void CControlSocket::SendTransferinfoNotification(const char transfermode, const
 	m_owner.SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
 }
 
-int CControlSocket::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
+int CControlSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 {
-	for (std::list<t_callbackMsg>::iterator iter = callbacks.begin(); iter != callbacks.end(); iter++)
-	{
-		if (m_pSslLayer && iter->pLayer == m_pSslLayer)
-		{
-			if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO && iter->nParam2 == SSL_INFO_ESTABLISHED)
+	for (auto const& cb : callbacks) {
+		if (m_pSslLayer && cb.pLayer == m_pSslLayer) {
+			if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_INFO && cb.nParam2 == SSL_INFO_ESTABLISHED)
 				SendStatus(_T("SSL connection established"), 0);
-			else if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_INFO && iter->nParam2 == SSL_INFO_SHUTDOWNCOMPLETE)
-			{
-				if (m_shutdown)
-				{
-					delete [] iter->str;
+			else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_INFO && cb.nParam2 == SSL_INFO_SHUTDOWNCOMPLETE) {
+				if (m_shutdown) {
 					Close();
 					m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_DELSOCKET, m_userid);
 					return 0;
 				}
-				if (!m_bQuitCommand)
-				{
-					delete [] iter->str;
+				if (!m_bQuitCommand) {
 					continue;
 				}
-
-				do
-				{
-					delete [] iter->str;
-					iter++;
-				} while (iter != callbacks.end());
 
 				ForceClose(5);
 
 				return 0;
 			}
 		}
-		else if (iter->nType == LAYERCALLBACK_LAYERSPECIFIC && iter->nParam1 == SSL_VERBOSE_WARNING)
-		{
-			if (iter->str)
-			{
+		else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_VERBOSE_WARNING) {
+			if (cb.str) {
 				CStdString str = "SSL warning: ";
-				str += iter->str;
+				str += cb.str;
 
 				SendStatus(str, 1);
 			}
 		}
-		delete [] iter->str;
 	}
-	return 0;//CAsyncSocketEx::OnLayerCallback(pLayer, nType, nParam1, nParam2);
+	return 0;
 }
 
 bool CControlSocket::InitImplicitSsl()

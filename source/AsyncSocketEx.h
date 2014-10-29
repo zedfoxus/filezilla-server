@@ -311,7 +311,7 @@ protected:
 	friend CAsyncSocketExLayer;
 
 	//Called by the layers to notify application of some events
-	virtual int OnLayerCallback(std::list<t_callbackMsg>& callbacks);
+	virtual int OnLayerCallback(std::list<t_callbackMsg> const& callbacks);
 #endif //NOLAYERS
 
 	// Used by Bind with AF_UNSPEC sockets

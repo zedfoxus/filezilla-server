@@ -76,7 +76,7 @@ protected:
 	virtual void OnAccept(int nErrorCode);
 	virtual void OnReceive(int nErrorCode);
 
-	virtual int OnLayerCallback(std::list<t_callbackMsg>& callbacks);
+	virtual int OnLayerCallback(std::list<t_callbackMsg> const& callbacks);
 
 	void EndTransfer(int status);
 

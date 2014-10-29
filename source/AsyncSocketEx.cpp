@@ -659,6 +659,10 @@ public:
 			std::list<t_callbackMsg> tmp;
 			tmp.swap(pSocket->m_pendingCallbacks);
 			pSocket->OnLayerCallback(tmp);
+
+			for (auto & cb : tmp) {
+				delete [] cb.str;
+			}
 		}
 		else if (message == WM_TIMER)
 		{
@@ -1537,12 +1541,8 @@ void CAsyncSocketEx::RemoveAllLayers()
 	m_pLocalAsyncSocketExThreadData->m_pHelperWindow->RemoveLayers(this);
 }
 
-int CAsyncSocketEx::OnLayerCallback(std::list<t_callbackMsg>& callbacks)
+int CAsyncSocketEx::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 {
-	for (std::list<t_callbackMsg>::iterator iter = callbacks.begin(); iter != callbacks.end(); iter++)
-	{
-		delete [] iter->str;
-	}
 	return 0;
 }
 

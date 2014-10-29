@@ -96,7 +96,7 @@ protected:
 	CStdString GetPassiveIP();
 	bool CreatePassiveTransferSocket();
 
-	virtual int OnLayerCallback(std::list<t_callbackMsg>& callbacks);
+	virtual int OnLayerCallback(std::list<t_callbackMsg> const& callbacks);
 
 	CAsyncSslSocketLayer *m_pSslLayer{};
 
