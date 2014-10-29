@@ -217,6 +217,7 @@ def(int, i2d_X509, (X509 *x, unsigned char **out));
 def(BIO_METHOD *, BIO_s_mem, (void));
 def(int, i2d_PrivateKey, (EVP_PKEY *a, unsigned char **pp));
 def(int, BIO_test_flags, (const BIO *b, int flags));
+def(void, ERR_free_strings, (void));
 
 /////////////////////////////////////////////////////////////////////////////
 // CAsyncSslSocketLayer
@@ -326,6 +327,7 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll2, BIO_test_flags);
 		proc(m_sslDll2, CRYPTO_set_locking_callback);
 		proc(m_sslDll2, CRYPTO_num_locks);
+		proc(m_sslDll2, ERR_free_strings);
 
 		if (bError) {
 			m_sslDll2.clear();
@@ -390,6 +392,7 @@ int CAsyncSslSocketLayer::InitSSL()
 
 		pSSL_load_error_strings();
 		if (!pSSL_library_init()) {
+			pERR_free_strings();
 			clear_locking_callback();
 			m_sslDll1.clear();
 			m_sslDll2.clear();
@@ -1194,11 +1197,12 @@ void CAsyncSslSocketLayer::UnloadSSL()
 	m_bSslInitialized = false;
 
 	simple_lock lock(m_mutex);
-	m_nSslRefCount--;
+	--m_nSslRefCount;
 	if (m_nSslRefCount) {
 		return;
 	}
 
+	pERR_free_strings();
 	clear_locking_callback();
 	m_sslDll1.clear();
 	m_sslDll2.clear();
