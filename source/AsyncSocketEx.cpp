@@ -205,12 +205,12 @@ public:
 		while (PeekMessage(&msg, m_hWnd, WM_SOCKETEX_NOTIFY + nSocketIndex, WM_SOCKETEX_NOTIFY + nSocketIndex, PM_REMOVE));
 
 		ASSERT(m_pAsyncSocketExWindowData);
-		ASSERT(m_nWindowDataSize>0);
-		ASSERT(m_nSocketCount>0);
-		ASSERT(m_pAsyncSocketExWindowData[nSocketIndex].m_pSocket==pSocket);
-		m_pAsyncSocketExWindowData[nSocketIndex].m_pSocket=0;
-		nSocketIndex=-1;
-		m_nSocketCount--;
+		ASSERT(m_nWindowDataSize > 0);
+		ASSERT(m_nSocketCount > 0);
+		ASSERT(m_pAsyncSocketExWindowData[nSocketIndex].m_pSocket == pSocket);
+		m_pAsyncSocketExWindowData[nSocketIndex].m_pSocket = 0;
+		nSocketIndex = -1;
+		--m_nSocketCount;
 
 		return TRUE;
 	}
@@ -220,17 +220,15 @@ public:
 		// Remove all layer messages from old socket
 		std::list<MSG> msgList;
 		MSG msg;
-		while (PeekMessage(&msg, m_hWnd, WM_USER, WM_USER, PM_REMOVE))
-		{
+		while (PeekMessage(&msg, m_hWnd, WM_USER, WM_USER, PM_REMOVE)) {
 			//Verify parameters, lookup socket and notification message
 			//Verify parameters
 			if (msg.wParam >= static_cast<UINT>(m_nWindowDataSize)) //Index is within socket storage
 				continue;
 
 			CAsyncSocketEx *pSocket = m_pAsyncSocketExWindowData[msg.wParam].m_pSocket;
-			CAsyncSocketExLayer::t_LayerNotifyMsg *pMsg=(CAsyncSocketExLayer::t_LayerNotifyMsg *)msg.lParam;
-			if (!pMsg || !pSocket || pSocket == pOrigSocket || pSocket->m_SocketData.hSocket != pMsg->hSocket)
-			{
+			CAsyncSocketExLayer::t_LayerNotifyMsg *pMsg = (CAsyncSocketExLayer::t_LayerNotifyMsg *)msg.lParam;
+			if (!pMsg || !pSocket || pSocket == pOrigSocket || pSocket->m_SocketData.hSocket != pMsg->hSocket) {
 				delete pMsg;
 				continue;
 			}
@@ -238,8 +236,12 @@ public:
 			msgList.push_back(msg);
 		}
 
-		for (std::list<MSG>::iterator iter = msgList.begin(); iter != msgList.end(); iter++)
-			PostMessage(m_hWnd, iter->message, iter->wParam, iter->lParam);
+		for (std::list<MSG>::iterator iter = msgList.begin(); iter != msgList.end(); ++iter) {
+			if (!PostMessage(m_hWnd, iter->message, iter->wParam, iter->lParam)) {
+				CAsyncSocketExLayer::t_LayerNotifyMsg *pMsg = (CAsyncSocketExLayer::t_LayerNotifyMsg *)msg.lParam;
+				delete pMsg;
+			}
+		}
 	}
 
 	//Processes event notifications sent by the sockets or the layers
@@ -986,35 +988,26 @@ BOOL CAsyncSocketEx::InitAsyncSocketExInstance()
 	simple_lock lock(m_mutex);
 
 	//Get thread specific data
-	if (m_spAsyncSocketExThreadDataList) {
-		t_AsyncSocketExThreadDataList *pList = m_spAsyncSocketExThreadDataList;
-		while (pList) {
-			ASSERT(pList->pThreadData);
-			ASSERT(pList->pThreadData->nInstanceCount > 0);
+	t_AsyncSocketExThreadDataList *pList = m_spAsyncSocketExThreadDataList;
+	while (pList) {
+		ASSERT(pList->pThreadData);
+		ASSERT(pList->pThreadData->nInstanceCount > 0);
 
-			if (pList->pThreadData->nThreadId == id) {
-				m_pLocalAsyncSocketExThreadData = pList->pThreadData;
-				++m_pLocalAsyncSocketExThreadData->nInstanceCount;
-				break;
-			}
-			pList = pList->pNext;
+		if (pList->pThreadData->nThreadId == id) {
+			m_pLocalAsyncSocketExThreadData = pList->pThreadData;
+			++m_pLocalAsyncSocketExThreadData->nInstanceCount;
+			break;
 		}
-		//Current thread yet has no sockets
-		if (!pList) {
-			//Initialize data for current thread
-			pList = new t_AsyncSocketExThreadDataList;
-			pList->pNext = m_spAsyncSocketExThreadDataList;
-			m_spAsyncSocketExThreadDataList = pList;
-			m_pLocalAsyncSocketExThreadData = new t_AsyncSocketExThreadData;
-			m_pLocalAsyncSocketExThreadData->nInstanceCount = 1;
-			m_pLocalAsyncSocketExThreadData->nThreadId = id;
-			m_pLocalAsyncSocketExThreadData->m_pHelperWindow = new CAsyncSocketExHelperWindow(m_pLocalAsyncSocketExThreadData);
-			m_spAsyncSocketExThreadDataList->pThreadData = m_pLocalAsyncSocketExThreadData;
-		}
+		pList = pList->pNext;
 	}
-	else {
-		//No thread has instances of CAsyncSocketEx; Initialize data
-		m_spAsyncSocketExThreadDataList = new t_AsyncSocketExThreadDataList;
+
+	if (!pList) {
+		// Current thread has no sockets
+		//Initialize data for current thread
+		pList = new t_AsyncSocketExThreadDataList;
+		pList->pNext = m_spAsyncSocketExThreadDataList;
+		m_spAsyncSocketExThreadDataList = pList;
+
 		m_pLocalAsyncSocketExThreadData = new t_AsyncSocketExThreadData;
 		m_pLocalAsyncSocketExThreadData->nInstanceCount = 1;
 		m_pLocalAsyncSocketExThreadData->nThreadId = id;
@@ -1041,11 +1034,11 @@ void CAsyncSocketEx::FreeAsyncSocketExInstance()
 		break;
 	}
 
-	DWORD id=m_pLocalAsyncSocketExThreadData->nThreadId;
+	DWORD id = m_pLocalAsyncSocketExThreadData->nThreadId;
 	simple_lock lock(m_mutex);
 
 	ASSERT(m_spAsyncSocketExThreadDataList);
-	t_AsyncSocketExThreadDataList *pList=m_spAsyncSocketExThreadDataList;
+	t_AsyncSocketExThreadDataList *pList = m_spAsyncSocketExThreadDataList;
 	t_AsyncSocketExThreadDataList *pPrev=0;
 
 	//Serach for data for current thread and decrease instance count
