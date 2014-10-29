@@ -13,6 +13,7 @@ SetCompressor /SOLID LZMA
 
   !include "MUI.nsh"
   !include "WinVer.nsh"
+  !include "x64.nsh"
 
 ;--------------------------------
 ;Product Info
@@ -20,7 +21,7 @@ SetCompressor /SOLID LZMA
   !define PRODUCT_NAME    "FileZilla Server"
   !define VERSION_MAJOR   "0"
   !define VERSION_MINOR   "9"
-  !define VERSION_MICRO   "47"
+  !define VERSION_MICRO   "48"
   !define VERSION_NANO    "0"
   !define PRODUCT_VERSION "beta ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}"
   !define VERSION_FULL    "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}.${VERSION_NANO}"
@@ -139,6 +140,17 @@ Section "-default files"
   WriteRegDWORD HKLM "${PRODUCT_UNINSTALL}" "VersionMinor"    "${VERSION_MINOR}"
   WriteRegDWORD HKLM "${PRODUCT_UNINSTALL}" "NoModify"        "1"
   WriteRegDWORD HKLM "${PRODUCT_UNINSTALL}" "NoRepair"        "1"
+
+  ; Enable mini dumps
+  ${If} ${RunningX64}
+    SetRegView 64
+  ${EndIf}
+  !define DUMP_KEY "SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\FileZilla Server.exe"
+  WriteRegStr   HKLM "${DUMP_KEY}" "DumpFolder" "$INSTDIR"
+  WriteRegDWORD HKLM "${DUMP_KEY}" "DumpType"   "1"
+  ${If} ${RunningX64}
+    SetRegView lastused
+  ${EndIf}
 
   Call GetInstalledSize
   WriteRegDWORD HKLM "${PRODUCT_UNINSTALL}" "EstimatedSize"  "$GetInstalledSize.total" ; Create/Write the reg key with the dword value
@@ -613,6 +625,17 @@ Section "Uninstall"
   DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "FileZilla Server Interface"
 
   RMDir "$INSTDIR"
+
+  ; Remove dump key
+  ${If} ${RunningX64}
+    SetRegView 64
+  ${EndIf}
+  DeleteRegValue HKLM "${DUMP_KEY}" "DumpFolder"
+  DeleteRegValue HKLM "${DUMP_KEY}" "DumpType"
+  DeleteRegKey /ifempty HKLM "${DUMP_KEY}"
+  ${If} ${RunningX64}
+    SetRegView lastused
+  ${EndIf}
 
 SectionEnd
 
