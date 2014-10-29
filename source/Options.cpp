@@ -27,11 +27,6 @@
 #include "iputils.h"
 #include "OptionLimits.h"
 
-#ifdef _DEBUG
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
 std::list<COptions *> COptions::m_InstanceList;
 std::recursive_mutex COptions::m_mutex;
 COptions::t_OptionsCache COptions::m_sOptionsCache[OPTIONS_NUM];

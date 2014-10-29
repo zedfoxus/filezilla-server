@@ -27,11 +27,6 @@
 #include "iputils.h"
 #include "autobanmanager.h"
 
-#ifdef _DEBUG
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
 CListenSocket::CListenSocket(CServer & server, std::list<CServerThread*> & threadList, bool ssl)
 	: m_server(server)
 	, m_threadList(threadList)

@@ -65,14 +65,6 @@ to tim.kosse@filezilla-project.org
 
 #include "AsyncSocketEx.h"
 
-#ifdef _DEBUG
-	#undef THIS_FILE
-	static char THIS_FILE[]=__FILE__;
-	#ifdef DEBUG_NEW
-		#define new DEBUG_NEW
-	#endif
-#endif
-
 #define WM_SOCKETEX_NOTIFY (WM_USER+3)
 
 

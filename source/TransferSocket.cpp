@@ -28,11 +28,6 @@
 #include "Permissions.h"
 #include "iputils.h"
 
-#ifdef _DEBUG
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
 /////////////////////////////////////////////////////////////////////////////
 // CTransferSocket
 CTransferSocket::CTransferSocket(CControlSocket *pOwner)

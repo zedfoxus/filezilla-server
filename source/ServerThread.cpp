@@ -31,11 +31,6 @@
 #include "autobanmanager.h"
 #include "hash_thread.h"
 
-#ifdef _DEBUG
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
 std::map<int, t_socketdata> CServerThread::m_userids;
 std::recursive_mutex CServerThread::m_global_mutex;
 std::map<CStdString, int> CServerThread::m_userIPs;
