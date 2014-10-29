@@ -1683,6 +1683,10 @@ void CControlSocket::ParseCommand()
 			if (!Send(hash))
 				break;
 		}
+		if (!Send(_T(" EPSV")))
+			break;
+		if (!Send(_T(" EPRT")))
+			break;
 		if (!Send(_T("211 End")))
 			break;
 		break;
@@ -2188,17 +2192,19 @@ void CControlSocket::CheckForTimeout()
 	SYSTEMTIME sCurrentTime;
 	GetSystemTime(&sCurrentTime);
 	FILETIME fCurrentTime;
-	SystemTimeToFileTime(&sCurrentTime, &fCurrentTime);
+	if (!SystemTimeToFileTime(&sCurrentTime, &fCurrentTime)) {
+		return;
+	}
 	FILETIME fLastTime;
-	SystemTimeToFileTime(&m_LastCmdTime, &fLastTime);
+	if (!SystemTimeToFileTime(&m_LastCmdTime, &fLastTime)) {
+		return;
+	}
 	_int64 elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
-	if (elapsed > (timeout*10000000))
-	{
+	if (elapsed > (timeout*10000000)) {
 		ForceClose(1);
 		return;
 	}
-	if (m_status.loggedon)
-	{ //Transfer timeout
+	if (m_status.loggedon) { //Transfer timeout
 		_int64 nNoTransferTimeout=m_owner.m_pOptions->GetOptionVal(OPTION_NOTRANSFERTIMEOUT);
 		if (!nNoTransferTimeout)
 			return;
@@ -2210,15 +2216,15 @@ void CControlSocket::CheckForTimeout()
 			return;
 		}
 	}
-	else
-	{ //Login timeout
+	else { //Login timeout
 		_int64 nLoginTimeout=m_owner.m_pOptions->GetOptionVal(OPTION_LOGINTIMEOUT);
 		if (!nLoginTimeout)
 			return;
-		SystemTimeToFileTime(&m_LoginTime, &fLastTime);
+		if (!SystemTimeToFileTime(&m_LoginTime, &fLastTime)) {
+			return;
+		}
 		elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
-		if (elapsed>(nLoginTimeout*10000000))
-		{
+		if (elapsed>(nLoginTimeout*10000000)) {
 			ForceClose(3);
 			return;
 		}
