@@ -5,6 +5,8 @@
 #define CString CStdString
 #endif
 
+#include <vector>
+
 class DLL final
 {
 public:
@@ -19,10 +21,13 @@ public:
 
 	void clear();
 	
+	void* load_func(LPCSTR name, void** out);
+
 	explicit operator bool() const { return hModule != 0; }
 
 	HMODULE get() { return hModule; }
 protected:
+	std::vector<void**> loaded_functions;
 	HMODULE hModule{};
 };
 

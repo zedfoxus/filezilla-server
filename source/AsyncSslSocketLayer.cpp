@@ -106,11 +106,11 @@ Version 2.0:
 
 #define def(r, n, a) \
 	typedef r (*t##n) a; \
-	static t##n p##n;
+	static t##n p##n = 0;
 
 // Macro to load the given macro from a dll:
 #define proc(dll, n) \
-	p##n = (t##n) GetProcAddress(dll.get(), #n); \
+	dll.load_func( #n, (void**)&p##n); \
 	if (!p##n) \
 		bError = true;
 
@@ -155,8 +155,6 @@ def(int, SSL_CTX_use_certificate_chain_file, (SSL_CTX *ctx, const char *file));
 def(long, SSL_CTX_ctrl, (SSL_CTX *ctx, int cmd, long larg, void *parg));
 def(int, SSL_set_cipher_list, (SSL *ssl, const char *str));
 def(const char*, SSL_get_cipher_list, (const SSL *ssl, int priority));
-def(void, CRYPTO_set_locking_callback, (void (*func)(int mode, int type, char const* file, int line)));
-def(int, CRYPTO_num_locks, (void));
 
 def(size_t, BIO_ctrl_pending, (BIO *b));
 def(int, BIO_read, (BIO *b, void *data, int len));
@@ -212,6 +210,32 @@ def(BIO_METHOD *, BIO_s_mem, (void));
 def(int, i2d_PrivateKey, (EVP_PKEY *a, unsigned char **pp));
 def(int, BIO_test_flags, (const BIO *b, int flags));
 def(void, ERR_free_strings, (void));
+def(void, CRYPTO_set_locking_callback, (void (*func)(int mode, int type, char const* file, int line)));
+def(int, CRYPTO_num_locks, (void));
+def(void, CRYPTO_cleanup_all_ex_data, (void));
+def(void, ENGINE_cleanup, (void));
+def(void, EVP_cleanup, (void));
+def(void, CONF_modules_unload, (int));
+def(void, CONF_modules_free, (void));
+
+template<typename Ret, typename ...Args, typename ...Args2>
+Ret safe_call(Ret(*f)(Args...), Args2&& ... args)
+{
+	Ret ret{};
+	if (f) {
+		ret = f(std::forward<Args2>(args)...);
+	}
+
+	return ret;
+}
+
+template<typename ...Args, typename ...Args2>
+void safe_call(void(*f)(Args...), Args2&& ... args)
+{
+	if (f) {
+		f(std::forward<Args2>(args)...);
+	}
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CAsyncSslSocketLayer
@@ -247,7 +271,7 @@ extern "C" static void locking_callback(int mode, int type, char const*, int)
 void clear_locking_callback()
 {
 	if (openssl_mutexes) {
-		pCRYPTO_set_locking_callback(0);
+		safe_call(pCRYPTO_set_locking_callback, (void(*)(int, int, const char*, int))0);
 		delete [] openssl_mutexes;
 		openssl_mutexes = 0;
 	}
@@ -322,9 +346,14 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll2, CRYPTO_set_locking_callback);
 		proc(m_sslDll2, CRYPTO_num_locks);
 		proc(m_sslDll2, ERR_free_strings);
+		proc(m_sslDll2, CRYPTO_cleanup_all_ex_data);
+		proc(m_sslDll2, ENGINE_cleanup);
+		proc(m_sslDll2, EVP_cleanup);
+		proc(m_sslDll2, CONF_modules_unload);
+		proc(m_sslDll2, CONF_modules_free);
 
 		if (bError) {
-			m_sslDll2.clear();
+			DoUnloadLibrary();
 			return SSL_FAILURE_LOADDLLS;
 		}
 
@@ -332,8 +361,7 @@ int CAsyncSslSocketLayer::InitSSL()
 		pCRYPTO_set_locking_callback(&locking_callback);
 
 		if (!m_sslDll1.load(_T("ssleay32.dll"))) {
-			clear_locking_callback();
-			m_sslDll2.clear();
+			DoUnloadLibrary();
 			return SSL_FAILURE_LOADDLLS;
 		}
 		proc(m_sslDll1, SSL_state_string_long);
@@ -378,18 +406,13 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll1, SSL_set_cipher_list);
 
 		if (bError) {
-			clear_locking_callback();
-			m_sslDll1.clear();
-			m_sslDll2.clear();
+			DoUnloadLibrary();
 			return SSL_FAILURE_LOADDLLS;
 		}
 
 		pSSL_load_error_strings();
 		if (!pSSL_library_init()) {
-			pERR_free_strings();
-			clear_locking_callback();
-			m_sslDll1.clear();
-			m_sslDll2.clear();
+			DoUnloadLibrary();
 			return SSL_FAILURE_INITSSL;
 		}
 	}
@@ -1196,8 +1219,20 @@ void CAsyncSslSocketLayer::UnloadSSL()
 		return;
 	}
 
-	pERR_free_strings();
+	DoUnloadLibrary();
+}
+
+void CAsyncSslSocketLayer::DoUnloadLibrary()
+{
+	safe_call(pCONF_modules_free);
+	safe_call(pENGINE_cleanup);
+	safe_call(pEVP_cleanup);
+	safe_call(pCONF_modules_unload, 1);
+	safe_call(pCRYPTO_cleanup_all_ex_data);
+	safe_call(pERR_free_strings);
+	
 	clear_locking_callback();
+
 	m_sslDll1.clear();
 	m_sslDll2.clear();
 }

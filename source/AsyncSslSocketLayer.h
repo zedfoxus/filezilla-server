@@ -180,6 +180,7 @@ private:
 	void PrintSessionInfo();
 	int InitSSL();
 	void UnloadSSL();
+	void DoUnloadLibrary();
 	int GetLastSslError(CStdString& e);
 	bool PrintLastErrorMsg();
 	void ClearErrors();

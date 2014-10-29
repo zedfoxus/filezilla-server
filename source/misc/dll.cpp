@@ -25,7 +25,27 @@ bool DLL::load(CString const& s)
 void DLL::clear()
 {
 	if (hModule) {
+		for( auto & f : loaded_functions ) {
+			*f = 0;
+		}
 		FreeLibrary(hModule);
 		hModule = 0;
 	}
+}
+
+void* DLL::load_func(LPCSTR name, void** out)
+{
+	void* ret = 0;
+	if (hModule) {
+		ret = GetProcAddress(hModule, name);
+	}
+
+	if (out) {
+		*out = ret;
+		if (ret) {
+			loaded_functions.push_back(out);
+		}
+	}
+
+	return ret;
 }
