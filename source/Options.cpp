@@ -478,42 +478,34 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 		break;
 	case OPTION_IPBINDINGS:
 		{
-			CStdString sub;
 			std::list<CStdString> ipBindList;
-			for (unsigned int i = 0; i<_tcslen(value); i++)
-			{
-				TCHAR cur = value[i];
-				if ((cur < '0' || cur > '9') && cur != '.' && cur != ':')
-				{
-					if (sub == _T("") && cur == '*')
-					{
-						ipBindList.clear();
-						ipBindList.push_back(_T("*"));
-						break;
-					}
 
-					if (sub != _T(""))
-					{
-						if (IsIpAddress(sub))
-							ipBindList.push_back(sub);
-						sub = _T("");
-					}
+			str += _T(" ");
+			while (!str.empty()) {
+				int pos  = str.Find(' ');
+				if (pos < 0) {
+					break;
 				}
-				else
-					sub += cur;
-			}
-			if (sub != _T(""))
-			{
-				if (IsIpAddress(sub))
+				CStdString sub = str.Left(pos);
+				str = str.Mid(pos + 1);
+
+				if (sub == _T("*")) {
+					ipBindList.clear();
+					ipBindList.push_back(_T("*"));
+					break;
+				}
+				else if (IsIpAddress(sub)) {
 					ipBindList.push_back(sub);
+				}
 			}
 
 			if (ipBindList.empty())
 				ipBindList.push_back(_T("*"));
 
-			str = _T("");
-			for (std::list<CStdString>::iterator iter = ipBindList.begin(); iter != ipBindList.end(); iter++)
-				str += *iter + _T(" ");
+			str.clear();
+			for (auto const& ip : ipBindList) {
+				str += ip + _T(" ");
+			}
 
 			str.TrimRight(_T(" "));
 		}
