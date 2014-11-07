@@ -1259,30 +1259,32 @@ BOOL CServer::CreateAdminListenSocket()
 	return !m_AdminListenSocketList.empty();
 }
 
-BOOL CServer::CreateListenSocket()
+bool CServer::CreateListenSocket()
 {
 	CStdString ports = (m_pOptions ? m_pOptions->GetOption(OPTION_SERVERPORT) : _T("21"));
-	bool ssl = false;
+	bool success = CreateListenSocket(ports, false);
 
-	if (ports == _T("") && m_pOptions && m_pOptions->GetOptionVal(OPTION_ENABLESSL))
-	{
+	bool ssl_enabled = m_pOptions && m_pOptions->GetOptionVal(OPTION_ENABLESSL) != 0;
+	if (ssl_enabled) {
 		ports = m_pOptions->GetOption(OPTION_SSLPORTS);
-		ssl = true;
+		success &= CreateListenSocket(ports, true);
 	}
 
-	if (ports == _T(""))
-	{
+	if (success && m_ListenSocketList.empty()) {
 		ShowStatus(_T("No listen ports set in settings"), 1);
-		return false;
 	}
+
+	return !m_ListenSocketList.empty();
+}
+
+bool CServer::CreateListenSocket(CStdString ports, bool ssl)
+{
+	bool success = true;
 
 	ports += _T(" ");
 	int pos = ports.Find(' ');
-	while (pos > 0)
-	{
+	while (pos > 0) {
 		CStdString ipBindings = (m_pOptions ? m_pOptions->GetOption(OPTION_IPBINDINGS) : _T("*"));
-		if (ipBindings == _T(""))
-			ipBindings = _T("*");
 		int nPort = _ttoi(ports.Left(pos));
 		ports = ports.Mid(pos + 1);
 		pos = ports.Find(' ');
@@ -1290,74 +1292,42 @@ BOOL CServer::CreateListenSocket()
 		CStdString str;
 		str.Format(_T("Creating listen socket on port %d..."), nPort);
 		ShowStatus(str, 0);
-		if (ipBindings == _T("*"))
-		{
+		if (ipBindings.empty() || ipBindings == _T("*")) {
+			ipBindings = _T("::0 0.0.0.0");
+		}
+			
+		bool bError = false;
+		str.Format(_T("Failed to bind the listen socket on port %d to the following IPs:"), nPort);
+		ipBindings += _T(" ");
+		while (ipBindings != _T("")) {
+			int pos = ipBindings.Find(' ');
+			if (pos == -1)
+				break;
+			CStdString ip = ipBindings.Left(pos);
+			ipBindings = ipBindings.Mid(pos + 1);
 			CListenSocket *pListenSocket = new CListenSocket(*this, m_ThreadArray, ssl);
 
-			if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET) || !pListenSocket->Listen(16)) {
+			int family;
+			if (ip.Find(':') != -1)
+				family = AF_INET6;
+			else
+				family = AF_INET;
+
+			if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, ip, family) || !pListenSocket->Listen(16)) {
 				delete pListenSocket;
-				pListenSocket = NULL;
-				str.Format(_T("Failed to create listen socket on port %d for IPv4"), nPort);
-				ShowStatus(str, 1);
+				bError = true;
+				str += _T(" ") + ip;
 			}
 			else
 				m_ListenSocketList.push_back(pListenSocket);
-
-			if (!m_pOptions->GetOptionVal(OPTION_DISABLE_IPV6)) {
-				CListenSocket *pListenSocket = new CListenSocket(*this, m_ThreadArray, ssl);
-
-				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, NULL, AF_INET6) || !pListenSocket->Listen(16)) {
-					delete pListenSocket;
-					pListenSocket = NULL;
-					str.Format(_T("Failed to create listen socket on port %d for IPv6"), nPort);
-					ShowStatus(str, 1);
-				}
-				else
-					m_ListenSocketList.push_back(pListenSocket);
-			}
 		}
-		else {
-			BOOL bError = FALSE;
-			CStdString str;
-			str.Format(_T("Failed to bind the listen socket on port %d to the following IPs:"), nPort);
-			ipBindings += _T(" ");
-			while (ipBindings != _T("")) {
-				int pos = ipBindings.Find(' ');
-				if (pos == -1)
-					break;
-				CStdString ip = ipBindings.Left(pos);
-				ipBindings = ipBindings.Mid(pos + 1);
-				CListenSocket *pListenSocket = new CListenSocket(*this, m_ThreadArray, ssl);
-
-				int family;
-				if (ip.Find(':') != -1)
-					family = AF_INET6;
-				else
-					family = AF_INET;
-
-				if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, ip, family) || !pListenSocket->Listen(16)) {
-					delete pListenSocket;
-					bError = TRUE;
-					str += _T(" ") + ip;
-				}
-				else
-					m_ListenSocketList.push_back(pListenSocket);
-			}
-			if (bError)
-				ShowStatus(str, 1);
-		}
-
-		if (pos < 1 && !ssl && m_pOptions && m_pOptions->GetOptionVal(OPTION_ENABLESSL))
-		{
-			// Now create the ssl ports
-			ports = m_pOptions->GetOption(OPTION_SSLPORTS);
-			ports += _T(" ");
-			pos = ports.Find(' ');
-			ssl = true;
+		if (bError) {
+			ShowStatus(str, 1);
+			success = false;
 		}
 	}
 
-	return !m_ListenSocketList.empty();
+	return success;
 }
 
 unsigned int CServer::GetNextThreadNotificationID()

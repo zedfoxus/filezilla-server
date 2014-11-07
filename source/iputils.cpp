@@ -341,8 +341,7 @@ CStdString GetIPV6LongForm(CStdString short_address)
 			return _T("");
 		*out-- = c;
 	}
-	if (!grouplength && stop + 1 < len)
-	{
+	if (!grouplength && stop + 1 < len) {
 		// Empty group length, not valid
 		return _T("");
 	}
@@ -436,25 +435,23 @@ bool IsRoutableAddress(const CStdString& address)
 	}
 }
 
-bool IsIpAddress(const CStdString& address)
+bool IsIpAddress(const CStdString& address, bool allowNull)
 {
 	if (GetIPV6LongForm(address) != _T(""))
 		return true;
 
 	int segment = 0;
 	int dotcount = 0;
-	for (int i = 0; i < address.GetLength(); ++i)
-	{
+	for (int i = 0; i < address.GetLength(); ++i) {
 		const TCHAR& c = address[i];
-		if (c == '.')
-		{
+		if (c == '.') {
 			if (address[i + 1] == '.')
 				// Disallow multiple dots in a row
 				return false;
 
 			if (segment > 255)
 				return false;
-			if (!dotcount && !segment)
+			if (!dotcount && !segment && !allowNull)
 				return false;
 			dotcount++;
 			segment = 0;

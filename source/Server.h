@@ -28,7 +28,8 @@ public:
 	COptions *m_pOptions;
 	CAutoBanManager* m_pAutoBanManager;
 protected:
-	BOOL CreateListenSocket();
+	bool CreateListenSocket();
+	bool CreateListenSocket(CStdString ports, bool ssl);
 	BOOL CreateAdminListenSocket();
 	int DoCreateAdminListenSocket(UINT port, LPCTSTR addr, int family);
 	void OnTimer(UINT nIDEvent);

@@ -494,7 +494,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 					ipBindList.push_back(_T("*"));
 					break;
 				}
-				else if (IsIpAddress(sub)) {
+				else if (IsIpAddress(sub, true)) {
 					ipBindList.push_back(sub);
 				}
 			}

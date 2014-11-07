@@ -23,7 +23,7 @@
 bool IsLocalhost(const CStdString& ip);
 bool IsValidAddressFilter(CStdString& filter);
 bool MatchesFilter(CStdString filter, CStdString ip);
-bool IsIpAddress(const CStdString& address);
+bool IsIpAddress(const CStdString& address, bool allowNull = false);
 
 // Also verifies that it is a correct IPv6 address
 CStdString GetIPV6LongForm(CStdString short_address);
