@@ -831,9 +831,9 @@ CHashThread& CServerThread::GetHashThread()
 void CServerThread::OnPermissionsUpdated()
 {
 	simple_lock lock(m_mutex);
-	for( auto & cs : m_userids ) {
-		if( cs.second.pSocket ) {
-			cs.second.pSocket->UpdateUser();
+	for( auto & cs : m_LocalUserIDs ) {
+		if( cs.second ) {
+			cs.second->UpdateUser();
 		}
 	}
 }
