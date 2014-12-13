@@ -40,6 +40,7 @@
 #include "MFC64bitFix.h"
 #include <list>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <vector>
@@ -156,5 +157,12 @@ extern HWND hMainWnd;
 
 typedef std::lock_guard<std::recursive_mutex> simple_lock;
 typedef std::unique_lock<std::recursive_mutex> scoped_lock;
+
+// C++11 sadly lacks make_unique, provide our own.
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
+{
+	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 
 #endif // !defined(AFX_STDAFX_H__0D7D6CEC_E1AA_4287_BB10_A97FA4D444B6__INCLUDED_)

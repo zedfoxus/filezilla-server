@@ -10,6 +10,11 @@ CAdminListenSocket::CAdminListenSocket(CAdminInterface & adminInterface)
 {
 }
 
+CAdminListenSocket::~CAdminListenSocket()
+{
+	Close();
+}
+
 void CAdminListenSocket::OnAccept(int nErrorCode)
 {
 	CAdminSocket *pSocket = new CAdminSocket(&m_adminInterface);

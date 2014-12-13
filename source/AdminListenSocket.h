@@ -30,6 +30,7 @@ class CAdminListenSocket final : public CAsyncSocketEx
 {
 public:
 	CAdminListenSocket(CAdminInterface & adminInterface);
+	virtual ~CAdminListenSocket();
 
 protected:
 	virtual void OnAccept(int nErrorCode);

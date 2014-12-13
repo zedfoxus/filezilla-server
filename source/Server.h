@@ -49,7 +49,7 @@ protected:
 	std::list<CServerThread*> m_ClosedThreads;
 
 	std::vector<CServerThread*> m_ThreadNotificationIDs;
-	std::list<CAdminListenSocket*> m_AdminListenSocketList;
+	std::list<std::unique_ptr<CAdminListenSocket>> m_AdminListenSocketList;
 	std::list<CListenSocket*> m_ListenSocketList;
 
 	std::map<int, t_connectiondata> m_UsersList;
