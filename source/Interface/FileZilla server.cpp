@@ -98,21 +98,13 @@ BOOL CFileZillaserverApp::InitInstance()
 		return FALSE;
 	}
 
-	// Dieser Code erstellt ein neues Rahmenfensterobjekt und setzt dies
-	// dann als das Hauptfensterobjekt der Anwendung, um das Hauptfenster zu erstellen.
-
 	CMainFrame* pFrame = new CMainFrame(pOptions);
 	m_pMainWnd = pFrame;
 
-	// Rahmen mit Ressourcen erstellen und laden
+	if (!pFrame->LoadFrame(IDR_MAINFRAME, WS_OVERLAPPEDWINDOW, NULL, NULL)) {
+		return FALSE;
+	}
 
-	pFrame->LoadFrame(IDR_MAINFRAME,
-		WS_OVERLAPPEDWINDOW , NULL,
-		NULL);
-
-
-
-	// Das einzige Fenster ist initialisiert und kann jetzt angezeigt und aktualisiert werden.
 	if (pOptions->GetOptionVal(IOPTION_STARTMINIMIZED))
 		pFrame->ShowWindow(SW_HIDE);
 	else
