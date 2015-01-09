@@ -2970,7 +2970,7 @@ void CControlSocket::UpdateUser()
 
 CStdString CControlSocket::PrepareSend(CStdString const& str, bool sendStatus)
 {
-	if (!sendStatus) {
+	if (sendStatus) {
 		SendStatus(str, 3);
 	}
 	return str + _T("\r\n");
