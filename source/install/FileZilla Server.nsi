@@ -555,7 +555,7 @@ Section "Uninstall"
   DeleteRegValue HKLM "Software\${PRODUCT_NAME}" "Install_Dir"
   DeleteRegKey /ifempty HKCU "Software\${PRODUCT_NAME}"
   DeleteRegKey /ifempty HKLM "Software\${PRODUCT_NAME}"
-  MessageBox MB_YESNO "Delete settings?" IDNO NoSettingsDelete
+  MessageBox MB_YESNO "Delete settings?" /SD IDNO IDNO NoSettingsDelete
   Delete "$INSTDIR\FileZilla Server.xml"
   Delete "$INSTDIR\FileZilla Server Interface.xml"
  NoSettingsDelete:
