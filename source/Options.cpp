@@ -668,7 +668,7 @@ _int64 COptions::GetOptionVal(int nOptionID)
 				m_sOptionsCache[nOptionID-1].value = 1;
 				break;
 			case OPTION_BUFFERSIZE2:
-				m_sOptionsCache[nOptionID-1].value = 65536;
+				m_sOptionsCache[nOptionID-1].value = 65536*4;
 				break;
 			case OPTION_NOEXTERNALIPONLOCAL:
 				m_sOptionsCache[nOptionID-1].value = 1;
