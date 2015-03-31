@@ -21,19 +21,21 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-#include "Server.h"
-#include "Options.h"
-#include "ServerThread.h"
-#include "ListenSocket.h"
+
 #include "AdminListenSocket.h"
 #include "AdminInterface.h"
 #include "AdminSocket.h"
-#include "Permissions.h"
-#include "FileLogger.h"
-#include "version.h"
-#include "defs.h"
-#include "iputils.h"
+#include "AsyncSslSocketLayer.h"
 #include "autobanmanager.h"
+#include "defs.h"
+#include "FileLogger.h"
+#include "iputils.h"
+#include "ListenSocket.h"
+#include "Options.h"
+#include "Permissions.h"
+#include "Server.h"
+#include "ServerThread.h"
+#include "version.h"
 
 #ifndef MB_SERVICE_NOTIFICATION
 #define MB_SERVICE_NOTIFICATION          0x00040000L
@@ -802,6 +804,8 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				if (nAdminListenPort != m_pOptions->GetOptionVal(OPTION_ADMINPORT) || adminIpBindings != m_pOptions->GetOption(OPTION_ADMINIPBINDINGS)) {
 					CreateAdminListenSocket();
 				}
+
+				VerifyTlsSettings(pAdminSocket);
 			}
 		}
 		break;
@@ -963,7 +967,7 @@ BOOL CServer::ToggleActive(int nServerState)
 	return TRUE;
 }
 
-void CServer::ShowStatus(LPCTSTR msg, int nType)
+void CServer::ShowStatus(LPCTSTR msg, int nType, CAdminSocket* pAdminSocket)
 {
 	if (!msg)
 		return;
@@ -975,7 +979,10 @@ void CServer::ShowStatus(LPCTSTR msg, int nType)
 	char *pBuffer = new char[utf8.size() + 1];
 	*pBuffer = nType;
 	memcpy(pBuffer + 1, utf8.c_str(), utf8.size());
-	if (m_pAdminInterface)
+	if (pAdminSocket) {
+		pAdminSocket->SendCommand(2, 1, pBuffer, utf8.size() + 1);
+	}
+	else if (m_pAdminInterface)
 		m_pAdminInterface->SendCommand(2, 1, pBuffer, utf8.size() + 1);
 	delete [] pBuffer;
 
@@ -1251,4 +1258,57 @@ void CServer::SendState()
 	buffer[0] = m_nServerState / 256;
 	buffer[1] = m_nServerState % 256;
 	m_pAdminInterface->SendCommand(2, 2, buffer, 2);
+}
+
+void CServer::AdminLoggedOn(CAdminSocket *pAdminSocket)
+{
+	VerifyTlsSettings(pAdminSocket);
+}
+
+void CServer::VerifyTlsSettings(CAdminSocket *pAdminSocket)
+{
+	bool enableSsl = m_pOptions->GetOptionVal(OPTION_ENABLESSL) != 0;
+	if (!enableSsl) {
+		ShowStatus(_T("Warning: FTP over TLS is not enabled, users cannot securely log in."), 1, pAdminSocket);
+	}
+	else {
+		bool allowExplicit = m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL) != 0;
+		bool hasExplicit = false;
+		for (auto const& s : m_ListenSocketList) {
+			if (!s->ImplicitTLS()) {
+				hasExplicit = true;
+			}
+		}
+		if (!allowExplicit || !hasExplicit) {
+			ShowStatus(_T("Warning: Explicit FTP over TLS is not enabled or there is no FTP listen socket configured."), 1, pAdminSocket);
+		}
+
+		CAsyncSslSocketLayer layer;
+		CString error;
+
+		CString cert = m_pOptions->GetOption(OPTION_SSLCERTFILE);
+		CString key = m_pOptions->GetOption(OPTION_SSLKEYFILE);
+		CString pass = m_pOptions->GetOption(OPTION_SSLKEYPASS);
+
+		USES_CONVERSION;
+		int res = layer.SetCertKeyFile(T2A(cert), T2A(key), T2A(pass), &error, true);
+		if (error.empty()) {
+			if (res == SSL_FAILURE_LOADDLLS) {
+				error = _T("Failed to load SSL libraries");
+			}
+			else if (res == SSL_FAILURE_INITSSL) {
+				error = _T("Failed to initialize SSL libraries");
+			}
+			else if (res == SSL_FAILURE_VERIFYCERT) {
+				error = _T("Failed to set certificate and private key");
+			}
+			else if (res) {
+				error = _T("Unknown error loading TLS certificate and private key");
+			}
+		}
+
+		if (!error.empty()) {
+			ShowStatus(error, 1, pAdminSocket);
+		}
+	}
 }

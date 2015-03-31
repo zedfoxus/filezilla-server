@@ -17,7 +17,7 @@ class CAutoBanManager;
 class CServer final
 {
 public:
-	void ShowStatus(LPCTSTR msg, int nType);
+	void ShowStatus(LPCTSTR msg, int nType, CAdminSocket* pAdminSocket = 0);
 	void ShowStatus(DWORD eventDateHigh, DWORD eventDateLow, LPCTSTR msg, int nType);
 	BOOL ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char *pData, int nDataLength);
 	void OnClose();
@@ -27,6 +27,8 @@ public:
 	HWND GetHwnd();
 	COptions *m_pOptions;
 	CAutoBanManager* m_pAutoBanManager;
+
+	void AdminLoggedOn(CAdminSocket *pAdminSocket);
 protected:
 	bool CreateListenSocket();
 	bool CreateListenSocket(CStdString ports, bool ssl);
@@ -36,6 +38,8 @@ protected:
 	BOOL ToggleActive(int nServerState);
 	unsigned int GetNextThreadNotificationID();
 	void FreeThreadNotificationID(CServerThread *pThread);
+
+	void VerifyTlsSettings(CAdminSocket *pAdminSocket);
 
 	// Send state to interface
 	void SendState();

@@ -35,6 +35,7 @@ public:
 	void CheckForTimeout();
 	BOOL ProcessCommand(CAdminSocket *pAdminSocket, int nID, void *pData, int nDataLength);
 	BOOL Add(CAdminSocket *pAdminSocket);
+	void LoggedOn(CAdminSocket *pAdminSocket);
 	CAdminInterface(CServer *pServer);
 	virtual ~CAdminInterface();
 	BOOL SendCommand(int nType, int nID, const void *pData, int nDataLength);

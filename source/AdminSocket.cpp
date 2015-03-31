@@ -362,5 +362,8 @@ BOOL CAdminSocket::FinishLogon()
 	//Logon successful
 	if (!SendCommand(1, 0, NULL, 0))
 		return FALSE;
+
+	m_pAdminInterface->LoggedOn(this);
+
 	return TRUE;
 }

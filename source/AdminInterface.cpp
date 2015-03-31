@@ -97,3 +97,8 @@ void CAdminInterface::CheckForTimeout()
 	for (iter=deleteList.begin(); iter!=deleteList.end(); iter++)
 		VERIFY(Remove(*iter));
 }
+
+void CAdminInterface::LoggedOn(CAdminSocket *pAdminSocket)
+{
+	m_pServer->AdminLoggedOn(pAdminSocket);
+}

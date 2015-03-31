@@ -31,6 +31,7 @@ class CListenSocket final: public CAsyncSocketEx
 public:
 	CListenSocket(CServer & server, std::list<CServerThread*> & threadList, bool ssl);
 
+	bool ImplicitTLS() const { return m_ssl; }
 public:
 	BOOL m_bLocked{};
 
