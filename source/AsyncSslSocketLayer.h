@@ -116,11 +116,8 @@ struct t_SslCertData final
 		TCHAR Other[1024];
 	} subject, issuer;
 
-	struct t_validTime final
-	{
-		//Year, Month, day, hour, minute, second
-		int y,M,d,h,m,s;
-	} validFrom, validUntil;
+	tm validFrom{};
+	tm validUntil{};
 
 	unsigned char hash[20];
 
@@ -154,7 +151,7 @@ public:
 			const unsigned char* locality, const unsigned char* organization, const unsigned char* unit, const unsigned char* cname,
 			const unsigned char *email, CString& err);
 
-	int SetCertKeyFile(const char* cert, const char* key, const char* pass, CString* error = 0);
+	int SetCertKeyFile(const char* cert, const char* key, const char* pass, CString* error = 0, bool checkExpired = false);
 
 	// Send raw text, useful to send a confirmation after the ssl connection
 	// has been initialized
@@ -187,7 +184,7 @@ private:
 
 	void TriggerEvents();
 
-	int LoadCertKeyFile(const char* cert, const char* key, CString* error);
+	int LoadCertKeyFile(const char* cert, const char* key, CString* error, bool checkExpired);
 
 	//Will be called from the OpenSSL library
 	static void apps_ssl_info_callback(const SSL *s, int where, int ret);

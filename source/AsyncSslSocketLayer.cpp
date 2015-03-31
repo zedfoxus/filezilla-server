@@ -155,6 +155,7 @@ def(int, SSL_CTX_use_certificate_chain_file, (SSL_CTX *ctx, const char *file));
 def(long, SSL_CTX_ctrl, (SSL_CTX *ctx, int cmd, long larg, void *parg));
 def(int, SSL_set_cipher_list, (SSL *ssl, const char *str));
 def(const char*, SSL_get_cipher_list, (const SSL *ssl, int priority));
+def(X509*, SSL_CTX_get0_certificate, (const SSL_CTX *ctx));
 
 def(size_t, BIO_ctrl_pending, (BIO *b));
 def(int, BIO_read, (BIO *b, void *data, int len));
@@ -404,6 +405,7 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll1, SSL_CTX_ctrl);
 		proc(m_sslDll1, SSL_get_cipher_list);
 		proc(m_sslDll1, SSL_set_cipher_list);
+		proc(m_sslDll1, SSL_CTX_get0_certificate);
 
 		if (bError) {
 			DoUnloadLibrary();
@@ -1335,7 +1337,7 @@ void ParseX509Name(X509_NAME * name, t_SslCertData::t_Contact & contact )
 	}
 }
 
-bool ParseTime(ASN1_UTCTIME *pTime, t_SslCertData::t_validTime& out)
+bool ParseTime(ASN1_UTCTIME *pTime, tm& out)
 {
 	char *v;
 	int gmt = 0;
@@ -1367,12 +1369,12 @@ bool ParseTime(ASN1_UTCTIME *pTime, t_SslCertData::t_validTime& out)
 		(v[11] >= '0') && (v[11] <= '9'))
 		s=  (v[10]-'0')*10+(v[11]-'0');
 
-	out.y = y+1900;
-	out.M = M;
-	out.d = d;
-	out.h = h;
-	out.m = m;
-	out.s = s;
+	out.tm_year = y;
+	out.tm_mon = M;
+	out.tm_mday = d;
+	out.tm_hour = h;
+	out.tm_min = m;
+	out.tm_sec = s;
 
 	return true;
 }
@@ -1721,7 +1723,13 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	return true;
 }
 
-int CAsyncSslSocketLayer::LoadCertKeyFile(const char* cert, const char* key, CString* error)
+bool operator<(tm const& lhs, tm const& rhs) {
+	auto l = std::tie(lhs.tm_year, lhs.tm_mon, lhs.tm_mday, lhs.tm_hour, lhs.tm_min, lhs.tm_sec);
+	auto r = std::tie(rhs.tm_year, rhs.tm_mon, rhs.tm_mday, rhs.tm_hour, rhs.tm_min, rhs.tm_sec);
+	return l < r;
+}
+
+int CAsyncSslSocketLayer::LoadCertKeyFile(const char* cert, const char* key, CString* error, bool checkExpired)
 {
 	ClearErrors();
 	if (pSSL_CTX_use_certificate_chain_file(m_ssl_ctx, cert) <= 0) {
@@ -1751,10 +1759,30 @@ int CAsyncSslSocketLayer::LoadCertKeyFile(const char* cert, const char* key, CSt
 		return SSL_FAILURE_VERIFYCERT;
 	}
 
+	if (checkExpired) {
+		X509* cert = pSSL_CTX_get0_certificate(m_ssl_ctx);
+		if (cert) {
+			// I'd really like to use ASN1_UTCTIME_get here, but it's behind #if 0 without any alternative...
+			tm v;
+			if (ParseTime(X509_get_notAfter(cert), v)) {
+				time_t now = time(0);
+				tm* t = gmtime(&now);
+				if (t && v < *t) {
+					if (error) {
+						CStdString e;
+						int err = GetLastSslError(e);
+						error->Format(_T("The configured TLS certificate is expired"), e, err );
+					}
+					return SSL_FAILURE_VERIFYCERT;
+				}
+			}
+		}
+	}
+
 	return 0;
 }
 
-int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, const char* pass, CString* error /*=0*/)
+int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, const char* pass, CString* error, bool checkExpired)
 {
 	int res = InitSSL();
 	if (res)
@@ -1777,7 +1805,7 @@ int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, cons
 		strcpy(m_pKeyPassword, pass);
 	}
 
-	res = LoadCertKeyFile(cert, key, error);
+	res = LoadCertKeyFile(cert, key, error, checkExpired);
 
 	pSSL_CTX_set_default_passwd_cb_userdata(m_ssl_ctx, 0);
 
