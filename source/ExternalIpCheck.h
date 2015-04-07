@@ -39,6 +39,8 @@ protected:
 	virtual void OnConnect(int nErrorCode);
 	virtual void OnClose(int nErrorCode);
 
+	CStdString GetHost();
+
 // Variables
 protected:
 	int m_nTimerID;

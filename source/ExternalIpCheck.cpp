@@ -20,6 +20,7 @@
 #include "ExternalIpCheck.h"
 #include "ServerThread.h"
 #include "Options.h"
+#include "version.h"
 
 //////////////////////////////////////////////////////////////////////
 // Konstruktion/Destruktion
@@ -175,19 +176,22 @@ void CExternalIpCheck::OnConnect(int nErrorCode)
 	if (!m_bActive)
 		return;
 
-	if (nErrorCode)
-	{
+	if (nErrorCode) {
 		m_bActive = FALSE;
 		Close();
 		m_nRetryCount++;
 		return;
 	}
 
-	CStdStringA address = "GET " + m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIPSERVER) + " HTTP/1.0\r\nUser-Agent: FileZilla Server\r\n\r\n";
-	const char *buffer = address;
+	CStdString host = GetHost();
+	CStdStringA query = "GET " + m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIPSERVER) + " HTTP/1.1\r\n";
+	query += "User-Agent: FileZillaServer/" + GetVersionString(false) + "\r\n";
+	query += "Host: " + host + "\r\n";
+	query += "Connection: close\r\n\r\n";
+
+	const char *buffer = query;
 	int len = strlen(buffer);
-	if (Send(buffer, len) != len)
-	{
+	if (Send(buffer, len) != len) {
 		m_bActive = FALSE;
 		Close();
 		m_nRetryCount++;
@@ -297,19 +301,27 @@ void CExternalIpCheck::OnClose(int nErrorCode)
 	}
 }
 
-void CExternalIpCheck::Start()
+CStdString CExternalIpCheck::GetHost()
 {
-	if (m_bActive)
-		return;
-
 	CStdString address = m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIPSERVER);
 	if (address.Left(7) == _T("http://"))
 		address = address.Mid(7);
 	int pos = address.Find('/');
 	if (pos != -1)
 		address = address.Left(pos);
-	if (address == _T(""))
+	
+	return address;
+}
+
+void CExternalIpCheck::Start()
+{
+	if (m_bActive)
 		return;
+
+	CStdString address = GetHost();
+	if (address.empty()) {
+		return;
+	}
 
 	m_bTriggerUpdateCalled = FALSE;
 
