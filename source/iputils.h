@@ -31,3 +31,8 @@ CStdString GetIPV6ShortForm(const CStdString& ip);
 bool IsRoutableAddress(const CStdString& address);
 
 bool ParseIPFilter(CStdString in, std::list<CStdString>* output = 0);
+
+// Checks if FZS is running behind an IPv4 NAT
+// Simple heuristic: Returns true if at least one adapter has an
+// IPv4 address and no IPv4 address is a public one
+bool IsBehindIPv4Nat();

@@ -19,6 +19,9 @@
 #include "stdafx.h"
 #include "iputils.h"
 
+#include <memory>
+#include <iphlpapi.h>
+
 bool IsLocalhost(const CStdString& ip)
 {
 	if (ip.Left(4) == _T("127."))
@@ -541,4 +544,43 @@ CStdString GetIPV6ShortForm(const CStdString& ip)
 		shortIp = shortIp.Left(shortIp.GetLength()-1);
 
 	return shortIp;
+}
+
+bool foo = IsBehindIPv4Nat();
+
+bool IsBehindIPv4Nat()
+{
+
+	ULONG len = 0;
+	int ret = GetAdaptersAddresses(AF_INET, GAA_FLAG_SKIP_MULTICAST|GAA_FLAG_SKIP_DNS_SERVER|GAA_FLAG_SKIP_FRIENDLY_NAME, 0, 0, &len);
+	if (ret != ERROR_BUFFER_OVERFLOW) {
+		return false;
+	}
+
+	bool has_ipv4 = false;
+	bool has_public_ipv4 = false;
+
+	auto buf = std::unique_ptr<char[]>(new char[len]);
+	IP_ADAPTER_ADDRESSES *addrs = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buf.get());
+	ret = GetAdaptersAddresses(AF_INET, GAA_FLAG_SKIP_MULTICAST|GAA_FLAG_SKIP_DNS_SERVER|GAA_FLAG_SKIP_FRIENDLY_NAME, 0, addrs, &len);
+	if (ret == ERROR_SUCCESS) {
+		for (auto addr = addrs; addr; addr = addr->Next) {
+			for (auto ip = addr->FirstUnicastAddress; ip; ip = ip->Next) {
+				if (ip->Flags & IP_ADAPTER_ADDRESS_TRANSIENT) {
+					continue;
+				}
+
+				if (ip->Address.lpSockaddr && ip->Address.lpSockaddr->sa_family == AF_INET) {
+					has_ipv4 = true;
+
+					CStdString ipStr = inet_ntoa(reinterpret_cast<SOCKADDR_IN*>(ip->Address.lpSockaddr)->sin_addr);
+					if (!ipStr.IsEmpty()) {
+						has_public_ipv4 = has_public_ipv4 || IsRoutableAddress(ipStr);
+					}
+				}
+			}
+		}
+	}
+
+	return has_ipv4 && !has_public_ipv4;
 }

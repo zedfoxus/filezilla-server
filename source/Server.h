@@ -40,6 +40,7 @@ protected:
 	void FreeThreadNotificationID(CServerThread *pThread);
 
 	void VerifyTlsSettings(CAdminSocket *pAdminSocket);
+	void VerifyPassiveModeSettings(CAdminSocket *pAdminSocket);
 
 	// Send state to interface
 	void SendState();

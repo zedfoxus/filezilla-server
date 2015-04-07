@@ -708,11 +708,12 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length")+1);
 			else
 			{
-				CStdString listenPorts = m_pOptions->GetOption(OPTION_SERVERPORT);
-				CStdString listenPortsSsl = m_pOptions->GetOption(OPTION_SSLPORTS);
-				bool enableSsl = m_pOptions->GetOptionVal(OPTION_ENABLESSL) != 0;
-				int nAdminListenPort = (int)m_pOptions->GetOptionVal(OPTION_ADMINPORT);
-				CStdString adminIpBindings = m_pOptions->GetOption(OPTION_ADMINIPBINDINGS);
+				CStdString const listenPorts = m_pOptions->GetOption(OPTION_SERVERPORT);
+				CStdString const listenPortsSsl = m_pOptions->GetOption(OPTION_SSLPORTS);
+				bool const enableSsl = m_pOptions->GetOptionVal(OPTION_ENABLESSL) != 0;
+				CStdString const ipBindings = m_pOptions->GetOption(OPTION_IPBINDINGS);
+				int const nAdminListenPort = (int)m_pOptions->GetOptionVal(OPTION_ADMINPORT);
+				CStdString const adminIpBindings = m_pOptions->GetOption(OPTION_ADMINIPBINDINGS);
 
 				CStdString peerIP;
 				UINT port = 0;
@@ -775,25 +776,22 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				}
 				if (listenPorts != m_pOptions->GetOption(OPTION_SERVERPORT) ||
 					enableSsl != (m_pOptions->GetOptionVal(OPTION_ENABLESSL) != 0) ||
-					(m_pOptions->GetOptionVal(OPTION_ENABLESSL) && listenPortsSsl != m_pOptions->GetOption(OPTION_SSLPORTS)))
+					(m_pOptions->GetOptionVal(OPTION_ENABLESSL) && listenPortsSsl != m_pOptions->GetOption(OPTION_SSLPORTS)) ||
+					ipBindings != m_pOptions->GetOption(OPTION_IPBINDINGS))
 				{
-					if (!m_ListenSocketList.empty())
-					{
+					if (!m_ListenSocketList.empty()) {
 						ShowStatus(_T("Closing all listening sockets"), 0);
-						for (std::list<CListenSocket*>::iterator listIter = m_ListenSocketList.begin(); listIter != m_ListenSocketList.end(); listIter++)
-						{
+						for (std::list<CListenSocket*>::iterator listIter = m_ListenSocketList.begin(); listIter != m_ListenSocketList.end(); ++listIter) {
 							(*listIter)->Close();
 							delete *listIter;
 						}
 						m_ListenSocketList.clear();
 
-						if (!CreateListenSocket())
-						{
+						if (!CreateListenSocket()) {
 							ShowStatus(_T("Failed to create a listen socket on any of the specified ports. Server is not online!"), 1);
 							m_nServerState &= ~STATE_ONLINE;
 						}
-						else
-						{
+						else {
 							ShowStatus(_T("Listen socket port changed"), 0);
 							if (!(m_nServerState & STATE_MASK_GOOFFLINE))
 								m_nServerState |= STATE_ONLINE;
@@ -806,6 +804,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				}
 
 				VerifyTlsSettings(pAdminSocket);
+				VerifyPassiveModeSettings(pAdminSocket);
 			}
 		}
 		break;
@@ -1262,6 +1261,7 @@ void CServer::SendState()
 
 void CServer::AdminLoggedOn(CAdminSocket *pAdminSocket)
 {
+	VerifyPassiveModeSettings(pAdminSocket);
 	VerifyTlsSettings(pAdminSocket);
 }
 
@@ -1310,5 +1310,24 @@ void CServer::VerifyTlsSettings(CAdminSocket *pAdminSocket)
 		if (!error.empty()) {
 			ShowStatus(error, 1, pAdminSocket);
 		}
+	}
+}
+
+void CServer::VerifyPassiveModeSettings(CAdminSocket *pAdminSocket)
+{
+	bool nat = IsBehindIPv4Nat();
+	bool listensIPv4 = false;
+	int passiveIPType = m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE);
+
+	for (auto const& s : m_ListenSocketList) {
+		auto family = s->GetFamily();
+		if (family == AF_INET || family == AF_UNSPEC) {
+			listensIPv4 = true;
+		}
+	}
+
+	if (listensIPv4 && nat && !passiveIPType) {
+		CStdString error = _T("You appear to be behind a NAT router. Please configure the passive mode settings and forward a range of ports in your router.");
+		ShowStatus(error, 1, pAdminSocket);
 	}
 }
