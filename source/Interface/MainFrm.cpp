@@ -205,7 +205,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndStatusBar.SetPaneInfo(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVLED),ID_INDICATOR_RECVLED,SBPS_NOBORDERS,6);
 	m_wndStatusBar.SetPaneInfo(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED),ID_INDICATOR_SENDLED,SBPS_NOBORDERS,6);
 
-	ShowStatus(GetVersionString(), 0);
+	ShowStatus(GetProductVersionString(), 0);
 	ShowStatus(_T("Copyright 2001-2015 by Tim Kosse (tim.kosse@filezilla-project.org)"), 0);
 	ShowStatus(_T("https://filezilla-project.org/"), 0);
 

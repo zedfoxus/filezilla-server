@@ -125,7 +125,7 @@ bool CServer::Create()
 		}
 	}
 
-	m_pFileLogger->Log(GetVersionString() + _T(" started"));
+	m_pFileLogger->Log(GetProductVersionString() + _T(" started"));
 	m_pFileLogger->Log(_T("Initializing Server."));
 
 	m_nTimerID = SetTimer(m_hWnd, 1234, 10000, NULL);

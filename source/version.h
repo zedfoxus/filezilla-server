@@ -18,4 +18,5 @@
 
 #pragma once
 
-CStdString GetVersionString();
+CStdString GetProductVersionString();
+CStdString GetVersionString(bool include_suffix);

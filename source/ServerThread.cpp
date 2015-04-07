@@ -258,7 +258,7 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 		m_ParsedWelcomeMessage.clear();
 
 		msg.Replace(_T("%%"), _T("\001"));
-		msg.Replace(_T("%v"), GetVersionString());
+		msg.Replace(_T("%v"), GetProductVersionString());
 		msg.Replace(_T("\001"), _T("%"));
 
 		ASSERT(msg != _T(""));

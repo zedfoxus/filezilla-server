@@ -204,7 +204,7 @@ BOOL CAboutDlg::OnInitDialog()
 
 	m_cDonate.SubclassDlgItem(IDC_DONATE, this, _T("https://www.paypal.com/xclick/business=Tim.Kosse%40gmx.de&item_name=FileZilla&cn=Enter+your+comments+here&tax=0&currency_code=USD"));
 
-	m_cVersion.SetWindowText(GetVersionString());
+	m_cVersion.SetWindowText(GetProductVersionString());
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }
