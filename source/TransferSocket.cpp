@@ -807,13 +807,11 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 {
 	int optAllowServerToServer, optStrictFilter;
 
-	if (m_nMode == TRANSFERMODE_RECEIVE)
-	{
+	if (m_nMode == TRANSFERMODE_RECEIVE) {
 		optAllowServerToServer = OPTION_INFXP;
 		optStrictFilter = OPTION_NOINFXPSTRICT;
 	}
-	else
-	{
+	else {
 		optAllowServerToServer = OPTION_OUTFXP;
 		optStrictFilter = OPTION_NOOUTFXPSTRICT;
 	}
@@ -853,8 +851,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 				}
 			}
 
-			if (OwnerIP != TransferIP)
-			{
+			if (OwnerIP != TransferIP) {
 				EndTransfer(5);
 				return FALSE;
 			}
@@ -870,74 +867,62 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		m_pOwner->SendTransferPreliminary();
 
 	m_bStarted = TRUE;
-	if (m_nMode == TRANSFERMODE_SEND)
-	{
+	if (m_nMode == TRANSFERMODE_SEND) {
 		ASSERT(m_Filename != _T(""));
 		int shareMode = FILE_SHARE_READ;
 		if (m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_SHAREDWRITE))
 			shareMode |= FILE_SHARE_WRITE;
-		m_hFile = CreateFile(m_Filename, GENERIC_READ, shareMode, 0, OPEN_EXISTING, 0, 0);
-		if (m_hFile == INVALID_HANDLE_VALUE)
-		{
+		m_hFile = CreateFile(m_Filename, GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
+		if (m_hFile == INVALID_HANDLE_VALUE) {
 			EndTransfer(3);
 			return FALSE;
 		}
 		DWORD low=(DWORD)(m_nRest&0xFFFFFFFF);
 		LONG high=(LONG)(m_nRest>>32);
-		if ((low = SetFilePointer(m_hFile, low, &high, FILE_BEGIN)) == 0xFFFFFFFF && GetLastError() != NO_ERROR)
-		{
+		if ((low = SetFilePointer(m_hFile, low, &high, FILE_BEGIN)) == 0xFFFFFFFF && GetLastError() != NO_ERROR) {
 			high = 0;
 			low = SetFilePointer(m_hFile, 0, &high, FILE_END);
-			if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR)
-			{
+			if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR) {
 				EndTransfer(3);
 				return FALSE;
 			}
 		}
 		m_currentFileOffset = (((__int64)high) << 32) + low;
 
-		if (!m_pBuffer)
-		{
+		if (!m_pBuffer) {
 			m_pBuffer = new char[m_nBufSize];
 			m_nBufferPos = 0;
 
-			if (m_useZlib)
-			{
+			if (m_useZlib) {
 				m_zlibStream.next_out = (Bytef *)m_pBuffer;
 				m_zlibStream.avail_out = m_nBufSize;
 			}
 		}
 	}
-	else if (m_nMode == TRANSFERMODE_RECEIVE)
-	{
+	else if (m_nMode == TRANSFERMODE_RECEIVE) {
 		unsigned int buflen = 0;
 		int varlen = sizeof(buflen);
-		if (GetSockOpt(SO_RCVBUF, &buflen, &varlen))
-		{
-			if (buflen < m_nBufSize)
-			{
+		if (GetSockOpt(SO_RCVBUF, &buflen, &varlen)) {
+			if (buflen < m_nBufSize) {
 				buflen = m_nBufSize;
 				SetSockOpt(SO_RCVBUF, &buflen, varlen);
 			}
 		}
 
-		if (m_hFile == INVALID_HANDLE_VALUE)
-		{
+		if (m_hFile == INVALID_HANDLE_VALUE) {
 			ASSERT(m_Filename != _T(""));
 			int shareMode = FILE_SHARE_READ;
 			if (m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_SHAREDWRITE))
 				shareMode |= FILE_SHARE_WRITE;
-			m_hFile = CreateFile(m_Filename, GENERIC_WRITE, shareMode, 0, OPEN_ALWAYS, 0, 0);
-			if (m_hFile == INVALID_HANDLE_VALUE)
-			{
+			m_hFile = CreateFile(m_Filename, GENERIC_WRITE, shareMode, 0, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, 0);
+			if (m_hFile == INVALID_HANDLE_VALUE) {
 				EndTransfer(3);
 				return FALSE;
 			}
 			DWORD low = (DWORD)(m_nRest&0xFFFFFFFF);
 			LONG high = (LONG)(m_nRest>>32);
 			low = SetFilePointer(m_hFile, low, &high, FILE_BEGIN);
-			if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR)
-			{
+			if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR) {
 				EndTransfer(3);
 				return FALSE;
 			}

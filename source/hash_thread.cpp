@@ -82,7 +82,7 @@ void CHashThread::DoHash()
 	m_mutex.unlock();
 
 	int shareMode = FILE_SHARE_READ;
-	HANDLE hFile = CreateFile(file, GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	HANDLE hFile = CreateFile(file, GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
 	delete [] file;
 
 	if (hFile == INVALID_HANDLE_VALUE) {
