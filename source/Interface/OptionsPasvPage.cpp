@@ -68,6 +68,7 @@ void COptionsPasvPage::DoDataExchange(CDataExchange* pDX)
 	DDV_MaxChars(pDX, m_PortMax, 5);
 	DDX_Text(pDX, IDC_OPTIONS_PASV_TEXT, m_Text);
 	DDX_Check(pDX, IDC_OPTIONS_PASV_NOLOCAL, m_NoExternalOnLocal);
+	DDX_Control(pDX, IDC_FTPTEST, m_ftptest);
 	//}}AFX_DATA_MAP
 }
 

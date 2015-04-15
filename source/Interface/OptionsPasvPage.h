@@ -19,6 +19,8 @@
 #if !defined(AFX_OPTIONSPASVPAGE_H__CF8A61D7_93AB_449F_AC3F_8EE3A0F44B87__INCLUDED_)
 #define AFX_OPTIONSPASVPAGE_H__CF8A61D7_93AB_449F_AC3F_8EE3A0F44B87__INCLUDED_
 
+#include "misc/hyperlink.h"
+
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
@@ -54,6 +56,7 @@ public:
 	CString	m_PortMax;
 	CString	m_Text;
 	BOOL	m_NoExternalOnLocal;
+	CHyperLink m_ftptest;
 	//}}AFX_DATA
 
 
