@@ -69,6 +69,22 @@ char* toHex(unsigned char* buffer, unsigned int len)
 
 	return hex;
 }
+
+void FreeState(void* data, CHashThread::_algorithm alg)
+{
+	switch (alg)
+	{
+	case CHashThread::MD5:
+		delete static_cast<::MD5*>(data);
+		break;
+	case CHashThread::SHA512:
+		delete static_cast<SHA512_State*>(data);
+		break;
+	case CHashThread::SHA1:
+		delete static_cast<SHA_State*>(data);
+		break;
+	}
+}
 }
 
 void CHashThread::DoHash()
@@ -132,6 +148,7 @@ void CHashThread::DoHash()
 		m_mutex.lock();
 		if (!m_server_thread) {
 			CloseHandle(hFile);
+			FreeState(data, alg);
 			return;
 		}
 		m_mutex.unlock();
@@ -144,6 +161,7 @@ void CHashThread::DoHash()
 		m_result = FAILURE_READ;
 		if (m_server_thread)
 			m_server_thread->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_HASHRESULT, m_active_id);
+		FreeState(data, alg);
 		return;
 	}
 
@@ -171,6 +189,8 @@ void CHashThread::DoHash()
 	m_result = m_hash ? OK : FAILURE_READ;
 	if (m_server_thread)
 		m_server_thread->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_HASHRESULT, m_active_id);
+
+	FreeState(data, alg);
 }
 
 void CHashThread::Loop()
