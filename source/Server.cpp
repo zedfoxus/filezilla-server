@@ -709,8 +709,8 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			else
 			{
 				CStdString const listenPorts = m_pOptions->GetOption(OPTION_SERVERPORT);
-				CStdString const listenPortsSsl = m_pOptions->GetOption(OPTION_SSLPORTS);
-				bool const enableSsl = m_pOptions->GetOptionVal(OPTION_ENABLESSL) != 0;
+				CStdString const listenPortsSsl = m_pOptions->GetOption(OPTION_TLSPORTS);
+				bool const enableSsl = m_pOptions->GetOptionVal(OPTION_ENABLETLS) != 0;
 				CStdString const ipBindings = m_pOptions->GetOption(OPTION_IPBINDINGS);
 				int const nAdminListenPort = (int)m_pOptions->GetOptionVal(OPTION_ADMINPORT);
 				CStdString const adminIpBindings = m_pOptions->GetOption(OPTION_ADMINIPBINDINGS);
@@ -775,8 +775,8 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 					}
 				}
 				if (listenPorts != m_pOptions->GetOption(OPTION_SERVERPORT) ||
-					enableSsl != (m_pOptions->GetOptionVal(OPTION_ENABLESSL) != 0) ||
-					(m_pOptions->GetOptionVal(OPTION_ENABLESSL) && listenPortsSsl != m_pOptions->GetOption(OPTION_SSLPORTS)) ||
+					enableSsl != (m_pOptions->GetOptionVal(OPTION_ENABLETLS) != 0) ||
+					(m_pOptions->GetOptionVal(OPTION_ENABLETLS) && listenPortsSsl != m_pOptions->GetOption(OPTION_TLSPORTS)) ||
 					ipBindings != m_pOptions->GetOption(OPTION_IPBINDINGS))
 				{
 					if (!m_ListenSocketList.empty()) {
@@ -1160,9 +1160,9 @@ bool CServer::CreateListenSocket()
 	CStdString ports = (m_pOptions ? m_pOptions->GetOption(OPTION_SERVERPORT) : _T("21"));
 	bool success = CreateListenSocket(ports, false);
 
-	bool ssl_enabled = m_pOptions && m_pOptions->GetOptionVal(OPTION_ENABLESSL) != 0;
+	bool ssl_enabled = m_pOptions && m_pOptions->GetOptionVal(OPTION_ENABLETLS) != 0;
 	if (ssl_enabled) {
-		ports = m_pOptions->GetOption(OPTION_SSLPORTS);
+		ports = m_pOptions->GetOption(OPTION_TLSPORTS);
 		success &= CreateListenSocket(ports, true);
 	}
 
@@ -1267,12 +1267,12 @@ void CServer::AdminLoggedOn(CAdminSocket *pAdminSocket)
 
 void CServer::VerifyTlsSettings(CAdminSocket *pAdminSocket)
 {
-	bool enableSsl = m_pOptions->GetOptionVal(OPTION_ENABLESSL) != 0;
+	bool enableSsl = m_pOptions->GetOptionVal(OPTION_ENABLETLS) != 0;
 	if (!enableSsl) {
 		ShowStatus(_T("Warning: FTP over TLS is not enabled, users cannot securely log in."), 1, pAdminSocket);
 	}
 	else {
-		bool allowExplicit = m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL) != 0;
+		bool allowExplicit = m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITTLS) != 0;
 		bool hasExplicit = false;
 		for (auto const& s : m_ListenSocketList) {
 			if (!s->ImplicitTLS()) {
@@ -1286,9 +1286,9 @@ void CServer::VerifyTlsSettings(CAdminSocket *pAdminSocket)
 		CAsyncSslSocketLayer layer;
 		CString error;
 
-		CString cert = m_pOptions->GetOption(OPTION_SSLCERTFILE);
-		CString key = m_pOptions->GetOption(OPTION_SSLKEYFILE);
-		CString pass = m_pOptions->GetOption(OPTION_SSLKEYPASS);
+		CString cert = m_pOptions->GetOption(OPTION_TLSCERTFILE);
+		CString key = m_pOptions->GetOption(OPTION_TLSKEYFILE);
+		CString pass = m_pOptions->GetOption(OPTION_TLSKEYPASS);
 
 		USES_CONVERSION;
 		int res = layer.SetCertKeyFile(T2A(cert), T2A(key), T2A(pass), &error, true);

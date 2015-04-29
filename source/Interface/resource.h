@@ -237,6 +237,7 @@
 #define IDC_KEYPASS                     1170
 #define IDC_ALLOWEXPLICIT               1171
 #define IDC_SSLONLY                     1172
+#define IDC_REQUIRE_SESSION_RESUMPTION  1173
 #define IDC_KEYSIZE1                    1176
 #define IDC_KEYSIZE2                    1177
 #define IDC_KEYSIZE3                    1178

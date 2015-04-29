@@ -66,15 +66,15 @@
 #define OPTION_IPFILTER_ALLOWED 40
 #define OPTION_IPFILTER_DISALLOWED 41
 #define OPTION_WELCOMEMESSAGE_HIDE 42
-#define OPTION_ENABLESSL 43
-#define OPTION_ALLOWEXPLICITSSL 44
-#define OPTION_SSLKEYFILE 45
-#define OPTION_SSLCERTFILE 46
-#define OPTION_SSLPORTS 47
-#define OPTION_SSLFORCEEXPLICIT 48
+#define OPTION_ENABLETLS 43
+#define OPTION_ALLOWEXPLICITTLS 44
+#define OPTION_TLSKEYFILE 45
+#define OPTION_TLSCERTFILE 46
+#define OPTION_TLSPORTS 47
+#define OPTION_TLSFORCEEXPLICIT 48
 #define OPTION_BUFFERSIZE2 49
 #define OPTION_FORCEPROTP 50
-#define OPTION_SSLKEYPASS 51
+#define OPTION_TLSKEYPASS 51
 #define OPTION_SHAREDWRITE 52
 #define OPTION_NOEXTERNALIPONLOCAL 53
 #define OPTION_ACTIVE_IGNORELOCAL 54
@@ -84,8 +84,9 @@
 #define OPTION_AUTOBAN_BANTIME 58
 #define OPTION_SERVICE_NAME 59
 #define OPTION_SERVICE_DISPLAY_NAME 60
+#define OPTION_TLS_REQUIRE_SESSION_RESUMPTION 61
 
-#define OPTIONS_NUM 60
+#define OPTIONS_NUM 61
 
 #define CONST_WELCOMEMESSAGE_LINESIZE 75
 
@@ -160,7 +161,8 @@ static const t_Option m_Options[OPTIONS_NUM]={	_T("Serverports"),				0,	FALSE,
 												_T("Autoban type"),				1,	FALSE,
 												_T("Autoban time"),				1,	FALSE,
 												_T("Service name"),				0,	TRUE,
-												_T("Service display name"),		0,	TRUE
+												_T("Service display name"),		0,	TRUE,
+												_T("Force TLS session resumption"), 1, TRUE
 											};
 
 #endif // OPTION_TYPES_INCLUDED

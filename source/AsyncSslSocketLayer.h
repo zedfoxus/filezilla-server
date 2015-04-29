@@ -145,7 +145,7 @@ public:
 	BOOL GetPeerCertificateData(t_SslCertData &SslCertData);
 
 	bool IsUsingSSL();
-	int InitSSLConnection(bool clientMode, void* pContext = 0);
+	int InitSSLConnection(bool clientMode, CAsyncSslSocketLayer* primarySocket = 0, bool require_session_reuse = false);
 
 	static bool CreateSslCertificate(LPCTSTR filename, int bits, const unsigned char* country, const unsigned char* state,
 			const unsigned char* locality, const unsigned char* organization, const unsigned char* unit, const unsigned char* cname,
@@ -156,8 +156,6 @@ public:
 	// Send raw text, useful to send a confirmation after the ssl connection
 	// has been initialized
 	int SendRaw(const void* lpBuf, int nBufLen);
-
-	void* GetContext() { return m_ssl_ctx; }
 
 private:
 	virtual void Close();
@@ -245,6 +243,9 @@ private:
 
 	char* m_pKeyPassword{};
 
+	bool m_require_session_reuse{};
+	CAsyncSslSocketLayer* m_primarySocket{};
+
 	ShutDownState shutDownState = ShutDownState::none;
 };
 
@@ -263,5 +264,6 @@ private:
 #define SSL_FAILURE_INITSSL 4
 #define SSL_FAILURE_VERIFYCERT 8
 #define SSL_FAILURE_CERTREJECTED 0x10
+#define SSL_FAILURE_NO_SESSIONREUSE 0x20
 
 #endif // ASYNCSSLSOCKETLEAYER_INCLUDED

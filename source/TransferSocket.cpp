@@ -32,11 +32,9 @@
 // CTransferSocket
 CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 : m_pSslLayer()
-, m_sslContext()
 {
 	ASSERT(pOwner);
 	m_pOwner = pOwner;
-	m_status = 0;
 	m_nMode = TRANSFERMODE_NOTSET;
 
 	m_nBufferPos = NULL;
@@ -44,10 +42,6 @@ CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 	m_pDirListing = NULL;
 	m_bAccepted = FALSE;
 
-	m_bSentClose = FALSE;
-
-	m_bReady = FALSE;
-	m_bStarted = FALSE;
 	GetSystemTime(&m_LastActiveTime);
 	m_wasActiveSinceCheck = false;
 	m_nRest = 0;
@@ -76,8 +70,8 @@ CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 void CTransferSocket::Init(std::list<t_dirlisting> &dir, int nMode)
 {
 	ASSERT(nMode == TRANSFERMODE_LIST);
-	m_bReady = TRUE;
-	m_status = 0;
+	m_bReady = true;
+	m_status = transfer_status_t::success;
 	if (m_pBuffer)
 		delete [] m_pBuffer;
 	m_pBuffer = 0;
@@ -97,7 +91,7 @@ void CTransferSocket::Init(std::list<t_dirlisting> &dir, int nMode)
 void CTransferSocket::Init(const CStdString& filename, int nMode, _int64 rest)
 {
 	ASSERT(nMode == TRANSFERMODE_SEND || nMode == TRANSFERMODE_RECEIVE);
-	m_bReady = TRUE;
+	m_bReady = true;
 	m_Filename = filename;
 	m_nRest = rest;
 	m_nMode = nMode;
@@ -142,7 +136,7 @@ END_MESSAGE_MAP()
 void CTransferSocket::OnSend(int nErrorCode)
 {
 	if (nErrorCode) {
-		EndTransfer(1);
+		EndTransfer(transfer_status_t::closed_aborted);
 		return;
 	}
 
@@ -196,7 +190,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 					{
 						if (directory_listing_.size() > 1 ) {
 							ShutDown();
-							EndTransfer(6);
+							EndTransfer(transfer_status_t::zlib);
 							return;
 						}
 						if (!(m_nBufSize - m_nBufferPos - m_zlibStream.avail_out))
@@ -205,7 +199,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 					else if (res != Z_OK)
 					{
 						ShutDown();
-						EndTransfer(6);
+						EndTransfer(transfer_status_t::zlib);
 						return;
 					}
 					if (!m_zlibStream.avail_in && !directory_listing_.empty()) {
@@ -231,7 +225,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				int numsent = Send(m_pBuffer + m_nBufferPos, numsend);
 				if (numsent == SOCKET_ERROR) {
 					if (GetLastError() != WSAEWOULDBLOCK)
-						EndTransfer(1);
+						EndTransfer(transfer_status_t::closed_aborted);
 					return;
 				}
 
@@ -250,15 +244,13 @@ void CTransferSocket::OnSend(int nErrorCode)
 
 				//Check if there are other commands in the command queue.
 				MSG msg;
-				if (PeekMessage(&msg,0, 0, 0, PM_NOREMOVE))
-				{
+				if (PeekMessage(&msg,0, 0, 0, PM_NOREMOVE)) {
 					TriggerEvent(FD_WRITE);
 					return;
 				}
 			}
 		}
-		else
-		{
+		else {
 			while (!directory_listing_.empty()) {
 				int numsend = m_nBufSize;
 				if ((directory_listing_.front().len - m_nBufferPos) < m_nBufSize)
@@ -275,7 +267,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				if (numsent == SOCKET_ERROR) {
 					int error = GetLastError();
 					if (error != WSAEWOULDBLOCK)
-						EndTransfer(1);
+						EndTransfer(transfer_status_t::closed_aborted);
 					return;
 				}
 
@@ -310,46 +302,38 @@ void CTransferSocket::OnSend(int nErrorCode)
 			}
 		}
 
-		if (m_waitingForSslHandshake)
-		{
+		if (m_waitingForSslHandshake) {
 			// Don't yet issue a shutdown
 			return;
 		}
 
-		if (m_pSslLayer)
-		{
+		if (m_pSslLayer) {
 			if (!ShutDown() && GetLastError() == WSAEWOULDBLOCK)
 				return;
 		}
 		else
 			ShutDown();
-		EndTransfer(0);
+		EndTransfer(transfer_status_t::success);
 	}
 	else if (m_nMode == TRANSFERMODE_SEND)
 	{ //Send file
 		if (!m_bStarted)
 			if (!InitTransfer(TRUE))
 				return;
-		if (m_useZlib)
-		{
-			if (!m_pBuffer2)
-			{
+		if (m_useZlib) {
+			if (!m_pBuffer2) {
 				m_pBuffer2 = new char[m_nBufSize];
 
 				m_zlibStream.next_in = (Bytef *)m_pBuffer2;
 			}
 
-			while (true)
-			{
+			while (true) {
 				int numsend;
-				if (!m_zlibStream.avail_in)
-				{
-					if (m_hFile != INVALID_HANDLE_VALUE)
-					{
+				if (!m_zlibStream.avail_in) {
+					if (m_hFile != INVALID_HANDLE_VALUE) {
 						DWORD numread;
-						if (!ReadFile(m_hFile, m_pBuffer2, m_nBufSize, &numread, 0))
-						{
-							EndTransfer(3); // TODO: Better reason
+						if (!ReadFile(m_hFile, m_pBuffer2, m_nBufSize, &numread, 0)) {
+							EndTransfer(transfer_status_t::noaccess); // TODO: Better reason
 							return;
 						}
 						m_currentFileOffset += numread;
@@ -388,7 +372,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 					{
 						if (m_hFile != INVALID_HANDLE_VALUE)
 						{
-							EndTransfer(6);
+							EndTransfer(transfer_status_t::zlib);
 							return;
 						}
 						if (!(m_nBufSize - m_nBufferPos - m_zlibStream.avail_out))
@@ -396,7 +380,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 					}
 					else if (res != Z_OK)
 					{
-						EndTransfer(6);
+						EndTransfer(transfer_status_t::zlib);
 						return;
 					}
 				}
@@ -419,7 +403,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				int numsent = Send(m_pBuffer + m_nBufferPos, numsend);
 				if (numsent == SOCKET_ERROR) {
 					if (GetLastError() != WSAEWOULDBLOCK)
-						EndTransfer(1);
+						EndTransfer(transfer_status_t::closed_aborted);
 					return;
 				}
 
@@ -445,16 +429,12 @@ void CTransferSocket::OnSend(int nErrorCode)
 				}
 			}
 		}
-		else
-		{
-			while (m_hFile != INVALID_HANDLE_VALUE || m_nBufferPos)
-			{
+		else {
+			while (m_hFile != INVALID_HANDLE_VALUE || m_nBufferPos) {
 				DWORD numread;
-				if (m_nBufSize - m_nBufferPos && m_hFile != INVALID_HANDLE_VALUE)
-				{
-					if (!ReadFile(m_hFile, m_pBuffer+m_nBufferPos, m_nBufSize-m_nBufferPos, &numread, 0))
-					{
-						EndTransfer(3); //TODO: Better reason
+				if (m_nBufSize - m_nBufferPos && m_hFile != INVALID_HANDLE_VALUE) {
+					if (!ReadFile(m_hFile, m_pBuffer+m_nBufferPos, m_nBufSize-m_nBufferPos, &numread, 0)) {
+						EndTransfer(transfer_status_t::noaccess); //TODO: Better reason
 						return;
 					}
 
@@ -470,7 +450,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 							if (m_pSslLayer)
 								if (!ShutDown() && GetLastError() == WSAEWOULDBLOCK)
 									return;
-							EndTransfer(0);
+							EndTransfer(transfer_status_t::success);
 							return;
 						}
 					}
@@ -501,7 +481,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				int	numsent = Send(m_pBuffer, numsend);
 				if (numsent == SOCKET_ERROR) {
 					if (GetLastError() != WSAEWOULDBLOCK) {
-						EndTransfer(1);
+						EndTransfer(transfer_status_t::closed_aborted);
 						return;
 					}
 					m_nBufferPos=numread;
@@ -543,7 +523,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 			ShutDown();
 		Sleep(0); //Give the system the possibility to relay the data
 				  //If not using Sleep(0), GetRight for example can't receive the last chunk.
-		EndTransfer(0);
+		EndTransfer(transfer_status_t::success);
 	}
 	else if (m_nMode == TRANSFERMODE_NOTSET)
 	{
@@ -555,7 +535,7 @@ void CTransferSocket::OnConnect(int nErrorCode)
 {
 	if (nErrorCode)
 	{
-		EndTransfer(2);
+		EndTransfer(transfer_status_t::noconn);
 		return;
 	}
 
@@ -568,14 +548,14 @@ void CTransferSocket::OnConnect(int nErrorCode)
 			SetSockOpt(SO_SNDBUF, &size, sizeof(int));
 	}
 
-	if (m_sslContext) {
+	if (m_use_ssl) {
 		// Disable Nagle algorithm for duration of the handshake.
 		SetNodelay(true);
 		if (!m_pSslLayer)
 			m_pSslLayer = new CAsyncSslSocketLayer();
 		VERIFY(AddLayer(m_pSslLayer));
 
-		int code = m_pSslLayer->InitSSLConnection(false, m_sslContext);
+		int code = m_pSslLayer->InitSSLConnection(false, m_pOwner->GetSslLayer(), m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TLS_REQUIRE_SESSION_RESUMPTION) != 0);
 		if (code == SSL_FAILURE_LOADDLLS)
 			m_pOwner->SendStatus(_T("Failed to load SSL libraries"), 1);
 		else if (code == SSL_FAILURE_INITSSL)
@@ -583,7 +563,7 @@ void CTransferSocket::OnConnect(int nErrorCode)
 
 		if (code)
 		{
-			EndTransfer(2);
+			EndTransfer(transfer_status_t::noconn);
 			return;
 		}
 		m_waitingForSslHandshake = true;
@@ -600,7 +580,7 @@ void CTransferSocket::OnClose(int nErrorCode)
 {
 	if (nErrorCode)
 	{
-		EndTransfer(1);
+		EndTransfer(transfer_status_t::closed_aborted);
 		return;
 	}
 	if (m_bReady)
@@ -618,14 +598,14 @@ void CTransferSocket::OnClose(int nErrorCode)
 					if (pos == GetPosition64(m_hFile))
 						break; //Leave loop when no data was written to file
 			} while (m_hFile != INVALID_HANDLE_VALUE); //Or file was closed
-			EndTransfer(0);
+			EndTransfer(transfer_status_t::success);
 		}
 		else
-			EndTransfer((m_nMode == TRANSFERMODE_RECEIVE) ? 0 : 1);
+			EndTransfer((m_nMode == TRANSFERMODE_RECEIVE) ? transfer_status_t::success : transfer_status_t::closed_aborted);
 	}
 }
 
-int CTransferSocket::GetStatus()
+transfer_status_t CTransferSocket::GetStatus() const
 {
 	return m_status;
 }
@@ -648,7 +628,7 @@ void CTransferSocket::OnAccept(int nErrorCode)
 			SetSockOpt(SO_SNDBUF, &size, sizeof(int));
 	}
 
-	if (m_sslContext) {
+	if (m_use_ssl) {
 		// Disable Nagle algorithm for duration of the handshake.
 		SetNodelay(true);
 
@@ -656,7 +636,7 @@ void CTransferSocket::OnAccept(int nErrorCode)
 			m_pSslLayer = new CAsyncSslSocketLayer();
 		VERIFY(AddLayer(m_pSslLayer));
 
-		int code = m_pSslLayer->InitSSLConnection(false, m_sslContext);
+		int code = m_pSslLayer->InitSSLConnection(false, m_pOwner->GetSslLayer(), m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TLS_REQUIRE_SESSION_RESUMPTION) != 0);
 		if (code == SSL_FAILURE_LOADDLLS)
 			m_pOwner->SendStatus(_T("Failed to load SSL libraries"), 1);
 		else if (code == SSL_FAILURE_INITSSL)
@@ -664,7 +644,7 @@ void CTransferSocket::OnAccept(int nErrorCode)
 
 		if (code)
 		{
-			EndTransfer(2);
+			EndTransfer(transfer_status_t::noconn);
 			return;
 		}
 		m_waitingForSslHandshake = true;
@@ -682,7 +662,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 		obeySpeedLimit = false;
 	else if (nErrorCode)
 	{
-		EndTransfer(3);
+		EndTransfer(transfer_status_t::noaccess);
 		return;
 	}
 	else if (GetState() == closed)
@@ -718,13 +698,13 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			}
 			else if (error != WSAEWOULDBLOCK)
 			{
-				EndTransfer(1);
+				EndTransfer(transfer_status_t::closed_aborted);
 			}
 			return;
 		}
 		if (!numread)
 		{
-			EndTransfer(0);
+			EndTransfer(transfer_status_t::success);
 			return;
 		}
 		m_pOwner->m_owner.IncRecvCount(numread);
@@ -753,7 +733,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 				DWORD numwritten;
 				if (!WriteFile(m_hFile, m_pBuffer2, m_nBufSize - m_zlibStream.avail_out, &numwritten, 0) || numwritten != m_nBufSize - m_zlibStream.avail_out)
 				{
-					EndTransfer(3); // TODO: Better reason
+					EndTransfer(transfer_status_t::noaccess); // TODO: Better reason
 					return;
 				}
 				m_currentFileOffset += numwritten;
@@ -767,14 +747,14 @@ void CTransferSocket::OnReceive(int nErrorCode)
 				DWORD numwritten;
 				if (!WriteFile(m_hFile, m_pBuffer2, m_nBufSize - m_zlibStream.avail_out, &numwritten, 0) || numwritten != m_nBufSize - m_zlibStream.avail_out)
 				{
-					EndTransfer(3); // TODO: Better reason
+					EndTransfer(transfer_status_t::noaccess); // TODO: Better reason
 					return;
 				}
 				m_currentFileOffset += numwritten;
 			}
 			else if (res != Z_OK && res != Z_BUF_ERROR)
 			{
-				EndTransfer(6);
+				EndTransfer(transfer_status_t::zlib);
 				return;
 			}
 		}
@@ -783,7 +763,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			DWORD numwritten;
 			if (!WriteFile(m_hFile, m_pBuffer, numread, &numwritten, 0) || numwritten!=(unsigned int)numread)
 			{
-				EndTransfer(3); //TODO: Better reason
+				EndTransfer(transfer_status_t::noaccess); //TODO: Better reason
 				return;
 			}
 			m_currentFileOffset += numwritten;
@@ -822,12 +802,12 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		UINT port = 0;
 
 		if (!m_pOwner->GetSockName(OwnerIP, port)) {
-			EndTransfer(5);
+			EndTransfer(transfer_status_t::ip_mismatch);
 			return FALSE;
 		}
 
 		if (!GetSockName(TransferIP, port)) {
-			EndTransfer(5);
+			EndTransfer(transfer_status_t::ip_mismatch);
 			return FALSE;
 		}
 
@@ -852,7 +832,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			}
 
 			if (OwnerIP != TransferIP) {
-				EndTransfer(5);
+				EndTransfer(transfer_status_t::ip_mismatch);
 				return FALSE;
 			}
 		}
@@ -866,7 +846,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 	if (m_bAccepted)
 		m_pOwner->SendTransferPreliminary();
 
-	m_bStarted = TRUE;
+	m_bStarted = true;
 	if (m_nMode == TRANSFERMODE_SEND) {
 		ASSERT(m_Filename != _T(""));
 		int shareMode = FILE_SHARE_READ;
@@ -874,7 +854,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			shareMode |= FILE_SHARE_WRITE;
 		m_hFile = CreateFile(m_Filename, GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
 		if (m_hFile == INVALID_HANDLE_VALUE) {
-			EndTransfer(3);
+			EndTransfer(transfer_status_t::noaccess);
 			return FALSE;
 		}
 		DWORD low=(DWORD)(m_nRest&0xFFFFFFFF);
@@ -883,7 +863,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			high = 0;
 			low = SetFilePointer(m_hFile, 0, &high, FILE_END);
 			if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR) {
-				EndTransfer(3);
+				EndTransfer(transfer_status_t::noaccess);
 				return FALSE;
 			}
 		}
@@ -916,14 +896,14 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 				shareMode |= FILE_SHARE_WRITE;
 			m_hFile = CreateFile(m_Filename, GENERIC_WRITE, shareMode, 0, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, 0);
 			if (m_hFile == INVALID_HANDLE_VALUE) {
-				EndTransfer(3);
+				EndTransfer(transfer_status_t::noaccess);
 				return FALSE;
 			}
 			DWORD low = (DWORD)(m_nRest&0xFFFFFFFF);
 			LONG high = (LONG)(m_nRest>>32);
 			low = SetFilePointer(m_hFile, low, &high, FILE_BEGIN);
 			if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR) {
-				EndTransfer(3);
+				EndTransfer(transfer_status_t::noaccess);
 				return FALSE;
 			}
 			SetEndOfFile(m_hFile);
@@ -963,11 +943,11 @@ BOOL CTransferSocket::CheckForTimeout()
 	}
 	_int64 elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
 	if (timeout && elapsed > (timeout*10000000)) {
-		EndTransfer(4);
+		EndTransfer(transfer_status_t::timeout);
 		return TRUE;
 	}
 	else if (!m_bStarted && elapsed > (10 * 10000000)) {
-		EndTransfer(2);
+		EndTransfer(transfer_status_t::noconn);
 		return TRUE;
 	}
 	else if (!timeout)
@@ -986,12 +966,12 @@ int CTransferSocket::GetMode() const
 	return m_nMode;
 }
 
-bool CTransferSocket::UseSSL(void* sslContext)
+bool CTransferSocket::UseSSL(bool use)
 {
 	if (m_pSslLayer)
 		return false;
 
-	m_sslContext = sslContext;
+	m_use_ssl = use;
 
 	return true;
 }
@@ -1001,7 +981,7 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 	for (auto const& cb : callbacks) {
 		if (m_pSslLayer && cb.pLayer == m_pSslLayer) {
 			if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_INFO && cb.nParam2 == SSL_INFO_SHUTDOWNCOMPLETE) {
-				EndTransfer(0);
+				EndTransfer(transfer_status_t::success);
 				return 0;
 			}
 			else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_VERBOSE_WARNING) {
@@ -1031,6 +1011,14 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 				SetNodelay(false);
 				return 0;
 			}
+			else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_FAILURE) {
+				if (cb.nParam2 == SSL_FAILURE_NO_SESSIONREUSE) {
+					EndTransfer(transfer_status_t::tls_no_resume);
+				}
+				else {
+					EndTransfer(transfer_status_t::tls_unknown);
+				}
+			}
 		}
 	}
 	return 0;
@@ -1058,7 +1046,7 @@ bool CTransferSocket::GetZlibStats(_int64 &bytesIn, _int64 &bytesOut) const
 	return true;
 }
 
-void CTransferSocket::EndTransfer(int status)
+void CTransferSocket::EndTransfer(transfer_status_t status)
 {
 	Close();
 
@@ -1067,7 +1055,7 @@ void CTransferSocket::EndTransfer(int status)
 	if (m_bSentClose)
 		return;
 
-	m_bSentClose = TRUE;
+	m_bSentClose = true;
 	m_status = status;
 	m_pOwner->m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_TRANSFERMSG, m_pOwner->m_userid);
 }

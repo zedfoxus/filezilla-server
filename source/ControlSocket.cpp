@@ -527,8 +527,8 @@ void CControlSocket::ParseCommand()
 				m_status.loggedon = FALSE;
 				m_CurrentServerDir = _T("");
 			}
-			if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLESSL) && m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL) &&
-				m_owner.m_pOptions->GetOptionVal(OPTION_SSLFORCEEXPLICIT) && !m_pSslLayer)
+			if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLETLS) && m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITTLS) &&
+				m_owner.m_pOptions->GetOptionVal(OPTION_TLSFORCEEXPLICIT) && !m_pSslLayer)
 			{
 				Send(_T("530 Have to use explicit SSL/TLS before logging on."));
 				break;
@@ -1511,7 +1511,7 @@ void CControlSocket::ParseCommand()
 					break;
 				}
 
-				if (!m_owner.m_pOptions->GetOptionVal(OPTION_ENABLESSL) || !m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL))
+				if (!m_owner.m_pOptions->GetOptionVal(OPTION_ENABLETLS) || !m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITTLS))
 				{
 					Send(_T("502 SSL/TLS authentication not allowed"));
 					break;
@@ -1523,7 +1523,7 @@ void CControlSocket::ParseCommand()
 				if (res)
 				{
 					CString error;
-					int res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLCERTFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLKEYFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLKEYPASS)), &error);
+					int res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSCERTFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSKEYFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSKEYPASS)), &error);
 					if (res == SSL_FAILURE_LOADDLLS)
 						SendStatus(_T("Failed to load SSL libraries"), 1);
 					else if (res == SSL_FAILURE_INITSSL)
@@ -1610,7 +1610,7 @@ void CControlSocket::ParseCommand()
 				else
 				{
 					if (m_transferstatus.socket)
-						m_transferstatus.socket->UseSSL(0);
+						m_transferstatus.socket->UseSSL(false);
 
 					Send(_T("200 Protection level set to C"));
 					m_bProtP = false;
@@ -1619,7 +1619,7 @@ void CControlSocket::ParseCommand()
 			else if (args == _T("P"))
 			{
 				if (m_transferstatus.socket)
-					m_transferstatus.socket->UseSSL(m_pSslLayer->GetContext());
+					m_transferstatus.socket->UseSSL(true);
 
 				Send(_T("200 Protection level set to P"));
 				m_bProtP = true;
@@ -1644,7 +1644,7 @@ void CControlSocket::ParseCommand()
 		}
 		reply += PrepareSend(_T(" MLST type*;size*;modify*;"));
 		reply += PrepareSend(_T(" MLSD"));
-		if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLESSL) && (m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITSSL) || m_pSslLayer)) {
+		if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLETLS) && (m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITTLS) || m_pSslLayer)) {
 			reply += PrepareSend(_T(" AUTH SSL"));
 			reply += PrepareSend(_T(" AUTH TLS"));
 			reply += PrepareSend(_T(" PROT"));
@@ -1996,14 +1996,14 @@ void CControlSocket::ProcessTransferMsg()
 {
 	if (!m_transferstatus.socket)
 		return;
-	int status = m_transferstatus.socket->GetStatus();
+	transfer_status_t const status = m_transferstatus.socket->GetStatus();
 
 	GetSystemTime(&m_LastCmdTime);
 	if (m_transferstatus.socket)
 		if (m_transferstatus.socket->GetMode()==TRANSFERMODE_SEND || m_transferstatus.socket->GetMode()==TRANSFERMODE_RECEIVE)
 			GetSystemTime(&m_LastTransferTime);
 
-	if (status == 2 && m_transferstatus.pasv && m_transferstatus.usedResolvedIP)
+	if (status == transfer_status_t::noconn && m_transferstatus.pasv && m_transferstatus.usedResolvedIP)
 		m_owner.ExternalIPFailed();
 
 	int mode = m_transferstatus.socket->GetMode();
@@ -2015,35 +2015,28 @@ void CControlSocket::ProcessTransferMsg()
 	CStdString resource = m_transferstatus.resource;
 	ResetTransferstatus();
 
-	if (!status)
-	{
+	if (status == transfer_status_t::success) {
 		CStdString msg = _T("226 Successfully transferred \"") + resource + _T("\"");
 
-		if ((mode == TRANSFERMODE_LIST || mode == TRANSFERMODE_SEND) && zlibBytesIn && zlibBytesOut)
-		{
+		if ((mode == TRANSFERMODE_LIST || mode == TRANSFERMODE_SEND) && zlibBytesIn && zlibBytesOut) {
 			CStdString str;
-			if (zlibBytesIn >= zlibBytesOut)
-			{
+			if (zlibBytesIn >= zlibBytesOut) {
 				_int64 percent = 10000 - (zlibBytesOut * 10000 / zlibBytesIn);
 				str.Format(_T(", compression saved %I64d of %I64d bytes (%I64d.%02I64d%%)"), zlibBytesIn - zlibBytesOut, zlibBytesIn, percent / 100, percent % 100);
 			}
-			else
-			{
+			else {
 				_int64 percent = (zlibBytesOut * 10000 / zlibBytesIn) - 10000;
 				str.Format(_T(", unfortunately compression did increase the transfer size by %I64d bytes to %I64d bytes (%I64d.%02I64d%%)"), zlibBytesOut - zlibBytesIn, zlibBytesOut, percent / 100, percent % 100);
 			}
 			msg += str;
 		}
-		else if (mode == TRANSFERMODE_RECEIVE && zlibBytesIn && zlibBytesOut)
-		{
+		else if (mode == TRANSFERMODE_RECEIVE && zlibBytesIn && zlibBytesOut) {
 			CStdString str;
-			if (zlibBytesOut >= zlibBytesIn)
-			{
+			if (zlibBytesOut >= zlibBytesIn) {
 				_int64 percent = 10000 - (zlibBytesIn * 10000 / zlibBytesOut);
 				str.Format(_T(", compression saved %I64d of %I64d bytes (%I64d.%02I64d%%)"), zlibBytesOut - zlibBytesIn, zlibBytesOut, percent / 100, percent % 100);
 			}
-			else
-			{
+			else {
 				_int64 percent = (zlibBytesIn * 10000 / zlibBytesOut) - 10000;
 				str.Format(_T(", unfortunately compression did increase the transfer size by %I64d bytes to %I64d bytes (%I64d.%02I64d%%)"), zlibBytesIn - zlibBytesOut, zlibBytesIn, percent / 100, percent % 100);
 			}
@@ -2051,26 +2044,29 @@ void CControlSocket::ProcessTransferMsg()
 		}
 		Send(msg);
 	}
-	else if (status==1)
+	else if (status == transfer_status_t::closed_aborted)
 		Send(_T("426 Connection closed; aborted transfer of \"") + resource + _T("\""));
-	else if (status==2)
+	else if (status == transfer_status_t::noconn)
 		Send(_T("425 Can't open data connection for transfer of \"") + resource + _T("\""));
-	else if (status==3)
+	else if (status == transfer_status_t::noaccess)
 		Send(_T("550 can't access file."));
-	else if (status==4)
-	{
+	else if (status == transfer_status_t::timeout) {
 		Send(_T("426 Connection timed out, aborting transfer of \"") + resource + _T("\""));
 		ForceClose(1);
 		return;
 	}
-	else if (status==5)
-		Send(_T("425 Can't open data connection for transfer of \"") + resource + _T("\""));
-	else if (status==6)
+	else if (status == transfer_status_t::ip_mismatch)
+		Send(_T("425 Rejected data connection for transfer of \"") + resource + _T("\", IP addresses of control and data connection do not match"));
+	else if (status == transfer_status_t::zlib)
 		Send(_T("450 zlib error"));
-	if (status>=0 && m_bWaitGoOffline)
+	else if (status == transfer_status_t::tls_no_resume)
+		Send(_T("450 TLS session of data connection has not resumed or the session does not match the control connection"));
+	else if (status == transfer_status_t::tls_unknown)
+		Send(_T("450 Unknown TLS error on data connection"));
+	if (status != transfer_status_t::success && m_bWaitGoOffline) {
 		ForceClose(0);
-	else if (m_bQuitCommand)
-	{
+	}
+	else if (m_bQuitCommand) {
 		Send(_T("221 Goodbye"));
 		if (CanQuit())
 			ForceClose(5);
@@ -2528,7 +2524,7 @@ creation_fallback:
 	}
 
 	if (m_pSslLayer && m_bProtP)
-		pTransferSocket->UseSSL(m_pSslLayer->GetContext());
+		pTransferSocket->UseSSL(true);
 
 	SendTransferPreliminary();
 
@@ -2633,7 +2629,7 @@ bool CControlSocket::InitImplicitSsl()
 	}
 
 	CString error;
-	res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLCERTFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLKEYFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_SSLKEYPASS)), &error);
+	res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSCERTFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSKEYFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSKEYPASS)), &error);
 	if (res == SSL_FAILURE_LOADDLLS)
 		SendStatus(_T("Failed to load SSL libraries"), 1);
 	else if (res == SSL_FAILURE_INITSSL)
@@ -2950,7 +2946,7 @@ bool CControlSocket::CreatePassiveTransferSocket()
 	}
 
 	if (m_pSslLayer && m_bProtP)
-		m_transferstatus.socket->UseSSL(m_pSslLayer->GetContext());
+		m_transferstatus.socket->UseSSL(true);
 
 	if (!m_transferstatus.socket->Listen()) {
 		ResetTransferstatus(false);

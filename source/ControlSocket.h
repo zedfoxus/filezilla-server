@@ -82,6 +82,8 @@ public:
 
 	void UpdateUser();
 
+	CAsyncSslSocketLayer * GetSslLayer() { return m_pSslLayer; }
+
 protected:
 	BOOL DoUserLogin(LPCTSTR password, bool skipPass = false);
 	BOOL UnquoteArgs(CStdString &args);

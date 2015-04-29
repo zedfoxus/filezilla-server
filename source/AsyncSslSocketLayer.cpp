@@ -156,6 +156,17 @@ def(long, SSL_CTX_ctrl, (SSL_CTX *ctx, int cmd, long larg, void *parg));
 def(int, SSL_set_cipher_list, (SSL *ssl, const char *str));
 def(const char*, SSL_get_cipher_list, (const SSL *ssl, int priority));
 def(X509*, SSL_CTX_get0_certificate, (const SSL_CTX *ctx));
+def(long, SSL_get_default_timeout, (const SSL *ssl));
+def(long, SSL_CTX_set_timeout, (SSL_CTX *ctx, long t));
+def(SSL_SESSION*, SSL_get_session, (const SSL *ssl));
+def(SSL_SESSION*, SSL_get1_session, (const SSL *ssl));
+def(long, SSL_SESSION_set_timeout, (SSL_SESSION *s, long t));
+def(void, SSL_CTX_flush_sessions, (SSL_CTX *ctx, long tm));
+def(int, SSL_CTX_remove_session, (SSL_CTX *, SSL_SESSION *c));
+def(void, SSL_CTX_sess_set_new_cb, (SSL_CTX *ctx, int (*new_session_cb)(SSL *, SSL_SESSION *)));
+def(void, SSL_CTX_sess_set_remove_cb, (SSL_CTX *ctx, void (*remove_session_cb)(SSL_CTX *ctx, SSL_SESSION *)));
+def(void, SSL_CTX_sess_set_get_cb, (SSL_CTX *ctx, SSL_SESSION *(*get_session_cb)(SSL *, unsigned char *, int, int *)));
+def(long, SSL_CTX_callback_ctrl, (SSL_CTX *, int, void (*)(void)));
 
 def(size_t, BIO_ctrl_pending, (BIO *b));
 def(int, BIO_read, (BIO *b, void *data, int len));
@@ -406,6 +417,17 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll1, SSL_get_cipher_list);
 		proc(m_sslDll1, SSL_set_cipher_list);
 		proc(m_sslDll1, SSL_CTX_get0_certificate);
+		proc(m_sslDll1, SSL_get_default_timeout);
+		proc(m_sslDll1, SSL_CTX_set_timeout);
+		proc(m_sslDll1, SSL_get_session);
+		proc(m_sslDll1, SSL_get1_session);
+		proc(m_sslDll1, SSL_SESSION_set_timeout);
+		proc(m_sslDll1, SSL_CTX_flush_sessions);
+		proc(m_sslDll1, SSL_CTX_remove_session);
+		proc(m_sslDll1, SSL_CTX_sess_set_new_cb);
+		proc(m_sslDll1, SSL_CTX_sess_set_remove_cb);
+		proc(m_sslDll1, SSL_CTX_sess_set_get_cb);
+		proc(m_sslDll1, SSL_CTX_callback_ctrl);
 
 		if (bError) {
 			DoUnloadLibrary();
@@ -889,7 +911,7 @@ BOOL CAsyncSslSocketLayer::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 	return res;
 }
 
-int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /*=0*/)
+int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, CAsyncSslSocketLayer* primarySocket, bool require_session_reuse)
 {
 	if (m_bUseSSL)
 		return 0;
@@ -898,18 +920,20 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, void* pSslContext /
 		return res;
 
 	scoped_lock lock(m_mutex);
-	if ((SSL_CTX*)pSslContext) {
+	m_require_session_reuse = require_session_reuse;
+	m_primarySocket = primarySocket;
+	if (primarySocket && primarySocket->m_ssl_ctx) {
 		if (m_ssl_ctx) {
 			ResetSslSession();
 			return SSL_FAILURE_INITSSL;
 		}
 
-		auto iter = m_contextRefCount.find((SSL_CTX*)pSslContext);
+		auto iter = m_contextRefCount.find(primarySocket->m_ssl_ctx);
 		if (iter == m_contextRefCount.end() || iter->second < 1) {
 			ResetSslSession();
 			return SSL_FAILURE_INITSSL;
 		}
-		m_ssl_ctx = (SSL_CTX*)pSslContext;
+		m_ssl_ctx = primarySocket->m_ssl_ctx;
 		++iter->second;
 	}
 	else if (!m_ssl_ctx) {
@@ -1102,6 +1126,41 @@ BOOL CAsyncSslSocketLayer::DoShutDown()
 	return res;
 }
 
+namespace {
+bool matching_session(SSL* control, SSL* data)
+{
+	if (!control || !data) {
+		return false;
+	}
+
+	SSL_SESSION* control_session = pSSL_get_session(control);
+	SSL_SESSION* data_session = pSSL_get_session(data);
+
+	if (!control_session || !data_session) {
+		return false;
+	}
+
+	// In case session tickets are used, the session_id isn't set on the control connection.
+	// Compare the master key instead. OpenSSL is such a PITA to work with...
+	if (!control_session->session_id_length) {
+		if (control_session->master_key_length != data_session->master_key_length ||
+			memcmp(control_session->master_key, data_session->master_key, control_session->master_key_length))
+		{
+			return false;
+		}
+	}
+	else {
+		if (control_session->session_id_length != data_session->session_id_length ||
+			memcmp(control_session->session_id, data_session->session_id, control_session->session_id_length))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+}
+
 void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int ret)
 {
 	CAsyncSslSocketLayer *pLayer = 0;
@@ -1119,10 +1178,8 @@ void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int r
 		return;
 
 	char const* str;
-	int w;
 
-	w = where& ~SSL_ST_MASK;
-
+	int const w = where & ~SSL_ST_MASK;
 	if (w & SSL_ST_CONNECT)
 		str = "SSL_connect";
 	else if (w & SSL_ST_ACCEPT)
@@ -1191,13 +1248,38 @@ void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int r
 			}
 		}
 	}
-	if (where & SSL_CB_HANDSHAKE_DONE) {
+	else if (where & SSL_CB_HANDSHAKE_DONE) {
 		int error = pSSL_get_verify_result(pLayer->m_ssl);
 		if (error) {
 			pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_VERIFY_CERT, error);
 			pLayer->m_bBlocking = TRUE;
 			return;
 		}
+
+		if (pLayer->m_require_session_reuse) {
+			SSL_SESSION* session = pSSL_get_session(pLayer->m_ssl);
+			bool const reused = pSSL_ctrl(pLayer->m_ssl, SSL_CTRL_GET_SESSION_REUSED, 0, NULL) != 0;
+			if (!reused) {
+				if (!pLayer->m_bFailureSent) {
+					pLayer->m_bFailureSent = TRUE;
+					pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_FAILURE, SSL_FAILURE_NO_SESSIONREUSE);
+				}
+				pLayer->m_bBlocking = TRUE;
+				return;
+			}
+			else if (pLayer->m_primarySocket) {
+				bool const match = matching_session(pLayer->m_primarySocket->m_ssl, pLayer->m_ssl);
+				if (!match) {
+					if (!pLayer->m_bFailureSent) {
+						pLayer->m_bFailureSent = TRUE;
+						pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_FAILURE, SSL_FAILURE_NO_SESSIONREUSE);
+					}
+					pLayer->m_bBlocking = TRUE;
+					return;
+				}
+			}
+		}
+
 		pLayer->m_bSslEstablished = TRUE;
 		pLayer->PrintSessionInfo();
 		pLayer->DoLayerCallback(LAYERCALLBACK_LAYERSPECIFIC, SSL_INFO, SSL_INFO_ESTABLISHED);
@@ -1919,7 +2001,12 @@ bool CAsyncSslSocketLayer::CreateContext()
 	long options = pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, 0, NULL);
 	options |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
 	options &= ~(SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION|SSL_OP_LEGACY_SERVER_CONNECT);
+
 	pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options, NULL);
+
+	pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_SET_SESS_CACHE_MODE, SSL_SESS_CACHE_BOTH|SSL_SESS_CACHE_NO_AUTO_CLEAR, NULL);
+
+	pSSL_CTX_set_timeout(m_ssl_ctx, 2000000000);
 
 	return true;
 }

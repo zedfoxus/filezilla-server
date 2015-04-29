@@ -36,6 +36,19 @@ struct t_dirlisting;
 
 #include <zlib.h>
 
+enum class transfer_status_t
+{
+	success,
+	closed_aborted,
+	noconn,
+	noaccess,
+	timeout,
+	ip_mismatch,
+	zlib,
+	tls_no_resume,
+	tls_unknown
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // Befehlsziel CTransferSocket
 class CAsyncSslSocketLayer;
@@ -50,7 +63,7 @@ public:
 	void Init(std::list<t_dirlisting> &dir, int nMode);
 	void Init(const CStdString& filename, int nMode, _int64 rest);
 	inline bool InitCalled() { return m_bReady; }
-	bool UseSSL(void* sslContext);
+	bool UseSSL(bool use);
 	virtual ~CTransferSocket();
 	void CloseFile();
 
@@ -60,7 +73,7 @@ public:
 	BOOL Started() const;
 	BOOL CheckForTimeout();
 	void PasvTransfer();
-	int GetStatus();
+	transfer_status_t GetStatus() const;
 	bool InitZLib(int level);
 	bool GetZlibStats(_int64 &bytesIn, _int64 &bytesOut) const;
 	__int64 GetCurrentFileOffset() const { return m_currentFileOffset; }
@@ -78,17 +91,17 @@ protected:
 
 	virtual int OnLayerCallback(std::list<t_callbackMsg> const& callbacks);
 
-	void EndTransfer(int status);
+	void EndTransfer(transfer_status_t status);
 
 	std::list<t_dirlisting> directory_listing_;
 	t_dirlisting *m_pDirListing;
-	BOOL m_bSentClose;
+	bool m_bSentClose{};
 	CStdString m_Filename;
-	bool m_bReady;
-	BOOL m_bStarted;
+	bool m_bReady{};
+	bool m_bStarted{};
 	BOOL InitTransfer(BOOL bCalledFromSend);
 	int m_nMode;
-	int m_status;
+	transfer_status_t m_status{transfer_status_t::success};
 	CControlSocket *m_pOwner;
 	_int64 m_nRest;
 	HANDLE m_hFile;
@@ -100,7 +113,7 @@ protected:
 	bool m_wasActiveSinceCheck;
 
 	CAsyncSslSocketLayer* m_pSslLayer;
-	void* m_sslContext;
+	bool m_use_ssl{};
 
 	unsigned int m_nBufSize;
 	bool m_useZlib;

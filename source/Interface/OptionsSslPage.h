@@ -36,10 +36,10 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 protected:
-	BOOL m_enabled;
-	BOOL m_allowExplicit;
-	BOOL m_forceExplicit;
-	BOOL m_forceProtP;
+	BOOL m_enabled{};
+	BOOL m_allowExplicit{};
+	BOOL m_forceExplicit{};
+	BOOL m_forceProtP{};
 	CString m_certificate;
 	CString m_key;
 	CString m_pass;
@@ -49,6 +49,7 @@ protected:
 	CButton m_cForceProtP;
 	CEdit m_cCertificate;
 	CButton m_cCertificateBrowse;
+	BOOL m_require_resumption{};
 
 	CEdit m_cKey;
 	CEdit m_cPass;

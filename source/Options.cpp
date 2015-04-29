@@ -328,7 +328,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 	switch (nOptionID)
 	{
 	case OPTION_SERVERPORT:
-	case OPTION_SSLPORTS:
+	case OPTION_TLSPORTS:
 		{
 			std::set<int> portSet;
 
@@ -597,7 +597,7 @@ CStdString COptions::GetOption(int nOptionID)
 		case OPTION_IPBINDINGS:
 			m_sOptionsCache[nOptionID-1].str = _T("*");
 			break;
-		case OPTION_SSLPORTS:
+		case OPTION_TLSPORTS:
 			m_sOptionsCache[nOptionID-1].str = _T("990");
 			break;
 		default:
@@ -664,7 +664,9 @@ _int64 COptions::GetOptionVal(int nOptionID)
 			case OPTION_MODEZ_ALLOWLOCAL:
 				m_sOptionsCache[nOptionID-1].value = 0;
 				break;
-			case OPTION_ALLOWEXPLICITSSL:
+			case OPTION_ALLOWEXPLICITTLS:
+			case OPTION_FORCEPROTP:
+			case OPTION_TLS_REQUIRE_SESSION_RESUMPTION:
 				m_sOptionsCache[nOptionID-1].value = 1;
 				break;
 			case OPTION_BUFFERSIZE2:
