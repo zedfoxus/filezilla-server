@@ -423,7 +423,7 @@ BEGIN
     GROUPBOX        "Connection settings",IDC_STATIC,0,0,331,59
     LTEXT           "&Listen on these ports:",IDC_STATIC,6,20,76,8
     EDITTEXT        IDC_PORT,82,17,89,14,ES_AUTOHSCROLL
-    LTEXT           "List of ports between 1 and 65535.",IDC_STATIC,177,15,101,16
+    LTEXT           "List of ports between 1 and 65535. These ports are used both for plain FTP and explicit FTP over TLS. (Default port: 21)",IDC_STATIC,177,12,151,25
     LTEXT           "&Max. number of users:",IDC_STATIC,6,38,73,8
     EDITTEXT        IDC_MAXUSERS,82,35,41,14,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "(0 for unlimited users)",IDC_STATIC,131,38,70,8
@@ -723,27 +723,31 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "&Enable FTP over SSL/TLS support (FTPS)",IDC_ENABLESSL,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,0,0,145,10
-    GROUPBOX        "X.509 Certificate",IDC_STATIC,0,19,331,97
-    LTEXT           "&Private key file:",IDC_STATIC,6,34,51,8
-    EDITTEXT        IDC_PRIVATEKEY,70,31,158,14,ES_AUTOHSCROLL
-    PUSHBUTTON      "&Browse...",IDC_PRIVATEKEY_BROWSE,234,30,50,14
-    LTEXT           "&Certificate file:",IDC_STATIC,6,55,51,8
-    EDITTEXT        IDC_CERTIFICATE,70,52,158,14,ES_AUTOHSCROLL
-    PUSHBUTTON      "B&rowse...",IDC_CERTIFICATE_BROWSE,234,51,50,14
-    LTEXT           "&Key password:",IDC_STATIC,6,76,51,8
-    EDITTEXT        IDC_KEYPASS,70,73,158,14,ES_PASSWORD | ES_AUTOHSCROLL
-    LTEXT           "Password will be stored in plaintext.",IDC_STATIC,234,72,90,22
-    PUSHBUTTON      "&Generate new certificate...",IDC_GENERATE,6,95,97,14
-    CONTROL         "&Allow explicit FTP over TLS",IDC_ALLOWEXPLICIT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,0,125,101,10
     CONTROL         "&Disallow plain unencrypted FTP",IDC_FORCEEXPLICIT,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,137,115,10
-    LTEXT           "&Listen for implicit SSL/TLS connections on the following ports (default: 990):",IDC_STATIC,0,152,242,8
-    EDITTEXT        IDC_SSLONLY,0,163,195,14,ES_AUTOHSCROLL
-    LTEXT           "Note: Explicit FTP over TLS shares the normal FTP port!",IDC_STATIC,0,180,178,8
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,12,115,10
+    GROUPBOX        "X.509 Certificate",IDC_STATIC,0,28,331,90
+    LTEXT           "&Private key file:",IDC_STATIC,6,43,51,8
+    EDITTEXT        IDC_PRIVATEKEY,70,40,158,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "&Browse...",IDC_PRIVATEKEY_BROWSE,234,39,50,14
+    LTEXT           "&Certificate file:",IDC_STATIC,6,63,51,8
+    EDITTEXT        IDC_CERTIFICATE,70,60,158,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "B&rowse...",IDC_CERTIFICATE_BROWSE,234,59,50,14
+    LTEXT           "&Key password:",IDC_STATIC,6,83,51,8
+    EDITTEXT        IDC_KEYPASS,70,80,158,14,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "Password will be stored in plaintext.",IDC_STATIC,234,79,90,22
+    PUSHBUTTON      "&Generate new certificate...",IDC_GENERATE,6,98,97,14
+    GROUPBOX        "Explicit and implicit FTP over TLS",IDC_STATIC,0,121,331,67
+    CONTROL         "&Allow explicit FTP over TLS (default: yes)",IDC_ALLOWEXPLICIT,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,133,147,10
+    LTEXT           "Note: Explicit FTP over TLS shares the normal FTP port configured on the General settings page.",IDC_STATIC,18,144,309,8
+    LTEXT           "&Listen for implicit FTP over TLS connections on the following ports (default: 990):",IDC_STATIC,7,158,258,8
+    EDITTEXT        IDC_SSLONLY,7,168,197,14,ES_AUTOHSCROLL
+    GROUPBOX        "File transfer security",IDC_STATIC,0,191,331,55
+    LTEXT           "These settings need to be enabled for file transfers to be secure.",IDC_STATIC,6,202,210,8
     CONTROL         "F&orce PROT P to encrypt file transfers in SSL/TLS mode",IDC_FORCEPROTP,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,0,207,192,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,215,192,10
     CONTROL         "Re&quire TLS session resumption on data connection when using PROT P",IDC_REQUIRE_SESSION_RESUMPTION,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,0,220,244,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,228,244,10
 END
 
 IDD_CERTGEN DIALOGEX 0, 0, 257, 249

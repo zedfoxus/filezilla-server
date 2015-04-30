@@ -50,6 +50,7 @@ protected:
 	CEdit m_cCertificate;
 	CButton m_cCertificateBrowse;
 	BOOL m_require_resumption{};
+	CButton m_cRequireResumption;
 
 	CEdit m_cKey;
 	CEdit m_cPass;

@@ -54,6 +54,7 @@ void COptionsSslPage::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_PRIVATEKEY_BROWSE, m_cKeyBrowse);
 	DDX_Control(pDX, IDC_SSLONLY, m_cSslports);
 	DDX_Control(pDX, IDC_KEYPASS, m_cPass);
+	DDX_Control(pDX, IDC_REQUIRE_SESSION_RESUMPTION, m_cRequireResumption);
 	DDX_Check(pDX, IDC_REQUIRE_SESSION_RESUMPTION, m_require_resumption);
 }
 
@@ -69,8 +70,7 @@ void COptionsSslPage::OnGenerate()
 {
 	UpdateData();
 	CGenerateCertificateDlg dlg;
-	if (dlg.DoModal() == IDOK)
-	{
+	if (dlg.DoModal() == IDOK) {
 		m_key = dlg.m_file;
 		m_certificate = dlg.m_file;
 		UpdateData(FALSE);
@@ -81,8 +81,7 @@ void COptionsSslPage::OnKeyBrowse()
 {
 	UpdateData();
 	CFileDialog dlg(TRUE);
-	if (dlg.DoModal() == IDOK)
-	{
+	if (dlg.DoModal() == IDOK) {
 		m_key = dlg.GetPathName();
 		UpdateData(FALSE);
 	}
@@ -92,8 +91,7 @@ void COptionsSslPage::OnCertificateBrowse()
 {
 	UpdateData();
 	CFileDialog dlg(TRUE);
-	if (dlg.DoModal() == IDOK)
-	{
+	if (dlg.DoModal() == IDOK) {
 		m_certificate = dlg.GetPathName();
 		UpdateData(FALSE);
 	}
@@ -108,9 +106,10 @@ void COptionsSslPage::OnEnableSsl()
 	m_cKey.EnableWindow(m_enabled);
 	m_cKeyBrowse.EnableWindow(m_enabled && m_pOptionsDlg->IsLocalConnection());
 	m_cSslports.EnableWindow(m_enabled);
-	m_cForceExplicit.EnableWindow(m_enabled && m_allowExplicit);
+	m_cForceExplicit.EnableWindow(m_enabled);
 	m_cForceProtP.EnableWindow(m_enabled);
 	m_cPass.EnableWindow(m_enabled);
+	m_cRequireResumption.EnableWindow(m_enabled);
 }
 
 BOOL COptionsSslPage::IsDataValid()

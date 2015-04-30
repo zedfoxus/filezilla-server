@@ -527,10 +527,10 @@ void CControlSocket::ParseCommand()
 				m_status.loggedon = FALSE;
 				m_CurrentServerDir = _T("");
 			}
-			if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLETLS) && m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITTLS) &&
+			if (m_owner.m_pOptions->GetOptionVal(OPTION_ENABLETLS) &&
 				m_owner.m_pOptions->GetOptionVal(OPTION_TLSFORCEEXPLICIT) && !m_pSslLayer)
 			{
-				Send(_T("530 Have to use explicit SSL/TLS before logging on."));
+				Send(_T("530 This server does not allow plain FTP. You have to use FTP over TLS."));
 				break;
 			}
 			RenName = _T("");
@@ -541,7 +541,7 @@ void CControlSocket::ParseCommand()
 				if ( m_owner.m_pPermissions->CheckUserLogin(m_status.user, _T(""), true) && m_status.user.ForceSsl()) {
 					m_status.username = _T("");
 					UpdateUser();
-					Send(_T("530 SSL required"));
+					Send(_T("530 TLS required"));
 					break;
 				}
 			}
@@ -1496,94 +1496,74 @@ void CControlSocket::ParseCommand()
 				break;
 			}
 
-			if (m_pSslLayer)
-			{
-				Send(_T("534 Authentication type already set to SSL"));
+			if (m_pSslLayer) {
+				Send(_T("534 Authentication type already set to TLS"));
 				break;
 			}
 			args.MakeUpper();
 
-			if (args == _T("SSL") || args == _T("TLS"))
-			{
-				if (m_pSslLayer)
-				{
-					Send(_T("503 Already using SSL/TLS"));
+			if (args == _T("SSL") || args == _T("TLS")) {
+				if (m_pSslLayer) {
+					Send(_T("503 Already using TLS"));
 					break;
 				}
 
-				if (!m_owner.m_pOptions->GetOptionVal(OPTION_ENABLETLS) || !m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITTLS))
-				{
-					Send(_T("502 SSL/TLS authentication not allowed"));
+				if (!m_owner.m_pOptions->GetOptionVal(OPTION_ENABLETLS) || !m_owner.m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITTLS)) {
+					Send(_T("502 Explicit TLS authentication not allowed"));
 					break;
 				}
 
 				m_pSslLayer = new CAsyncSslSocketLayer;
 				BOOL res = AddLayer(m_pSslLayer);
 
-				if (res)
-				{
+				if (res) {
 					CString error;
 					int res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSCERTFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSKEYFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSKEYPASS)), &error);
 					if (res == SSL_FAILURE_LOADDLLS)
-						SendStatus(_T("Failed to load SSL libraries"), 1);
+						SendStatus(_T("Failed to load TLS libraries"), 1);
 					else if (res == SSL_FAILURE_INITSSL)
-						SendStatus(_T("Failed to initialize SSL libraries"), 1);
+						SendStatus(_T("Failed to initialize TLS libraries"), 1);
 					else if (res == SSL_FAILURE_VERIFYCERT) {
 						if (error != _T(""))
 							SendStatus(error, 1);
 						else
 							SendStatus(_T("Failed to set certificate and private key"), 1);
 					}
-					if (res)
-					{
+					if (res) {
 						RemoveAllLayers();
 						delete m_pSslLayer;
 						m_pSslLayer = NULL;
-						Send(_T("431 Could not initialize SSL connection"));
+						Send(_T("431 Could not initialize TLS connection"));
 						break;
 					}
 				}
 
-				if (res)
-				{
+				if (res) {
 					int code = m_pSslLayer->InitSSLConnection(false);
 					if (code == SSL_FAILURE_LOADDLLS)
-						SendStatus(_T("Failed to load SSL libraries"), 1);
+						SendStatus(_T("Failed to load TLS libraries"), 1);
 					else if (code == SSL_FAILURE_INITSSL)
-						SendStatus(_T("Failed to initialize SSL library"), 1);
+						SendStatus(_T("Failed to initialize TKS library"), 1);
 
 					res = (code == 0);
 				}
 
-				if (res)
-				{
-					if (args == _T("SSL"))
-					{
-						SendStatus(_T("234 Using authentication type SSL"), 3);
-						static const char* reply = "234 Using authentication type SSL\r\n";
-						const int len = strlen(reply);
-						res = (m_pSslLayer->SendRaw(reply, len) == len);
-					}
-					else // TLS
-					{
-						SendStatus(_T("234 Using authentication type TLS"), 3);
-						static const char* reply = "234 Using authentication type TLS\r\n";
-						const int len = strlen(reply);
-						res = (m_pSslLayer->SendRaw(reply, len) == len);
-					}
+				if (res) {
+					SendStatus(_T("234 Using authentication type TLS"), 3);
+					static const char* reply = "234 Using authentication type TLS\r\n";
+					const int len = strlen(reply);
+					res = (m_pSslLayer->SendRaw(reply, len) == len);
 				}
 
-				if (!res)
-				{
+				if (!res) {
 					RemoveAllLayers();
 					delete m_pSslLayer;
 					m_pSslLayer = NULL;
-					Send(_T("431 Could not initialize SSL connection"));
+					Send(_T("431 Could not initialize TLS connection"));
 					break;
 				}
 			}
-			else
-			{
+			else {
 				Send(_T("504 Auth type not supported"));
 				break;
 			}
@@ -1600,15 +1580,12 @@ void CControlSocket::ParseCommand()
 			Send(_T("502 Command not implemented for this authentication type"));
 		break;
 	case commands::PROT:
-		if (m_pSslLayer)
-		{
+		if (m_pSslLayer) {
 			args.MakeUpper();
-			if (args == _T("C"))
-			{
+			if (args == _T("C")) {
 				if (m_owner.m_pOptions->GetOptionVal(OPTION_FORCEPROTP))
 					Send(_T("534 This server requires an encrypted data connection with PROT P"));
-				else
-				{
+				else {
 					if (m_transferstatus.socket)
 						m_transferstatus.socket->UseSSL(false);
 
@@ -1616,8 +1593,7 @@ void CControlSocket::ParseCommand()
 					m_bProtP = false;
 				}
 			}
-			else if (args == _T("P"))
-			{
+			else if (args == _T("P")) {
 				if (m_transferstatus.socket)
 					m_transferstatus.socket->UseSSL(true);
 
@@ -2107,8 +2083,7 @@ void CControlSocket::ForceClose(int nReason)
 	SendStatus(_T("disconnected."), 0);
 	m_shutdown = true;
 	int res = ShutDown();
-	if (m_pSslLayer)
-	{
+	if (m_pSslLayer) {
 		if (!res && GetLastError() == WSAEWOULDBLOCK)
 			return;
 	}
