@@ -170,21 +170,18 @@ BOOL COptionsSslPage::IsDataValid()
 	{
 		CAsyncSslSocketLayer layer;
 		CString error;
-		int res = layer.SetCertKeyFile(T2A(m_certificate), T2A(m_key), T2A(m_pass), &error);
-		if (res == SSL_FAILURE_LOADDLLS)
-		{
+		int res = layer.SetCertKeyFile(m_certificate, m_key, m_pass, &error);
+		if (res == SSL_FAILURE_LOADDLLS) {
 			m_pOptionsDlg->ShowPage(this);
 			AfxMessageBox(_T("Failed to load SSL libraries"));
 			return FALSE;
 		}
-		else if (res == SSL_FAILURE_INITSSL)
-		{
+		else if (res == SSL_FAILURE_INITSSL) {
 			m_pOptionsDlg->ShowPage(this);
 			AfxMessageBox(_T("Failed to initialize SSL libraries"));
 			return FALSE;
 		}
-		else if (res == SSL_FAILURE_VERIFYCERT)
-		{
+		else if (res == SSL_FAILURE_VERIFYCERT) {
 			m_pOptionsDlg->ShowPage(this);
 			if (error != _T(""))
 				AfxMessageBox(error);
@@ -192,8 +189,7 @@ BOOL COptionsSslPage::IsDataValid()
 				AfxMessageBox(_T("Failed to set certificate and private key"));
 			return FALSE;
 		}
-		else if (res)
-		{
+		else if (res) {
 			m_pOptionsDlg->ShowPage(this);
 			return FALSE;
 		}

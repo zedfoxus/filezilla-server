@@ -1632,7 +1632,7 @@ int CAsyncSslSocketLayer::verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	return 1;
 }
 
-BOOL CAsyncSslSocketLayer::SetCertStorage(CString file)
+BOOL CAsyncSslSocketLayer::SetCertStorage(CString const& file)
 {
 	m_CertStorage = file;
 	return TRUE;
@@ -1811,10 +1811,14 @@ bool operator<(tm const& lhs, tm const& rhs) {
 	return l < r;
 }
 
-int CAsyncSslSocketLayer::LoadCertKeyFile(const char* cert, const char* key, CString* error, bool checkExpired)
+int CAsyncSslSocketLayer::LoadCertKeyFile(char const* cert, char const* key, CString* error, bool checkExpired)
 {
 	ClearErrors();
-	if (pSSL_CTX_use_certificate_chain_file(m_ssl_ctx, cert) <= 0) {
+	if (!cert || !cert) {
+		error->Format(_T("Could not load certificate file: Invalid file name"));
+		return SSL_FAILURE_VERIFYCERT;
+	}
+	else if (pSSL_CTX_use_certificate_chain_file(m_ssl_ctx, cert) <= 0) {
 		if (error) {
 			CStdString e;
 			int err = GetLastSslError(e);
@@ -1823,7 +1827,11 @@ int CAsyncSslSocketLayer::LoadCertKeyFile(const char* cert, const char* key, CSt
 		return SSL_FAILURE_VERIFYCERT;
 	}
 
-	if (pSSL_CTX_use_PrivateKey_file(m_ssl_ctx, key, SSL_FILETYPE_PEM) <= 0) {
+	if (!key || !key) {
+		error->Format(_T("Could not load key file: Invalid file name"));
+		return SSL_FAILURE_VERIFYCERT;
+	}
+	else if (pSSL_CTX_use_PrivateKey_file(m_ssl_ctx, key, SSL_FILETYPE_PEM) <= 0) {
 		if (error) {
 			CStdString e;
 			int err = GetLastSslError(e);
@@ -1864,7 +1872,7 @@ int CAsyncSslSocketLayer::LoadCertKeyFile(const char* cert, const char* key, CSt
 	return 0;
 }
 
-int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, const char* pass, CString* error, bool checkExpired)
+int CAsyncSslSocketLayer::SetCertKeyFile(CString const& cert, CString const& key, CString const& pass, CString* error, bool checkExpired)
 {
 	int res = InitSSL();
 	if (res)
@@ -1881,13 +1889,17 @@ int CAsyncSslSocketLayer::SetCertKeyFile(const char* cert, const char* key, cons
 	delete [] m_pKeyPassword;
 	m_pKeyPassword = 0;
 
-	if (pass && *pass) {
-		size_t len = strlen(pass);
+	USES_CONVERSION;
+	char const* ascii_pass = T2CA(pass);
+	if (ascii_pass && *ascii_pass) {
+		size_t len = strlen(ascii_pass);
 		m_pKeyPassword = new char[len + 1];
-		strcpy(m_pKeyPassword, pass);
+		strcpy(m_pKeyPassword, ascii_pass);
 	}
 
-	res = LoadCertKeyFile(cert, key, error, checkExpired);
+	char const* ascii_cert = T2CA(cert);
+	char const* ascii_key = T2CA(key);
+	res = LoadCertKeyFile(ascii_cert, ascii_key, error, checkExpired);
 
 	pSSL_CTX_set_default_passwd_cb_userdata(m_ssl_ctx, 0);
 

@@ -1518,7 +1518,7 @@ void CControlSocket::ParseCommand()
 
 				if (res) {
 					CString error;
-					int res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSCERTFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSKEYFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSKEYPASS)), &error);
+					int res = m_pSslLayer->SetCertKeyFile(m_owner.m_pOptions->GetOption(OPTION_TLSCERTFILE), m_owner.m_pOptions->GetOption(OPTION_TLSKEYFILE), m_owner.m_pOptions->GetOption(OPTION_TLSKEYPASS), &error);
 					if (res == SSL_FAILURE_LOADDLLS)
 						SendStatus(_T("Failed to load TLS libraries"), 1);
 					else if (res == SSL_FAILURE_INITSSL)
@@ -2604,7 +2604,7 @@ bool CControlSocket::InitImplicitSsl()
 	}
 
 	CString error;
-	res = m_pSslLayer->SetCertKeyFile(ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSCERTFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSKEYFILE)), ConvToLocal(m_owner.m_pOptions->GetOption(OPTION_TLSKEYPASS)), &error);
+	res = m_pSslLayer->SetCertKeyFile(m_owner.m_pOptions->GetOption(OPTION_TLSCERTFILE), m_owner.m_pOptions->GetOption(OPTION_TLSKEYFILE), m_owner.m_pOptions->GetOption(OPTION_TLSKEYPASS), &error);
 	if (res == SSL_FAILURE_LOADDLLS)
 		SendStatus(_T("Failed to load SSL libraries"), 1);
 	else if (res == SSL_FAILURE_INITSSL)

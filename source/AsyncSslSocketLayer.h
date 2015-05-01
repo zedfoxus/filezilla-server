@@ -137,7 +137,7 @@ enum class ShutDownState
 class CAsyncSslSocketLayer final : public CAsyncSocketExLayer
 {
 public:
-	BOOL SetCertStorage(CString file);
+	BOOL SetCertStorage(CString const& file);
 	CAsyncSslSocketLayer() {};
 	virtual ~CAsyncSslSocketLayer();
 
@@ -151,7 +151,7 @@ public:
 			const unsigned char* locality, const unsigned char* organization, const unsigned char* unit, const unsigned char* cname,
 			const unsigned char *email, CString& err);
 
-	int SetCertKeyFile(const char* cert, const char* key, const char* pass, CString* error = 0, bool checkExpired = false);
+	int SetCertKeyFile(CString const& cert, CString const& key, CString const& pass, CString* error = 0, bool checkExpired = false);
 
 	// Send raw text, useful to send a confirmation after the ssl connection
 	// has been initialized

@@ -1290,14 +1290,13 @@ void CServer::VerifyTlsSettings(CAdminSocket *pAdminSocket)
 		CString key = m_pOptions->GetOption(OPTION_TLSKEYFILE);
 		CString pass = m_pOptions->GetOption(OPTION_TLSKEYPASS);
 
-		USES_CONVERSION;
-		int res = layer.SetCertKeyFile(T2A(cert), T2A(key), T2A(pass), &error, true);
+		int res = layer.SetCertKeyFile(cert, key, pass, &error, true);
 		if (error.empty()) {
 			if (res == SSL_FAILURE_LOADDLLS) {
-				error = _T("Failed to load SSL libraries");
+				error = _T("Failed to load TLS libraries");
 			}
 			else if (res == SSL_FAILURE_INITSSL) {
-				error = _T("Failed to initialize SSL libraries");
+				error = _T("Failed to initialize TLS libraries");
 			}
 			else if (res == SSL_FAILURE_VERIFYCERT) {
 				error = _T("Failed to set certificate and private key");
