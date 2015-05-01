@@ -121,7 +121,10 @@ struct t_connectiondata
 
 struct t_connectiondata_add
 {
-	TCHAR ip[40];
+	enum {
+		ip_size = 40
+	};
+	TCHAR ip[ip_size];
 	unsigned int port;
 	CServerThread *pThread;
 };

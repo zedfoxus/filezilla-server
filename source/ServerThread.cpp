@@ -228,7 +228,7 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 	conndata->pThread = this;
 
 	conndata->port = port;
-	_tcscpy(conndata->ip, socket->m_RemoteIP);
+	_tcsncpy(conndata->ip, socket->m_RemoteIP, t_connectiondata_add::ip_size);
 
 	SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
 

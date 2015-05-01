@@ -49,11 +49,11 @@ void LoadServiceName()
 {
 	COptions *pOptions = new COptions();
 
-	CStdString name = pOptions->GetOption(OPTION_SERVICE_NAME);
+	CStdString const name = pOptions->GetOption(OPTION_SERVICE_NAME);
 	if (name.size() > 0 && name.size() < 256)
 		_tcscpy(ServiceName, name);
 
-	CStdString display_name = pOptions->GetOption(OPTION_SERVICE_DISPLAY_NAME);
+	CStdString const display_name = pOptions->GetOption(OPTION_SERVICE_DISPLAY_NAME);
 	if (display_name.size() > 0 && display_name.size() < 256)
 		_tcscpy(ServiceDisplayName, display_name);
 
