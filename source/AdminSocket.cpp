@@ -29,6 +29,8 @@
 #include "Options.h"
 #include "version.h"
 
+#include <random>
+
 #define BUFSIZE 4096
 
 //////////////////////////////////////////////////////////////////////
@@ -72,25 +74,22 @@ BOOL CAdminSocket::Init()
 	*p++ = 4;
 
 	memcpy(p, &PROTOCOL_VERSION, 4);
-	p+=4;
+	p += 4;
 
 	COptions options;
 	CStdString pass = options.GetOption(OPTION_ADMINPASS);
 	CStdString peerAddress;
 	UINT port = 0;
-	if (GetPeerName(peerAddress, port) && IsLocalhost(peerAddress) && pass == _T(""))
-	{
+	if (0 &&GetPeerName(peerAddress, port) && IsLocalhost(peerAddress) && pass == _T("")) {
 		BOOL res = Send(buffer, p-buffer) == p - buffer;
 		delete [] buffer;
-		if (!res)
-		{
+		if (!res) {
 			Close();
 			return FALSE;
 		}
 		return FinishLogon();
 	}
-	else
-	{
+	else {
 		*p++ = 0;
 
 		DWORD len = 20;
@@ -101,18 +100,16 @@ BOOL CAdminSocket::Init()
 		*p++ = 8;
 
 		int i;
-		for (i = 0; i < 8; i++)
-		{
-			m_Nonce1[i] = (rand()*256)/(RAND_MAX+1);
+		for (i = 0; i < 8; ++i) {
+			m_Nonce1[i] = std::uniform_int_distribution<unsigned int>(0, 255)(std::random_device());
 			*p++ = m_Nonce1[i];
 		}
 
 		*p++ = 0;
 		*p++ = 8;
 
-		for (i = 0; i < 8; i++)
-		{
-			m_Nonce2[i] = (rand()*256)/(RAND_MAX+1);
+		for (i = 0; i < 8; ++i) {
+			m_Nonce2[i] = std::uniform_int_distribution<unsigned int>(0, 255)(std::random_device());
 			*p++ = m_Nonce2[i];
 		}
 	}
