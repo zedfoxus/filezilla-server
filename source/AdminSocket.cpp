@@ -80,7 +80,7 @@ BOOL CAdminSocket::Init()
 	CStdString pass = options.GetOption(OPTION_ADMINPASS);
 	CStdString peerAddress;
 	UINT port = 0;
-	if (0 &&GetPeerName(peerAddress, port) && IsLocalhost(peerAddress) && pass == _T("")) {
+	if (GetPeerName(peerAddress, port) && IsLocalhost(peerAddress) && pass == _T("")) {
 		BOOL res = Send(buffer, p-buffer) == p - buffer;
 		delete [] buffer;
 		if (!res) {
