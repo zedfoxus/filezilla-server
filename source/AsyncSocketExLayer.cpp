@@ -737,7 +737,6 @@ bool CAsyncSocketExLayer::TryNextProtocol()
 			continue;
 		}
 
-#ifndef NOLAYERS
 		if (m_pOwnerSocket->m_pFirstLayer) {
 			if (WSAAsyncSelect(m_pOwnerSocket->m_SocketData.hSocket, m_pOwnerSocket->GetHelperWindowHandle(), m_pOwnerSocket->m_SocketData.nSocketIndex+WM_SOCKETEX_NOTIFY, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE))
 			{
@@ -746,7 +745,6 @@ bool CAsyncSocketExLayer::TryNextProtocol()
 				continue;
 			}
 		}
-#endif //NOLAYERS
 
 		m_pOwnerSocket->m_SocketData.nFamily = m_nextAddr->ai_family;
 		m_nFamily = m_nextAddr->ai_family;

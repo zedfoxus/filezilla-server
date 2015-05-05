@@ -2011,7 +2011,7 @@ bool CAsyncSslSocketLayer::CreateContext()
 	m_contextRefCount[m_ssl_ctx] = 1;
 
 	long options = pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, 0, NULL);
-	options |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+	options |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; // todo: add option so that users can further tighten requirements
 	options &= ~(SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION|SSL_OP_LEGACY_SERVER_CONNECT);
 
 	pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options, NULL);

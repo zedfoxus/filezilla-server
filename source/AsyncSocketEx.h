@@ -79,7 +79,6 @@ to tim.kosse@filezilla-project.org
 
 class CAsyncSocketExHelperWindow;
 
-#ifndef NOLAYERS
 class CAsyncSocketExLayer;
 
 struct t_callbackMsg
@@ -90,8 +89,6 @@ struct t_callbackMsg
 	int nParam2;
 	char* str;
 };
-
-#endif //NOLAYERS
 
 enum SocketState
 {
@@ -213,7 +210,6 @@ public:
 	//Additional functions//
 	////////////////////////
 
-#ifndef NOLAYERS
 	//Resets layer chain.
 	void RemoveAllLayers();
 
@@ -222,7 +218,6 @@ public:
 
 	//Is a layer attached to the socket?
 	BOOL IsLayerAttached() const;
-#endif //NOLAYERS
 
 	//Returns the handle of the socket.
 	SOCKET GetSocketHandle();
@@ -289,10 +284,8 @@ protected:
 
 	void ResendCloseNotify();
 
-#ifndef NOLAYERS
 	// Add a new notification to the list of pending callbacks
 	void AddCallbackNotification(const t_callbackMsg& msg);
-#endif // NOLAYERS
 
 #ifndef NOSOCKETSTATES
 	int m_nPendingEvents{};
@@ -303,7 +296,6 @@ protected:
 	int m_nState{notsock};
 #endif //NOSOCKETSTATES
 
-#ifndef NOLAYERS
 	//Layer chain
 	CAsyncSocketExLayer *m_pFirstLayer{};
 	CAsyncSocketExLayer *m_pLastLayer{};
@@ -312,7 +304,6 @@ protected:
 
 	//Called by the layers to notify application of some events
 	virtual int OnLayerCallback(std::list<t_callbackMsg> const& callbacks);
-#endif //NOLAYERS
 
 	// Used by Bind with AF_UNSPEC sockets
 	UINT m_nSocketPort{};
@@ -320,10 +311,8 @@ protected:
 
 	friend CAsyncSocketExHelperWindow;
 
-#ifndef NOLAYERS
 	// Pending callbacks
 	std::list<t_callbackMsg> m_pendingCallbacks;
-#endif // NOLAYERS
 
 private:
 	BOOL GetPeerName(sockaddr_storage & sockAddr);
@@ -333,10 +322,8 @@ private:
 typedef std::lock_guard<std::recursive_mutex> simple_lock;
 typedef std::unique_lock<std::recursive_mutex> scoped_lock;
 
-#ifndef NOLAYERS
 #define LAYERCALLBACK_STATECHANGE 0
 #define LAYERCALLBACK_LAYERSPECIFIC 1
-#endif //NOLAYERS
 
 #define _sntprintf _snwprintf
 
