@@ -16,23 +16,18 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#if !defined(OPTION_TYPES_INCLUDED)
-#define OPTION_TYPES_INCLUDED
+#ifndef FZS_OPTION_TYPES_INCLUDED
+#define FZS_OPTION_TYPES_INCLUDED
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-// OptionTypes.h : Header-Datei
-//
 #define OPTION_SERVERPORT 1
 #define OPTION_THREADNUM 2
 #define OPTION_MAXUSERS 3
 #define OPTION_TIMEOUT 4
 #define OPTION_NOTRANSFERTIMEOUT 5
-#define OPTION_INFXP 6
-#define OPTION_OUTFXP 7
-#define OPTION_NOINFXPSTRICT 8
-#define OPTION_NOOUTFXPSTRICT 9
+#define OPTION_CHECK_DATA_CONNECTION_IP 6
+#define OPTION_SERVICE_NAME 7
+#define OPTION_SERVICE_DISPLAY_NAME 8
+#define OPTION_TLS_REQUIRE_SESSION_RESUMPTION 9
 #define OPTION_LOGINTIMEOUT 10
 #define OPTION_LOGSHOWPASS 11
 #define OPTION_CUSTOMPASVIPTYPE 12
@@ -82,11 +77,8 @@
 #define OPTION_AUTOBAN_ATTEMPTS 56
 #define OPTION_AUTOBAN_TYPE 57
 #define OPTION_AUTOBAN_BANTIME 58
-#define OPTION_SERVICE_NAME 59
-#define OPTION_SERVICE_DISPLAY_NAME 60
-#define OPTION_TLS_REQUIRE_SESSION_RESUMPTION 61
 
-#define OPTIONS_NUM 61
+#define OPTIONS_NUM 58
 
 #define CONST_WELCOMEMESSAGE_LINESIZE 75
 
@@ -107,10 +99,10 @@ static const t_Option m_Options[OPTIONS_NUM]={	_T("Serverports"),				0,	FALSE,
 												_T("Maximum user count"),		1,	FALSE,
 												_T("Timeout"),					1,	FALSE,
 												_T("No Transfer Timeout"),		1,	FALSE,
-												_T("Allow Incoming FXP"),		1,	FALSE,
-												_T("Allow outgoing FXP"),		1,	FALSE,
-												_T("No Strict In FXP"),			1,	FALSE,
-												_T("No Strict Out FXP"),		1,	FALSE,
+												_T("Check data connection IP"),	1,	FALSE,
+												_T("Service name"),				0,	TRUE,
+												_T("Service display name"),		0,	TRUE,
+												_T("Force TLS session resumption"), 1, FALSE,
 												_T("Login Timeout"),			1,	FALSE,
 												_T("Show Pass in Log"),			1,	FALSE,
 												_T("Custom PASV IP type"),		1,	FALSE,
@@ -159,10 +151,7 @@ static const t_Option m_Options[OPTIONS_NUM]={	_T("Serverports"),				0,	FALSE,
 												_T("Autoban enable"),			1,	FALSE,
 												_T("Autoban attempts"),			1,	FALSE,
 												_T("Autoban type"),				1,	FALSE,
-												_T("Autoban time"),				1,	FALSE,
-												_T("Service name"),				0,	TRUE,
-												_T("Service display name"),		0,	TRUE,
-												_T("Force TLS session resumption"), 1, TRUE
+												_T("Autoban time"),				1,	FALSE
 											};
 
-#endif // OPTION_TYPES_INCLUDED
+#endif

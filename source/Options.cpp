@@ -626,6 +626,9 @@ _int64 COptions::GetOptionVal(int nOptionID)
 		//Default values
 		switch (nOptionID)
 		{
+			case OPTION_CHECK_DATA_CONNECTION_IP:
+				m_sOptionsCache[nOptionID-1].value = 2;
+				break;
 			case OPTION_MAXUSERS:
 				m_sOptionsCache[nOptionID-1].value = 0;
 				break;

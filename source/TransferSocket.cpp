@@ -776,8 +776,7 @@ void CTransferSocket::PasvTransfer()
 	if (m_bAccepted)
 		if (!m_bStarted)
 			InitTransfer(FALSE);
-	if (m_premature_send)
-	{
+	if (m_premature_send) {
 		m_premature_send = false;
 		OnSend(0);
 	}
@@ -785,56 +784,43 @@ void CTransferSocket::PasvTransfer()
 
 BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 {
-	int optAllowServerToServer, optStrictFilter;
-
-	if (m_nMode == TRANSFERMODE_RECEIVE) {
-		optAllowServerToServer = OPTION_INFXP;
-		optStrictFilter = OPTION_NOINFXPSTRICT;
-	}
-	else {
-		optAllowServerToServer = OPTION_OUTFXP;
-		optStrictFilter = OPTION_NOOUTFXPSTRICT;
-	}
-
-	if (!m_pOwner->m_owner.m_pOptions->GetOptionVal(optAllowServerToServer))
-	{ //Check if the IP of the remote machine is valid
+	auto const checkDataIP = m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_CHECK_DATA_CONNECTION_IP);
+	if (checkDataIP) {
+		//Check if the IP of the remote machine is valid
 		CStdString OwnerIP, TransferIP;
 		UINT port = 0;
 
-		if (!m_pOwner->GetSockName(OwnerIP, port)) {
+		if (!m_pOwner->GetPeerName(OwnerIP, port)) {
 			EndTransfer(transfer_status_t::ip_mismatch);
 			return FALSE;
 		}
 
-		if (!GetSockName(TransferIP, port)) {
+		if (!GetPeerName(TransferIP, port)) {
 			EndTransfer(transfer_status_t::ip_mismatch);
 			return FALSE;
 		}
 
-		if (!IsLocalhost(OwnerIP) && !IsLocalhost(TransferIP)) {
+		if (GetFamily() == AF_INET6) {
+			OwnerIP = GetIPV6LongForm(OwnerIP);
+			TransferIP = GetIPV6LongForm(TransferIP);
+		}
 
+		if (checkDataIP == 1) {
 			if (GetFamily() == AF_INET6) {
-				OwnerIP = GetIPV6LongForm(OwnerIP);
-				TransferIP = GetIPV6LongForm(TransferIP);
+				// Assume a /64
+				OwnerIP = OwnerIP.Left(20);
+				TransferIP = TransferIP.Left(20);
 			}
+			else {
+				// Assume a /24
+				OwnerIP = OwnerIP.Left(OwnerIP.ReverseFind('.'));
+				TransferIP = TransferIP.Left(TransferIP.ReverseFind('.'));
+			}
+		}
 
-			if (!m_pOwner->m_owner.m_pOptions->GetOptionVal(optStrictFilter)) {
-				if (GetFamily() == AF_INET6) {
-					// Assume a /64
-					OwnerIP = OwnerIP.Left(20);
-					TransferIP = TransferIP.Left(20);
-				}
-				else {
-					// Assume a /24
-					OwnerIP = OwnerIP.Left(OwnerIP.ReverseFind('.'));
-					TransferIP = TransferIP.Left(TransferIP.ReverseFind('.'));
-				}
-			}
-
-			if (OwnerIP != TransferIP) {
-				EndTransfer(transfer_status_t::ip_mismatch);
-				return FALSE;
-			}
+		if (OwnerIP != TransferIP) {
+			EndTransfer(transfer_status_t::ip_mismatch);
+			return FALSE;
 		}
 	}
 

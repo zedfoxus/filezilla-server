@@ -126,8 +126,6 @@
 #define IDC_GROUPS_SPEEDLIMIT_SERVERBYPASS_DOWNLOAD 1042
 #define IDC_GROUPS_SPEEDLIMIT_SERVERBYPASS_UPLOAD 1043
 #define IDC_HOMEPAGE                    1044
-#define IDC_INFXP                       1045
-#define IDC_INFXPSTRICT                 1046
 #define IDC_IPLIMIT                     1047
 #define IDC_LOGINTIMEOUT                1050
 #define IDC_MAIL                        1051
@@ -154,9 +152,7 @@
 #define IDC_OPTIONS_MISC_DONTSHOWPASS   1077
 #define IDC_OPTIONS_MISC_STARTMINIMIZED 1078
 #define IDC_OPTIONS_TRANSFERBUFFERSIZE  1079
-#define IDC_OUTFXP                      1080
 #define IDC_OPTIONS_TRANSFERBUFFERSIZE2 1080
-#define IDC_OUTFXPSTRICT                1081
 #define IDC_PAGE_TREE                   1082
 #define IDC_PASS                        1083
 #define IDC_PHELP                       1084
@@ -263,6 +259,9 @@
 #define IDC_BANTYPE2                    1205
 #define IDC_8PLUS3                      1206
 #define IDC_FTPTEST                     1207
+#define IDC_DATAIPMATCH_EXACT           1208
+#define IDC_DATAIPMATCH_RELAXED         1209
+#define IDC_DATAIPMATCH_NONE            1210
 #define ID_ACTIVE                       32768
 #define ID_DIRMENU_ADD                  32769
 #define ID_DIRMENU_REMOVE               32770
@@ -311,7 +310,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        168
 #define _APS_NEXT_COMMAND_VALUE         32807
-#define _APS_NEXT_CONTROL_VALUE         1208
+#define _APS_NEXT_CONTROL_VALUE         1211
 #define _APS_NEXT_SYMED_VALUE           1228
 #endif
 #endif

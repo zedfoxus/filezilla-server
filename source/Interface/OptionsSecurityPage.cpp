@@ -38,12 +38,6 @@ static char THIS_FILE[] = __FILE__;
 COptionsSecurityPage::COptionsSecurityPage(COptionsDlg *pOptionsDlg, CWnd* pParent /*=NULL*/)
 	: COptionsPage(pOptionsDlg, COptionsSecurityPage::IDD, pParent)
 {
-	//{{AFX_DATA_INIT(COptionsSecurityPage)
-	m_bInFxp = FALSE;
-	m_bInFxpStrict = FALSE;
-	m_bOutFxp = FALSE;
-	m_bOutFxpStrict = FALSE;
-	//}}AFX_DATA_INIT
 }
 
 
@@ -51,45 +45,15 @@ void COptionsSecurityPage::DoDataExchange(CDataExchange* pDX)
 {
 	COptionsPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(COptionsSecurityPage)
-	DDX_Control(pDX, IDC_OUTFXPSTRICT, m_cOutFxpStrict);
-	DDX_Control(pDX, IDC_INFXPSTRICT, m_cInFxpStrict);
-	DDX_Check(pDX, IDC_INFXP, m_bInFxp);
-	DDX_Check(pDX, IDC_INFXPSTRICT, m_bInFxpStrict);
-	DDX_Check(pDX, IDC_OUTFXP, m_bOutFxp);
-	DDX_Check(pDX, IDC_OUTFXPSTRICT, m_bOutFxpStrict);
+	DDX_Check(pDX, IDC_DATAIPMATCH_EXACT, m_exact);
+	DDX_Check(pDX, IDC_DATAIPMATCH_RELAXED, m_relaxed);
+	DDX_Check(pDX, IDC_DATAIPMATCH_NONE, m_none);
 	//}}AFX_DATA_MAP
-}
-
-
-BEGIN_MESSAGE_MAP(COptionsSecurityPage, COptionsPage)
-	//{{AFX_MSG_MAP(COptionsSecurityPage)
-	ON_BN_CLICKED(IDC_INFXP, OnInfxp)
-	ON_BN_CLICKED(IDC_OUTFXP, OnOutfxp)
-	//}}AFX_MSG_MAP
-END_MESSAGE_MAP()
-
-/////////////////////////////////////////////////////////////////////////////
-// Behandlungsroutinen für Nachrichten COptionsSecurityPage
-
-void COptionsSecurityPage::OnInfxp()
-{
-	UpdateData(TRUE);
-	m_cInFxpStrict.EnableWindow(m_bInFxp);
-
-}
-
-void COptionsSecurityPage::OnOutfxp()
-{
-	UpdateData(TRUE);
-	m_cOutFxpStrict.EnableWindow(m_bOutFxp);
 }
 
 BOOL COptionsSecurityPage::OnInitDialog()
 {
 	COptionsPage::OnInitDialog();
-
-	m_cInFxpStrict.EnableWindow(m_bInFxp);
-	m_cOutFxpStrict.EnableWindow(m_bOutFxp);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
@@ -97,16 +61,23 @@ BOOL COptionsSecurityPage::OnInitDialog()
 
 void COptionsSecurityPage::LoadData()
 {
-	m_bInFxp = !m_pOptionsDlg->GetOptionVal(OPTION_INFXP);
-	m_bOutFxp = !m_pOptionsDlg->GetOptionVal(OPTION_OUTFXP);
-	m_bInFxpStrict = m_pOptionsDlg->GetOptionVal(OPTION_NOINFXPSTRICT) != 0;
-	m_bOutFxpStrict = m_pOptionsDlg->GetOptionVal(OPTION_NOOUTFXPSTRICT) != 0;
+	auto const level = m_pOptionsDlg->GetOptionVal(OPTION_CHECK_DATA_CONNECTION_IP);
+	m_relaxed = level == 1;
+	m_none = level == 0;
+	m_exact = !m_relaxed && !m_none;
 }
 
 void COptionsSecurityPage::SaveData()
 {
-	m_pOptionsDlg->SetOption(OPTION_INFXP, !m_bInFxp);
-	m_pOptionsDlg->SetOption(OPTION_OUTFXP, !m_bOutFxp);
-	m_pOptionsDlg->SetOption(OPTION_NOINFXPSTRICT, m_bInFxpStrict);
-	m_pOptionsDlg->SetOption(OPTION_NOOUTFXPSTRICT, m_bOutFxpStrict);
+	int level;
+	if (m_none) {
+		level = 0;
+	}
+	else if (m_relaxed) {
+		level = 1;
+	}
+	else {
+		level = 2;
+	}
+	m_pOptionsDlg->SetOption(OPTION_CHECK_DATA_CONNECTION_IP, level);
 }

@@ -41,12 +41,9 @@ public:
 // Dialogfelddaten
 	//{{AFX_DATA(COptionsSecurityPage)
 	enum { IDD = IDD_OPTIONS_SECURITY };
-	CButton	m_cOutFxpStrict;
-	CButton	m_cInFxpStrict;
-	BOOL	m_bInFxp;
-	BOOL	m_bInFxpStrict;
-	BOOL	m_bOutFxp;
-	BOOL	m_bOutFxpStrict;
+	BOOL	m_exact{};
+	BOOL	m_relaxed{};
+	BOOL	m_none{};
 	//}}AFX_DATA
 
 
@@ -62,11 +59,9 @@ protected:
 
 	// Generierte Nachrichtenzuordnungsfunktionen
 	//{{AFX_MSG(COptionsSecurityPage)
-	afx_msg void OnInfxp();
-	afx_msg void OnOutfxp();
 	virtual BOOL OnInitDialog();
 	//}}AFX_MSG
-	DECLARE_MESSAGE_MAP()
+public:
 };
 
 //{{AFX_INSERT_LOCATION}}
