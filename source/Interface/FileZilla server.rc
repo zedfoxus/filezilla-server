@@ -298,6 +298,10 @@ BEGIN
         VERTGUIDE, 83
     END
 
+    IDD_USERS_IPFILTER, DIALOG
+    BEGIN
+    END
+
     IDD_DELETEGROUPINUSE, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -428,6 +432,7 @@ BEGIN
     EDITTEXT        IDC_MAXUSERS,82,35,41,14,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "(0 for unlimited users)",IDC_STATIC,131,38,70,8
     GROUPBOX        "Performance settings",IDC_STATIC,0,60,332,49
+    LTEXT           "&Number of threads:",IDC_STATIC,7,75,64,8
     EDITTEXT        IDC_THREADNUM,82,73,41,14,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "This value should be a multiple of the number of processors installed on your system. Increase this value if your server is under heavy load.",IDC_STATIC,131,71,194,33
     GROUPBOX        "Timeout settings",IDC_STATIC,0,113,332,82,0,WS_EX_TRANSPARENT
@@ -440,7 +445,6 @@ BEGIN
     LTEXT           "L&ogin timeout:",IDC_STATIC,7,175,45,8
     EDITTEXT        IDC_LOGINTIMEOUT,82,171,41,14,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "in seconds (1-9999, 0 for no timeout). This value specifies the time in which a new user has to login.",IDC_STATIC,131,173,195,26
-    LTEXT           "&Number of Threads:",IDC_STATIC,7,75,64,8
 END
 
 IDD_OFFLINEASK DIALOG 0, 0, 147, 89
@@ -462,7 +466,7 @@ STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     GROUPBOX        "Data connection stealing and bounce attack mitigation",IDC_STATIC,0,0,331,246
-    LTEXT           "Plain FTP does not perform any authentication of the data connection used for transfers. This potentially allows an attacker to steal a data connection. Unfiltered PORT commands also be used for bounce attacks.",IDC_STATIC,6,13,318,25
+    LTEXT           "Plain FTP does not perform any authentication of the data connection used for transfers. This potentially allows an attacker to steal a data connection. Similarly, unfiltered PORT commands can be used for bounce attacks.",IDC_STATIC,6,13,318,25
     LTEXT           "To mitigate this risk, FileZilla Server can check that the peer IP address of the data connection matches the peer IP of the control connection, disallowing the transfer on address mismatch.",IDC_STATIC,5,43,318,17
     LTEXT           "This mitigation has the drawback of not being compatible with server-to-server transfers. It can also cause problems in multi-homed network configurations.",IDC_STATIC,5,67,318,16
     LTEXT           "&Protection level:",IDC_STATIC,5,91,318,8
@@ -489,11 +493,11 @@ BEGIN
     LTEXT           "Internal transfer &buffer size:",IDC_STATIC,0,44,93,8
     EDITTEXT        IDC_OPTIONS_TRANSFERBUFFERSIZE,94,42,40,14,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "(default: 32768)",IDC_STATIC,140,44,54,8
-    LTEXT           "Adjust these values if you get very slow transfer rates.",IDC_STATIC,0,86,177,8
-    LTEXT           "Please check your changes to the buffer size carefully. Too high or too low values can have a huge impact on the data throughput.",IDC_STATIC,0,99,332,24
     LTEXT           "&Socket buffer size:",IDC_STATIC,0,67,61,8
     EDITTEXT        IDC_OPTIONS_TRANSFERBUFFERSIZE2,94,64,40,14,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "(default: 262144)",IDC_STATIC,140,67,70,8
+    LTEXT           "Adjust these values if you get very slow transfer rates.",IDC_STATIC,0,86,311,8
+    LTEXT           "Please check your changes to the buffer size carefully. Too high or too low values can have a huge impact on the data throughput.",IDC_STATIC,0,99,332,24
     CONTROL         "&Allow downloading of files which are open for writing by another process.",IDC_SHAREWRITE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,0,128,250,10
     LTEXT           "Please note that this can result in corrupt transfers!",IDC_STATIC,11,141,169,8
@@ -555,8 +559,8 @@ BEGIN
     EDITTEXT        IDC_OPTIONS_ADMININTERFACE_NEWPASS,100,180,81,14,ES_PASSWORD | ES_AUTOHSCROLL
     LTEXT           "&Retype new Password:",IDC_STATIC,20,199,74,8
     EDITTEXT        IDC_OPTIONS_ADMININTERFACE_NEWPASS2,100,196,81,14,ES_PASSWORD | ES_AUTOHSCROLL
-    LTEXT           "A password is required for remote administration to work.",IDC_STATIC,0,227,332,9
     LTEXT           "Minimum password length is 6 characters. Leave empty to remove password.",IDC_STATIC,0,218,247,8
+    LTEXT           "A password is required for remote administration to work.",IDC_STATIC,0,227,332,9
 END
 
 IDD_OPTIONS_LOGGING DIALOGEX 0, 0, 332, 246
@@ -618,25 +622,26 @@ IDD_OPTIONS_PASV DIALOGEX 0, 0, 332, 246
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
+    CONTROL         "Use custom &port range:",IDD_OPTIONS_PASV_USEPORTRANGE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,1,89,10
+    EDITTEXT        IDC_OPTIONS_PASV_PORTMIN,98,0,30,14,ES_AUTOHSCROLL | ES_NUMBER
+    CTEXT           "-",IDC_STATIC,130,1,8,8
+    EDITTEXT        IDC_OPTIONS_PASV_PORTMAX,140,0,30,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "(1-65535)",IDC_STATIC,175,1,31,8
+    GROUPBOX        "IPv4 specific",IDC_STATIC,0,17,331,229
     LTEXT           "External Server &IP Address for passive mode transfers:",IDC_STATIC,6,30,125,19
     CONTROL         "&Default",IDC_OPTIONS_PASV_IPTYPE1,"Button",BS_AUTORADIOBUTTON | WS_GROUP,6,48,39,10
     CONTROL         "&Use the following IP:",IDC_OPTIONS_PASV_IPTYPE2,"Button",BS_AUTORADIOBUTTON,6,62,81,10
     CONTROL         "&Retrieve external IP address from:",IDC_OPTIONS_PASV_IPTYPE3,
                     "Button",BS_AUTORADIOBUTTON,6,101,122,10
-    CTEXT           "-",IDC_STATIC,130,1,8,8
-    EDITTEXT        IDC_OPTIONS_PASV_PORTMAX,140,0,30,14,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "(1-65535)",IDC_STATIC,175,1,31,8
-    GROUPBOX        "IPv4 specific",IDC_STATIC,0,17,331,229
-    EDITTEXT        IDC_OPTIONS_PASV_PORTMIN,98,0,30,14,ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "Use custom &port range:",IDD_OPTIONS_PASV_USEPORTRANGE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,1,89,10
-    CONTROL         "D&on't use external IP for local connections",IDC_OPTIONS_PASV_NOLOCAL,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,192,326,10
-    LTEXT           "Information for users with dynamic IPs: If your external IP changes, it might take up to 5 minutes after the next failed transfer until FileZilla Server recognizes the changed IP.\nIn most cases, the IP is updated within 30s after a failed transfer.",IDC_STATIC,6,157,318,33
-    EDITTEXT        IDC_OPTIONS_PASV_TEXT,167,30,157,105,ES_MULTILINE | ES_READONLY | NOT WS_BORDER | WS_VSCROLL,WS_EX_STATICEDGE
-    EDITTEXT        IDC_OPTIONS_PASV_URL,16,114,129,14,ES_AUTOHSCROLL
     EDITTEXT        IDC_OPTIONS_PASV_IP,16,73,129,14,ES_AUTOHSCROLL | WS_GROUP
     LTEXT           "You can also enter hostnames",IDC_STATIC,17,88,131,8
+    EDITTEXT        IDC_OPTIONS_PASV_URL,16,114,129,14,ES_AUTOHSCROLL
+    LTEXT           "(Default: http://ip.filezilla-project.org/ip.php)",IDC_STATIC,17,129,150,8
+    EDITTEXT        IDC_OPTIONS_PASV_TEXT,167,30,157,105,ES_MULTILINE | ES_READONLY | NOT WS_BORDER | WS_VSCROLL,WS_EX_STATICEDGE
+    LTEXT           "Information for users with dynamic IPs: If your external IP changes, it might take up to 5 minutes after the next failed transfer until FileZilla Server recognizes the changed IP.\nIn most cases, the IP is updated within 30s after a failed transfer.",IDC_STATIC,6,157,318,33
+    CONTROL         "D&on't use external IP for local connections",IDC_OPTIONS_PASV_NOLOCAL,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,192,326,10
     LTEXT           "https://ftptest.net/",IDC_FTPTEST,6,232,115,8
     LTEXT           "You can use this site to test that your settings work correctly:",IDC_STATIC,6,222,235,8
 END
@@ -724,7 +729,7 @@ IDD_OPTIONS_SSL DIALOGEX 0, 0, 332, 246
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "&Enable FTP over SSL/TLS support (FTPS)",IDC_ENABLESSL,
+    CONTROL         "&Enable FTP over TLS support (FTPS)",IDC_ENABLESSL,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,0,0,145,10
     CONTROL         "&Disallow plain unencrypted FTP",IDC_FORCEEXPLICIT,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,12,115,10
@@ -747,8 +752,8 @@ BEGIN
     EDITTEXT        IDC_SSLONLY,7,168,197,14,ES_AUTOHSCROLL
     GROUPBOX        "File transfer security",IDC_STATIC,0,191,331,55
     LTEXT           "These settings need to be enabled for file transfers to be secure.",IDC_STATIC,6,202,210,8
-    CONTROL         "F&orce PROT P to encrypt file transfers in SSL/TLS mode",IDC_FORCEPROTP,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,215,192,10
+    CONTROL         "F&orce PROT P to encrypt file transfers when using FTP over TLS",IDC_FORCEPROTP,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,215,272,10
     CONTROL         "Re&quire TLS session resumption on data connection when using PROT P",IDC_REQUIRE_SESSION_RESUMPTION,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,228,244,10
 END
@@ -758,7 +763,7 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSM
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     ICON            IDI_CERT,IDC_STATIC,10,9,20,20
-    LTEXT           "This dialog will help you to create a new private key and a self-signed certificate, needed by FileZilla Server to accept SSL/TLS connections.",IDC_STATIC,38,7,212,25
+    LTEXT           "This dialog will help you to create a new private key and a self-signed certificate, needed by FileZilla Server to accept TLS connections.",IDC_STATIC,38,7,212,25
     LTEXT           "Please fill out the required information. Wrong or missing information may confuse clients.",IDC_STATIC,7,32,243,16
     LTEXT           "&Key size:",IDC_STATIC,7,51,30,8
     CONTROL         "1280 bit",IDC_KEYSIZE1,"Button",BS_AUTORADIOBUTTON | WS_GROUP,43,51,45,10
@@ -1125,8 +1130,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,9,50,0
- PRODUCTVERSION 0,9,50,0
+ FILEVERSION 0,9,51,0
+ PRODUCTVERSION 0,9,51,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -1144,12 +1149,12 @@ BEGIN
             VALUE "Comments", "Open Source FTP server for Windows"
             VALUE "CompanyName", "FileZilla Project"
             VALUE "FileDescription", "FileZilla Server"
-            VALUE "FileVersion", "0, 9, 50, 0"
+            VALUE "FileVersion", "0, 9, 51, 0"
             VALUE "InternalName", "FileZilla Server"
             VALUE "LegalCopyright", "Copyright (C) 2001-2015"
             VALUE "OriginalFilename", "FileZilla server.exe"
             VALUE "ProductName", "FileZilla Server"
-            VALUE "ProductVersion", "0, 9, 50, 0"
+            VALUE "ProductVersion", "0, 9, 51, 0"
         END
     END
     BLOCK "VarFileInfo"
@@ -1205,7 +1210,7 @@ BEGIN
     IDS_OPTIONSPAGE_COMPRESSION "Filetransfer compression"
     IDS_OPTIONSPAGE_GENERAL_IPBINDINGS "IP bindings"
     IDS_OPTIONSPAGE_GENERAL_IPFILTER "IP Filter"
-    IDS_OPTIONSPAGE_SSL     "SSL/TLS settings"
+    IDS_OPTIONSPAGE_SSL     "FTP over TLS settings"
 END
 
 STRINGTABLE
