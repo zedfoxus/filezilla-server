@@ -16,6 +16,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+#ifndef FZS_IPUTILS_HEADER
+#define FZS_IPUTILS_HEADER
+
 #ifdef _AFX
 #define CStdString CString
 #endif
@@ -36,3 +39,5 @@ bool ParseIPFilter(CStdString in, std::list<CStdString>* output = 0);
 // Simple heuristic: Returns true if at least one adapter has an
 // IPv4 address and no IPv4 address is a public one
 bool IsBehindIPv4Nat();
+
+#endif

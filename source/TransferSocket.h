@@ -19,11 +19,7 @@
 #if !defined(AFX_TRANSFERSOCKET_H__38ADA982_DD96_4607_B7D2_982011F162FE__INCLUDED_)
 #define AFX_TRANSFERSOCKET_H__38ADA982_DD96_4607_B7D2_982011F162FE__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-// TransferSocket.h : Header-Datei
-//
+#include "pasv_port_randomizer.h"
 
 class CControlSocket;
 
@@ -49,15 +45,9 @@ enum class transfer_status_t
 	tls_unknown
 };
 
-/////////////////////////////////////////////////////////////////////////////
-// Befehlsziel CTransferSocket
 class CAsyncSslSocketLayer;
 class CTransferSocket final : public CAsyncSocketEx
 {
-// Attribute
-public:
-
-// Operationen
 public:
 	CTransferSocket(CControlSocket *pOwner);
 	void Init(std::list<t_dirlisting> &dir, int nMode);
@@ -67,8 +57,6 @@ public:
 	virtual ~CTransferSocket();
 	void CloseFile();
 
-// Überschreibungen
-public:
 	int GetMode() const;
 	BOOL Started() const;
 	BOOL CheckForTimeout();
@@ -81,7 +69,7 @@ public:
 
 	bool WasOnConnectCalled() const { return m_on_connect_called; }
 
-// Implementierung
+	bool CreateListenSocket(PortLease&& port, int family);
 protected:
 	virtual void OnSend(int nErrorCode);
 	virtual void OnConnect(int nErrorCode);
@@ -128,6 +116,8 @@ protected:
 	bool m_premature_send;
 
 	bool m_on_connect_called;
+
+	PortLease portLease_;
 };
 
 

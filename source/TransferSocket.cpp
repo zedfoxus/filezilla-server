@@ -614,14 +614,15 @@ void CTransferSocket::OnAccept(int nErrorCode)
 {
 	CAsyncSocketEx tmp;
 	Accept(tmp);
-	SOCKET socket=tmp.Detach();
+	SOCKET socket = tmp.Detach();
 	Close();
 	Attach(socket);
 	m_bAccepted = TRUE;
 
+	portLease_.SetConnected();
+
 	int size = (int)m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_BUFFERSIZE2);
-	if (size > 0)
-	{
+	if (size > 0) {
 		if (m_nMode == TRANSFERMODE_RECEIVE)
 			SetSockOpt(SO_RCVBUF, &size, sizeof(int));
 		else
@@ -642,8 +643,7 @@ void CTransferSocket::OnAccept(int nErrorCode)
 		else if (code == SSL_FAILURE_INITSSL)
 			m_pOwner->SendStatus(_T("Failed to initialize SSL library"), 1);
 
-		if (code)
-		{
+		if (code) {
 			EndTransfer(transfer_status_t::noconn);
 			return;
 		}
@@ -1048,12 +1048,17 @@ void CTransferSocket::EndTransfer(transfer_status_t status)
 
 void CTransferSocket::CloseFile()
 {
-	if (m_hFile != INVALID_HANDLE_VALUE)
-	{
+	if (m_hFile != INVALID_HANDLE_VALUE) {
 		if (m_nMode == TRANSFERMODE_RECEIVE)
 			FlushFileBuffers(m_hFile);
 
 		CloseHandle(m_hFile);
 		m_hFile = INVALID_HANDLE_VALUE;
 	}
+}
+
+bool CTransferSocket::CreateListenSocket(PortLease&& port, int family)
+{
+	portLease_ = std::move(port);
+	return Create(portLease_.GetPort(), SOCK_STREAM, FD_ACCEPT, 0, family);
 }

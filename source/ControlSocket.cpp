@@ -29,6 +29,7 @@
 #include <math.h>
 #include "iputils.h"
 #include "autobanmanager.h"
+#include "pasv_port_randomizer.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CControlSocket
@@ -2886,32 +2887,27 @@ void CControlSocket::SendTransferPreliminary()
 	Send(msg);
 }
 
+PasvPortManager pasvPortManager;
+
 bool CControlSocket::CreatePassiveTransferSocket()
 {
 	m_transferstatus.socket = new CTransferSocket(this);
 
-	unsigned int retries = 10;
+	CStdString peerIP;
+	UINT tmp = 0;
+	(void)GetPeerName(peerIP, tmp);
+
+	unsigned int retries = 15;
+	PasvPortRandomizer randomizer(pasvPortManager, peerIP, *m_owner.m_pOptions);
 	while (retries > 0) {
-		unsigned int port = 0;
-		if (m_owner.m_pOptions->GetOptionVal(OPTION_USECUSTOMPASVPORT)) {
-			unsigned int minPort = (unsigned int)m_owner.m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMINPORT);
-			unsigned int maxPort = (unsigned int)m_owner.m_pOptions->GetOptionVal(OPTION_CUSTOMPASVMAXPORT);
-			if (minPort > maxPort) {
-				std::swap(minPort, maxPort);
-			}
-			simple_lock lock(m_mutex);
-			static unsigned int customPort = 0;
-			if (customPort < minPort || customPort > maxPort) {
-				customPort = minPort;
-			}
-			port = customPort;
-			++customPort;
-		}
-		else {
-			port = 0;
-		}
-		if (m_transferstatus.socket->Create(port, SOCK_STREAM, FD_ACCEPT, 0, GetFamily()))
+		PortLease port = randomizer.GetPort();
+		if (!port.GetPort()) {
+			retries = 0;
 			break;
+		}
+		if (m_transferstatus.socket->CreateListenSocket(std::move(port), GetFamily())) {
+			break;
+		}
 		--retries;
 	}
 	if (retries <= 0) {

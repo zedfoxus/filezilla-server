@@ -208,6 +208,7 @@ GOTO:EOF
     <ClCompile Include="misc\md5.cpp" />
     <ClCompile Include="MFC64bitFix.cpp" />
     <ClCompile Include="Options.cpp" />
+    <ClCompile Include="pasv_port_randomizer.cpp" />
     <ClCompile Include="Permissions.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="ServerThread.cpp" />
@@ -259,6 +260,7 @@ GOTO:EOF
     <ClInclude Include="OptionLimits.h" />
     <ClInclude Include="Options.h" />
     <ClInclude Include="OptionTypes.h" />
+    <ClInclude Include="pasv_port_randomizer.h" />
     <ClInclude Include="Permissions.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Server.h" />
