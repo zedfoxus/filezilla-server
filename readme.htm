@@ -1,4 +1,4 @@
-<p align="center"><b><u>FileZilla Server version 0.9.50 beta</u></b></p>
+<p align="center"><b><u>FileZilla Server version 0.9.51 beta</u></b></p>
 <p align="center">Copyright 2001-2015<br>
 by <a href="mailto:tim.kosse@filezilla-project.org">Tim Kosse</a><a href="https://filezilla-project.org/"><br>
 https://filezilla-project.org/</a></p>
@@ -67,6 +67,22 @@ as restoring it to normal size.</p>
 </table>
 <p align="left"><b><u>Version History:</u></b></p>
 <p>For a more detailed list of changes, please have a look at the SVN changelog located at <a href="https://filezilla-project.org/changelog.php?type=2">https://filezilla-project.org/changelog.php?type=2</a>.</p>
+
+<p><b>Version 0.9.51</b></p>
+<blockquote>
+  <u>Bug fixes:</u>
+  <ul>
+    <li>Security fix: The code that checks that the peer's data connection IP address matches the control connection IP had been nonfunctional. Vulnerability discovered and reported by Amit Klein.</li>
+  </ul>
+  <u>New features:</u>
+  <ul>
+    <li>Security fix: Added option to force TLS session resumption on the data connection to prevent data connection stealing</li>
+    <li>Security fix: FileZilla Server now randomizes the port used for passive mode transfers to mitigate data connection stealing when using plain FTP</li>
+    <li>Added diagnostic message to the administration interface if FTP over TLS is disabled and if the configured certificate is expired or otherwise invalid</li>
+    <li>Added diagnostic message to the administration interface if no passive mode IP has been configured and the server appears to be behind a NAT router</li>
+    <li>The settings dialog layout had a spring cleaning. The security settings, passive mode settings and TLS settings pages have received the most cleanup.</li>
+  </ul>
+ </blockquote>
 
 <p><b>Version 0.9.50</b></p>
 <blockquote>
