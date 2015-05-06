@@ -623,8 +623,7 @@ void CControlSocket::ParseCommand()
 		break;
 	case commands::PORT:
 		{
-			if (GetFamily() != AF_INET)
-			{
+			if (GetFamily() != AF_INET) {
 				Send(_T("500 You are connected using IPv6. PORT is only for IPv4. You have to use the EPRT command instead."));
 				break;
 			}
@@ -635,8 +634,7 @@ void CControlSocket::ParseCommand()
 			int pos = 0;
 			//Convert commas to dots
 			args.Replace(_T(","), _T("."));
-			while (1)
-			{
+			while (1) {
 				pos = args.Find(_T("."), pos);
 				if (pos != -1)
 					count++;
@@ -644,8 +642,7 @@ void CControlSocket::ParseCommand()
 					break;
 				pos++;
 			}
-			if (count != 5)
-			{
+			if (count != 5) {
 				Send(_T("501 Syntax error"));
 				m_transferstatus.pasv = -1;
 				break;
@@ -668,8 +665,7 @@ void CControlSocket::ParseCommand()
 			CStdString decIP;
 			ip += _T(".");
 			pos = ip.Find('.');
-			while (pos != -1)
-			{
+			while (pos != -1) {
 				CStdString tmp;
 				tmp.Format(_T("%d."), _ttoi(ip.Left(pos)));
 				decIP += tmp;
@@ -681,24 +677,16 @@ void CControlSocket::ParseCommand()
 			ip = decIP.Left(decIP.GetLength() - 1);
 			int res = inet_addr(ConvToLocal(ip));
 
-			if (res == INADDR_NONE || port < 1 || port > 65535)
-			{
+			if (res == INADDR_NONE || port < 1 || port > 65535) {
 				Send(_T("501 Syntax error"));
-				m_transferstatus.pasv = -1;
 				break;
 			}
 
-			if (m_owner.m_pOptions->GetOptionVal(OPTION_ACTIVE_IGNORELOCAL))
-			{
-				CStdString peerAddr;
-				UINT peerPort = 0;
-				if (GetPeerName(peerAddr, peerPort))
-				{
-					if (!IsRoutableAddress(ip) && IsRoutableAddress(peerAddr))
-						ip = peerAddr;
-				}
+			if (!VerifyIPFromPortCommand(ip)) {
+				// Function already sends errors
+				break;
 			}
-
+	
 			m_transferstatus.ip = ip;
 			m_transferstatus.port = port;
 			m_transferstatus.pasv = 0;
@@ -1408,76 +1396,64 @@ void CControlSocket::ParseCommand()
 		{
 			ResetTransferstatus();
 
-			if (args[0] != '|')
-			{
+			if (args[0] != '|') {
 				Send(_T("501 Syntax error"));
-				m_transferstatus.pasv = -1;
 				break;
 			}
 			args = args.Mid(1);
 
 			int pos = args.Find('|');
-			if (pos < 1 || (pos>=(args.GetLength()-1)))
-			{
+			if (pos < 1 || (pos>=(args.GetLength()-1))) {
 				Send(_T("501 Syntax error"));
-				m_transferstatus.pasv = -1;
 				break;
 			}
 			int protocol = _ttoi(args.Left(pos));
 
-			bool ipv6Allowed = m_owner.m_pOptions->GetOptionVal(OPTION_DISABLE_IPV6) == 0;
-			if (protocol != 1 && (protocol != 2 || !ipv6Allowed))
-			{
+			bool const ipv6Allowed = m_owner.m_pOptions->GetOptionVal(OPTION_DISABLE_IPV6) == 0;
+			if (protocol != 1 && (protocol != 2 || !ipv6Allowed)) {
 				if (ipv6Allowed)
 					Send(_T("522 Extended Port Failure - unknown network protocol. Supported protocols: (1,2)"));
 				else
 					Send(_T("522 Extended Port Failure - unknown network protocol. Supported protocols: (1)"));
-				m_transferstatus.pasv = -1;
 				break;
 			}
 			args = args.Mid(pos + 1);
 
 			pos = args.Find('|');
-			if (pos < 1 || (pos>=(args.GetLength()-1)))
-			{
+			if (pos < 1 || (pos>=(args.GetLength()-1))) {
 				Send(_T("501 Syntax error"));
-				m_transferstatus.pasv = -1;
 				break;
 			}
 			CStdString ip = args.Left(pos);
-			if (protocol == 1)
-			{
-				if (inet_addr(ConvToLocal(ip)) == INADDR_NONE)
-				{
+			if (protocol == 1) {
+				if (inet_addr(ConvToLocal(ip)) == INADDR_NONE) {
 					Send(_T("501 Syntax error, not a valid IPv4 address"));
-					m_transferstatus.pasv = -1;
 					break;
 				}
 			}
-			else
-			{
+			else {
 				ip = GetIPV6LongForm(ip);
-				if (ip.IsEmpty())
-				{
+				if (ip.IsEmpty()) {
 					Send(_T("501 Syntax error, not a valid IPv6 address"));
-					m_transferstatus.pasv = -1;
 					break;
 				}
 			}
 			args = args.Mid(pos + 1);
 
 			pos = args.Find('|');
-			if (pos < 1)
-			{
+			if (pos < 1) {
 				Send(_T("501 Syntax error"));
 				m_transferstatus.pasv = -1;
 				break;
 			}
 			int port = _ttoi(args.Left(pos));
-			if (port < 1 || port > 65535)
-			{
+			if (port < 1 || port > 65535) {
 				Send(_T("501 Syntax error"));
 				m_transferstatus.pasv = -1;
+				break;
+			}
+
+			if (!VerifyIPFromPortCommand(ip)) {
 				break;
 			}
 
@@ -2941,4 +2917,28 @@ CStdString CControlSocket::PrepareSend(CStdString const& str, bool sendStatus)
 		SendStatus(str, 3);
 	}
 	return str + _T("\r\n");
+}
+
+bool CControlSocket::VerifyIPFromPortCommand(CStdString & ip)
+{
+	CStdString controlIP;
+	UINT tmp{};
+	if (!GetPeerName(controlIP, tmp)) {
+		Send(_T("421 Rejected command. Could not get peer name."));
+		return false;
+	}
+
+	if (m_owner.m_pOptions->GetOptionVal(OPTION_ACTIVE_IGNORELOCAL)) {
+		if (!IsRoutableAddress(ip) && IsRoutableAddress(controlIP)) {
+			ip = controlIP;
+		}
+	}
+
+	// Verify peer IP against control connection
+	if (!CTransferSocket::IsAllowedDataConnectionIP(controlIP, ip, GetFamily(), *m_owner.m_pOptions)) {
+		Send(_T("421 Rejected command, requested IP address does not match control connection IP."));
+		return false;
+	}
+
+	return true;
 }

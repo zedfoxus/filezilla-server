@@ -70,6 +70,9 @@ public:
 	bool WasOnConnectCalled() const { return m_on_connect_called; }
 
 	bool CreateListenSocket(PortLease&& port, int family);
+
+	static bool IsAllowedDataConnectionIP(CStdString controlIP, CStdString dataIP, int family, COptions& options);
+
 protected:
 	virtual void OnSend(int nErrorCode);
 	virtual void OnConnect(int nErrorCode);

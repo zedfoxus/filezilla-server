@@ -782,47 +782,57 @@ void CTransferSocket::PasvTransfer()
 	}
 }
 
-BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
+bool CTransferSocket::IsAllowedDataConnectionIP(CStdString controlIP, CStdString dataIP, int family, COptions & options)
 {
-	auto const checkDataIP = m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_CHECK_DATA_CONNECTION_IP);
+	auto const checkDataIP = options.GetOptionVal(OPTION_CHECK_DATA_CONNECTION_IP);
 	if (checkDataIP) {
 		//Check if the IP of the remote machine is valid
-		CStdString OwnerIP, TransferIP;
 		UINT port = 0;
 
-		if (!m_pOwner->GetPeerName(OwnerIP, port)) {
-			EndTransfer(transfer_status_t::ip_mismatch);
-			return FALSE;
-		}
-
-		if (!GetPeerName(TransferIP, port)) {
-			EndTransfer(transfer_status_t::ip_mismatch);
-			return FALSE;
-		}
-
-		if (GetFamily() == AF_INET6) {
-			OwnerIP = GetIPV6LongForm(OwnerIP);
-			TransferIP = GetIPV6LongForm(TransferIP);
+		if (family == AF_INET6) {
+			controlIP = GetIPV6LongForm(controlIP);
+			dataIP = GetIPV6LongForm(dataIP);
 		}
 
 		if (checkDataIP == 1) {
-			if (GetFamily() == AF_INET6) {
+			if (family == AF_INET6) {
 				// Assume a /64
-				OwnerIP = OwnerIP.Left(20);
-				TransferIP = TransferIP.Left(20);
+				controlIP = controlIP.Left(20);
+				dataIP = dataIP.Left(20);
 			}
 			else {
 				// Assume a /24
-				OwnerIP = OwnerIP.Left(OwnerIP.ReverseFind('.'));
-				TransferIP = TransferIP.Left(TransferIP.ReverseFind('.'));
+				controlIP = controlIP.Left(controlIP.ReverseFind('.'));
+				dataIP = dataIP.Left(dataIP.ReverseFind('.'));
 			}
 		}
 
-		if (OwnerIP != TransferIP) {
-			EndTransfer(transfer_status_t::ip_mismatch);
-			return FALSE;
+		if (controlIP != dataIP) {
+			return false;
 		}
 	}
+
+	return true;
+}
+
+BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
+{
+	//Check if the IP of the remote machine is valid
+	CStdString OwnerIP, TransferIP;
+	UINT port = 0;
+	if (!m_pOwner->GetPeerName(OwnerIP, port)) {
+		EndTransfer(transfer_status_t::ip_mismatch);
+		return FALSE;
+	}
+	if (!GetPeerName(TransferIP, port)) {
+		EndTransfer(transfer_status_t::ip_mismatch);
+		return FALSE;
+	}
+	if (!IsAllowedDataConnectionIP(OwnerIP, TransferIP, GetFamily(), *m_pOwner->m_owner.m_pOptions)) {
+		EndTransfer(transfer_status_t::ip_mismatch);
+		return FALSE;
+	}
+
 
 	if (m_nMode == TRANSFERMODE_RECEIVE)
 		AsyncSelect(FD_READ|FD_CLOSE);

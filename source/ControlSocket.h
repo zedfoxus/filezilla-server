@@ -98,6 +98,7 @@ protected:
 	bool CanQuit();
 	CStdString GetPassiveIP();
 	bool CreatePassiveTransferSocket();
+	bool VerifyIPFromPortCommand(CStdString & ip);
 
 	virtual int OnLayerCallback(std::list<t_callbackMsg> const& callbacks);
 
