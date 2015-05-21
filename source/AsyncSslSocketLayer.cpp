@@ -235,6 +235,8 @@ def(int, DH_generate_parameters_ex, (DH *dh, int prime_len, int generator, BN_GE
 def(int, DH_check, (const DH *dh, int *codes));
 def(int, i2d_DHparams, (const DH *a, unsigned char **pp));
 def(DH *, d2i_DHparams, (DH **a, const unsigned char **pp, long length));
+def(EC_KEY *, EC_KEY_new_by_curve_name, (int nid));
+def(void, EC_KEY_free, (EC_KEY *key));
 
 template<typename Ret, typename ...Args, typename ...Args2>
 Ret safe_call(Ret(*f)(Args...), Args2&& ... args)
@@ -380,6 +382,8 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll2, DH_check);
 		proc(m_sslDll2, i2d_DHparams);
 		proc(m_sslDll2, d2i_DHparams);
+		proc(m_sslDll2, EC_KEY_new_by_curve_name);
+		proc(m_sslDll2, EC_KEY_free);
 
 		if (bError) {
 			DoUnloadLibrary();
@@ -1001,7 +1005,8 @@ bool CAsyncSslSocketLayer::SetDiffieHellmanParameters(CStdString const& params)
 				buf[i] += fromHexDigit(params[i * 2 + 1]);
 			}
 
-			m_dh = pd2i_DHparams(0, const_cast<const unsigned char**>(&buf), len);
+			auto * tmp = buf;
+			m_dh = pd2i_DHparams(0, const_cast<const unsigned char**>(&tmp), len);
 			if (m_dh) {
 
 				int tmp{};
@@ -1068,11 +1073,21 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, CAsyncSslSocketLaye
 	// Disable DES and other weak and export ciphers
 	pSSL_set_cipher_list(m_ssl, "DEFAULT:!eNULL:!aNULL:!DES:!3DES:!WEAK:!EXP:!LOW:!MD5:!RC4");
 
+	// Enable Diffie-Hellman
 	if (!SetDiffieHellmanParameters(diffie_hellman_params)) {
 		ResetSslSession();
 		return SSL_FAILURE_INITSSL;
 	}
 	pSSL_ctrl(m_ssl, SSL_CTRL_SET_TMP_DH, 0, (char *)m_dh);
+
+	// ECDH
+	EC_KEY* ec_key = pEC_KEY_new_by_curve_name(NID_X9_62_prime256v1); // In future, consider using Curve25519 once supported by OpenSSL
+    if (!ec_key) {
+        ResetSslSession();
+		return SSL_FAILURE_INITSSL;
+    }
+    pSSL_ctrl(m_ssl, SSL_CTRL_SET_TMP_ECDH, 0, (char *)ec_key);
+    pEC_KEY_free(ec_key);
 
 	//Add current instance to list of active instances
 	t_SslLayerList *tmp = m_pSslLayerList;
