@@ -990,6 +990,7 @@ bool CAsyncSslSocketLayer::SetDiffieHellmanParameters(CStdString const& params)
 	if (m_bSslInitialized) {
 		if (m_dh) {
 			pDH_free(m_dh);
+			m_dh = 0;
 		}
 
 		if (!(params.GetLength() % 2)) {
