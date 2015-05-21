@@ -1008,6 +1008,7 @@ bool CAsyncSslSocketLayer::SetDiffieHellmanParameters(CStdString const& params)
 					ret = true;
 				}
 			}
+			delete [] buf;
 		}
 
 		if (!ret && m_dh) {
