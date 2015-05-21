@@ -53,8 +53,8 @@ char* toHex(unsigned char* buffer, unsigned int len)
 
 	for (unsigned int i = 0; i < len; i++)
 	{
-		unsigned char l = buffer[i] >> 4;
-		unsigned char r = buffer[i] & 0x0F;
+		unsigned char const l = buffer[i] >> 4;
+		unsigned char const r = buffer[i] & 0x0F;
 
 		if (l > 9)
 			hex[i * 2] = 'a' + l - 10;

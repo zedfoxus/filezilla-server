@@ -157,6 +157,9 @@ public:
 	// has been initialized
 	int SendRaw(const void* lpBuf, int nBufLen);
 
+	CStdString GenerateDiffieHellmanParameters();
+
+	bool SetDiffieHellmanParameters(CStdString const& params);
 private:
 	virtual void Close();
 	virtual BOOL Connect(LPCTSTR lpszHostAddress, UINT nHostPort );
@@ -247,6 +250,8 @@ private:
 	CAsyncSslSocketLayer* m_primarySocket{};
 
 	ShutDownState shutDownState = ShutDownState::none;
+
+	DH* m_dh{};
 };
 
 #define SSL_INFO 0

@@ -229,6 +229,12 @@ def(void, ENGINE_cleanup, (void));
 def(void, EVP_cleanup, (void));
 def(void, CONF_modules_unload, (int));
 def(void, CONF_modules_free, (void));
+def(DH *, DH_new, (void));
+def(void, DH_free, (DH *dh));
+def(int, DH_generate_parameters_ex, (DH *dh, int prime_len, int generator, BN_GENCB *cb));
+def(int, DH_check, (const DH *dh, int *codes));
+def(int, i2d_DHparams, (const DH *a, unsigned char **pp));
+def(DH *, d2i_DHparams, (DH **a, const unsigned char **pp, long length));
 
 template<typename Ret, typename ...Args, typename ...Args2>
 Ret safe_call(Ret(*f)(Args...), Args2&& ... args)
@@ -247,6 +253,11 @@ void safe_call(void(*f)(Args...), Args2&& ... args)
 	if (f) {
 		f(std::forward<Args2>(args)...);
 	}
+}
+
+
+namespace {
+static LPCTSTR diffie_hellman_params = _T("30820108028201010097EAE2115B89A0F17A0E82E7E528BD20E4801E153D26763616BEF04D20EEDFF5576522B9167BF8CCD2FE4987F41D86CB91BC307CCBF68B14EE8E19191A84AD9EB4A8CB6DA5CCAFA59CB76C28641C5D948CC34F9898BFC385DAEBBD8C86C67AABFDCB1E36E3604CEB066DA4359FEA701828036F4CAE8777C727B6B0F4578702F8C913A03BE3412736AE9DB753EC03F232FED3457BD9383B845ECB25CDD3E0112AC3D3E514AB020F4032801BF47E823029D254D4A4FF0200A93980E92952E1ECA87526CBA765331835B3609FD9FA13F8754565331C04F7AC8E19B5FCB41BA0A82C7FAB3A358280DD2079A3495572B0747DBEB4D7F219F82C5D98DF35180396B473020102FD");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -363,6 +374,12 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll2, EVP_cleanup);
 		proc(m_sslDll2, CONF_modules_unload);
 		proc(m_sslDll2, CONF_modules_free);
+		proc(m_sslDll2, DH_new);
+		proc(m_sslDll2, DH_free);
+		proc(m_sslDll2, DH_generate_parameters_ex);
+		proc(m_sslDll2, DH_check);
+		proc(m_sslDll2, i2d_DHparams);
+		proc(m_sslDll2, d2i_DHparams);
 
 		if (bError) {
 			DoUnloadLibrary();
@@ -911,6 +928,97 @@ BOOL CAsyncSslSocketLayer::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 	return res;
 }
 
+namespace {
+TCHAR toHexDigit(unsigned char c)
+{
+	if (c >= 10) {
+		return c + 'A' - 10;
+	}
+	else {
+		return c + '0';
+	}
+}
+
+unsigned char fromHexDigit(TCHAR c)
+{
+	if (c >= 'a')
+		return c - 'a' + 10;
+	else if (c >= 'A')
+		return c - 'A' + 10;
+	else
+		return c - '0';
+}
+}
+
+CStdString CAsyncSslSocketLayer::GenerateDiffieHellmanParameters()
+{
+	CStdString ret;
+
+	if (m_bSslInitialized) {
+		// Set DH parameters
+		DH* dh = pDH_new();
+		int res = pDH_generate_parameters_ex(dh, 2048, DH_GENERATOR_2, 0);
+		if (res == 1) {
+			int len = pi2d_DHparams(dh, 0);
+			if (len > 0) {
+				auto buf = new unsigned char[len];
+
+				// Who designed this API?
+				auto tmp = buf;
+				if ((pi2d_DHparams(dh, &tmp) == len)) {
+
+					// Convert to hex encoding
+					for (int i = 0; i <= len; ++i) {
+						ret += toHexDigit(buf[i] >> 4);
+						ret += toHexDigit(buf[i] & 0xfu);
+					}
+				}
+
+				delete [] buf;
+			}
+		}
+
+		pDH_free(dh);
+	}
+
+	return ret;
+}
+
+bool CAsyncSslSocketLayer::SetDiffieHellmanParameters(CStdString const& params)
+{
+	bool ret{};
+	if (m_bSslInitialized) {
+		if (m_dh) {
+			pDH_free(m_dh);
+		}
+
+		if (!(params.GetLength() % 2)) {
+			int const len = params.GetLength() / 2;
+			auto buf = new unsigned char[len];
+			for (int i = 0; i < len; ++i) {
+				buf[i] = fromHexDigit(params[i * 2]) << 4;
+				buf[i] += fromHexDigit(params[i * 2 + 1]);
+			}
+
+			m_dh = pd2i_DHparams(0, const_cast<const unsigned char**>(&buf), len);
+			if (m_dh) {
+
+				int tmp{};
+				if (pDH_check(m_dh, &tmp) == 1 && !tmp) {
+					ret = true;
+				}
+			}
+		}
+
+		if (!ret && m_dh) {
+			pDH_free(m_dh);
+			m_dh = 0;
+		}
+	}
+
+	return ret;
+}
+
 int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, CAsyncSslSocketLayer* primarySocket, bool require_session_reuse)
 {
 	if (m_bUseSSL)
@@ -957,6 +1065,12 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, CAsyncSslSocketLaye
 
 	// Disable DES and other weak and export ciphers
 	pSSL_set_cipher_list(m_ssl, "DEFAULT:!eNULL:!aNULL:!DES:!3DES:!WEAK:!EXP:!LOW:!MD5:!RC4");
+
+	if (!SetDiffieHellmanParameters(diffie_hellman_params)) {
+		ResetSslSession();
+		return SSL_FAILURE_INITSSL;
+	}
+	pSSL_ctrl(m_ssl, SSL_CTRL_SET_TMP_DH, 0, (char *)m_dh);
 
 	//Add current instance to list of active instances
 	t_SslLayerList *tmp = m_pSslLayerList;
@@ -1294,6 +1408,11 @@ void CAsyncSslSocketLayer::UnloadSSL()
 	if (!m_bSslInitialized)
 		return;
 	ResetSslSession();
+
+	if (m_dh) {
+		pDH_free(m_dh);
+		m_dh = 0;
+	}
 
 	m_bSslInitialized = false;
 
@@ -2012,6 +2131,7 @@ bool CAsyncSslSocketLayer::CreateContext()
 
 	long options = pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, 0, NULL);
 	options |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; // todo: add option so that users can further tighten requirements
+	options |= SSL_OP_SINGLE_DH_USE | SSL_OP_SINGLE_ECDH_USE; // Require a new (EC)DH key with each connection. Of course the OpenSSL documentation only documents the former, not the latter.
 	options &= ~(SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION|SSL_OP_LEGACY_SERVER_CONNECT);
 
 	pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options, NULL);
