@@ -126,7 +126,7 @@ public:
 							 addFunc_t addFunc,
 							 bool *enabledFacts = 0);
 
-	// Full direcoty listing with all details. Used by LIST command
+	// Full directory listing with all details. Used by LIST command
 	static void AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *);
 
 	// Directory listing with just the filenames. Used by NLST command
