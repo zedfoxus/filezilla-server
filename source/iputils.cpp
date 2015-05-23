@@ -49,7 +49,7 @@ bool IsValidAddressFilter(CStdString& filter)
 	else
 		left = filter;
 
-	if (!IsIpAddress(left))
+	if (!IsIpAddress(left, true))
 		return false;
 
 	if (left.Find(':') != -1)
@@ -117,13 +117,11 @@ bool MatchesFilter(CStdString filter, CStdString ip)
 
 	// Check for IP range syntax.
 	int pos = filter.Find('/');
-	if (pos != -1)
-	{
+	if (pos != -1) {
 		// CIDR filter
 		int prefixLength = _ttoi(filter.Mid(pos+1));
 
-		if (ip.Find(':') != -1)
-		{
+		if (ip.Find(':') != -1) {
 			// IPv6 address
 			CStdString left = GetIPV6LongForm(filter.Left(pos));
 			if (left.Find(':') == -1)
@@ -131,16 +129,14 @@ bool MatchesFilter(CStdString filter, CStdString ip)
 			ip = GetIPV6LongForm(ip);
 			LPCTSTR i = ip;
 			LPCTSTR f = left;
-			while (prefixLength >= 4)
-			{
+			while (prefixLength >= 4) {
 				if (*i != *f)
 					return false;
 
 				if (!*i)
 					return true;
 
-				if (*i == ':')
-				{
+				if (*i == ':') {
 					++i;
 					++f;
 				}
@@ -162,8 +158,7 @@ bool MatchesFilter(CStdString filter, CStdString ip)
 
 			return (DigitHexToDecNum(*i) & mask) == (DigitHexToDecNum(*f) & mask);
 		}
-		else
-		{
+		else {
 			if (prefixLength < 0)
 				prefixLength = 0;
 			else if (prefixLength > 32)
@@ -182,8 +177,7 @@ bool MatchesFilter(CStdString filter, CStdString ip)
 			return i == f;
 		}
 	}
-	else
-	{
+	else {
 		// Literal filter
 		if (filter.Find(':') != -1)
 			return filter == GetIPV6ShortForm(ip);
