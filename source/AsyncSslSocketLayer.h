@@ -138,7 +138,7 @@ class CAsyncSslSocketLayer final : public CAsyncSocketExLayer
 {
 public:
 	BOOL SetCertStorage(CString const& file);
-	CAsyncSslSocketLayer() {};
+	CAsyncSslSocketLayer(int minTlsVersion);
 	virtual ~CAsyncSslSocketLayer();
 
 	void SetNotifyReply(int nID, int nCode, int result);
@@ -252,6 +252,8 @@ private:
 	ShutDownState shutDownState = ShutDownState::none;
 
 	DH* m_dh{};
+
+	int m_minTlsVersion;
 };
 
 #define SSL_INFO 0

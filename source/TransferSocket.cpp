@@ -552,7 +552,7 @@ void CTransferSocket::OnConnect(int nErrorCode)
 		// Disable Nagle algorithm for duration of the handshake.
 		SetNodelay(true);
 		if (!m_pSslLayer)
-			m_pSslLayer = new CAsyncSslSocketLayer();
+			m_pSslLayer = new CAsyncSslSocketLayer(m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TLS_MINVERSION));
 		VERIFY(AddLayer(m_pSslLayer));
 
 		int code = m_pSslLayer->InitSSLConnection(false, m_pOwner->GetSslLayer(), m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TLS_REQUIRE_SESSION_RESUMPTION) != 0);
@@ -634,7 +634,7 @@ void CTransferSocket::OnAccept(int nErrorCode)
 		SetNodelay(true);
 
 		if (!m_pSslLayer)
-			m_pSslLayer = new CAsyncSslSocketLayer();
+			m_pSslLayer = new CAsyncSslSocketLayer(m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TLS_MINVERSION));
 		VERIFY(AddLayer(m_pSslLayer));
 
 		int code = m_pSslLayer->InitSSLConnection(false, m_pOwner->GetSslLayer(), m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TLS_REQUIRE_SESSION_RESUMPTION) != 0);

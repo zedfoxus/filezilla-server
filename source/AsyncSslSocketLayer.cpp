@@ -275,6 +275,11 @@ std::map<SSL_CTX *, int> CAsyncSslSocketLayer::m_contextRefCount;
 //Used internally by openssl via callbacks
 static std::recursive_mutex *openssl_mutexes;
 
+CAsyncSslSocketLayer::CAsyncSslSocketLayer(int minTlsVersion)
+	: m_minTlsVersion(minTlsVersion)
+{
+}
+
 CAsyncSslSocketLayer::~CAsyncSslSocketLayer()
 {
 	UnloadSSL();
@@ -1847,7 +1852,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	// Certificate valid for a year
 	int days = 365;
 
-	CAsyncSslSocketLayer layer;
+	CAsyncSslSocketLayer layer(0);
 	if (layer.InitSSL()) {
 		err = _T("Failed to initialize SSL library");
 		return false;
@@ -2150,6 +2155,17 @@ bool CAsyncSslSocketLayer::CreateContext()
 	options |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; // todo: add option so that users can further tighten requirements
 	options |= SSL_OP_SINGLE_DH_USE | SSL_OP_SINGLE_ECDH_USE; // Require a new (EC)DH key with each connection. Of course the OpenSSL documentation only documents the former, not the latter.
 	options &= ~(SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION|SSL_OP_LEGACY_SERVER_CONNECT);
+	
+	// Fall-throughs are intentional
+	switch (m_minTlsVersion) {
+	default:
+	case 2:
+		options |= SSL_OP_NO_TLSv1_1;
+	case 1:
+		options |= SSL_OP_NO_TLSv1;
+	case 0:
+		break;
+	}
 
 	pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options, NULL);
 

@@ -168,7 +168,7 @@ BOOL COptionsSslPage::IsDataValid()
 
 	if (m_enabled && m_pOptionsDlg->IsLocalConnection())
 	{
-		CAsyncSslSocketLayer layer;
+		CAsyncSslSocketLayer layer(0);
 		CString error;
 		int res = layer.SetCertKeyFile(m_certificate, m_key, m_pass, &error);
 		if (res == SSL_FAILURE_LOADDLLS) {

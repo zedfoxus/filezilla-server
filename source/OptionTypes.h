@@ -77,8 +77,9 @@
 #define OPTION_AUTOBAN_ATTEMPTS 56
 #define OPTION_AUTOBAN_TYPE 57
 #define OPTION_AUTOBAN_BANTIME 58
+#define OPTION_TLS_MINVERSION 59
 
-#define OPTIONS_NUM 58
+#define OPTIONS_NUM 59
 
 #define CONST_WELCOMEMESSAGE_LINESIZE 75
 
@@ -151,7 +152,8 @@ static const t_Option m_Options[OPTIONS_NUM]={	_T("Serverports"),				0,	FALSE,
 												_T("Autoban enable"),			1,	FALSE,
 												_T("Autoban attempts"),			1,	FALSE,
 												_T("Autoban type"),				1,	FALSE,
-												_T("Autoban time"),				1,	FALSE
+												_T("Autoban time"),				1,	FALSE,
+												_T("Minimum TLS version"),		1,	FALSE
 											};
 
 #endif

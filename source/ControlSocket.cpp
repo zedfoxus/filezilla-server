@@ -1490,7 +1490,7 @@ void CControlSocket::ParseCommand()
 					break;
 				}
 
-				m_pSslLayer = new CAsyncSslSocketLayer;
+				m_pSslLayer = new CAsyncSslSocketLayer(m_owner.m_pOptions->GetOptionVal(OPTION_TLS_MINVERSION));
 				BOOL res = AddLayer(m_pSslLayer);
 
 				if (res) {
@@ -2572,7 +2572,7 @@ int CControlSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 
 bool CControlSocket::InitImplicitSsl()
 {
-	m_pSslLayer = new CAsyncSslSocketLayer;
+	m_pSslLayer = new CAsyncSslSocketLayer(m_owner.m_pOptions->GetOptionVal(OPTION_TLS_MINVERSION));
 	int res = AddLayer(m_pSslLayer) ? 1 : 0;
 	if (!res) {
 		delete m_pSslLayer;

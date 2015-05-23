@@ -1283,7 +1283,7 @@ void CServer::VerifyTlsSettings(CAdminSocket *pAdminSocket)
 			ShowStatus(_T("Warning: Explicit FTP over TLS is not enabled or there is no FTP listen socket configured."), 1, pAdminSocket);
 		}
 
-		CAsyncSslSocketLayer layer;
+		CAsyncSslSocketLayer layer(0);
 		CString error;
 
 		CString cert = m_pOptions->GetOption(OPTION_TLSCERTFILE);
