@@ -35,12 +35,11 @@ bool IsLocalhost(const CStdString& ip)
 bool IsValidAddressFilter(CStdString& filter)
 {
 	CStdString left;
-	int pos = filter.Find(_T("/"));
+	int const pos = filter.Find(_T("/"));
 	int prefixLength = 0;
 	if (!pos)
 		return false;
-	else if (pos != -1)
-	{
+	else if (pos != -1) {
 		left = filter.Left(pos);
 		prefixLength = _ttoi(filter.Mid(pos + 1));
 		if (prefixLength < 0 || prefixLength > 128)
@@ -54,7 +53,7 @@ bool IsValidAddressFilter(CStdString& filter)
 
 	if (left.Find(':') != -1)
 		left = GetIPV6ShortForm(left);
-	if (prefixLength)
+	if (pos != -1)
 		filter.Format(_T("%s/%d"), (LPCTSTR)left, prefixLength);
 	else
 		filter = left;
