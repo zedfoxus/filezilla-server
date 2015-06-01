@@ -26,8 +26,8 @@ public:
 	CServer();
 	~CServer();
 	HWND GetHwnd();
-	COptions *m_pOptions;
-	CAutoBanManager* m_pAutoBanManager;
+	COptions *m_pOptions{};
+	CAutoBanManager* m_pAutoBanManager{};
 
 	void AdminLoggedOn(CAdminSocket *pAdminSocket);
 protected:
@@ -46,8 +46,8 @@ protected:
 	// Send state to interface
 	void SendState();
 
-	BOOL m_bQuit;
-	int m_nServerState;
+	BOOL m_bQuit{};
+	int m_nServerState{};
 	CAdminInterface *m_pAdminInterface;
 	CFileLogger *m_pFileLogger{};
 
@@ -60,19 +60,18 @@ protected:
 
 	std::map<int, t_connectiondata> m_UsersList;
 
-	UINT m_nTimerID;
+	UINT m_nTimerID{};
+	UINT m_nBanTimerID{};
 
-	_int64 m_nRecvCount;
-	_int64 m_nSendCount;
-
-	UINT m_nBanTimerID;
+	int64_t m_nRecvCount{};
+	int64_t m_nSendCount{};
 
 	LRESULT OnServerMessage(CServerThread *pThread, WPARAM wParam, LPARAM lParam);
 
 	std::unique_ptr<CAsyncSslSocketLayer> m_sslLoader;
 private:
 	static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-	HWND m_hWnd;
+	HWND m_hWnd{};
 };
 
 #endif // !defined(AFX_SERVER_H__4896D8C6_EDB5_438E_98E6_08957DBCD1BC__INCLUDED_)

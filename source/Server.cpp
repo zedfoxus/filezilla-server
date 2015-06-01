@@ -43,20 +43,10 @@
 
 CServer::CServer()
 {
-	m_hWnd=0;
-	m_pOptions = NULL;
 	m_pAdminInterface = new CAdminInterface(this);
-	m_nServerState = 0;
-	m_bQuit = FALSE;
-
-	m_nSendCount = m_nRecvCount = 0;
-	m_nTimerID = 0;
-	m_nBanTimerID = 0;
 
 	// Since this thread has to handle notifications, increase it's priority
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
-
-	m_pAutoBanManager = 0;
 }
 
 CServer::~CServer()
@@ -126,8 +116,7 @@ bool CServer::Create()
 	m_nBanTimerID = SetTimer(m_hWnd, 1235, 60000, NULL);
 	ASSERT(m_nBanTimerID);
 
-	if (CreateListenSocket())
-	{
+	if (CreateListenSocket()) {
 		m_nServerState = STATE_ONLINE;
 		ShowStatus(_T("Server online."), 0);
 	}
