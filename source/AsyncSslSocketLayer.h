@@ -161,8 +161,6 @@ public:
 
 	CStdString GenerateDiffieHellmanParameters();
 
-	bool SetDiffieHellmanParameters(CStdString const& params);
-
 	// If needed, lLoads the library and does global initialization.
 	// Return 0 on success
 	int InitSSL();
@@ -193,7 +191,9 @@ private:
 
 	int LoadCertKeyFile(const char* cert, const char* key, CString* error, bool checkExpired);
 
-	//Will be called from the OpenSSL library
+	bool SetDiffieHellmanParameters(CStdString const& params);
+
+	// Will be called from the OpenSSL library
 	static void apps_ssl_info_callback(const SSL *s, int where, int ret);
 	static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
 	static int pem_passwd_cb(char *buf, int size, int rwflag, void *userdata);
@@ -225,8 +225,11 @@ private:
 	static DLL m_sslDll1;
 	static DLL m_sslDll2;
 
+	static DH* m_dh;
+
 	// SSL data
 	std::shared_ptr<SSL_CTX> m_ssl_ctx{}; // SSL context
+
 	SSL* m_ssl{};			// current session handle
 
 	// Data channels for encrypted/unencrypted data
@@ -255,8 +258,6 @@ private:
 	CAsyncSslSocketLayer* m_primarySocket{};
 
 	ShutDownState shutDownState = ShutDownState::none;
-
-	DH* m_dh{};
 
 	int m_minTlsVersion;
 };

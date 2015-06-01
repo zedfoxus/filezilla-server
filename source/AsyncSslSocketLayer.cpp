@@ -270,6 +270,7 @@ CAsyncSslSocketLayer::t_SslLayerList* CAsyncSslSocketLayer::m_pSslLayerList = 0;
 int CAsyncSslSocketLayer::m_nSslRefCount = 0;
 DLL CAsyncSslSocketLayer::m_sslDll1;
 DLL CAsyncSslSocketLayer::m_sslDll2;
+DH* CAsyncSslSocketLayer::m_dh = 0;
 
 //Used internally by openssl via callbacks
 static std::recursive_mutex *openssl_mutexes;
@@ -461,6 +462,11 @@ int CAsyncSslSocketLayer::InitSSL()
 
 		pSSL_load_error_strings();
 		if (!pSSL_library_init()) {
+			DoUnloadLibrary();
+			return SSL_FAILURE_INITSSL;
+		}
+
+		if (!SetDiffieHellmanParameters(diffie_hellman_params)) {
 			DoUnloadLibrary();
 			return SSL_FAILURE_INITSSL;
 		}
@@ -995,36 +1001,34 @@ CStdString CAsyncSslSocketLayer::GenerateDiffieHellmanParameters()
 bool CAsyncSslSocketLayer::SetDiffieHellmanParameters(CStdString const& params)
 {
 	bool ret{};
-	if (m_bSslInitialized) {
+	if (m_dh) {
+		pDH_free(m_dh);
+		m_dh = 0;
+	}
+
+	if (!(params.GetLength() % 2)) {
+		int const len = params.GetLength() / 2;
+		auto buf = new unsigned char[len];
+		for (int i = 0; i < len; ++i) {
+			buf[i] = fromHexDigit(params[i * 2]) << 4;
+			buf[i] += fromHexDigit(params[i * 2 + 1]);
+		}
+
+		auto * tmp = buf;
+		m_dh = pd2i_DHparams(0, const_cast<const unsigned char**>(&tmp), len);
 		if (m_dh) {
-			pDH_free(m_dh);
-			m_dh = 0;
-		}
 
-		if (!(params.GetLength() % 2)) {
-			int const len = params.GetLength() / 2;
-			auto buf = new unsigned char[len];
-			for (int i = 0; i < len; ++i) {
-				buf[i] = fromHexDigit(params[i * 2]) << 4;
-				buf[i] += fromHexDigit(params[i * 2 + 1]);
+			int tmp{};
+			if (pDH_check(m_dh, &tmp) == 1 && !tmp) {
+				ret = true;
 			}
-
-			auto * tmp = buf;
-			m_dh = pd2i_DHparams(0, const_cast<const unsigned char**>(&tmp), len);
-			if (m_dh) {
-
-				int tmp{};
-				if (pDH_check(m_dh, &tmp) == 1 && !tmp) {
-					ret = true;
-				}
-			}
-			delete [] buf;
 		}
+		delete [] buf;
+	}
 
-		if (!ret && m_dh) {
-			pDH_free(m_dh);
-			m_dh = 0;
-		}
+	if (!ret && m_dh) {
+		pDH_free(m_dh);
+		m_dh = 0;
 	}
 
 	return ret;
@@ -1072,11 +1076,9 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, CAsyncSslSocketLaye
 	pSSL_set_cipher_list(m_ssl, "DEFAULT:!eNULL:!aNULL:!DES:!3DES:!WEAK:!EXP:!LOW:!MD5:!RC4");
 
 	// Enable Diffie-Hellman
-	if (!SetDiffieHellmanParameters(diffie_hellman_params)) {
-		ResetSslSession();
-		return SSL_FAILURE_INITSSL;
+	if (m_dh) {
+		pSSL_ctrl(m_ssl, SSL_CTRL_SET_TMP_DH, 0, (char *)m_dh);
 	}
-	pSSL_ctrl(m_ssl, SSL_CTRL_SET_TMP_DH, 0, (char *)m_dh);
 
 	// ECDH
 	EC_KEY* ec_key = pEC_KEY_new_by_curve_name(NID_X9_62_prime256v1); // In future, consider using Curve25519 once supported by OpenSSL
@@ -1416,11 +1418,6 @@ void CAsyncSslSocketLayer::UnloadSSL()
 		return;
 	ResetSslSession();
 
-	if (m_dh) {
-		pDH_free(m_dh);
-		m_dh = 0;
-	}
-
 	m_bSslInitialized = false;
 
 	simple_lock lock(m_mutex);
@@ -1434,6 +1431,11 @@ void CAsyncSslSocketLayer::UnloadSSL()
 
 void CAsyncSslSocketLayer::DoUnloadLibrary()
 {
+	if (m_dh) {
+		safe_call(pDH_free, m_dh);
+		m_dh = 0;
+	}
+
 	safe_call(pCONF_modules_free);
 	safe_call(pENGINE_cleanup);
 	safe_call(pEVP_cleanup);
