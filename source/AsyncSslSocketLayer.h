@@ -215,12 +215,6 @@ private:
 	int m_nVerificationResult{};
 	int m_nVerificationDepth{};
 
-	static struct t_SslLayerList
-	{
-		CAsyncSslSocketLayer *pLayer{};
-		t_SslLayerList *pNext{};
-	} *m_pSslLayerList;
-
 	// Handles to the SLL libraries
 	static DLL m_sslDll1;
 	static DLL m_sslDll2;

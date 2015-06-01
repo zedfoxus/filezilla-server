@@ -167,6 +167,8 @@ def(void, SSL_CTX_sess_set_new_cb, (SSL_CTX *ctx, int (*new_session_cb)(SSL *, S
 def(void, SSL_CTX_sess_set_remove_cb, (SSL_CTX *ctx, void (*remove_session_cb)(SSL_CTX *ctx, SSL_SESSION *)));
 def(void, SSL_CTX_sess_set_get_cb, (SSL_CTX *ctx, SSL_SESSION *(*get_session_cb)(SSL *, unsigned char *, int, int *)));
 def(long, SSL_CTX_callback_ctrl, (SSL_CTX *, int, void (*)(void)));
+def(int, SSL_set_ex_data, (SSL *ssl, int idx, void *arg));
+def(void*, SSL_get_ex_data, (const SSL *ssl, int idx));
 
 def(size_t, BIO_ctrl_pending, (BIO *b));
 def(int, BIO_read, (BIO *b, void *data, int len));
@@ -266,7 +268,6 @@ static LPCTSTR diffie_hellman_params = _T("30820108028201010097EAE2115B89A0F17A0
 // CAsyncSslSocketLayer
 std::recursive_mutex CAsyncSslSocketLayer::m_mutex;
 
-CAsyncSslSocketLayer::t_SslLayerList* CAsyncSslSocketLayer::m_pSslLayerList = 0;
 int CAsyncSslSocketLayer::m_nSslRefCount = 0;
 DLL CAsyncSslSocketLayer::m_sslDll1;
 DLL CAsyncSslSocketLayer::m_sslDll2;
@@ -454,6 +455,8 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll1, SSL_CTX_sess_set_remove_cb);
 		proc(m_sslDll1, SSL_CTX_sess_set_get_cb);
 		proc(m_sslDll1, SSL_CTX_callback_ctrl);
+		proc(m_sslDll1, SSL_set_ex_data);
+		proc(m_sslDll1, SSL_get_ex_data);
 
 		if (bError) {
 			DoUnloadLibrary();
@@ -1071,6 +1074,7 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, CAsyncSslSocketLaye
 		ResetSslSession();
 		return SSL_FAILURE_INITSSL;
 	}
+	pSSL_set_ex_data(m_ssl, 0, this);
 
 	// Disable DES and other weak and export ciphers
 	pSSL_set_cipher_list(m_ssl, "DEFAULT:!eNULL:!aNULL:!DES:!3DES:!WEAK:!EXP:!LOW:!MD5:!RC4");
@@ -1088,12 +1092,6 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, CAsyncSslSocketLaye
     }
     pSSL_ctrl(m_ssl, SSL_CTRL_SET_TMP_ECDH, 0, (char *)ec_key);
     pEC_KEY_free(ec_key);
-
-	//Add current instance to list of active instances
-	t_SslLayerList *tmp = m_pSslLayerList;
-	m_pSslLayerList = new t_SslLayerList;
-	m_pSslLayerList->pNext = tmp;
-	m_pSslLayerList->pLayer = this;
 
 	lock.unlock();
 
@@ -1175,23 +1173,6 @@ void CAsyncSslSocketLayer::ResetSslSession()
 
 	delete [] m_pKeyPassword;
 	m_pKeyPassword = 0;
-
-	t_SslLayerList *cur = m_pSslLayerList;
-	t_SslLayerList *prev = 0;
-	while( cur ) {
-		if( cur->pLayer == this ) {
-			if( prev ) {
-				prev->pNext = cur->pNext;
-			}
-			else {
-				m_pSslLayerList = cur->pNext;
-			}
-			delete cur;
-			break;
-		}
-		prev = cur;
-		cur = cur->pNext;
-	}
 }
 
 bool CAsyncSslSocketLayer::IsUsingSSL()
@@ -1286,15 +1267,7 @@ bool matching_session(SSL* control, SSL* data)
 
 void CAsyncSslSocketLayer::apps_ssl_info_callback(const SSL *s, int where, int ret)
 {
-	CAsyncSslSocketLayer *pLayer = 0;
-	m_mutex.lock();
-	for (t_SslLayerList *cur = m_pSslLayerList; cur; cur = cur->pNext) {
-		if (cur->pLayer->m_ssl == s) {
-			pLayer = cur->pLayer;
-			break;
-		}
-	}
-	m_mutex.unlock();
+	auto const pLayer = static_cast<CAsyncSslSocketLayer*>(pSSL_get_ex_data(s, 0));
 
 	// Called while unloading?
 	if (!pLayer || !pLayer->m_bUseSSL)
@@ -1718,23 +1691,14 @@ int CAsyncSslSocketLayer::verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	 * and the application specific data stored into the SSL object.
 	 */
 	ssl = (SSL *)pX509_STORE_CTX_get_ex_data(ctx, pSSL_get_ex_data_X509_STORE_CTX_idx());
-
-	// Lookup CAsyncSslSocketLayer instance
-	CAsyncSslSocketLayer *pLayer = 0;
-	
-	scoped_lock lock(m_mutex);
-	t_SslLayerList *cur = m_pSslLayerList;
-	while (cur) {
-		if (cur->pLayer->m_ssl == ssl)
-			break;
-		cur = cur->pNext;
-	}
-	if (!cur) {
+	if (!ssl) {
 		return 1;
 	}
-	else
-		pLayer = cur->pLayer;
-	lock.unlock();
+
+	auto const pLayer = static_cast<CAsyncSslSocketLayer*>(pSSL_get_ex_data(ssl, 0));
+	if (!pLayer) {
+		return 1;
+	}
 
 	/*
 	 * Catch a too long certificate chain. The depth limit set using
