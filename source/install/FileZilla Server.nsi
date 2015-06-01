@@ -116,6 +116,20 @@ Var GetInstalledSize.total
 Section "-default files"
   SectionIn 1 2 3 4
 
+  ; Stopping interface
+  DetailPrint "Closing interface..."
+  Push "FileZilla Server Main Window"
+  Call CloseWindowByName
+
+  ${If} ${FileExists} "$INSTDIR\FileZilla Server.exe"
+    ExecWait '"$INSTDIR\FileZilla Server.exe" /stop'
+    ExecWait '"$INSTDIR\FileZilla Server.exe" /compat /stop'
+    Sleep 500
+    Push "FileZilla Server Helper Window"
+    call CloseWindowByName
+  ${EndIf}
+  Sleep 100
+
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
 
@@ -205,11 +219,6 @@ Section "Administration interface" SecFileZillaServerInterface
 
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
-
-  ; Stopping interface
-  DetailPrint "Closing interface..."
-  Push "FileZilla Server Main Window"
-  Call CloseWindowByName
 
   File "..\Release\FileZilla Server Interface.exe"
 
