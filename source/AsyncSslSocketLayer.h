@@ -101,6 +101,8 @@ Version 2.0:
 #include <openssl/ssl.h>
 #include "misc/dll.h"
 
+#include <memory>
+
 // Details of SSL certificate, can be used by app to verify if certificate is valid
 struct t_SslCertData final
 {
@@ -220,8 +222,7 @@ private:
 	static DLL m_sslDll2;
 
 	// SSL data
-	SSL_CTX* m_ssl_ctx{};	// SSL context
-	static std::map<SSL_CTX *, int> m_contextRefCount;
+	std::shared_ptr<SSL_CTX> m_ssl_ctx{}; // SSL context
 	SSL* m_ssl{};			// current session handle
 
 	// Data channels for encrypted/unencrypted data

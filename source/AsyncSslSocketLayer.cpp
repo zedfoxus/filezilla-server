@@ -270,7 +270,6 @@ CAsyncSslSocketLayer::t_SslLayerList* CAsyncSslSocketLayer::m_pSslLayerList = 0;
 int CAsyncSslSocketLayer::m_nSslRefCount = 0;
 DLL CAsyncSslSocketLayer::m_sslDll1;
 DLL CAsyncSslSocketLayer::m_sslDll2;
-std::map<SSL_CTX *, int> CAsyncSslSocketLayer::m_contextRefCount;
 
 //Used internally by openssl via callbacks
 static std::recursive_mutex *openssl_mutexes;
@@ -1048,13 +1047,7 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, CAsyncSslSocketLaye
 			return SSL_FAILURE_INITSSL;
 		}
 
-		auto iter = m_contextRefCount.find(primarySocket->m_ssl_ctx);
-		if (iter == m_contextRefCount.end() || iter->second < 1) {
-			ResetSslSession();
-			return SSL_FAILURE_INITSSL;
-		}
 		m_ssl_ctx = primarySocket->m_ssl_ctx;
-		++iter->second;
 	}
 	else if (!m_ssl_ctx) {
 		if (!CreateContext() ) {
@@ -1064,13 +1057,13 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, CAsyncSslSocketLaye
 
 		if (clientMode) {
 			USES_CONVERSION;
-			pSSL_CTX_set_verify(m_ssl_ctx, SSL_VERIFY_PEER, verify_callback);
-			pSSL_CTX_load_verify_locations(m_ssl_ctx, T2CA(m_CertStorage), 0);
+			pSSL_CTX_set_verify(m_ssl_ctx.get(), SSL_VERIFY_PEER, verify_callback);
+			pSSL_CTX_load_verify_locations(m_ssl_ctx.get(), T2CA(m_CertStorage), 0);
 		}
 	}
 
 	//Create new SSL session
-	if (!(m_ssl = pSSL_new(m_ssl_ctx))) {
+	if (!(m_ssl = pSSL_new(m_ssl_ctx.get()))) {
 		ResetSslSession();
 		return SSL_FAILURE_INITSSL;
 	}
@@ -1173,18 +1166,10 @@ void CAsyncSslSocketLayer::ResetSslSession()
 
 	simple_lock lock(m_mutex);
 
-	if (m_ssl_ctx) {
-		auto iter = m_contextRefCount.find(m_ssl_ctx);
-		if (iter != m_contextRefCount.end()) {
-			if (iter->second <= 1) {
-				pSSL_CTX_free(m_ssl_ctx);
-				m_contextRefCount.erase(iter);
-			}
-			else
-				--iter->second;
-		}
-		m_ssl_ctx = 0;
+	if (m_ssl_ctx.unique()) {
+		pSSL_CTX_free(m_ssl_ctx.get());
 	}
+	m_ssl_ctx.reset();
 
 	delete [] m_pKeyPassword;
 	m_pKeyPassword = 0;
@@ -1959,7 +1944,7 @@ int CAsyncSslSocketLayer::LoadCertKeyFile(char const* cert, char const* key, CSt
 		error->Format(_T("Could not load certificate file: Invalid file name"));
 		return SSL_FAILURE_VERIFYCERT;
 	}
-	else if (pSSL_CTX_use_certificate_chain_file(m_ssl_ctx, cert) <= 0) {
+	else if (pSSL_CTX_use_certificate_chain_file(m_ssl_ctx.get(), cert) <= 0) {
 		if (error) {
 			CStdString e;
 			int err = GetLastSslError(e);
@@ -1972,7 +1957,7 @@ int CAsyncSslSocketLayer::LoadCertKeyFile(char const* cert, char const* key, CSt
 		error->Format(_T("Could not load key file: Invalid file name"));
 		return SSL_FAILURE_VERIFYCERT;
 	}
-	else if (pSSL_CTX_use_PrivateKey_file(m_ssl_ctx, key, SSL_FILETYPE_PEM) <= 0) {
+	else if (pSSL_CTX_use_PrivateKey_file(m_ssl_ctx.get(), key, SSL_FILETYPE_PEM) <= 0) {
 		if (error) {
 			CStdString e;
 			int err = GetLastSslError(e);
@@ -1981,7 +1966,7 @@ int CAsyncSslSocketLayer::LoadCertKeyFile(char const* cert, char const* key, CSt
 		return SSL_FAILURE_VERIFYCERT;
 	}
 
-	if (!pSSL_CTX_check_private_key(m_ssl_ctx)) {
+	if (!pSSL_CTX_check_private_key(m_ssl_ctx.get())) {
 		if (error) {
 			CStdString e;
 			int err = GetLastSslError(e);
@@ -1991,7 +1976,7 @@ int CAsyncSslSocketLayer::LoadCertKeyFile(char const* cert, char const* key, CSt
 	}
 
 	if (checkExpired) {
-		X509* cert = pSSL_CTX_get0_certificate(m_ssl_ctx);
+		X509* cert = pSSL_CTX_get0_certificate(m_ssl_ctx.get());
 		if (cert) {
 			// I'd really like to use ASN1_UTCTIME_get here, but it's behind #if 0 without any alternative...
 			tm v;
@@ -2024,8 +2009,8 @@ int CAsyncSslSocketLayer::SetCertKeyFile(CString const& cert, CString const& key
 		return SSL_FAILURE_INITSSL;
 	}
 
-	pSSL_CTX_set_default_passwd_cb(m_ssl_ctx, pem_passwd_cb);
-	pSSL_CTX_set_default_passwd_cb_userdata(m_ssl_ctx, this);
+	pSSL_CTX_set_default_passwd_cb(m_ssl_ctx.get(), pem_passwd_cb);
+	pSSL_CTX_set_default_passwd_cb_userdata(m_ssl_ctx.get(), this);
 
 	delete [] m_pKeyPassword;
 	m_pKeyPassword = 0;
@@ -2042,7 +2027,7 @@ int CAsyncSslSocketLayer::SetCertKeyFile(CString const& cert, CString const& key
 	char const* ascii_key = T2CA(key);
 	res = LoadCertKeyFile(ascii_cert, ascii_key, error, checkExpired);
 
-	pSSL_CTX_set_default_passwd_cb_userdata(m_ssl_ctx, 0);
+	pSSL_CTX_set_default_passwd_cb_userdata(m_ssl_ctx.get(), 0);
 
 	return res;
 }
@@ -2141,17 +2126,24 @@ int CAsyncSslSocketLayer::pem_passwd_cb(char *buf, int size, int, void *userdata
 	return len;
 }
 
+namespace {
+void null_deleter(void*)
+{
+}
+}
+
 bool CAsyncSslSocketLayer::CreateContext()
 {
 	if (m_ssl_ctx)
 		return true;
 
-	if (!(m_ssl_ctx = pSSL_CTX_new( pSSLv23_method()))) {
+	auto ctx = pSSL_CTX_new(pSSLv23_method());
+	if (!ctx) {
 		return false;
 	}
-	m_contextRefCount[m_ssl_ctx] = 1;
+	m_ssl_ctx = decltype(m_ssl_ctx)(ctx, &null_deleter);
 
-	long options = pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, 0, NULL);
+	long options = pSSL_CTX_ctrl(m_ssl_ctx.get(), SSL_CTRL_OPTIONS, 0, NULL);
 	options |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; // todo: add option so that users can further tighten requirements
 	options |= SSL_OP_SINGLE_DH_USE | SSL_OP_SINGLE_ECDH_USE; // Require a new (EC)DH key with each connection. Of course the OpenSSL documentation only documents the former, not the latter.
 	options &= ~(SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION|SSL_OP_LEGACY_SERVER_CONNECT);
@@ -2167,11 +2159,11 @@ bool CAsyncSslSocketLayer::CreateContext()
 		break;
 	}
 
-	pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_OPTIONS, options, NULL);
+	pSSL_CTX_ctrl(m_ssl_ctx.get(), SSL_CTRL_OPTIONS, options, NULL);
 
-	pSSL_CTX_ctrl(m_ssl_ctx, SSL_CTRL_SET_SESS_CACHE_MODE, SSL_SESS_CACHE_BOTH|SSL_SESS_CACHE_NO_AUTO_CLEAR, NULL);
+	pSSL_CTX_ctrl(m_ssl_ctx.get(), SSL_CTRL_SET_SESS_CACHE_MODE, SSL_SESS_CACHE_BOTH|SSL_SESS_CACHE_NO_AUTO_CLEAR, NULL);
 
-	pSSL_CTX_set_timeout(m_ssl_ctx, 2000000000);
+	pSSL_CTX_set_timeout(m_ssl_ctx.get(), 2000000000);
 
 	return true;
 }
