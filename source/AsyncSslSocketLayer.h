@@ -162,6 +162,11 @@ public:
 	CStdString GenerateDiffieHellmanParameters();
 
 	bool SetDiffieHellmanParameters(CStdString const& params);
+
+	// If needed, lLoads the library and does global initialization.
+	// Return 0 on success
+	int InitSSL();
+
 private:
 	virtual void Close();
 	virtual BOOL Connect(LPCTSTR lpszHostAddress, UINT nHostPort );
@@ -178,7 +183,6 @@ private:
 	bool CreateContext();
 	void ResetSslSession();
 	void PrintSessionInfo();
-	int InitSSL();
 	void UnloadSSL();
 	void DoUnloadLibrary();
 	int GetLastSslError(CStdString& e);

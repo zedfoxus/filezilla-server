@@ -71,10 +71,10 @@ CServer::~CServer()
 	delete m_pAutoBanManager;
 	delete m_pFileLogger;
 	delete m_pOptions;
+	m_sslLoader.reset();
 
 	//Destroy window
-	if (m_hWnd)
-	{
+	if (m_hWnd) {
 		hMainWnd = 0;
 		DestroyWindow(m_hWnd);
 		m_hWnd = 0;
@@ -84,19 +84,11 @@ CServer::~CServer()
 bool CServer::Create()
 {
 	//Create window
-	WNDCLASSEX wndclass;
-	wndclass.cbSize=sizeof wndclass;
-	wndclass.style=0;
-	wndclass.lpfnWndProc=WindowProc;
-	wndclass.cbClsExtra=0;
-	wndclass.cbWndExtra=0;
-	wndclass.hInstance=GetModuleHandle(0);
-	wndclass.hIcon=0;
-	wndclass.hCursor=0;
-	wndclass.hbrBackground=0;
-	wndclass.lpszMenuName=0;
-	wndclass.lpszClassName=_T("FileZilla Server Helper Window");
-	wndclass.hIconSm=0;
+	WNDCLASSEX wndclass{};
+	wndclass.cbSize = sizeof wndclass;
+	wndclass.lpfnWndProc = WindowProc;
+	wndclass.hInstance = GetModuleHandle(0);
+	wndclass.lpszClassName = _T("FileZilla Server Helper Window");
 
 	RegisterClassEx(&wndclass);
 
@@ -143,6 +135,9 @@ bool CServer::Create()
 		ShowStatus(_T("Server not online."), 1);
 
 	CreateAdminListenSocket();
+
+	m_sslLoader = make_unique<CAsyncSslSocketLayer>(0);
+	m_sslLoader->InitSSL();
 
 	return true;
 }

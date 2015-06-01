@@ -5,6 +5,7 @@
 #if !defined(AFX_SERVER_H__4896D8C6_EDB5_438E_98E6_08957DBCD1BC__INCLUDED_)
 #define AFX_SERVER_H__4896D8C6_EDB5_438E_98E6_08957DBCD1BC__INCLUDED_
 
+class CAsyncSslSocketLayer;
 class CListenSocket;
 class CServerThread;
 class COptions;
@@ -67,6 +68,8 @@ protected:
 	UINT m_nBanTimerID;
 
 	LRESULT OnServerMessage(CServerThread *pThread, WPARAM wParam, LPARAM lParam);
+
+	std::unique_ptr<CAsyncSslSocketLayer> m_sslLoader;
 private:
 	static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	HWND m_hWnd;
