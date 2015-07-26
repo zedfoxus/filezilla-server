@@ -1721,6 +1721,7 @@ CStdString CUser::GetAliasTarget(CStdString const& virtualPath) const
 void CPermissions::ReadSettings()
 {
 	TiXmlElement *pXML = COptions::GetXML();
+	bool fileIsDirty = false; //By default, nothing gets changed when reading the file
 	if (!pXML)
 		return;
 
@@ -1806,9 +1807,10 @@ void CPermissions::ReadSettings()
 					char *res = md5.hex_digest();
 
 					pOption->Clear();
-					XML::SetText(pOption, res);
+					XML::SetText(pOption, res); //Replace the password in the file with the hash
 					user.password = res;
 					delete [] res;
+					fileIsDirty = true; //Mark the file as modified
 				}
 				else
 					user.password = value;
@@ -1883,7 +1885,7 @@ void CPermissions::ReadSettings()
 			m_sUsersList[name] = user;
 		}
 	}
-	COptions::FreeXML(pXML, false);
+	COptions::FreeXML(pXML, fileIsDirty); //Free, saving if the file is dirty
 }
 
 // Replace :u and :g (if a group it exists)
