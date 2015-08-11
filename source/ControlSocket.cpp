@@ -2016,7 +2016,7 @@ void CControlSocket::ProcessTransferMsg()
 		Send(_T("450 TLS session of data connection has not resumed or the session does not match the control connection"));
 	else if (status == transfer_status_t::tls_unknown)
 		Send(_T("450 Unknown TLS error on data connection"));
-	if (status != transfer_status_t::success && m_bWaitGoOffline) {
+	if (m_bWaitGoOffline) {
 		ForceClose(0);
 	}
 	else if (m_bQuitCommand) {
