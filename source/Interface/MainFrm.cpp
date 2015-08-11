@@ -126,7 +126,6 @@ CMainFrame::CMainFrame(COptions *pOptions)
 	m_nOldSendCount = 0;
 	m_pOptions = pOptions;
 	m_pAdminSocket = NULL;
-	m_nServerState = 0;
 	m_nEdit = 0;
 
 	m_pOptionsDlg = 0;
@@ -393,10 +392,8 @@ void CMainFrame::OnEditSettings()
 
 void CMainFrame::OnActive()
 {
-	if (m_nServerState & STATE_ONLINE && !(m_nServerState & STATE_MASK_GOOFFLINE))
-	{
-		if (!GetUsersPane()->m_pListCtrl->GetItemCount())
-		{
+	if (m_nServerState & STATE_ONLINE && !(m_nServerState & STATE_MASK_GOOFFLINE)) {
+		if (!GetUsersPane()->m_pListCtrl->GetItemCount()) {
 			if (AfxMessageBox(_T("Do you really want to take the server offline?"), MB_YESNO | MB_ICONQUESTION) != IDYES)
 				return;
 			int nServerState = m_nServerState | STATE_GOOFFLINE_NOW;
@@ -407,46 +404,41 @@ void CMainFrame::OnActive()
 			ShowStatus(_T("Server is going offline..."), 0);
 			return;
 		}
-		else
-		{
+		else {
 			COfflineAskDlg dlg;
 			if (dlg.DoModal() != IDOK)
 				return;
-			if (dlg.m_nRadio == 2)
-			{
+			if (dlg.m_nRadio == 2) {
 				int nServerState = m_nServerState | STATE_GOOFFLINE_WAITTRANSFER;
 				unsigned char buffer[2];
 				buffer[0] = nServerState / 256;
 				buffer[1] = nServerState % 256;
 				SendCommand(2, buffer, 2);
-				ShowStatus(_T("Server is going offline..."), 0);
+				ShowStatus(_T("Server is going offline when all transfers have finished..."), 0);
 				return;
 			}
-			if (dlg.m_nRadio == 1)
-			{
+			if (dlg.m_nRadio == 1) {
 				int nServerState = m_nServerState | STATE_GOOFFLINE_LOGOUT;
 				unsigned char buffer[2];
 				buffer[0] = nServerState / 256;
 				buffer[1] = nServerState % 256;
 				SendCommand(2, buffer, 2);
-				ShowStatus(_T("Server is going offline..."), 0);
+				ShowStatus(_T("Server is going offline when all users have logged out..."), 0);
 				return;
 			}
-			else
-			{
+			else {
 				int nServerState = m_nServerState | STATE_GOOFFLINE_NOW;
 				unsigned char buffer[2];
 				buffer[0] = nServerState / 256;
 				buffer[1] = nServerState % 256;
 				SendCommand(2, buffer, 2);
-				ShowStatus(_T("Server is going offline..."), 0);
+				ShowStatus(_T("Server is going offline now..."), 0);
 				return;
 			}
 		}
 	}
-	else
-	{
-		int nServerState = 1 + (m_nServerState & STATE_LOCKED);
+	else {
+		int nServerState = STATE_ONLINE | (m_nServerState & STATE_LOCKED);
 		unsigned char buffer[2];
 		buffer[0] = nServerState / 256;
 		buffer[1] = nServerState % 256;
@@ -499,40 +491,32 @@ void CMainFrame::OnTrayRestore()
 
 void CMainFrame::SetIcon()
 {
-	if (!m_pAdminSocket || !m_pAdminSocket->IsConnected())
-	{
+	if (!m_pAdminSocket || !m_pAdminSocket->IsConnected()) {
 		m_TrayIcon.StopAnimation();
 		m_TrayIcon.SetIcon(IDI_UNKNOWN);
 	}
-	else if (!(m_nServerState & STATE_ONLINE) || m_nServerState & STATE_MASK_GOOFFLINE)
-	{
-		if (!GetUsersPane()->m_pListCtrl->GetItemCount())
-		{
+	else if (!(m_nServerState & STATE_ONLINE) || m_nServerState & STATE_MASK_GOOFFLINE) {
+		if (!GetUsersPane()->m_pListCtrl->GetItemCount()) {
 			m_TrayIcon.StopAnimation();
 			m_TrayIcon.SetIcon(IDI_RED);
 		}
-		else
-		{
+		else {
 			m_TrayIcon.SetIconList(IDI_GREEN, IDI_RED);
 			m_TrayIcon.Animate(500);
 		}
 	}
-	else if (m_nServerState & STATE_LOCKED)
-	{
-		if (GetUsersPane()->m_pListCtrl->GetItemCount())
-		{
+	else if (m_nServerState & STATE_LOCKED) {
+		if (GetUsersPane()->m_pListCtrl->GetItemCount()) {
 			m_TrayIcon.SetIconList(IDI_GREEN, IDI_YELLOW);
 			m_TrayIcon.Animate(300);
 		}
-		else
-		{
+		else {
 			m_TrayIcon.SetIconList(IDI_YELLOW, IDI_RED);
 			m_TrayIcon.Animate(500);
 		}
 
 	}
-	else
-	{
+	else {
 		m_TrayIcon.StopAnimation();
 		m_TrayIcon.SetIcon(GetUsersPane()->m_pListCtrl->GetItemCount()?IDI_GREEN:IDI_YELLOW);
 	}
@@ -543,17 +527,15 @@ void CMainFrame::OnLock()
 {
 	if (!(m_nServerState & STATE_ONLINE) || m_nServerState & STATE_MASK_GOOFFLINE)
 		return;
-	if (m_nServerState & STATE_LOCKED)
-	{
+	if (m_nServerState & STATE_LOCKED) {
 		int nServerState = m_nServerState & ~STATE_LOCKED;
 		unsigned char buffer[2];
 		buffer[0] = nServerState / 256;
 		buffer[1] = nServerState % 256;
 		SendCommand(2, buffer, 2);
 	}
-	else
-	{
-		if (AfxMessageBox(_T("Do you really want to lock the server? No new connenctions will be accepted while locked."), MB_YESNO|MB_ICONQUESTION)!=IDYES)
+	else {
+		if (AfxMessageBox(_T("Do you really want to lock the server? No new connections will be accepted while locked."), MB_YESNO|MB_ICONQUESTION) != IDYES)
 			return;
 		int nServerState = m_nServerState | STATE_LOCKED;
 		unsigned char buffer[2];
