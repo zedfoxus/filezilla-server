@@ -58,7 +58,7 @@ public:
 	void CloseFile();
 
 	int GetMode() const;
-	BOOL Started() const;
+	bool Started() const;
 	BOOL CheckForTimeout();
 	void PasvTransfer();
 	transfer_status_t GetStatus() const;

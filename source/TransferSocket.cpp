@@ -952,7 +952,7 @@ BOOL CTransferSocket::CheckForTimeout()
 	return TRUE;
 }
 
-BOOL CTransferSocket::Started() const
+bool CTransferSocket::Started() const
 {
 	return m_bStarted;
 }
