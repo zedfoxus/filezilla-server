@@ -558,7 +558,7 @@ void CControlSocket::ParseCommand()
 			Send(_T("230 Logged on"));
 		break;
 	case commands::QUIT:
-		m_bQuitCommand = TRUE;
+		m_bQuitCommand = true;
 		if (!m_transferstatus.socket || !m_transferstatus.socket->InitCalled())
 		{
 			Send(_T("221 Goodbye"));
@@ -1953,7 +1953,7 @@ void CControlSocket::ProcessTransferMsg()
 
 	GetSystemTime(&m_LastCmdTime);
 	if (m_transferstatus.socket)
-		if (m_transferstatus.socket->GetMode()==TRANSFERMODE_SEND || m_transferstatus.socket->GetMode()==TRANSFERMODE_RECEIVE)
+		if (m_transferstatus.socket->GetMode() == TRANSFERMODE_SEND || m_transferstatus.socket->GetMode() == TRANSFERMODE_RECEIVE)
 			GetSystemTime(&m_LastTransferTime);
 
 	if (status == transfer_status_t::noconn && m_transferstatus.pasv && m_transferstatus.usedResolvedIP)
@@ -2159,20 +2159,13 @@ void CControlSocket::CheckForTimeout()
 	}
 }
 
-void CControlSocket::WaitGoOffline(bool wait /*=true*/)
+void CControlSocket::WaitGoOffline()
 {
-	if (!wait)
-	{
-		m_bWaitGoOffline = FALSE;
-		return;
-	}
-
-	if (m_transferstatus.socket)
-	{
+	if (m_transferstatus.socket) {
 		if (!m_transferstatus.socket->Started())
 			ForceClose(0);
 		else
-			m_bWaitGoOffline=TRUE;
+			m_bWaitGoOffline = true;
 	}
 	else
 		ForceClose(0);

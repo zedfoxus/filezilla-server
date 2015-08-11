@@ -37,6 +37,8 @@
 #include "ServerThread.h"
 #include "version.h"
 
+#include <iterator>
+
 #ifndef MB_SERVICE_NOTIFICATION
 #define MB_SERVICE_NOTIFICATION          0x00040000L
 #endif
@@ -140,41 +142,35 @@ LRESULT CALLBACK CServer::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 {
 	CServer *pServer=(CServer *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
-	if (message == WM_CLOSE)
-	{
+	if (message == WM_CLOSE) {
 		pServer->OnClose();
 		return 0;
 	}
-	else if (hWnd && message == WM_DESTROY)
-	{
+	else if (hWnd && message == WM_DESTROY) {
 		ASSERT( hWnd == pServer->m_hWnd);
 		HANDLE *handle = new HANDLE[pServer->m_ThreadArray.size()];
 		unsigned int i = 0;
 		std::list<CServerThread *>::iterator iter;
-		for (iter = pServer->m_ThreadArray.begin(); iter != pServer->m_ThreadArray.end(); iter++, i++)
-		{
+		for (iter = pServer->m_ThreadArray.begin(); iter != pServer->m_ThreadArray.end(); ++iter, ++i) {
 			handle[i]=(*iter)->m_hThread;
 			(*iter)->PostThreadMessage(WM_QUIT, 0, 0);
 		}
-		for (i=0; i<pServer->m_ThreadArray.size(); i++)
-		{
-			int res=WaitForSingleObject(handle[i],INFINITE);
-			if (res==WAIT_FAILED)
-				res=GetLastError();
+		for (i=0; i < pServer->m_ThreadArray.size(); ++i) {
+			int res = WaitForSingleObject(handle[i], INFINITE);
+			if (res == WAIT_FAILED)
+				res = GetLastError();
 		}
 		delete [] handle;
 		handle = new HANDLE[pServer->m_ClosedThreads.size()];
 		i=0;
-		for (iter = pServer->m_ClosedThreads.begin(); iter != pServer->m_ClosedThreads.end(); iter++, i++)
-		{
+		for (iter = pServer->m_ClosedThreads.begin(); iter != pServer->m_ClosedThreads.end(); ++iter, ++i) {
 			handle[i]=(*iter)->m_hThread;
 			(*iter)->PostThreadMessage(WM_QUIT, 0, 0);
 		}
-		for (i = 0; i < pServer->m_ClosedThreads.size(); i++)
-		{
-			int res=WaitForSingleObject(handle[i],INFINITE);
-			if (res==WAIT_FAILED)
-				res=GetLastError();
+		for (i = 0; i < pServer->m_ClosedThreads.size(); ++i) {
+			int res = WaitForSingleObject(handle[i], INFINITE);
+			if (res == WAIT_FAILED)
+				res = GetLastError();
 		}
 		delete [] handle;
 		pServer->m_AdminListenSocketList.clear();
@@ -182,8 +178,7 @@ LRESULT CALLBACK CServer::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		pServer->m_pAdminInterface = NULL;
 		delete pServer->m_pOptions;
 		pServer->m_pOptions = NULL;
-		if (pServer->m_nTimerID)
-		{
+		if (pServer->m_nTimerID) {
 			KillTimer(pServer->m_hWnd, pServer->m_nTimerID);
 			pServer->m_nTimerID = 0;
 		}
@@ -192,22 +187,19 @@ LRESULT CALLBACK CServer::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	}
 	else if (message == WM_TIMER)
 		pServer->OnTimer(wParam);
-	else if (message == WM_FILEZILLA_RELOADCONFIG)
-	{
+	else if (message == WM_FILEZILLA_RELOADCONFIG) {
 		COptions options;
 		options.ReloadConfig();
 		CPermissions perm = CPermissions(std::function<void()>());
 		perm.ReloadConfig();
 	}
-	else if (message >= WM_FILEZILLA_SERVERMSG)
-	{
+	else if (message >= WM_FILEZILLA_SERVERMSG) {
 		UINT index = message - WM_FILEZILLA_SERVERMSG;
 		if (index >= pServer->m_ThreadNotificationIDs.size())
 			return 0;
 
 		CServerThread *pThread = pServer->m_ThreadNotificationIDs[index];
-		if (pThread)
-		{
+		if (pThread) {
 			std::list<CServerThread::t_Notification> notifications;
 			pThread->GetNotifications(notifications);
 			for (std::list<CServerThread::t_Notification>::const_iterator iter = notifications.begin(); iter != notifications.end(); iter++)
@@ -222,8 +214,7 @@ LRESULT CALLBACK CServer::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM lParam)
 {
-	if (wParam == FSM_STATUSMESSAGE)
-	{
+	if (wParam == FSM_STATUSMESSAGE) {
 		t_statusmsg *msg = reinterpret_cast<t_statusmsg *>(lParam);
 		if (!msg)
 			return 0;
@@ -239,8 +230,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 		delete [] msg->user;
 		delete msg;
 	}
-	else if (wParam == FSM_CONNECTIONDATA)
-	{
+	else if (wParam == FSM_CONNECTIONDATA) {
 		t_connop *pConnOp = reinterpret_cast<t_connop*>(lParam);
 		if (!pConnOp)
 			return 0;
@@ -392,28 +382,23 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 		delete [] buffer;
 		delete pConnOp;
 	}
-	else if (wParam == FSM_THREADCANQUIT)
-	{
+	else if (wParam == FSM_THREADCANQUIT) {
 		std::list<CServerThread *>::iterator iter;
-		for (iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); iter++)
-		{
-			if (*iter == pThread)
-			{
-				HANDLE handle=pThread->m_hThread;
+		for (iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); ++iter) {
+			if (*iter == pThread) {
+				HANDLE handle = pThread->m_hThread;
 				pThread->PostThreadMessage(WM_QUIT, 0, 0);
-				int res=WaitForSingleObject(handle, INFINITE);
-				if (res==WAIT_FAILED)
-					res=GetLastError();
+				int res = WaitForSingleObject(handle, INFINITE);
+				if (res == WAIT_FAILED)
+					res = GetLastError();
 				m_ThreadArray.erase(iter);
 				FreeThreadNotificationID(pThread);
-				if (!m_ThreadArray.size() && !m_ClosedThreads.size())
-				{
+				if (!m_ThreadArray.size() && !m_ClosedThreads.size()) {
 					m_nServerState &= ~(STATE_ONLINE | STATE_MASK_GOOFFLINE);
 					SendState();
 					if (!m_bQuit)
 						ShowStatus(_T("Server offline."), 1);
-					else
-					{
+					else {
 						hMainWnd = 0;
 						DestroyWindow(m_hWnd);
 						m_hWnd = 0;
@@ -422,10 +407,8 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				return -1;
 			}
 		}
-		for (iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); iter++)
-		{
-			if (*iter == pThread)
-			{
+		for (iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); ++iter) {
+			if (*iter == pThread) {
 				HANDLE handle = pThread->m_hThread;
 				pThread->PostThreadMessage(WM_QUIT, 0, 0);
 				int res = WaitForSingleObject(handle, INFINITE);
@@ -433,14 +416,12 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 					res = GetLastError();
 				m_ClosedThreads.erase(iter);
 				FreeThreadNotificationID(pThread);
-				if (!m_ThreadArray.size() && !m_ClosedThreads.size())
-				{
+				if (!m_ThreadArray.size() && !m_ClosedThreads.size()) {
 					m_nServerState &= ~(STATE_ONLINE | STATE_MASK_GOOFFLINE);
 					SendState();
 					if (!m_bQuit)
 						ShowStatus(_T("Server offline."), 1);
-					else
-					{
+					else {
 						hMainWnd = 0;
 						DestroyWindow(m_hWnd);
 						m_hWnd = 0;
@@ -451,16 +432,14 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 
 		}
 	}
-	else if (wParam == FSM_SEND)
-	{
+	else if (wParam == FSM_SEND) {
 		char buffer[5];
 		buffer[0] = 1;
 		memcpy(buffer+1, &lParam, 4);
 		m_pAdminInterface->SendCommand(2, 7, buffer, 5);
 		m_nSendCount += lParam;
 	}
-	else if (wParam == FSM_RECV)
-	{
+	else if (wParam == FSM_RECV) {
 		char buffer[5];
 		buffer[0] = 0;
 		memcpy(buffer+1, &lParam, 4);
@@ -473,17 +452,15 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 
 void CServer::OnClose()
 {
-	for (std::list<CListenSocket*>::iterator listIter = m_ListenSocketList.begin(); listIter != m_ListenSocketList.end(); listIter++)
-	{
-		(*listIter)->Close();
-		delete *listIter;
+	for (auto & socket : m_ListenSocketList) {
+		socket->Close();
+		delete socket;
 	}
 	m_ListenSocketList.clear();
 
-	m_bQuit = TRUE;
+	m_bQuit = true;
 
-	if (!m_ThreadArray.size() && !m_ClosedThreads.size())
-	{
+	if (!m_ThreadArray.size() && !m_ClosedThreads.size()) {
 		hMainWnd = 0;
 		DestroyWindow(m_hWnd);
 		m_hWnd = 0;
@@ -491,12 +468,10 @@ void CServer::OnClose()
 	}
 
 	std::list<CServerThread *>::iterator iter;
-	for (iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); iter++)
-	{
+	for (iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); ++iter) {
 		VERIFY((*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 0));
 	}
-	for (iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); iter++)
-	{
+	for (iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); ++iter) {
 		VERIFY((*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 0));
 	}
 }
@@ -506,15 +481,13 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 	switch (nID)
 	{
 	case 2:
-		if (!nDataLength)
-		{
+		if (!nDataLength) {
 			unsigned char buffer[2];
 			buffer[0] = m_nServerState / 256;
 			buffer[1] = m_nServerState % 256;
 			pAdminSocket->SendCommand(1, 2, buffer, 2);
 		}
-		else if (nDataLength == 2)
-		{
+		else if (nDataLength == 2) {
 			ToggleActive(*pData * 256 + pData[1]);
 			unsigned char buffer[2];
 			buffer[0] = m_nServerState / 256;
@@ -527,12 +500,10 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 	case 3:
 		if (!nDataLength)
 			pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length") + 1);
-		else if (*pData == USERCONTROL_GETLIST)
-		{
+		else if (*pData == USERCONTROL_GETLIST) {
 			int len = 3;
 			std::map<int, t_connectiondata>::iterator iter;
-			for (iter = m_UsersList.begin(); iter != m_UsersList.end(); iter++)
-			{
+			for (iter = m_UsersList.begin(); iter != m_UsersList.end(); ++iter) {
 				const t_connectiondata& data = iter->second;
 				auto ip = ConvToNetwork(data.ip);
 				auto user = ConvToNetwork(data.user);
@@ -554,8 +525,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			buffer[1] = m_UsersList.size() / 256;
 			buffer[2] = m_UsersList.size() % 256;
 			unsigned char *p = buffer + 3;
-			for (iter = m_UsersList.begin(); iter != m_UsersList.end(); iter++)
-			{
+			for (iter = m_UsersList.begin(); iter != m_UsersList.end(); ++iter) {
 				const t_connectiondata& data = iter->second;
 				auto ip = ConvToNetwork(data.ip);
 				auto user = ConvToNetwork(data.user);
@@ -576,8 +546,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				p += user.size();
 
 				*p = data.transferMode;
-				if (data.transferMode)
-				{
+				if (data.transferMode) {
 					// Bit 5 and 6 indicate presence of currentOffset and totalSize.
 					if (data.currentOffset != 0)
 						*p |= 0x20;
@@ -597,13 +566,11 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 					memcpy(p, logicalFile.c_str(), logicalFile.size());
 					p += logicalFile.size();
 
-					if (data.currentOffset != 0)
-					{
+					if (data.currentOffset != 0) {
 						memcpy(p, &data.currentOffset, 8);
 						p += 8;
 					}
-					if (data.totalSize != -1)
-					{
+					if (data.totalSize != -1) {
 						memcpy(p, &data.totalSize, 8);
 						p += 8;
 					}
@@ -614,20 +581,16 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			m_pAdminInterface->SendCommand(1, 3, buffer, len);
 			delete [] buffer;
 		}
-		else if (*pData == USERCONTROL_KICK || *pData == USERCONTROL_BAN)
-		{
+		else if (*pData == USERCONTROL_KICK || *pData == USERCONTROL_BAN) {
 			if (nDataLength != 5)
 				pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length")+1);
-			else
-			{
+			else {
 				int nUserID;
 				memcpy(&nUserID, pData+1, 4);
 
 				std::map<int, t_connectiondata>::iterator iter = m_UsersList.find(nUserID);
-				if (iter!=m_UsersList.end())
-				{
-					if (*pData == USERCONTROL_BAN)
-					{
+				if (iter!=m_UsersList.end()) {
+					if (*pData == USERCONTROL_BAN) {
 						// Get the list of IP filter rules.
 						CStdString ips = m_pOptions->GetOption(OPTION_IPFILTER_DISALLOWED);
 						if (ips != _T(""))
@@ -636,8 +599,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 						USES_CONVERSION;
 
 						int pos = ips.Find(' ');
-						while (pos != -1)
-						{
+						while (pos != -1) {
 							CStdString blockedIP = ips.Left(pos);
 							ips = ips.Mid(pos + 1);
 							pos = ips.Find(' ');
@@ -645,8 +607,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 							if (MatchesFilter(blockedIP, iter->second.ip))
 								break;
 						}
-						if (pos == -1)
-						{
+						if (pos == -1) {
 							ips = m_pOptions->GetOption(OPTION_IPFILTER_DISALLOWED);
 							if (ips != _T(""))
 								ips += _T(" ");
@@ -663,8 +624,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 					buffer[1] = 0;
 					pAdminSocket->SendCommand(1, 3, &buffer, 2);
 				}
-				else
-				{
+				else {
 					char buffer[2];
 					buffer[0] = USERCONTROL_KICK;
 					buffer[1] = 1;
@@ -676,22 +636,18 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			pAdminSocket->SendCommand(1, 1, "\001Protocol error: Invalid data", strlen("\001Protocol error: Invalid data")+1);
 		break;
 	case 5:
-		if (!nDataLength)
-		{
+		if (!nDataLength) {
 			char *pBuffer = NULL;
 			DWORD nBufferLength = 0;
-			if (m_pOptions && m_pOptions->GetAsCommand(&pBuffer, &nBufferLength))
-			{
+			if (m_pOptions && m_pOptions->GetAsCommand(&pBuffer, &nBufferLength)) {
 				pAdminSocket->SendCommand(1, 5, pBuffer, nBufferLength);
 				delete [] pBuffer;
 			}
 		}
-		else if (m_pOptions)
-		{
+		else if (m_pOptions) {
 			if (nDataLength < 2)
 				pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length")+1);
-			else
-			{
+			else {
 				CStdString const listenPorts = m_pOptions->GetOption(OPTION_SERVERPORT);
 				CStdString const listenPortsSsl = m_pOptions->GetOption(OPTION_TLSPORTS);
 				bool const enableSsl = m_pOptions->GetOptionVal(OPTION_ENABLETLS) != 0;
@@ -707,8 +663,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				else
 					bLocal = IsLocalhost(peerIP);
 
-				if (!m_pOptions->ParseOptionsCommand(pData, nDataLength, bLocal))
-				{
+				if (!m_pOptions->ParseOptionsCommand(pData, nDataLength, bLocal)) {
 					pAdminSocket->SendCommand(1, 1, "\001Protocol error: Invalid data, could not import settings.", strlen("\001Protocol error: Invalid data, could not import settings.")+1);
 					char buffer = 1;
 					pAdminSocket->SendCommand(1, 5, &buffer, 1);
@@ -719,13 +674,10 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				pAdminSocket->SendCommand(1, 5, &buffer, 1);
 
 				unsigned int threadnum = (int)m_pOptions->GetOptionVal(OPTION_THREADNUM);
-				if (m_nServerState & STATE_ONLINE)
-				{
-					if (threadnum > m_ThreadArray.size())
-					{
+				if (m_nServerState & STATE_ONLINE) {
+					if (threadnum > m_ThreadArray.size()) {
 						int newthreads = threadnum - m_ThreadArray.size();
-						for (int i = 0; i < newthreads; i++)
-						{
+						for (int i = 0; i < newthreads; ++i) {
 							int index = GetNextThreadNotificationID();
 							CServerThread *pThread = new CServerThread(WM_FILEZILLA_SERVERMSG + index);
 							m_ThreadNotificationIDs[index] = pThread;
@@ -739,21 +691,20 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 						str.Format(_T("Number of threads increased to %d."), threadnum);
 						ShowStatus(str, 0);
 					}
-					else if (threadnum < m_ThreadArray.size())
-					{
+					else if (threadnum < m_ThreadArray.size()) {
 						CStdString str;
 						str.Format(_T("Decreasing number of threads to %d."), threadnum);
 						ShowStatus(str, 0);
 						unsigned int i=0;
 						std::list<CServerThread *> newList;
-						for (std::list<CServerThread *>::iterator iter=m_ThreadArray.begin(); iter!=m_ThreadArray.end(); iter++,i++)
-							if (i>=threadnum)
-							{
+						for (std::list<CServerThread *>::iterator iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); iter++, i++) {
+							if (i >= threadnum) {
 								(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 2);
 								m_ClosedThreads.push_back(*iter);
 							}
 							else
 								newList.push_back(*iter);
+						}
 						m_ThreadArray.clear();
 						m_ThreadArray = newList;
 					}
@@ -793,8 +744,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 		}
 		break;
 	case 6:
-		if (!nDataLength)
-		{
+		if (!nDataLength) {
 			char *pBuffer = NULL;
 			DWORD nBufferLength = 0;
 			CPermissions permissions = CPermissions(std::function<void()>());
@@ -802,12 +752,10 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			pAdminSocket->SendCommand(1, 6, pBuffer, nBufferLength);
 			delete [] pBuffer;
 		}
-		else
-		{
+		else {
 			if (nDataLength < 2)
 				pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length")+1);
-			else
-			{
+			else {
 				CPermissions permissions = CPermissions(std::function<void()>());
 				if (!permissions.ParseUsersCommand(pData, nDataLength)) {
 					pAdminSocket->SendCommand(1, 1, "\001Protocol error: Invalid data, could not import account settings.", strlen("\001Protocol error: Invalid data, could not import account settings.")+1);
@@ -835,102 +783,62 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 	return TRUE;
 }
 
-BOOL CServer::ToggleActive(int nServerState)
+bool CServer::ToggleActive(int nServerState)
 {
-	if (nServerState & STATE_GOOFFLINE_NOW)
-	{
+	if (nServerState & STATE_MASK_GOOFFLINE) {
 		if (m_nServerState & STATE_MASK_GOOFFLINE)
-			return FALSE;
+			return false;
 
-		for (std::list<CListenSocket*>::iterator listenIter = m_ListenSocketList.begin(); listenIter != m_ListenSocketList.end(); listenIter++)
-		{
-			(*listenIter)->Close();
-			delete *listenIter;
+		int ftm_gooffline_arg{};
+		switch (nServerState & STATE_MASK_GOOFFLINE) {
+		case STATE_GOOFFLINE_LOGOUT:
+			ftm_gooffline_arg = 2;
+			break;
+		case STATE_GOOFFLINE_WAITTRANSFER:
+			ftm_gooffline_arg = 1;
+			break;
+		case STATE_GOOFFLINE_NOW:
+			ftm_gooffline_arg = 0;
+			break;
+		default:
+			return false;
+		}
+
+		for (auto & listenSocket : m_ListenSocketList) {
+			listenSocket->Close();
+			delete listenSocket;
 		}
 		m_ListenSocketList.clear();
-		for (std::list<CServerThread *>::iterator iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); iter++)
-			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 0);
-		for (std::list<CServerThread *>::iterator iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); iter++)
-		{
-			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 0);
-			m_ClosedThreads.push_back(*iter);
-		}
-		m_ThreadArray.clear();
-		m_nServerState &= ~STATE_ONLINE;
-		if (!m_ClosedThreads.empty())
-			m_nServerState |= STATE_GOOFFLINE_NOW;
-	}
-	else if (nServerState & STATE_GOOFFLINE_LOGOUT)
-	{
-		if (m_nServerState & STATE_MASK_GOOFFLINE)
-			return FALSE;
 
-		for (std::list<CListenSocket*>::iterator listenIter = m_ListenSocketList.begin(); listenIter != m_ListenSocketList.end(); listenIter++)
-		{
-			(*listenIter)->Close();
-			delete *listenIter;
-		}
-		m_ListenSocketList.clear();
-		for (std::list<CServerThread *>::iterator iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); iter++)
-			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 2);
-		for (std::list<CServerThread *>::iterator iter=m_ThreadArray.begin(); iter!=m_ThreadArray.end(); iter++)
-		{
-			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 2);
-			m_ClosedThreads.push_back(*iter);
-		}
+		std::move(m_ThreadArray.begin(), m_ThreadArray.end(), std::back_inserter(m_ClosedThreads));
 		m_ThreadArray.clear();
-		m_nServerState &= ~STATE_ONLINE;
-		if (!m_ClosedThreads.empty())
-			m_nServerState |= STATE_GOOFFLINE_LOGOUT;
-	}
-	else if (nServerState & STATE_GOOFFLINE_WAITTRANSFER)
-	{
-		if (m_nServerState & STATE_MASK_GOOFFLINE)
-			return FALSE;
-
-		for (std::list<CListenSocket*>::iterator listenIter = m_ListenSocketList.begin(); listenIter != m_ListenSocketList.end(); listenIter++)
-		{
-			(*listenIter)->Close();
-			delete *listenIter;
+		for (auto & closedThread : m_ClosedThreads) {
+			closedThread->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, ftm_gooffline_arg);
 		}
-		m_ListenSocketList.clear();
-		for (std::list<CServerThread *>::iterator iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); iter++)
-			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 1);
-		for (std::list<CServerThread *>::iterator iter=m_ThreadArray.begin(); iter!=m_ThreadArray.end(); iter++)
-		{
-			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 1);
-			m_ClosedThreads.push_back(*iter);
-		}
-		m_ThreadArray.clear();
 		m_nServerState &= ~STATE_ONLINE;
-		if (!m_ClosedThreads.empty())
-			m_nServerState |= STATE_GOOFFLINE_WAITTRANSFER;
+		if (!m_ClosedThreads.empty()) {
+			m_nServerState |= nServerState & STATE_MASK_GOOFFLINE;
+		}
 	}
-	else if (nServerState & STATE_ONLINE)
-	{
-		if (m_ListenSocketList.empty())
-		{
-			if (!CreateListenSocket())
-			{
+	else if (nServerState & STATE_ONLINE) {
+		if (m_ListenSocketList.empty()) {
+			if (!CreateListenSocket()) {
 				ShowStatus(_T("Failed to create a listen socket on any of the specified ports. Server is not online!"), 1);
 				return true;
 			}
 		}
 
-		if (!m_ListenSocketList.empty())
-		{
+		if (!m_ListenSocketList.empty()) {
 			ShowStatus(_T("Server online"), 0);
 			int i = 0;
 			int num = (m_pOptions ? (int)m_pOptions->GetOptionVal(OPTION_THREADNUM) : 2);
 
 			//Recreate the threads
-			for (i = m_ThreadArray.size(); i < num; i++)
-			{
+			for (i = m_ThreadArray.size(); i < num; ++i) {
 				int index = GetNextThreadNotificationID();
 				CServerThread *pThread = new CServerThread(WM_FILEZILLA_SERVERMSG + index);
 				m_ThreadNotificationIDs[index] = pThread;
-				if (pThread->Create(THREAD_PRIORITY_NORMAL, CREATE_SUSPENDED))
-				{
+				if (pThread->Create(THREAD_PRIORITY_NORMAL, CREATE_SUSPENDED)) {
 					m_ThreadArray.push_back(pThread);
 					pThread->ResumeThread();
 				}
@@ -943,11 +851,11 @@ BOOL CServer::ToggleActive(int nServerState)
 		for (std::list<CServerThread *>::iterator iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); iter++)
 			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 2);
 
-		m_nServerState = (m_ListenSocketList.empty() ? 0 : STATE_ONLINE) + (nServerState & STATE_LOCKED);
+		m_nServerState = (m_ListenSocketList.empty() ? 0 : STATE_ONLINE) | (nServerState & STATE_LOCKED);
 	}
 
 	SendState();
-	return TRUE;
+	return true;
 }
 
 void CServer::ShowStatus(LPCTSTR msg, int nType, CAdminSocket* pAdminSocket)
@@ -1222,13 +1130,12 @@ unsigned int CServer::GetNextThreadNotificationID()
 
 void CServer::FreeThreadNotificationID(CServerThread *pThread)
 {
-	for (unsigned int i = 0; i < m_ThreadNotificationIDs.size(); i++)
-		if (m_ThreadNotificationIDs[i] == pThread)
-		{
+	for (unsigned int i = 0; i < m_ThreadNotificationIDs.size(); ++i) {
+		if (m_ThreadNotificationIDs[i] == pThread) {
 			m_ThreadNotificationIDs[i] = 0;
 			break;
 		}
-
+	}
 }
 
 void CServer::SendState()

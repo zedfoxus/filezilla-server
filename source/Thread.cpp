@@ -93,7 +93,7 @@ DWORD CThread::Run()
 			OnThreadMessage(msg.message, msg.wParam, msg.lParam);
 		DispatchMessage(&msg);
 	}
-	DWORD res=ExitInstance();
+	DWORD res = ExitInstance();
 	delete this;
 	return res;
 }

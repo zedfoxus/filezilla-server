@@ -54,8 +54,8 @@ public:
 public:
 	CServerThread & m_owner;
 	CStdString m_RemoteIP;
-	void WaitGoOffline(bool wait = true);
-	BOOL m_bWaitGoOffline{};
+	void WaitGoOffline();
+	bool m_bWaitGoOffline{};
 	void CheckForTimeout();
 	void ForceClose(int nReason);
 	CTransferSocket* GetTransferSocket();
@@ -111,7 +111,7 @@ protected:
 	int m_nSendBufferLen{};
 
 	int m_nTelnetSkip{};
-	BOOL m_bQuitCommand{};
+	bool m_bQuitCommand{};
 	SYSTEMTIME m_LastCmdTime, m_LastTransferTime, m_LoginTime;
 	static std::map<CStdString, int> m_UserCount;
 	CStdString m_CurrentServerDir;

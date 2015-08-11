@@ -55,7 +55,7 @@ public:
 	void IncIpCount(const CStdString &ip);
 	void DecIpCount(const CStdString &ip);
 	int GetIpCount(const CStdString &ip) const;
-	BOOL IsReady();
+	bool IsReady();
 	static const int GetGlobalNumConnections();
 	void AddSocket(SOCKET sockethandle, bool ssl);
 	const int GetNumConnections();
@@ -105,7 +105,7 @@ protected:
 	int m_nRecvCount{};
 	int m_nSendCount{};
 	UINT m_nRateTimer{};
-	BOOL m_bQuit{};
+	bool m_bQuit{};
 
 	std::recursive_mutex m_mutex;
 	static std::recursive_mutex m_global_mutex;

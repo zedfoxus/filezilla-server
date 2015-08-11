@@ -36,7 +36,7 @@ protected:
 	BOOL CreateAdminListenSocket();
 	int DoCreateAdminListenSocket(UINT port, LPCTSTR addr, int family);
 	void OnTimer(UINT nIDEvent);
-	BOOL ToggleActive(int nServerState);
+	bool ToggleActive(int nServerState);
 	unsigned int GetNextThreadNotificationID();
 	void FreeThreadNotificationID(CServerThread *pThread);
 
@@ -46,7 +46,7 @@ protected:
 	// Send state to interface
 	void SendState();
 
-	BOOL m_bQuit{};
+	bool m_bQuit{};
 	int m_nServerState{};
 	CAdminInterface *m_pAdminInterface;
 	CFileLogger *m_pFileLogger{};

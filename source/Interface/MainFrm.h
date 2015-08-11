@@ -73,7 +73,7 @@ public:
 	void CloseAdminSocket(bool shouldReconnect = true);
 	void ShowStatusRaw(const char *status, int nType);
 	void ShowStatus(const CString& status, int nType);
-	BOOL m_bQuit;
+	bool m_bQuit{};
 	void SetIcon();
 	BOOL SendCommand(int nType);
 	BOOL SendCommand(int nType, void *pData, int nDataLength);
@@ -86,7 +86,7 @@ protected:
 	void DoConnect();
 
 	CAdminSocket *m_pAdminSocket;
-	int m_nServerState;
+	int m_nServerState{};
 	CStatusView* m_pStatusPane;
 	CUsersView* m_pUsersPane;
 

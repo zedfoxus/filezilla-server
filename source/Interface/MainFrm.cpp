@@ -116,7 +116,6 @@ CMainFrame::CMainFrame(COptions *pOptions)
 	ASSERT(pOptions);
 	s_winClassName = 0;
 	nTrayNotificationMsg_ = RegisterWindowMessage(_T("FileZilla Server Tray Notification Message"));
-	m_bQuit = FALSE;
 	m_nSendCount = 0;
 	m_nRecvCount = 0;
 	m_lastchecktime = GetTickCount();

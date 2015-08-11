@@ -71,7 +71,6 @@ BOOL CServerThread::InitInstance()
 	// Reduce anti hammer value twice an hour
 	m_antiHammerTimer = SetTimer(0, 0, 1800 * 1000, 0);
 
-	m_bQuit = FALSE;
 	m_nRecvCount = 0;
 	m_nSendCount = 0;
 	m_pOptions = new COptions;
@@ -298,8 +297,7 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 			AddNewSocket((SOCKET)lParam, false);
 		else if (wParam == FTM_NEWSOCKET_SSL) //Add a new socket to this thread
 			AddNewSocket((SOCKET)lParam, true);
-		else if (wParam==FTM_DELSOCKET) //Remove a socket from this thread
-		{
+		else if (wParam == FTM_DELSOCKET) { //Remove a socket from this thread
 			CControlSocket *socket = GetControlSocket(lParam);
 			{
 				simple_lock lock(m_mutex);
@@ -309,7 +307,7 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 			if (socket) {
 				socket->Close();
 				simple_lock lock(m_global_mutex);
-				if (m_userids.find(lParam)!=m_userids.end())
+				if (m_userids.find(lParam) != m_userids.end())
 					m_userids.erase(m_userids.find(lParam));
 				delete socket;
 			}
@@ -320,8 +318,7 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 		}
-		else if (wParam==FTM_COMMAND)
-		{ //Process a command sent from a client
+		else if (wParam == FTM_COMMAND) { //Process a command sent from a client
 			CControlSocket *socket=GetControlSocket(lParam);
 			if (socket)
 				socket->ParseCommand();
@@ -333,7 +330,7 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 		}
 		else if (wParam == FTM_GOOFFLINE) {
 			simple_lock lock(m_mutex);
-			m_bQuit = TRUE;
+			m_bQuit = true;
 			int count = m_LocalUserIDs.size();
 			if (!count) {
 				SendNotification(FSM_THREADCANQUIT, (LPARAM)this);
@@ -350,7 +347,7 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 					it.second->ForceClose(0);
 					break;
 				case 1:
-					it.second->WaitGoOffline(true);
+					it.second->WaitGoOffline();
 					break;
 				}
 			}
@@ -567,7 +564,7 @@ void CServerThread::ProcessControlMessage(t_controlmessage *msg)
 	delete msg;
 }
 
-BOOL CServerThread::IsReady()
+bool CServerThread::IsReady()
 {
 	return !m_bQuit;
 }
