@@ -170,7 +170,7 @@ BOOL COptionsSslPage::IsDataValid()
 			return FALSE;
 		}
 
-		if (m_cCertificate.IsEmpty()) {
+		if (m_certificate.IsEmpty()) {
 			m_pOptionsDlg->ShowPage(this);
 			m_cCertificate.SetFocus();
 			AfxMessageBox(_T("You need to enter a certificate file."));

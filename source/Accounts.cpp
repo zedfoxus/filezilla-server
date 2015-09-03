@@ -91,11 +91,6 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 			allowedIPs.push_back(ip);
 	}
 
-	if ((endMarker - p) < 1)
-		return NULL;
-
-	b8plus3 = *p++ != 0;
-
 	if ((endMarker - p) < 2)
 		return NULL;
 
@@ -247,8 +242,6 @@ char * t_group::FillBuffer(char *p) const
 	for (ipLimitIter = allowedIPs.begin(); ipLimitIter != allowedIPs.end(); ipLimitIter++)
 		FillString(p, *ipLimitIter);
 
-	*p++ = b8plus3 ? 1 : 0;
-
 	*p++ = (char)(permissions.size() >> 8);
 	*p++ = (char)(permissions.size() & 0xff);
 	for (std::vector<t_directory>::const_iterator permissioniter = permissions.begin(); permissioniter!=permissions.end(); permissioniter++)
@@ -309,8 +302,6 @@ int t_group::GetRequiredBufferLen() const
 		len += GetRequiredStringBufferLen(*ipLimitIter);
 	for (ipLimitIter = allowedIPs.begin(); ipLimitIter != allowedIPs.end(); ipLimitIter++)
 		len += GetRequiredStringBufferLen(*ipLimitIter);
-
-	len++;
 
 	len += 2;
 	for (std::vector<t_directory>::const_iterator permissioniter = permissions.begin(); permissioniter!=permissions.end(); permissioniter++)

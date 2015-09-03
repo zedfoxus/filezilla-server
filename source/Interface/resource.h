@@ -257,7 +257,6 @@
 #define ID_BANTIME                      1203
 #define IDC_BANTYPE1                    1204
 #define IDC_BANTYPE2                    1205
-#define IDC_8PLUS3                      1206
 #define IDC_FTPTEST                     1207
 #define IDC_DATAIPMATCH_EXACT           1208
 #define IDC_DATAIPMATCH_RELAXED         1209

@@ -452,22 +452,9 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 		if (!_tcscmp(FindFileData.cFileName, _T(".")) || !_tcscmp(FindFileData.cFileName, _T("..")))
 			continue;
 
-		CStdString fn;
-		if (user.b8plus3) {
-			if (FindFileData.cAlternateFileName[0])
-				fn = FindFileData.cAlternateFileName;
-			else
-			{
-				if (!is8dot3(FindFileData.cFileName))
-					continue;
-				fn = FindFileData.cFileName;
-			}
-		}
-		else
-			fn = FindFileData.cFileName;
+		CStdString const fn = FindFileData.cFileName;
 
-		if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-		{
+		if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 			// Check permissions of subdir. If we don't have LIST permission,
 			// don't display the subdir.
 			BOOL truematch;
@@ -475,16 +462,14 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 			if (GetRealDirectory(dir + _T("/") + fn, user, subDir, truematch))
 				continue;
 
-			if (subDir.bDirList)
-			{
+			if (subDir.bDirList) {
 				auto utf8 = ConvToNetwork(fn);
 				if (utf8.empty() && !fn.empty())
 					continue;
 				addFunc(result, true, utf8.c_str(), subDir, 0, &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
 			}
 		}
-		else
-		{
+		else {
 			auto utf8 = ConvToNetwork(fn);
 			if (utf8.empty() && !fn.empty())
 				continue;
@@ -1119,8 +1104,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		SetKey(pGroup, _T("Enabled"), groupiter->nEnabled);
 		SetKey(pGroup, _T("Comments"), groupiter->comment);
 		SetKey(pGroup, _T("ForceSsl"), groupiter->forceSsl);
-		SetKey(pGroup, _T("8plus3"), groupiter->b8plus3 ? 1 : 0);
-
+		
 		SaveIpFilter(pGroup, *groupiter);
 		SavePermissions(pGroup, *groupiter);
 		SaveSpeedLimits(pGroup, *groupiter);
@@ -1148,7 +1132,6 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		SetKey(pUser, _T("Enabled"), user.nEnabled);
 		SetKey(pUser, _T("Comments"), user.comment);
 		SetKey(pUser, _T("ForceSsl"), user.forceSsl);
-		SetKey(pUser, _T("8plus3"), user.b8plus3 ? 1 : 0);
 
 		SaveIpFilter(pUser, user);
 		SavePermissions(pUser, user);
@@ -1757,8 +1740,6 @@ void CPermissions::ReadSettings()
 				group.comment = value;
 			else if (name == _T("ForceSsl"))
 				group.forceSsl = _ttoi(value);
-			else if (name == _T("8plus3"))
-				group.b8plus3 = value != _T("0");
 		}
 		if (group.nUserLimit < 0 || group.nUserLimit > 999999999)
 			group.nUserLimit = 0;
@@ -1829,8 +1810,6 @@ void CPermissions::ReadSettings()
 				user.comment = value;
 			else if (name == _T("ForceSsl"))
 				user.forceSsl = _ttoi(value);
-			else if (name == _T("8plus3"))
-				user.b8plus3 = value != _T("0");
 		}
 		if (user.nUserLimit < 0 || user.nUserLimit > 999999999)
 			user.nUserLimit = 0;
