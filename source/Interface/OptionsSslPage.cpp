@@ -125,11 +125,9 @@ BOOL COptionsSslPage::IsDataValid()
 	ports.TrimLeft(_T(" ,"));
 
 	int pos = ports.FindOneOf(_T(" ,"));
-	while (pos != -1 && valid)
-	{
+	while (pos != -1 && valid) {
 		int port = _ttoi(ports.Left(pos));
-		if (port < 1 || port > 65535)
-		{
+		if (port < 1 || port > 65535) {
 			valid = false;
 			break;
 		}
@@ -139,8 +137,7 @@ BOOL COptionsSslPage::IsDataValid()
 		ports.TrimLeft(_T(" ,"));
 		pos = ports.FindOneOf(_T(" ,"));
 	}
-	if (valid && ports != _T(""))
-	{
+	if (valid && ports != _T("")) {
 		int port = _ttoi(ports);
 		if (port < 1 || port > 65535)
 			valid = false;
@@ -148,8 +145,7 @@ BOOL COptionsSslPage::IsDataValid()
 			portSet.insert(port);
 	}
 
-	if (!valid && m_enabled)
-	{
+	if (!valid && m_enabled) {
 		m_pOptionsDlg->ShowPage(this);
 		m_cSslports.SetFocus();
 		AfxMessageBox(_T("Invalid port found, please only enter ports in the range from 1 to 65535."));
@@ -157,41 +153,56 @@ BOOL COptionsSslPage::IsDataValid()
 	}
 
 	m_sslports = _T("");
-	for (std::set<int>::const_iterator iter = portSet.begin(); iter != portSet.end(); ++iter)
-	{
+	for (auto port : portSet) {
 		CString tmp;
-		tmp.Format(_T("%d "), *iter);
+		tmp.Format(_T("%d "), port);
 		m_sslports += tmp;
 	}
 	m_sslports.TrimRight(' ');
 	UpdateData(false);
 
-	if (m_enabled && m_pOptionsDlg->IsLocalConnection())
-	{
-		CAsyncSslSocketLayer layer(0);
-		CString error;
-		int res = layer.SetCertKeyFile(m_certificate, m_key, m_pass, &error);
-		if (res == SSL_FAILURE_LOADDLLS) {
+	if (m_enabled) {
+
+		if (m_key.IsEmpty()) {
 			m_pOptionsDlg->ShowPage(this);
-			AfxMessageBox(_T("Failed to load SSL libraries"));
+			m_cKey.SetFocus();
+			AfxMessageBox(_T("You need to enter a key file."));
 			return FALSE;
 		}
-		else if (res == SSL_FAILURE_INITSSL) {
+
+		if (m_cCertificate.IsEmpty()) {
 			m_pOptionsDlg->ShowPage(this);
-			AfxMessageBox(_T("Failed to initialize SSL libraries"));
+			m_cCertificate.SetFocus();
+			AfxMessageBox(_T("You need to enter a certificate file."));
 			return FALSE;
 		}
-		else if (res == SSL_FAILURE_VERIFYCERT) {
-			m_pOptionsDlg->ShowPage(this);
-			if (error != _T(""))
-				AfxMessageBox(error);
-			else
-				AfxMessageBox(_T("Failed to set certificate and private key"));
-			return FALSE;
-		}
-		else if (res) {
-			m_pOptionsDlg->ShowPage(this);
-			return FALSE;
+
+		if (m_pOptionsDlg->IsLocalConnection()) {
+			CAsyncSslSocketLayer layer(0);
+			CString error;
+			int res = layer.SetCertKeyFile(m_certificate, m_key, m_pass, &error);
+			if (res == SSL_FAILURE_LOADDLLS) {
+				m_pOptionsDlg->ShowPage(this);
+				AfxMessageBox(_T("Failed to load SSL libraries"));
+				return FALSE;
+			}
+			else if (res == SSL_FAILURE_INITSSL) {
+				m_pOptionsDlg->ShowPage(this);
+				AfxMessageBox(_T("Failed to initialize SSL libraries"));
+				return FALSE;
+			}
+			else if (res == SSL_FAILURE_VERIFYCERT) {
+				m_pOptionsDlg->ShowPage(this);
+				if (error != _T(""))
+					AfxMessageBox(error);
+				else
+					AfxMessageBox(_T("Failed to set certificate and private key"));
+				return FALSE;
+			}
+			else if (res) {
+				m_pOptionsDlg->ShowPage(this);
+				return FALSE;
+			}
 		}
 	}
 
