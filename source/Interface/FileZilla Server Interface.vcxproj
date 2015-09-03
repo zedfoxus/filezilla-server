@@ -18,7 +18,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <UseOfMfc>Static</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -64,6 +64,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -97,6 +98,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -236,7 +238,6 @@
     <ClInclude Include="OutputFormat.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="misc\SBDestination.h" />
-    <ClInclude Include="..\serverstates.h" />
     <ClInclude Include="..\SpeedLimit.h" />
     <ClInclude Include="SpeedLimitRuleDlg.h" />
     <ClInclude Include="splitex.h" />
@@ -259,7 +260,7 @@
     <Image Include="res\empty.ico" />
     <Image Include="res\FileZilla server.ico" />
     <Image Include="res\green.ico" />
-    <Image Include="res\icon1.ico" />
+    <Image Include="res\home.ico" />
     <Image Include="res\leds.bmp" />
     <Image Include="res\red.ico" />
     <Image Include="res\Toolbar.bmp" />

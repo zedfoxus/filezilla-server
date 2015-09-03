@@ -1022,7 +1022,7 @@ END
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "res\\FileZilla server.ico"
 IDI_EMPTY               ICON                    "res\\empty.ico"
-IDI_HOME                ICON                    "res\\icon1.ico"
+IDI_HOME                ICON                    "res\\home.ico"
 IDI_GREEN               ICON                    "res\\green.ico"
 IDI_RED                 ICON                    "res\\red.ico"
 IDI_YELLOW              ICON                    "res\\yellow.ico"
