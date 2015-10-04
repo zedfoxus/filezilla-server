@@ -2,7 +2,7 @@
 
 To build FileZilla Server you'll need the following:
 
-- Visual Studio 2013 Professional
+- Visual Studio 2015
 - OpenSSL
 - Zlib
 
