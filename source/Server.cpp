@@ -1163,15 +1163,17 @@ void CServer::VerifyTlsSettings(CAdminSocket *pAdminSocket)
 		ShowStatus(_T("Warning: FTP over TLS is not enabled, users cannot securely log in."), 1, pAdminSocket);
 	}
 	else {
-		bool allowExplicit = m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITTLS) != 0;
-		bool hasExplicit = false;
-		for (auto const& s : m_ListenSocketList) {
-			if (!s->ImplicitTLS()) {
-				hasExplicit = true;
+		if (m_nServerState & STATE_ONLINE) {
+			bool allowExplicit = m_pOptions->GetOptionVal(OPTION_ALLOWEXPLICITTLS) != 0;
+			bool hasExplicit = false;
+			for (auto const& s : m_ListenSocketList) {
+				if (!s->ImplicitTLS()) {
+					hasExplicit = true;
+				}
 			}
-		}
-		if (!allowExplicit || !hasExplicit) {
-			ShowStatus(_T("Warning: Explicit FTP over TLS is not enabled or there is no FTP listen socket configured."), 1, pAdminSocket);
+			if (!allowExplicit || !hasExplicit) {
+				ShowStatus(_T("Warning: Explicit FTP over TLS is not enabled or there is no FTP listen socket configured."), 1, pAdminSocket);
+			}
 		}
 
 		CAsyncSslSocketLayer layer(0);
