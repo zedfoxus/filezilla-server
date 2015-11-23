@@ -475,11 +475,10 @@ void t_user::generateSalt()
 	std::random_device rd;
 	std::uniform_int_distribution<int> dist(0, sizeof(validChars) - 2);
 	
-	salt.clear();
-	salt.resize(64);
+	salt = _T("");
 
-	for (size_t i = 0; i < salt.size(); ++i) {
-		salt[i] = validChars[dist(rd)];
+	for (size_t i = 0; i < 64; ++i) {
+		salt[i] += validChars[dist(rd)];
 	}
 }
 
