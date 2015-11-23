@@ -2,6 +2,8 @@
 #include "accounts.h"
 #include "iputils.h"
 
+#include <random>
+
 t_group::t_group()
 {
 	for (int i = 0; i < 2; ++i) {
@@ -438,6 +440,9 @@ unsigned char * t_user::ParseBuffer(unsigned char *pBuffer, int length)
 	if (!ParseString(endMarker, p, password))
 		return 0;
 
+	if (!ParseString(endMarker, p, salt))
+		return 0;
+
 	return p;
 }
 
@@ -449,6 +454,7 @@ char * t_user::FillBuffer(char *p) const
 
 	FillString(p, user);
 	FillString(p, password);
+	FillString(p, salt);
 
 	return p;
 }
@@ -458,7 +464,23 @@ int t_user::GetRequiredBufferLen() const
 	int len = t_group::GetRequiredBufferLen();
 	len += GetRequiredStringBufferLen(user);
 	len += GetRequiredStringBufferLen(password);
+	len += GetRequiredStringBufferLen(salt);
 	return len;
+}
+
+void t_user::generateSalt()
+{
+	char const validChars[] = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+	
+	std::random_device rd;
+	std::uniform_int_distribution<int> dist(0, sizeof(validChars) - 2);
+	
+	salt.clear();
+	salt.resize(64);
+
+	for (size_t i = 0; i < salt.size(); ++i) {
+		salt[0] = validChars[dist(rd)];
+	}
 }
 
 bool t_group::ParseString(const unsigned char* endMarker, unsigned char *&p, CStdString &string)

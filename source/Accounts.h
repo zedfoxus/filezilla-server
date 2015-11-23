@@ -85,9 +85,11 @@ public:
 	virtual int GetRequiredBufferLen() const;
 	virtual char * FillBuffer(char *p) const;
 	virtual unsigned char * ParseBuffer(unsigned char *pBuffer, int length);
+	void generateSalt(); // Generates a new random salt of length 64, using all printable ASCII characters.
 
 	CStdString user;
 	CStdString password;
+	CStdString salt;
 };
 
 #endif //#define ACCOUNTS_H_INCLUDED
