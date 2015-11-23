@@ -479,7 +479,7 @@ void t_user::generateSalt()
 	salt.resize(64);
 
 	for (size_t i = 0; i < salt.size(); ++i) {
-		salt[0] = validChars[dist(rd)];
+		salt[i] = validChars[dist(rd)];
 	}
 }
 
