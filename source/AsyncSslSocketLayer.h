@@ -165,6 +165,8 @@ public:
 	// Return 0 on success
 	int InitSSL();
 
+	std::string SHA512(unsigned char const* buf, size_t len);
+
 private:
 	virtual void Close();
 	virtual BOOL Connect(LPCTSTR lpszHostAddress, UINT nHostPort );

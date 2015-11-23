@@ -239,6 +239,7 @@ def(int, i2d_DHparams, (const DH *a, unsigned char **pp));
 def(DH *, d2i_DHparams, (DH **a, const unsigned char **pp, long length));
 def(EC_KEY *, EC_KEY_new_by_curve_name, (int nid));
 def(void, EC_KEY_free, (EC_KEY *key));
+def(unsigned char *, SHA512, (const unsigned char *d, size_t n,	unsigned char *md));
 
 template<typename Ret, typename ...Args, typename ...Args2>
 Ret safe_call(Ret(*f)(Args...), Args2&& ... args)
@@ -390,6 +391,7 @@ int CAsyncSslSocketLayer::InitSSL()
 		proc(m_sslDll2, d2i_DHparams);
 		proc(m_sslDll2, EC_KEY_new_by_curve_name);
 		proc(m_sslDll2, EC_KEY_free);
+		proc(m_sslDll2, SHA512);
 
 		if (bError) {
 			DoUnloadLibrary();
@@ -2132,4 +2134,25 @@ bool CAsyncSslSocketLayer::CreateContext()
 	pSSL_CTX_set_timeout(m_ssl_ctx.get(), 2000000000);
 
 	return true;
+}
+
+std::string CAsyncSslSocketLayer::SHA512(unsigned char const* buf, size_t len)
+{
+	std::string ret;
+
+	unsigned char out[SHA512_DIGEST_LENGTH];
+
+	InitSSL();
+
+	if (pSHA512) {
+		if (pSHA512(buf, len, out)) {
+			// Convert to hex encoding
+			for (int i = 0; i <= SHA512_DIGEST_LENGTH; ++i) {
+				ret += toHexDigit(out[i] >> 4);
+				ret += toHexDigit(out[i] & 0xfu);
+			}
+		}
+	}
+
+	return ret;
 }

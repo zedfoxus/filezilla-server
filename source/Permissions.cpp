@@ -28,6 +28,8 @@
 #include "options.h"
 #include "iputils.h"
 
+#include "AsyncSslSocketLayer.h"
+
 class CPermissionsHelperWindow final
 {
 public:
@@ -832,25 +834,46 @@ bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswo
 	if (user.user.empty())
 		return false;
 
-	if (!pass)
-		return false;
-
-	auto tmp = ConvToNetwork(pass);
-	if (tmp.empty() && *pass)
-		return false;
-
-	MD5 md5;
-	md5.update((unsigned char const*)tmp.c_str(), tmp.size());
-	md5.finalize();
-	char *res = md5.hex_digest();
-	CStdString hash = res;
-	delete [] res;
-
-	if (noPasswordCheck || user.password == hash || user.password == _T("")) {
+	if (user.password.empty() || noPasswordCheck) {
 		return true;
 	}
 
-	return false;
+	if (!pass)
+		return false;
+	auto tmp = ConvToNetwork(pass);
+	if (tmp.empty() && *pass) {
+		// Network broke. Meh...
+		return false;
+	}
+
+	if (user.salt.empty()) {
+		// It should be an old MD5 hashed password
+		if (user.password.size() != MD5_HEX_FORM_LENGTH) {
+			// But it isn't...
+			return false;
+		}
+
+		MD5 md5;
+		md5.update((unsigned char const*)tmp.c_str(), tmp.size());
+		md5.finalize();
+		char *res = md5.hex_digest();
+		CStdString hash = res;
+		delete[] res;
+
+		return hash == user.password;
+	}
+	
+	// It's a salted SHA-512 hash
+
+	auto saltedPassword = ConvToNetwork(pass + user.salt);
+	if (saltedPassword.empty()) {
+		return false;
+	}
+
+	CAsyncSslSocketLayer ssl(0);
+	CStdString hash = ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size());
+
+	return !hash.empty() && user.password == hash;
 }
 
 void CPermissions::UpdateInstances()
@@ -1079,11 +1102,16 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	UpdatePermissions(true);
 	UpdateInstances();
 
+	return SaveSettings();
+}
+
+bool CPermissions::SaveSettings()
+{
 	// Write the new account data into xml file
 
 	TiXmlElement *pXML = COptions::GetXML();
 	if (!pXML)
-		return FALSE;
+		return false;
 
 	TiXmlElement* pGroups;
 	while ((pGroups = pXML->FirstChildElement("Groups")))
@@ -1092,7 +1120,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	pXML->LinkEndChild(pGroups);
 
 	//Save the changed user details
-	for (t_GroupsList::const_iterator groupiter=m_GroupsList.begin(); groupiter!=m_GroupsList.end(); groupiter++) {
+	for (t_GroupsList::const_iterator groupiter = m_GroupsList.begin(); groupiter != m_GroupsList.end(); groupiter++) {
 		TiXmlElement* pGroup = new TiXmlElement("Group");
 		pGroups->LinkEndChild(pGroup);
 
@@ -1104,7 +1132,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		SetKey(pGroup, _T("Enabled"), groupiter->nEnabled);
 		SetKey(pGroup, _T("Comments"), groupiter->comment);
 		SetKey(pGroup, _T("ForceSsl"), groupiter->forceSsl);
-		
+
 		SaveIpFilter(pGroup, *groupiter);
 		SavePermissions(pGroup, *groupiter);
 		SaveSpeedLimits(pGroup, *groupiter);
@@ -1117,7 +1145,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	pXML->LinkEndChild(pUsers);
 
 	//Save the changed user details
-	for (auto const& iter : m_UsersList ) {
+	for (auto const& iter : m_UsersList) {
 		CUser const& user = iter.second;
 		TiXmlElement* pUser = new TiXmlElement("User");
 		pUsers->LinkEndChild(pUser);
@@ -1125,6 +1153,7 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		pUser->SetAttribute("Name", ConvToNetwork(user.user).c_str());
 
 		SetKey(pUser, _T("Pass"), user.password);
+		SetKey(pUser, _T("Salt"), user.salt);
 		SetKey(pUser, _T("Group"), user.group);
 		SetKey(pUser, _T("Bypass server userlimit"), user.nBypassUserLimit);
 		SetKey(pUser, _T("User Limit"), user.nUserLimit);
@@ -1138,9 +1167,9 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		SaveSpeedLimits(pUser, user);
 	}
 	if (!COptions::FreeXML(pXML, true))
-		return FALSE;
+		return false;
 
-	return TRUE;
+	return true;
 }
 
 bool CPermissions::Init()
@@ -1768,33 +1797,19 @@ void CPermissions::ReadSettings()
 		CUser user;
 		user.nBypassUserLimit = 2;
 		user.user = ConvFromNetwork(pUser->Attribute("Name"));
-		if (user.user == _T(""))
+		if (user.user == _T("")) {
 			continue;
+		}
 
-		for (TiXmlElement* pOption = pUser->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option"))
-		{
+		for (TiXmlElement* pOption = pUser->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option")) {
 			CStdString name = ConvFromNetwork(pOption->Attribute("Name"));
 			CStdString value = XML::ReadText(pOption);
 
-			if (name == _T("Pass"))
-			{
-				// If provided password is not a MD5 has, convert it into a MD5 hash
-				if (value != _T("") && value.GetLength() != 32)
-				{
-					auto tmp = ConvToNetwork(value);
-					MD5 md5;
-					md5.update((unsigned char const*)tmp.c_str(), tmp.size());
-					md5.finalize();
-					char *res = md5.hex_digest();
-
-					pOption->Clear();
-					XML::SetText(pOption, res); //Replace the password in the file with the hash
-					user.password = res;
-					delete [] res;
-					fileIsDirty = true; //Mark the file as modified
-				}
-				else
-					user.password = value;
+			if (name == _T("Pass")) {
+				user.password = value;
+			}
+			else if (name == _T("Salt")) {
+				user.salt = value;
 			}
 			else if (name == _T("Bypass server userlimit"))
 				user.nBypassUserLimit = _ttoi(value);
@@ -1811,6 +1826,30 @@ void CPermissions::ReadSettings()
 			else if (name == _T("ForceSsl"))
 				user.forceSsl = _ttoi(value);
 		}
+
+		// If provided password is not a salted SHA512 hash and neither an old MD5 hash, convert it into a salted SHA512 hash
+		if (!user.password.empty() && user.salt.empty() && user.password.size() != MD5_HEX_FORM_LENGTH) {
+			user.generateSalt();
+
+			auto saltedPassword = ConvToNetwork(user.password + user.salt);
+			if (saltedPassword.empty()) {
+				// We skip this user
+				continue;
+			}
+
+			CAsyncSslSocketLayer ssl(0);
+			CStdString hash = ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size());
+
+			if (hash.empty()) {
+				// We skip this user
+				continue;
+			}
+
+			user.password = hash;
+
+			fileIsDirty = true;
+		}
+
 		if (user.nUserLimit < 0 || user.nUserLimit > 999999999)
 			user.nUserLimit = 0;
 		if (user.nIpLimit < 0 || user.nIpLimit > 999999999)
@@ -1864,7 +1903,13 @@ void CPermissions::ReadSettings()
 			m_sUsersList[name] = user;
 		}
 	}
-	COptions::FreeXML(pXML, fileIsDirty); //Free, saving if the file is dirty
+	COptions::FreeXML(pXML, false);
+
+	UpdatePermissions(false);
+
+	if (fileIsDirty) {
+		SaveSettings();
+	}
 }
 
 // Replace :u and :g (if a group it exists)
@@ -1953,7 +1998,7 @@ void CPermissions::UpdatePermissions(bool notifyOwner)
 		}
 	}
 
-	if( notifyOwner && updateCallback_ ) {
+	if (notifyOwner && updateCallback_) {
 		updateCallback_();
 	}
 }

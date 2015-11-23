@@ -22,10 +22,10 @@
 #include "stdafx.h"
 #include "FileZilla server.h"
 #include "UsersDlgGeneral.h"
-#include "../misc/md5.h"
 #include "entersomething.h"
 #include "UsersDlg.h"
 #include "UsersDlgSpeedLimit.h"
+#include "../AsyncSslSocketLayer.h"
 
 #if defined(_DEBUG) 
 #define new DEBUG_NEW
@@ -274,16 +274,13 @@ BOOL CUsersDlgGeneral::SaveUser(t_user *pUser)
 	pUser->password = m_Pass;
 	if (!m_bNeedpass)
 		pUser->password = _T("");
-	else if (m_cPass.GetModify() && m_Pass != _T(""))
-	{
-		auto tmp = ConvToNetwork(pUser->password);
-		MD5 md5;
-		md5.update((unsigned char *)tmp.c_str(), tmp.size());
-		md5.finalize();
-		char *res = md5.hex_digest();
-		CString hash = res;
-		delete [] res;
-		pUser->password = hash;
+	else if (m_cPass.GetModify() && m_Pass != _T("")) {
+		pUser->generateSalt();
+		
+		auto saltedPassword = ConvToNetwork(pUser->password + pUser->salt);
+
+		CAsyncSslSocketLayer ssl(0);
+		pUser->password = ConvFromNetwork(ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size()).c_str());
 	}
 
 	pUser->nBypassUserLimit = m_nMaxUsersBypass;

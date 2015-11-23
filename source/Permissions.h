@@ -47,6 +47,9 @@
 #define PERMISSION_DOESALREADYEXIST	0x10
 #define PERMISSION_INVALIDNAME		0x20
 
+#define MD5_HEX_FORM_LENGTH			 32
+#define SHA512_HEX_FORM_LENGTH		128		//Length of the hex string representation of a SHA512 hash
+
 class TiXmlElement;
 class CPermissionsHelperWindow;
 class COptions;
@@ -156,6 +159,7 @@ protected:
 	void UpdatePermissions(bool notifyOwner);
 
 	void ReadSettings();
+	bool SaveSettings();
 
 	void ReadPermissions(TiXmlElement *pXML, t_group &user, BOOL &bGotHome);
 	void SavePermissions(TiXmlElement *pXML, const t_group &user);

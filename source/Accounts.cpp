@@ -478,7 +478,7 @@ void t_user::generateSalt()
 	salt = _T("");
 
 	for (size_t i = 0; i < 64; ++i) {
-		salt[i] += validChars[dist(rd)];
+		salt += validChars[dist(rd)];
 	}
 }
 

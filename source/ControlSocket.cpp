@@ -513,8 +513,7 @@ void CControlSocket::ParseCommand()
 		{
 			AntiHammerIncrease();
 
-			if (m_status.loggedon)
-			{
+			if (m_status.loggedon) {
 				GetSystemTime(&m_LoginTime);
 				DecUserCount(m_status.username);
 				m_owner.DecIpCount(m_status.ip);
@@ -539,8 +538,8 @@ void CControlSocket::ParseCommand()
 			m_status.username = args;
 			UpdateUser();
 			if (!m_pSslLayer) {
-				if ( m_owner.m_pPermissions->CheckUserLogin(m_status.user, _T(""), true) && m_status.user.ForceSsl()) {
-					m_status.username = _T("");
+				if (m_owner.m_pPermissions->CheckUserLogin(m_status.user, _T(""), true) && m_status.user.ForceSsl()) {
+					m_status.username.clear();
 					UpdateUser();
 					Send(_T("530 TLS required"));
 					break;
@@ -2250,9 +2249,9 @@ void CControlSocket::OnSend(int nErrorCode)
 	}
 }
 
-BOOL CControlSocket::DoUserLogin(LPCTSTR password, bool skipPass /*=false*/)
+BOOL CControlSocket::DoUserLogin(LPCTSTR password)
 {
-	if (!m_owner.m_pPermissions->CheckUserLogin(m_status.user, password, skipPass)) {
+	if (!m_owner.m_pPermissions->CheckUserLogin(m_status.user, password, false)) {
 		AntiHammerIncrease(2);
 		m_owner.AntiHammerIncrease(m_RemoteIP);
 
