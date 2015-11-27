@@ -197,7 +197,7 @@ BOOL CFileLogger::CheckLogFile()
 		{
 			int curReadPos = (int)(size * 1024 - (nLimit * 1024) * 0.9); //New log size is 10% smaller than the set limit
 			int curWritePos =0;
-			const int bufsize = 16384; // 16KB
+			const int bufsize = 1024 * 64;
 			char buffer[bufsize];
 			DWORD numread;
 			DWORD numwritten;
