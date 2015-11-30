@@ -2147,7 +2147,7 @@ std::string CAsyncSslSocketLayer::SHA512(unsigned char const* buf, size_t len)
 	if (pSHA512) {
 		if (pSHA512(buf, len, out)) {
 			// Convert to hex encoding
-			for (int i = 0; i <= SHA512_DIGEST_LENGTH; ++i) {
+			for (int i = 0; i < SHA512_DIGEST_LENGTH; ++i) {
 				ret += toHexDigit(out[i] >> 4);
 				ret += toHexDigit(out[i] & 0xfu);
 			}
