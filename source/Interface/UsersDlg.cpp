@@ -100,14 +100,12 @@ BOOL CUsersDlg::OnInitDialog()
 
 	m_cUserlist.ResetContent();
 
-	for (unsigned int i=0;i<m_UsersList.size();i++)
-	{
+	for (unsigned int i = 0;i < m_UsersList.size(); ++i) {
 		int index=m_cUserlist.AddString(m_UsersList[i].user);
 		m_cUserlist.SetItemData(index, i);
 	}
 
-	if (m_UsersList.size())
-	{
+	if (m_UsersList.size()) {
 		m_cUserlist.SetCurSel(0);
 		OnSelchangeUserlist();
 	}
@@ -121,32 +119,28 @@ BOOL CUsersDlg::OnInitDialog()
 BOOL CUsersDlg::Validate()
 {
 	CString res = m_pGeneralPage->Validate();
-	if (res != _T(""))
-	{
+	if (res != _T("")) {
 		ShowPage(m_pGeneralPage);
 		m_cUserlist.SetCurSel(m_olduser);
 		MessageBox(res);
 		return FALSE;
 	}
 	res = m_pSpeedLimitPage->Validate();
-	if (res != _T(""))
-	{
+	if (res != _T("")) {
 		ShowPage(m_pSpeedLimitPage);
 		m_cUserlist.SetCurSel(m_olduser);
 		MessageBox(res);
 		return FALSE;
 	}
 	res = m_pSharedFoldersPage->Validate();
-	if (res != _T(""))
-	{
+	if (res != _T("")) {
 		ShowPage(m_pSharedFoldersPage);
 		m_cUserlist.SetCurSel(m_olduser);
 		MessageBox(res);
 		return FALSE;
 	}
 	res = m_pIpFilterPage->Validate();
-	if (res != _T(""))
-	{
+	if (res != _T("")) {
 		ShowPage(m_pIpFilterPage);
 		m_cUserlist.SetCurSel(m_olduser);
 		MessageBox(res);
@@ -158,15 +152,13 @@ BOOL CUsersDlg::Validate()
 void CUsersDlg::OnSelchangeUserlist()
 {
 	m_insideSelchange = true;
-	if (!Validate())
-	{
+	if (!Validate()) {
 		m_insideSelchange = false;
 		return;
 	}
 	m_insideSelchange = false;
 
-	if (m_olduser!=LB_ERR)
-	{
+	if (m_olduser != LB_ERR) {
 		int oldindex = m_cUserlist.GetItemData(m_olduser);
 		VERIFY(m_pGeneralPage->SaveUser(&m_UsersList[oldindex]));
 		VERIFY(m_pSpeedLimitPage->SaveUser(&m_UsersList[oldindex]));
@@ -174,8 +166,7 @@ void CUsersDlg::OnSelchangeUserlist()
 		VERIFY(m_pIpFilterPage->SaveUser(&m_UsersList[oldindex]));
 	}
 	int nItem = m_cUserlist.GetCurSel();
-	if (nItem!=LB_ERR)
-	{
+	if (nItem != LB_ERR) {
 		m_olduser = nItem;
 		int index = m_cUserlist.GetItemData(nItem);
 		VERIFY(m_pGeneralPage->DisplayUser(&m_UsersList[index]));
@@ -183,8 +174,7 @@ void CUsersDlg::OnSelchangeUserlist()
 		VERIFY(m_pSharedFoldersPage->DisplayUser(&m_UsersList[index]));
 		VERIFY(m_pIpFilterPage->DisplayUser(&m_UsersList[index]));
 	}
-	else
-	{
+	else {
 		VERIFY(m_pGeneralPage->DisplayUser(NULL));
 		VERIFY(m_pSpeedLimitPage->DisplayUser(NULL));
 		VERIFY(m_pSharedFoldersPage->DisplayUser(0));
@@ -207,8 +197,7 @@ void CUsersDlg::OnOK()
 
 void CUsersDlg::OnContextMenu(CWnd* pWnd, CPoint point)
 {
-	if (pWnd == &m_cUserlist)
-	{
+	if (pWnd == &m_cUserlist) {
 		CMenu menu;
 		menu.LoadMenu(IDR_USERCONTEXT);
 
@@ -218,8 +207,7 @@ void CUsersDlg::OnContextMenu(CWnd* pWnd, CPoint point)
 		while (pWndPopupOwner->GetStyle() & WS_CHILD)
 			pWndPopupOwner = pWndPopupOwner->GetParent();
 
-		if (m_cUserlist.GetCurSel() == LB_ERR)
-		{
+		if (m_cUserlist.GetCurSel() == LB_ERR) {
 			pPopup->EnableMenuItem(ID_USERMENU_COPY, MF_GRAYED);
 			pPopup->EnableMenuItem(ID_USERMENU_REMOVE, MF_GRAYED);
 			pPopup->EnableMenuItem(ID_USERMENU_RENAME, MF_GRAYED);
@@ -237,19 +225,17 @@ void CUsersDlg::OnUsermenuAdd()
 		return;
 
 	CNewUserDlg dlg;
-	for (t_GroupsList::iterator iter=m_GroupsList.begin(); iter!=m_GroupsList.end(); ++iter)
+	for (t_GroupsList::iterator iter = m_GroupsList.begin(); iter != m_GroupsList.end(); ++iter) {
 		dlg.m_GroupList.push_back(iter->group);
-	if (dlg.DoModal()==IDOK)
-	{
+	}
+	if (dlg.DoModal() == IDOK) {
 		CString newname = dlg.m_Name;
 		newname.MakeLower();
-		for (int i=0; i<m_cUserlist.GetCount(); i++)
-		{
+		for (int i = 0; i < m_cUserlist.GetCount(); ++i) {
 			CString str;
-			m_cUserlist.GetText(i,str);
+			m_cUserlist.GetText(i, str);
 			str.MakeLower();
-			if (str==newname)
-			{
+			if (str == newname) {
 				AfxMessageBox(IDS_ERRORMSG_USERALREADYEXISTS);
 				return;
 			}
@@ -258,8 +244,7 @@ void CUsersDlg::OnUsermenuAdd()
 		t_user user;
 		user.nEnabled = true;
 		user.user = dlg.m_Name;
-		if (dlg.m_Group != _T(""))
-		{
+		if (dlg.m_Group != _T("")) {
 			user.group = dlg.m_Group;
 			user.nBypassUserLimit = 2;
 			user.nBypassServerSpeedLimit[download] = 2;
@@ -267,8 +252,7 @@ void CUsersDlg::OnUsermenuAdd()
 			user.nEnabled = 2;
 			user.forceSsl = 2;
 		}
-		else
-		{
+		else {
 			user.nBypassUserLimit = 0;
 			user.nBypassServerSpeedLimit[download] = 0;
 			user.nBypassServerSpeedLimit[upload] = 0;
@@ -279,9 +263,9 @@ void CUsersDlg::OnUsermenuAdd()
 		user.password = _T("");
 		int nItem = m_cUserlist.AddString(user.user);
 		if (nItem <= m_olduser)
-			m_olduser++;
+			++m_olduser;
 		m_UsersList.push_back(user);
-		m_cUserlist.SetItemData(nItem, m_UsersList.size()-1);
+		m_cUserlist.SetItemData(nItem, m_UsersList.size() - 1);
 		m_cUserlist.SetCurSel(nItem);
 		OnSelchangeUserlist();
 	}
@@ -292,43 +276,40 @@ void CUsersDlg::OnUsermenuCopy()
 	if (!Validate())
 		return;
 
-	int pos=m_cUserlist.GetCurSel();
-	if (pos==LB_ERR)
+	int pos = m_cUserlist.GetCurSel();
+	if (pos == LB_ERR)
 		return;
-	int index=m_cUserlist.GetItemData(pos);
+	int index = m_cUserlist.GetItemData(pos);
 
 	CEnterSomething dlg(IDS_COPYUSERDIALOG);
-	if (dlg.DoModal()==IDOK)
-	{
+	if (dlg.DoModal() == IDOK) {
 		int i;
-		CString newname=dlg.m_String;
+		CString newname = dlg.m_String;
 		newname.MakeLower();
-		for (i=0;i<m_cUserlist.GetCount();i++)
-		{
+		for (i = 0; i < m_cUserlist.GetCount(); ++i) {
 			CString str;
-			m_cUserlist.GetText(i,str);
+			m_cUserlist.GetText(i, str);
 			str.MakeLower();
-			if (str==newname)
-			{
+			if (str == newname) {
 				AfxMessageBox(IDS_ERRORMSG_USERALREADYEXISTS);
 				return;
 			}
 		}
 
 		t_user user;
-		user.user=dlg.m_String;
+		user.user = dlg.m_String;
 		user.nBypassUserLimit = m_UsersList[index].nBypassUserLimit;
 		user.nIpLimit = m_UsersList[index].nIpLimit;
 		user.nUserLimit = m_UsersList[index].nUserLimit;
 		user.password = m_UsersList[index].password;
-		for (std::vector<t_directory>::const_iterator iter=m_UsersList[index].permissions.begin(); iter!=m_UsersList[index].permissions.end(); ++iter)
+		for (std::vector<t_directory>::const_iterator iter = m_UsersList[index].permissions.begin(); iter != m_UsersList[index].permissions.end(); ++iter)
 			user.permissions.push_back(*iter);
 
-		int nItem=m_cUserlist.AddString(user.user);
-		if (nItem<=m_olduser)
-			m_olduser++;
+		int nItem = m_cUserlist.AddString(user.user);
+		if (nItem <= m_olduser)
+			++m_olduser;
 		m_UsersList.push_back(user);
-		m_cUserlist.SetItemData(nItem, m_UsersList.size()-1);
+		m_cUserlist.SetItemData(nItem, m_UsersList.size() - 1);
 		m_cUserlist.SetCurSel(nItem);
 
 		OnSelchangeUserlist();
@@ -338,23 +319,22 @@ void CUsersDlg::OnUsermenuCopy()
 
 void CUsersDlg::OnUsermenuRemove()
 {
-	int pos=m_cUserlist.GetCurSel();
-	if (pos==LB_ERR)
+	int pos = m_cUserlist.GetCurSel();
+	if (pos == LB_ERR)
 		return;
-	int index=m_cUserlist.GetItemData(pos);
-	m_olduser=LB_ERR;
-	int i=0;
-	for (t_UsersList::iterator iter=m_UsersList.begin(); iter!=m_UsersList.end(); iter++, i++)
-		if (i==index)
-		{
+	int index = m_cUserlist.GetItemData(pos);
+	m_olduser = LB_ERR;
+	int i = 0;
+	for (t_UsersList::iterator iter = m_UsersList.begin(); iter != m_UsersList.end(); ++iter, ++i) {
+		if (i == index) {
 			m_UsersList.erase(iter);
 			break;
 		}
-	for (i=0;i<m_cUserlist.GetCount();i++)
-	{
-		int data=m_cUserlist.GetItemData(i);
-		if (data>index)
-			m_cUserlist.SetItemData(i, data-1);
+	}
+	for (i = 0; i < m_cUserlist.GetCount(); ++i) {
+		int data = m_cUserlist.GetItemData(i);
+		if (data > index)
+			m_cUserlist.SetItemData(i, data - 1);
 	}
 	m_cUserlist.DeleteString(pos);
 	OnSelchangeUserlist();
@@ -368,22 +348,19 @@ void CUsersDlg::OnUsermenuRename()
 	int pos = m_cUserlist.GetCurSel();
 	if (pos == LB_ERR)
 		return;
-	int index=m_cUserlist.GetItemData(pos);
+	int index = m_cUserlist.GetItemData(pos);
 
 	CEnterSomething dlg(IDS_INPUTDIALOGTEXT_RENAME);
-	if (dlg.DoModal()==IDOK)
-	{
-		CString newname=dlg.m_String;
+	if (dlg.DoModal() == IDOK) {
+		CString newname = dlg.m_String;
 		newname.MakeLower();
-		for (int i=0; i < m_cUserlist.GetCount(); i++)
-		{
+		for (int i = 0; i < m_cUserlist.GetCount(); ++i) {
 			if (i == pos)
 				continue;
 			CString str;
-			m_cUserlist.GetText(i,str);
+			m_cUserlist.GetText(i, str);
 			str.MakeLower();
-			if (str == newname)
-			{
+			if (str == newname) {
 				AfxMessageBox(IDS_ERRORMSG_USERALREADYEXISTS);
 				return;
 			}
@@ -401,14 +378,12 @@ void CUsersDlg::OnUsermenuRename()
 
 void CUsersDlg::SetCtrlState()
 {
-	if (m_cUserlist.GetCurSel()==LB_ERR)
-	{
+	if (m_cUserlist.GetCurSel() == LB_ERR) {
 		GetDlgItem(IDC_USERREMOVE)->EnableWindow(FALSE);
 		GetDlgItem(IDC_USERRENAME)->EnableWindow(FALSE);
 		GetDlgItem(IDC_USERCOPY)->EnableWindow(FALSE);
 	}
-	else
-	{
+	else {
 		GetDlgItem(IDC_USERREMOVE)->EnableWindow(TRUE);
 		GetDlgItem(IDC_USERRENAME)->EnableWindow(TRUE);
 		GetDlgItem(IDC_USERCOPY)->EnableWindow(TRUE);
@@ -518,12 +493,9 @@ BOOL CUsersDlg::Init(unsigned char *pData, DWORD dwDataLength)
 
 BOOL CUsersDlg::PreTranslateMessage(MSG* pMsg)
 {
-	if (pMsg->message==WM_KEYDOWN)
-	{
-		if (pMsg->wParam==VK_F2)
-		{
-			if (GetFocus() == &m_cUserlist)
-			{
+	if (pMsg->message == WM_KEYDOWN) {
+		if (pMsg->wParam == VK_F2) {
+			if (GetFocus() == &m_cUserlist) {
 				if (m_cUserlist.GetCurSel() == LB_ERR)
 					return TRUE;
 				OnUsermenuRename();
@@ -536,12 +508,11 @@ BOOL CUsersDlg::PreTranslateMessage(MSG* pMsg)
 
 t_user* CUsersDlg::GetCurrentUser()
 {
-	if (m_cUserlist.GetCurSel() == LB_ERR)
+	if (m_cUserlist.GetCurSel() == LB_ERR) {
 		return NULL;
-	else
-	{
-		if (m_insideSelchange)
-		{
+	}
+	else {
+		if (m_insideSelchange) {
 			if (m_olduser == LB_ERR)
 				return NULL;
 			else
