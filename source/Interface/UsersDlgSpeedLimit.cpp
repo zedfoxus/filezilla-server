@@ -460,23 +460,23 @@ BOOL CUsersDlgSpeedLimit::DisplayUser(const t_user *pUser)
 	return TRUE;
 }
 
-BOOL CUsersDlgSpeedLimit::SaveUser(t_user *pUser)
+BOOL CUsersDlgSpeedLimit::SaveUser(t_user & user)
 {
 	UpdateData(TRUE);
 	if (m_DownloadValue > 65535)
 		m_DownloadValue = 65535;
 	if (m_UploadValue > 65535)
 		m_UploadValue = 65535;
-	pUser->nSpeedLimit[download] = m_DownloadValue;
-	pUser->nSpeedLimit[upload] = m_UploadValue;
-	pUser->nSpeedLimitType[download] = m_DownloadSpeedLimitType;
-	pUser->nSpeedLimitType[upload] = m_UploadSpeedLimitType;
+	user.nSpeedLimit[download] = m_DownloadValue;
+	user.nSpeedLimit[upload] = m_UploadValue;
+	user.nSpeedLimitType[download] = m_DownloadSpeedLimitType;
+	user.nSpeedLimitType[upload] = m_UploadSpeedLimitType;
 
-	pUser->SpeedLimits[download] = m_DownloadSpeedLimits;
-	pUser->SpeedLimits[upload] = m_UploadSpeedLimits;
+	user.SpeedLimits[download] = m_DownloadSpeedLimits;
+	user.SpeedLimits[upload] = m_UploadSpeedLimits;
 
-	pUser->nBypassServerSpeedLimit[download] = ((CButton *)GetDlgItem(IDC_USERS_SPEEDLIMIT_SERVERBYPASS_DOWNLOAD))->GetCheck();
-	pUser->nBypassServerSpeedLimit[upload] = ((CButton *)GetDlgItem(IDC_USERS_SPEEDLIMIT_SERVERBYPASS_UPLOAD))->GetCheck();
+	user.nBypassServerSpeedLimit[download] = ((CButton *)GetDlgItem(IDC_USERS_SPEEDLIMIT_SERVERBYPASS_DOWNLOAD))->GetCheck();
+	user.nBypassServerSpeedLimit[upload] = ((CButton *)GetDlgItem(IDC_USERS_SPEEDLIMIT_SERVERBYPASS_UPLOAD))->GetCheck();
 
 	return TRUE;
 }

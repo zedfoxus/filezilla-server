@@ -74,6 +74,7 @@ protected:
 	void SetCtrlState();
 	int m_olduser;
 	BOOL Validate();
+	void SaveUser(t_user& user);
 
 	typedef std::vector<t_group> t_GroupsList;
 	typedef std::vector<t_user> t_UsersList;

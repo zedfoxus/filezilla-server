@@ -612,24 +612,20 @@ BOOL CUsersDlgSharedFolders::DisplayUser(t_user *pUser)
 	return TRUE;
 }
 
-BOOL CUsersDlgSharedFolders::SaveUser(t_user *pUser)
+BOOL CUsersDlgSharedFolders::SaveUser(t_user & user)
 {
-	if (!pUser)
-		return FALSE;
-
 	POSITION selpos = m_cDirs.GetFirstSelectedItemPosition();
-	if (selpos)
-	{
+	if (selpos) {
 		int item = m_cDirs.GetNextSelectedItem(selpos);
 		int index = m_cDirs.GetItemData(item);
-		pUser->permissions[index].bFileRead = m_bFilesRead;
-		pUser->permissions[index].bFileWrite = m_bFilesWrite;
-		pUser->permissions[index].bFileDelete = m_bFilesDelete;
-		pUser->permissions[index].bFileAppend = m_bFilesAppend;
-		pUser->permissions[index].bDirCreate = m_bDirsCreate;
-		pUser->permissions[index].bDirDelete = m_bDirsDelete;
-		pUser->permissions[index].bDirList = m_bDirsList;
-		pUser->permissions[index].bDirSubdirs = m_bDirsSubdirs;
+		user.permissions[index].bFileRead = m_bFilesRead;
+		user.permissions[index].bFileWrite = m_bFilesWrite;
+		user.permissions[index].bFileDelete = m_bFilesDelete;
+		user.permissions[index].bFileAppend = m_bFilesAppend;
+		user.permissions[index].bDirCreate = m_bDirsCreate;
+		user.permissions[index].bDirDelete = m_bDirsDelete;
+		user.permissions[index].bDirList = m_bDirsList;
+		user.permissions[index].bDirSubdirs = m_bDirsSubdirs;
 	}
 	return TRUE;
 }

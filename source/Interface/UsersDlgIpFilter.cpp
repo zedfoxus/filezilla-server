@@ -115,8 +115,7 @@ BOOL CUsersDlgIpFilter::DisplayUser(t_user *pUser)
 	m_DisallowedAddresses = _T("");
 	m_AllowedAddresses = _T("");
 
-	if (!pUser)
-	{
+	if (!pUser) {
 		UpdateData(FALSE);
 
 		return TRUE;
@@ -133,18 +132,15 @@ BOOL CUsersDlgIpFilter::DisplayUser(t_user *pUser)
 	return TRUE;
 }
 
-BOOL CUsersDlgIpFilter::SaveUser(t_user *pUser)
+BOOL CUsersDlgIpFilter::SaveUser(t_user & user)
 {
-	if (!pUser)
-		return FALSE;
-
 	UpdateData(TRUE);
 
-	pUser->disallowedIPs.clear();
-	pUser->allowedIPs.clear();
+	user.disallowedIPs.clear();
+	user.allowedIPs.clear();
 
-	ParseIPFilter(m_DisallowedAddresses, &pUser->disallowedIPs);
-	ParseIPFilter(m_AllowedAddresses, &pUser->allowedIPs);
+	ParseIPFilter(m_DisallowedAddresses, &user.disallowedIPs);
+	ParseIPFilter(m_AllowedAddresses, &user.allowedIPs);
 
 	return TRUE;
 }

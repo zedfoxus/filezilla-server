@@ -38,7 +38,7 @@ public:
 	~CUsersDlgSharedFolders();
 
 	BOOL DisplayUser(t_user *pUser);
-	BOOL SaveUser(t_user *pUser);
+	BOOL SaveUser(t_user & user);
 
 protected:
 

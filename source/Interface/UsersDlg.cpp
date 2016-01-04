@@ -160,10 +160,8 @@ void CUsersDlg::OnSelchangeUserlist()
 
 	if (m_olduser != LB_ERR) {
 		int oldindex = m_cUserlist.GetItemData(m_olduser);
-		VERIFY(m_pGeneralPage->SaveUser(&m_UsersList[oldindex]));
-		VERIFY(m_pSpeedLimitPage->SaveUser(&m_UsersList[oldindex]));
-		VERIFY(m_pSharedFoldersPage->SaveUser(&m_UsersList[oldindex]));
-		VERIFY(m_pIpFilterPage->SaveUser(&m_UsersList[oldindex]));
+		t_user & user = m_UsersList[oldindex];
+		SaveUser(user);
 	}
 	int nItem = m_cUserlist.GetCurSel();
 	if (nItem != LB_ERR) {
@@ -281,6 +279,8 @@ void CUsersDlg::OnUsermenuCopy()
 		return;
 	int index = m_cUserlist.GetItemData(pos);
 
+	SaveUser(m_UsersList[index]);
+
 	CEnterSomething dlg(IDS_COPYUSERDIALOG);
 	if (dlg.DoModal() == IDOK) {
 		int i;
@@ -296,14 +296,8 @@ void CUsersDlg::OnUsermenuCopy()
 			}
 		}
 
-		t_user user;
+		t_user user = m_UsersList[index];
 		user.user = dlg.m_String;
-		user.nBypassUserLimit = m_UsersList[index].nBypassUserLimit;
-		user.nIpLimit = m_UsersList[index].nIpLimit;
-		user.nUserLimit = m_UsersList[index].nUserLimit;
-		user.password = m_UsersList[index].password;
-		for (std::vector<t_directory>::const_iterator iter = m_UsersList[index].permissions.begin(); iter != m_UsersList[index].permissions.end(); ++iter)
-			user.permissions.push_back(*iter);
 
 		int nItem = m_cUserlist.AddString(user.user);
 		if (nItem <= m_olduser)
@@ -432,7 +426,7 @@ BOOL CUsersDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	char *p = *pBuffer;
 
 	*p++ = (m_GroupsList.size() / 256) / 256;
-	*p++ = m_GroupsList.size() / 256;
+	*p++ = (m_GroupsList.size() / 256) % 256;
 	*p++ = m_GroupsList.size() % 256;
 	for (auto const& group : m_GroupsList) {
 		p = group.FillBuffer(p);
@@ -444,7 +438,7 @@ BOOL CUsersDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	}
 
 	*p++ = (m_UsersList.size() / 256) / 256;
-	*p++ = m_UsersList.size() / 256;
+	*p++ = (m_UsersList.size() / 256) % 256;
 	*p++ = m_UsersList.size() % 256;
 	for (auto const& user : m_UsersList) {
 		p = user.FillBuffer(p);
@@ -522,3 +516,10 @@ t_user* CUsersDlg::GetCurrentUser()
 	}
 }
 
+void CUsersDlg::SaveUser(t_user & user)
+{
+	VERIFY(m_pGeneralPage->SaveUser(user));
+	VERIFY(m_pSpeedLimitPage->SaveUser(user));
+	VERIFY(m_pSharedFoldersPage->SaveUser(user));
+	VERIFY(m_pIpFilterPage->SaveUser(user));
+}

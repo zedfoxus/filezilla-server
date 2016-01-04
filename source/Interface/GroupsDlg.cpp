@@ -457,7 +457,7 @@ BOOL CGroupsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	char *p = *pBuffer;
 
 	*p++ = (m_GroupsList.size() / 256) / 256;
-	*p++ = m_GroupsList.size() / 256;
+	*p++ = (m_GroupsList.size() / 256) % 256;
 	*p++ = m_GroupsList.size() % 256;
 	for (auto const& group : m_GroupsList) {
 		p = group.FillBuffer(p);
@@ -469,7 +469,7 @@ BOOL CGroupsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	}
 
 	*p++ = (m_UsersList.size() / 256) / 256;
-	*p++ = m_UsersList.size() / 256;
+	*p++ = (m_UsersList.size() / 256) % 256;
 	*p++ = m_UsersList.size() % 256;
 	for (auto const& user : m_UsersList) {
 		p = user.FillBuffer(p);
@@ -538,10 +538,8 @@ t_group* CGroupsDlg::GetCurrentGroup()
 {
 	if (m_cGrouplist.GetCurSel() == LB_ERR)
 		return NULL;
-	else
-	{
-		if (m_insideSelchange)
-		{
+	else {
+		if (m_insideSelchange) {
 			if (m_oldgroup == LB_ERR)
 				return NULL;
 			else

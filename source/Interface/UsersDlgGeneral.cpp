@@ -265,35 +265,32 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 	return TRUE;
 }
 
-BOOL CUsersDlgGeneral::SaveUser(t_user *pUser)
+BOOL CUsersDlgGeneral::SaveUser(t_user & user)
 {
-	if (!pUser)
-		return FALSE;
-
-	pUser->nEnabled = m_nEnabled;
-	pUser->password = m_Pass;
+	user.nEnabled = m_nEnabled;
+	user.password = m_Pass;
 	if (!m_bNeedpass)
-		pUser->password = _T("");
+		user.password = _T("");
 	else if (m_cPass.GetModify() && m_Pass != _T("")) {
-		pUser->generateSalt();
+		user.generateSalt();
 		
-		auto saltedPassword = ConvToNetwork(pUser->password + pUser->salt);
+		auto saltedPassword = ConvToNetwork(user.password + user.salt);
 
 		CAsyncSslSocketLayer ssl(0);
-		pUser->password = ConvFromNetwork(ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size()).c_str());
+		user.password = ConvFromNetwork(ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size()).c_str());
 	}
 
-	pUser->nBypassUserLimit = m_nMaxUsersBypass;
-	pUser->nUserLimit = _ttoi(m_MaxConnCount);
-	pUser->nIpLimit = _ttoi(m_IpLimit);
+	user.nBypassUserLimit = m_nMaxUsersBypass;
+	user.nUserLimit = _ttoi(m_MaxConnCount);
+	user.nIpLimit = _ttoi(m_IpLimit);
 	if (m_cGroup.GetCurSel()<=0)
-		pUser->group = _T("");
+		user.group = _T("");
 	else
-		m_cGroup.GetLBText(m_cGroup.GetCurSel(), pUser->group);
+		m_cGroup.GetLBText(m_cGroup.GetCurSel(), user.group);
 
-	pUser->comment = m_Comments;
+	user.comment = m_Comments;
 
-	pUser->forceSsl = m_nForceSsl;
+	user.forceSsl = m_nForceSsl;
 
 	return TRUE;
 }

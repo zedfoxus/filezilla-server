@@ -38,7 +38,7 @@ public:
 
 	void SetCtrlState();
 	BOOL DisplayUser(const t_user *pUser);
-	BOOL SaveUser(t_user *pUser);
+	BOOL SaveUser(t_user & user);
 	CString Validate();
 
 protected:

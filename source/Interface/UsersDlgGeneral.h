@@ -39,7 +39,7 @@ public:
 	~CUsersDlgGeneral();
 
 	BOOL DisplayUser(t_user *pUser);
-	BOOL SaveUser(t_user *pUser);
+	BOOL SaveUser(t_user & user);
 
 protected:
 	t_user *m_pUser;
