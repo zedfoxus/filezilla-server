@@ -926,7 +926,7 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 				int len = utf8.size();
 				*p++ = (len / 256) / 256;
-				*p++ = len / 256;
+				*p++ = (len / 256) % 256;
 				*p++ = len % 256;
 				memcpy(p, utf8.c_str(), len);
 				p += len;
@@ -945,8 +945,8 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	}
 
 	for (i = 0; i < 2; ++i) {
-		*p++ = m_sSpeedLimits[i].size() << 8;
-		*p++ = m_sSpeedLimits[i].size() %256;
+		*p++ = m_sSpeedLimits[i].size() >> 8;
+		*p++ = m_sSpeedLimits[i].size() % 256;
 		for (iter = m_sSpeedLimits[i].begin(); iter != m_sSpeedLimits[i].end(); iter++)
 			p = iter->FillBuffer(p);
 	}

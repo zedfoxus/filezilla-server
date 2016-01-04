@@ -962,7 +962,7 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 	// Write groups to buffer
 	*p++ = (m_sGroupsList.size() / 256) / 256;
-	*p++ = m_sGroupsList.size() / 256;
+	*p++ = (m_sGroupsList.size() / 256) % 256;
 	*p++ = m_sGroupsList.size() % 256;
 	for (auto const& group : m_sGroupsList) {
 		p = group.FillBuffer(p);
@@ -975,7 +975,7 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 	// Write users to buffer
 	*p++ = (m_sUsersList.size() / 256) / 256;
-	*p++ = m_sUsersList.size() / 256;
+	*p++ = (m_sUsersList.size() / 256) % 256;
 	*p++ = m_sUsersList.size() % 256;
 	for (auto const& iter : m_sUsersList ) {
 		p = iter.second.FillBuffer(p);
