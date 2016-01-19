@@ -25,6 +25,8 @@
 #include "misc\hyperlink.h"
 #include "options.h"
 
+#include "../AsyncSslSocketLayer.h"
+
 #include "MainFrm.h"
 
 #if defined(_DEBUG)
@@ -96,6 +98,12 @@ BOOL CFileZillaserverApp::InitInstance()
 	if(!res) {
 		delete pOptions;
 		return FALSE;
+	}
+
+	auto sslLoader = std::make_unique<CAsyncSslSocketLayer>(0);
+	if (sslLoader->InitSSL() != 0) {
+		AfxMessageBox(_T("Could not load TLS libraries. Aborting start of administration interface."), MB_ICONEXCLAMATION);
+		return false;
 	}
 
 	CMainFrame* pFrame = new CMainFrame(pOptions);
