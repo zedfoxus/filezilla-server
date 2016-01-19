@@ -161,7 +161,7 @@ public:
 
 	CStdString GenerateDiffieHellmanParameters();
 
-	// If needed, lLoads the library and does global initialization.
+	// If needed, loads the library and does global initialization.
 	// Return 0 on success
 	int InitSSL();
 
