@@ -218,8 +218,7 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 {
 	m_pUser = pUser;
 
-	if (!pUser)
-	{
+	if (!pUser) {
 		m_bNeedpass = FALSE;
 		m_Pass = _T("");
 		m_nMaxUsersBypass = 0;
@@ -237,15 +236,13 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 	m_cPass.SetModify(FALSE);
 	m_bNeedpass = pUser->password != _T("");
 
-	if (pUser->group == _T("") || m_cGroup.SelectString(-1, pUser->group) == CB_ERR)
-	{
+	if (pUser->group == _T("") || m_cGroup.SelectString(-1, pUser->group) == CB_ERR) {
 		m_cMaxUsersBypass.SetButtonStyle(BS_AUTOCHECKBOX);
 		m_cEnabled.SetButtonStyle(BS_AUTOCHECKBOX);
 		m_cGroup.SetCurSel(0);
 		m_cForceSsl.SetButtonStyle(BS_AUTOCHECKBOX);
 	}
-	else
-	{
+	else {
 		m_cMaxUsersBypass.SetButtonStyle(BS_AUTO3STATE);
 		m_cEnabled.SetButtonStyle(BS_AUTO3STATE);
 		m_cForceSsl.SetButtonStyle(BS_AUTO3STATE);
@@ -268,16 +265,19 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 BOOL CUsersDlgGeneral::SaveUser(t_user & user)
 {
 	user.nEnabled = m_nEnabled;
-	user.password = m_Pass;
 	if (!m_bNeedpass)
 		user.password = _T("");
 	else if (m_cPass.GetModify() && m_Pass != _T("")) {
 		user.generateSalt();
 		
-		auto saltedPassword = ConvToNetwork(user.password + user.salt);
+		auto saltedPassword = ConvToNetwork(m_Pass + user.salt);
 
 		CAsyncSslSocketLayer ssl(0);
 		user.password = ConvFromNetwork(ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size()).c_str());
+		if (user.password.IsEmpty()) {
+			// Something went very wrong, disable user.
+			user.nEnabled = false;
+		}
 	}
 
 	user.nBypassUserLimit = m_nMaxUsersBypass;
