@@ -477,7 +477,7 @@ DWORD ServiceExecutionThread(LPDWORD param)
 	BOOL res=TRUE;
 	WSADATA wsaData;
 
-	WORD wVersionRequested = MAKEWORD(1, 1);
+	WORD wVersionRequested = MAKEWORD(2, 2);
 	int nResult = WSAStartup(wVersionRequested, &wsaData);
 	if (nResult != 0)
 		res=FALSE;
@@ -596,7 +596,7 @@ int CompatMain(LPCSTR lpCmdLine)
 		BOOL res=TRUE;
 		WSADATA wsaData;
 
-		WORD wVersionRequested = MAKEWORD(1, 1);
+		WORD wVersionRequested = MAKEWORD(2, 2);
 		int nResult = WSAStartup(wVersionRequested, &wsaData);
 		if (nResult != 0)
 			res=FALSE;
