@@ -86,7 +86,8 @@ static const t_Option m_Options[IOPTIONS_NUM] = {
 	{ _T("Last Server Password"),   0 },
 	{ _T("Always use last server"), 1 },
 	{ _T("User Sorting"),           1 },
-	{ _T("Filename Display"),       1 }
+	{ _T("Filename Display"),       1 },
+	{ _T("Max reconnect count"),    1 },
 };
 
 void COptions::SetOption(int nOptionID, __int64 value)
@@ -184,8 +185,11 @@ __int64 COptions::GetOptionVal(int nOptionID)
 	case IOPTION_LASTSERVERPORT:
 		m_OptionsCache[nOptionID - 1].value = 14147;
 		break;
+	case IOPTION_RECONNECTCOUNT:
+		m_OptionsCache[nOptionID - 1].value = 15;
+		break;
 	default:
-		m_OptionsCache[nOptionID - 1].value=0;
+		m_OptionsCache[nOptionID - 1].value = 0;
 	}
 	m_OptionsCache[nOptionID - 1].bCached = TRUE;
 	m_OptionsCache[nOptionID - 1].nType = 0;

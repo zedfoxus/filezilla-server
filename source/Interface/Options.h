@@ -26,8 +26,9 @@
 #define IOPTION_ALWAYS 5
 #define IOPTION_USERSORTING 6
 #define IOPTION_FILENAMEDISPLAY 7
+#define IOPTION_RECONNECTCOUNT 8
 
-#define IOPTIONS_NUM 7
+#define IOPTIONS_NUM 8
 
 class COptionsDlg;
 class COptions final

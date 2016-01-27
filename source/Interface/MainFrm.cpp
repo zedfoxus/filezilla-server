@@ -1030,10 +1030,9 @@ BOOL CMainFrame::SendCommand(int nType, void *pData, int nDataLength)
 	return TRUE;
 }
 
-void CMainFrame::CloseAdminSocket(bool shouldReconnect /*=true*/)
+void CMainFrame::CloseAdminSocket(bool shouldReconnect)
 {
-	if (m_pAdminSocket)
-	{
+	if (m_pAdminSocket) {
 		m_pAdminSocket->DoClose();
 		delete m_pAdminSocket;
 		m_pAdminSocket = NULL;
@@ -1045,21 +1044,16 @@ void CMainFrame::CloseAdminSocket(bool shouldReconnect /*=true*/)
 	}
 	m_nEdit = 0;
 
-	if (!shouldReconnect)
-	{
-		if (m_nReconnectTimerID)
-		{
+	if (!shouldReconnect) {
+		if (m_nReconnectTimerID) {
 			KillTimer(m_nReconnectTimerID);
 			m_nReconnectTimerID = 0;
 		}
 	}
-	else
-	{
-		if (!m_nReconnectTimerID)
-		{
-			m_nReconnectCount++;
-			if (m_nReconnectCount < 15)
-			{
+	else {
+		if (!m_nReconnectTimerID) {
+			++m_nReconnectCount;
+			if (m_nReconnectCount < m_pOptions->GetOptionVal(IOPTION_RECONNECTCOUNT)) {
 				ShowStatus("Trying to reconnect in 5 seconds", 0);
 				m_nReconnectTimerID = SetTimer(7779, 5000, 0);
 			}
