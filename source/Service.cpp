@@ -45,6 +45,35 @@ int SetAdminPort(int port);
 int ReloadConfig();
 int CompatMain(LPCSTR lpCmdLine);
 
+class Scm final
+{
+public:
+	Scm(int desiredAccess)
+		: hScm_(OpenSCManager(0, 0, desiredAccess))
+	{}
+
+	~Scm()
+	{
+		if (hScm_) {
+			CloseServiceHandle(hScm_);
+		}
+	}
+
+	Scm(Scm const&) = delete;
+	Scm& operator=(Scm const&) = delete;
+
+	operator SC_HANDLE() {
+		return hScm_;
+	}
+
+	explicit operator bool() const {
+		return hScm_ != 0;
+	}
+
+private:
+	SC_HANDLE hScm_{};
+};
+
 void LoadServiceName()
 {
 	COptions *pOptions = new COptions();
@@ -72,8 +101,7 @@ int SetServiceName(LPCTSTR serviceName)
 	delete pOptions;
 
 	pOptions = new COptions();
-	if (pOptions->GetOption(OPTION_SERVICE_NAME) != serviceName)
-	{
+	if (pOptions->GetOption(OPTION_SERVICE_NAME) != serviceName) {
 		delete pOptions;
 		return 1;
 	}
@@ -93,8 +121,7 @@ int SetServiceDisplayName(LPCTSTR serviceDisplayName)
 	delete pOptions;
 
 	pOptions = new COptions();
-	if (pOptions->GetOption(OPTION_SERVICE_DISPLAY_NAME) != serviceDisplayName)
-	{
+	if (pOptions->GetOption(OPTION_SERVICE_DISPLAY_NAME) != serviceDisplayName) {
 		delete pOptions;
 		return 1;
 	}
@@ -113,11 +140,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	BOOL dwCurrentState = 0;
 
 	int nAction = 0;
-	if (lpCmdLine[0] == '/' || lpCmdLine[0] == '-')
-	{
+	if (lpCmdLine[0] == '/' || lpCmdLine[0] == '-') {
 		lpCmdLine++;
-		if (strlen(lpCmdLine) >= 6 && !strncmp(lpCmdLine, "compat", 6))
-		{
+		if (strlen(lpCmdLine) >= 6 && !strncmp(lpCmdLine, "compat", 6)) {
 			lpCmdLine += 6;
 			while (lpCmdLine[0] == ' ')
 				lpCmdLine++;
@@ -150,65 +175,55 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	else if (nAction == 7)
 		return ReloadConfig();
 
-	SC_HANDLE hService, hScm;
-	hScm = OpenSCManager(0, 0, SC_MANAGER_CONNECT);
-
-	if (hScm)
+	SC_HANDLE hService;
+	
 	{
-		bNT = TRUE;
-		hService = OpenService(hScm, ServiceName, GENERIC_READ);
-		if (hService)
-		{
-			bInstalled = TRUE;
+		Scm scm(SC_MANAGER_CONNECT);
+		if (scm) {
+			bNT = TRUE;
+			hService = OpenService(scm, ServiceName, GENERIC_READ);
+			if (hService) {
+				bInstalled = TRUE;
 
-			SERVICE_STATUS ServiceStatus;
-			if (QueryServiceStatus(hService, &ServiceStatus))
-			{
-				dwCurrentState = ServiceStatus.dwCurrentState;
-				if (dwCurrentState == SERVICE_START_PENDING)
-				{
-					CloseServiceHandle(hService);
-					CloseServiceHandle(hScm);
+				SERVICE_STATUS ServiceStatus;
+				if (QueryServiceStatus(hService, &ServiceStatus)) {
+					dwCurrentState = ServiceStatus.dwCurrentState;
+					if (dwCurrentState == SERVICE_START_PENDING) {
+						CloseServiceHandle(hService);
 
-					const SERVICE_TABLE_ENTRY servicetable[]=
-					{
-						{ServiceName,(LPSERVICE_MAIN_FUNCTION)ServiceMain},
-						{NULL,NULL}
-					};
-					BOOL success;
-					success=StartServiceCtrlDispatcher(servicetable);
-					if (!success)
-					{
-						int nError=GetLastError();
-						TCHAR buffer[1000];
-						_stprintf(buffer, _T("StartServiceCtrlDispatcher failed with error %d"), nError);
-						MessageBox(0, buffer, _T("Error while starting service"), MB_OK);
-						//error occured
+						const SERVICE_TABLE_ENTRY servicetable[] =
+						{
+							{ServiceName,(LPSERVICE_MAIN_FUNCTION)ServiceMain},
+							{NULL,NULL}
+						};
+						BOOL success;
+						success = StartServiceCtrlDispatcher(servicetable);
+						if (!success) {
+							int nError = GetLastError();
+							TCHAR buffer[1000];
+							_stprintf(buffer, _T("StartServiceCtrlDispatcher failed with error %d"), nError);
+							MessageBox(0, buffer, _T("Error while starting service"), MB_OK);
+							//error occured
+						}
+						return 0;
 					}
-					return 0;
 				}
+
+				CloseServiceHandle(hService);
 			}
-
-			CloseServiceHandle(hService);
 		}
-		CloseServiceHandle(hScm);
-	}
-	else
-	{
-		if (GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
-		{
-			lpCmdLine--;
-			return CompatMain(lpCmdLine);
+		else {
+			if (GetLastError() == ERROR_CALL_NOT_IMPLEMENTED) {
+				--lpCmdLine;
+				return CompatMain(lpCmdLine);
+			}
 		}
 	}
 
-	if (!bInstalled)
-	{
-		if (nAction==1 || nAction==5 || (nAction == 0 && MessageBox(0, _T("Install Service?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES))
-		{
-			hScm=OpenSCManager(0, 0, SC_MANAGER_CREATE_SERVICE);
-			if(!hScm)
-			{
+	if (!bInstalled) {
+		if (nAction == 1 || nAction == 5 || (nAction == 0 && MessageBox(0, _T("Install Service?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES)) {
+			Scm scm(SC_MANAGER_CREATE_SERVICE);
+			if (!scm) {
 				return 1;
 			}
 			int nStartMode = (nAction==5)?SERVICE_AUTO_START:SERVICE_DEMAND_START;
@@ -218,93 +233,72 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			TCHAR buffer[MAX_PATH + 3];
 			buffer[0] = '"';
 			DWORD written = GetModuleFileName(0, buffer + 1, MAX_PATH);
-			if (!written)
-			{
-				CloseServiceHandle(hScm);
-
+			if (!written) {
 				MessageBox(0, _T("Failed to get own executable path"), _T("Could not install server"), MB_ICONSTOP);
 				return 1;
 			}
 			buffer[written + 1] = '"';
 			buffer[written + 2] = 0;
 
-			hService=CreateService(hScm, ServiceName,
+			hService = CreateService(scm, ServiceName,
 				ServiceDisplayName,
 				SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS|SERVICE_INTERACTIVE_PROCESS, nStartMode,
 				SERVICE_ERROR_NORMAL,
 				buffer,
 				0, 0, 0, 0, 0);
-			if(!hService)
-			{
-				CloseServiceHandle(hScm);
+			if (!hService) {
 				return 1;
 			}
 			CloseServiceHandle(hService);
-			CloseServiceHandle(hScm);
 			dwCurrentState = SERVICE_STOPPED;
 		}
 		else
 			return 0;
 	}
 
-	if (dwCurrentState == SERVICE_STOPPED && (nAction==3 || (nAction == 0 && MessageBox(0, _T("Start server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES)))
-	{
-		SC_HANDLE hService,hScm;
-		hScm=OpenSCManager(0, 0, SC_MANAGER_ALL_ACCESS);
-		if(!hScm)
-		{
+	if (dwCurrentState == SERVICE_STOPPED && (nAction==3 || (nAction == 0 && MessageBox(0, _T("Start server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES))) {
+		SC_HANDLE hService;
+		Scm scm(SC_MANAGER_ALL_ACCESS);
+		if (!scm) {
 			return 1;
 		}
-		hService=OpenService(hScm, ServiceName, SERVICE_ALL_ACCESS);
-		if(!hService)
-		{
-			CloseServiceHandle(hScm);
+		hService = OpenService(scm, ServiceName, SERVICE_ALL_ACCESS);
+		if (!hService) {
 			return 1;
 		}
 		StartService(hService, 0, NULL);
 		CloseServiceHandle(hService);
-		CloseServiceHandle(hScm);
 		return 0;
 	}
 
-	if (dwCurrentState == SERVICE_STOPPED && (nAction==2 || (nAction == 0 && MessageBox(0, _T("Uninstall Service?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES)))
-	{
-		SC_HANDLE hService,hScm;
-		hScm=OpenSCManager(0, 0, SC_MANAGER_CREATE_SERVICE);
-		if(!hScm)
-		{
+	if (dwCurrentState == SERVICE_STOPPED && (nAction==2 || (nAction == 0 && MessageBox(0, _T("Uninstall Service?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES))) {
+		SC_HANDLE hService;
+		Scm scm(SC_MANAGER_CREATE_SERVICE);
+		if (!scm) {
 			return 1;
 		}
-		hService=OpenService(hScm, ServiceName, SERVICE_ALL_ACCESS);
-		if(!hService)
-		{
-			CloseServiceHandle(hScm);
+		hService = OpenService(scm, ServiceName, SERVICE_ALL_ACCESS);
+		if (!hService) {
 			return 1;
 		}
 		DeleteService(hService);
 		CloseServiceHandle(hService);
-		CloseServiceHandle(hScm);
 		return 0;
 	}
 
-	if (dwCurrentState != SERVICE_STOPPED && (nAction==4 || (nAction == 0 && MessageBox(0, _T("Stop Server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES)))
-	{
-		SC_HANDLE hService,hScm;
-		hScm=OpenSCManager(0, 0, SC_MANAGER_ALL_ACCESS);
-		if(!hScm)
-		{
+	if (dwCurrentState != SERVICE_STOPPED && (nAction==4 || (nAction == 0 && MessageBox(0, _T("Stop Server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES))) {
+		SC_HANDLE hService;
+		Scm scm(SC_MANAGER_ALL_ACCESS);
+		if (!scm) {
 			return 1;
 		}
-		hService=OpenService(hScm, ServiceName, SERVICE_ALL_ACCESS);
-		if(!hService)
-		{
-			CloseServiceHandle(hScm);
+		hService = OpenService(scm, ServiceName, SERVICE_ALL_ACCESS);
+		if (!hService) {
 			return 1;
 		}
 		SERVICE_STATUS status;
 		ControlService(hService, SERVICE_CONTROL_STOP, &status);
 		CloseServiceHandle(hService);
-		CloseServiceHandle(hScm);
 		return 0;
 	}
 
@@ -360,30 +354,24 @@ BOOL UpdateServiceStatus(DWORD dwCurrentState, DWORD dwWin32ExitCode,
 	SERVICE_STATUS nServiceStatus;
 	nServiceStatus.dwServiceType=SERVICE_WIN32_OWN_PROCESS;
 	nServiceStatus.dwCurrentState=dwCurrentState;
-	if(dwCurrentState==SERVICE_START_PENDING)
-	{
-		nServiceStatus.dwControlsAccepted=0;
+	if (dwCurrentState == SERVICE_START_PENDING) {
+		nServiceStatus.dwControlsAccepted = 0;
 	}
-	else
-	{
-		nServiceStatus.dwControlsAccepted=SERVICE_ACCEPT_STOP
-			|SERVICE_ACCEPT_SHUTDOWN;
+	else {
+		nServiceStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
 	}
-	if(dwServiceSpecificExitCode==0)
-	{
-		nServiceStatus.dwWin32ExitCode=dwWin32ExitCode;
+	if (dwServiceSpecificExitCode == 0) {
+		nServiceStatus.dwWin32ExitCode = dwWin32ExitCode;
 	}
-	else
-	{
-		nServiceStatus.dwWin32ExitCode=ERROR_SERVICE_SPECIFIC_ERROR;
+	else {
+		nServiceStatus.dwWin32ExitCode = ERROR_SERVICE_SPECIFIC_ERROR;
 	}
-	nServiceStatus.dwServiceSpecificExitCode=dwServiceSpecificExitCode;
-	nServiceStatus.dwCheckPoint=dwCheckPoint;
-	nServiceStatus.dwWaitHint=dwWaitHint;
+	nServiceStatus.dwServiceSpecificExitCode = dwServiceSpecificExitCode;
+	nServiceStatus.dwCheckPoint = dwCheckPoint;
+	nServiceStatus.dwWaitHint = dwWaitHint;
 
 	success=SetServiceStatus(nServiceStatusHandle,&nServiceStatus);
-	if(!success)
-	{
+	if (!success) {
 		KillService();
 		return success;
 	}
@@ -394,16 +382,14 @@ BOOL UpdateServiceStatus(DWORD dwCurrentState, DWORD dwWin32ExitCode,
 BOOL StartServiceThread()
 {
 	DWORD id;
-	hServiceThread=CreateThread(0,0,
+	hServiceThread=CreateThread(0, 0,
 		(LPTHREAD_START_ROUTINE)ServiceExecutionThread,
-		0,0,&id);
-	if(hServiceThread==0)
-	{
+		0, 0, &id);
+	if (hServiceThread == 0) {
 		return false;
 	}
-	else
-	{
-		nServiceRunning=true;
+	else {
+		nServiceRunning = true;
 		return true;
 	}
 }
@@ -454,12 +440,11 @@ int SendReloadConfig()
 void ServiceCtrlHandler(DWORD nControlCode)
 {
 	BOOL success;
-	switch(nControlCode)
-	{
+	switch(nControlCode) {
 	case SERVICE_CONTROL_SHUTDOWN:
 	case SERVICE_CONTROL_STOP:
-		nServiceCurrentStatus=SERVICE_STOP_PENDING;
-		success=UpdateServiceStatus(SERVICE_STOP_PENDING,NO_ERROR,0,1,3000);
+		nServiceCurrentStatus = SERVICE_STOP_PENDING;
+		success=UpdateServiceStatus(SERVICE_STOP_PENDING, NO_ERROR, 0, 1, 3000);
 		KillService();
 		return;
 	case 128:
@@ -468,7 +453,7 @@ void ServiceCtrlHandler(DWORD nControlCode)
 	default:
 		break;
 	}
-	UpdateServiceStatus(nServiceCurrentStatus,NO_ERROR,0,0,0);
+	UpdateServiceStatus(nServiceCurrentStatus, NO_ERROR, 0, 0, 0);
 }
 
 DWORD ServiceExecutionThread(LPDWORD param)
@@ -480,15 +465,13 @@ DWORD ServiceExecutionThread(LPDWORD param)
 	WORD wVersionRequested = MAKEWORD(2, 2);
 	int nResult = WSAStartup(wVersionRequested, &wsaData);
 	if (nResult != 0)
-		res=FALSE;
-	else if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1)
-	{
+		res = FALSE;
+	else if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1) {
 		WSACleanup();
-		res=FALSE;
+		res = FALSE;
 	}
 
-	if(!res)
-	{
+	if (!res) {
 		SetEvent(killServiceEvent);
 		UpdateServiceStatus(SERVICE_STOPPED, NO_ERROR, 0, 0, 0);
 		return 0;
@@ -501,8 +484,7 @@ DWORD ServiceExecutionThread(LPDWORD param)
 		PostQuitMessage(0);
 
 	MSG msg;
-	while (GetMessage(&msg, 0, 0, 0))
-	{
+	while (GetMessage(&msg, 0, 0, 0)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
@@ -524,8 +506,7 @@ int SetAdminPort(int nAdminPort)
 	delete pOptions;
 
 	pOptions = new COptions();
-	if (pOptions->GetOptionVal(OPTION_ADMINPORT) != nAdminPort)
-	{
+	if (pOptions->GetOptionVal(OPTION_ADMINPORT) != nAdminPort) {
 		delete pOptions;
 		return 1;
 	}
@@ -538,19 +519,16 @@ int ReloadConfig()
 {
 	int res = SendReloadConfig();
 
-	SC_HANDLE hService, hScm;
-	hScm = OpenSCManager(0, 0, SC_MANAGER_CONNECT);
+	SC_HANDLE hService;
+	Scm scm(SC_MANAGER_CONNECT);
 
-	if (hScm)
-	{
-		hService = OpenService(hScm, ServiceName, SERVICE_USER_DEFINED_CONTROL);
-		if (hService)
-		{
+	if (scm) {
+		hService = OpenService(scm, ServiceName, SERVICE_USER_DEFINED_CONTROL);
+		if (hService) {
 			SERVICE_STATUS status;
 			res |= ControlService(hService, 128, &status) == 0;
 			CloseServiceHandle(hService);
 		}
-		CloseServiceHandle(hScm);
 	}
 
 	return !res;
@@ -560,8 +538,7 @@ int CompatMain(LPCSTR lpCmdLine)
 {
 	int nAction = 0;
 
-	if (lpCmdLine[0] == '/' || lpCmdLine[0] == '-')
-	{
+	if (lpCmdLine[0] == '/' || lpCmdLine[0] == '-') {
 		lpCmdLine++;
 		if (!strcmp(lpCmdLine, "start"))
 			nAction = 1;
@@ -590,8 +567,7 @@ int CompatMain(LPCSTR lpCmdLine)
 	else if (nAction==2 && !hWnd)
 		return 0;
 
-	if (!hWnd && (nAction == 1 || (nAction == 0 && MessageBox(0, _T("Start Server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES)))
-	{
+	if (!hWnd && (nAction == 1 || (nAction == 0 && MessageBox(0, _T("Start Server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES))) {
 		// initialize Winsock library
 		BOOL res=TRUE;
 		WSADATA wsaData;
@@ -599,15 +575,13 @@ int CompatMain(LPCSTR lpCmdLine)
 		WORD wVersionRequested = MAKEWORD(2, 2);
 		int nResult = WSAStartup(wVersionRequested, &wsaData);
 		if (nResult != 0)
-			res=FALSE;
-		else if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1)
-		{
+			res = FALSE;
+		else if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1) {
 			WSACleanup();
-			res=FALSE;
+			res = FALSE;
 		}
 
-		if(!res)
-		{
+		if (!res) {
 			return 1;
 		}
 
@@ -615,8 +589,7 @@ int CompatMain(LPCSTR lpCmdLine)
 		VERIFY(pServer->Create());
 
 		MSG msg;
-		while (GetMessage(&msg, 0, 0, 0))
-		{
+		while (GetMessage(&msg, 0, 0, 0)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
@@ -625,8 +598,7 @@ int CompatMain(LPCSTR lpCmdLine)
 		WSACleanup();
 		return 0;
 	}
-	else if (hWnd && (nAction == 2 || (nAction == 0 && MessageBox(0, _T("Stop Server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES)))
-	{
+	else if (hWnd && (nAction == 2 || (nAction == 0 && MessageBox(0, _T("Stop Server?"), _T("Question"), MB_YESNO|MB_ICONQUESTION)==IDYES))) {
 		SendMessage(hWnd, WM_CLOSE, 0, 0);
 		if (GetLastError())
 			return 1;
