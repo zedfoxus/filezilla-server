@@ -466,7 +466,7 @@ DWORD ServiceExecutionThread(LPDWORD param)
 	int nResult = WSAStartup(wVersionRequested, &wsaData);
 	if (nResult != 0)
 		res = FALSE;
-	else if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1) {
+	else if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
 		WSACleanup();
 		res = FALSE;
 	}
@@ -576,7 +576,7 @@ int CompatMain(LPCSTR lpCmdLine)
 		int nResult = WSAStartup(wVersionRequested, &wsaData);
 		if (nResult != 0)
 			res = FALSE;
-		else if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1) {
+		else if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
 			WSACleanup();
 			res = FALSE;
 		}
