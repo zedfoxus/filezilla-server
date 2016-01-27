@@ -1,6 +1,6 @@
 // FileZilla Server - a Windows ftp server
 
-// Copyright (C) 2002-2015 - Tim Kosse <tim.kosse@filezilla-project.org>
+// Copyright (C) 2002-2016 - Tim Kosse <tim.kosse@filezilla-project.org>
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -204,7 +204,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndStatusBar.SetPaneInfo(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDLED),ID_INDICATOR_SENDLED,SBPS_NOBORDERS,6);
 
 	ShowStatus(GetProductVersionString(), 0);
-	ShowStatus(_T("Copyright 2001-2015 by Tim Kosse (tim.kosse@filezilla-project.org)"), 0);
+	ShowStatus(_T("Copyright 2001-2016 by Tim Kosse (tim.kosse@filezilla-project.org)"), 0);
 	ShowStatus(_T("https://filezilla-project.org/"), 0);
 
 	m_nTimerID = SetTimer(7777, 10000, 0);

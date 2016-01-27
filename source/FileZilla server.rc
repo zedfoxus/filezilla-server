@@ -83,7 +83,7 @@ BEGIN
             VALUE "FileDescription", "FileZilla Server"
             VALUE "FileVersion", "0, 9, 54, 0"
             VALUE "InternalName", "FileZilla Server"
-            VALUE "LegalCopyright", "Copyright (C) 2001-2015"
+            VALUE "LegalCopyright", "Copyright (C) 2001-2016 - Tim Kosse"
             VALUE "OriginalFilename", "FileZilla server.exe"
             VALUE "ProductName", "FileZilla Server"
             VALUE "ProductVersion", "0, 9, 54, 0"
