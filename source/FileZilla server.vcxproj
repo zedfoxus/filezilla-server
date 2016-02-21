@@ -41,7 +41,7 @@
     <IncludePath>$(zlib_include);$(openssl_include);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LibraryPath>$(zlib_lib_debug);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(zlib_lib_release);$(LibraryPath)</LibraryPath>
     <IncludePath>$(zlib_include);$(openssl_include);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
