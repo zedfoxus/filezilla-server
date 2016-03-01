@@ -167,6 +167,8 @@ CALL:copyChanged "$(openssl_lib)\ssleay32.dll" "$(OUTDIR)\ssleay32.dll"
 CALL:copyChanged "$(openssl_lib)\libeay32.dll" "$(OUTDIR)\libeay32.dll"
 CALL:copyChanged "$(openssl_lib)\ssleay32.pdb" "$(OUTDIR)\ssleay32.pdb" 1
 CALL:copyChanged "$(openssl_lib)\libeay32.pdb" "$(OUTDIR)\libeay32.pdb" 1
+CALL:copyChanged "$(openssl_lib)\ssleay32.map" "$(OUTDIR)\ssleay32.map" 1
+CALL:copyChanged "$(openssl_lib)\libeay32.map" "$(OUTDIR)\libeay32.map" 1
 
 GOTO:EOF
 
