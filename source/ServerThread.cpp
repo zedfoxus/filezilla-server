@@ -534,7 +534,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 		m_pExternalIpCheck->OnTimer();
 	}
 	else if (wParam == m_antiHammerTimer && m_bIsMaster)
-		AntiHammerDecrease();
+		AntiHammerDecay();
 }
 
 const int CServerThread::GetGlobalNumConnections()
@@ -782,7 +782,7 @@ void CServerThread::GetNotifications(std::list<CServerThread::t_Notification>& l
 		SetPriority(THREAD_PRIORITY_NORMAL);
 }
 
-void CServerThread::AntiHammerIncrease(const CStdString& ip)
+void CServerThread::AntiHammerIncrease(CStdString const& ip)
 {
 	simple_lock lock(m_global_mutex);
 
@@ -792,19 +792,36 @@ void CServerThread::AntiHammerIncrease(const CStdString& ip)
 			iter->second++;
 		return;
 	}
-	else if (m_antiHammerInfo.size() >= 1000) {
-		std::map<CStdString, int>::iterator best = m_antiHammerInfo.begin();
-		for (iter = m_antiHammerInfo.begin(); iter != m_antiHammerInfo.end(); iter++)
-		{
-			if (iter->second < best->second)
-				best = iter;
+	else {
+		if (m_antiHammerInfo.size() >= 1000) {
+			std::map<CStdString, int>::iterator best = m_antiHammerInfo.begin();
+			for (iter = m_antiHammerInfo.begin(); iter != m_antiHammerInfo.end(); ++iter) {
+				if (iter->second < best->second)
+					best = iter;
+			}
+			m_antiHammerInfo.erase(best);
 		}
-		m_antiHammerInfo.erase(best);
+		
+		m_antiHammerInfo.insert(std::make_pair(ip, 1));
 	}
-	m_antiHammerInfo.insert(std::make_pair(ip, 1));
 }
 
-void CServerThread::AntiHammerDecrease()
+void CServerThread::AntiHammerDecrease(CStdString const& ip)
+{
+	simple_lock lock(m_global_mutex);
+
+	auto iter = m_antiHammerInfo.find(ip);
+	if (iter != m_antiHammerInfo.end()) {
+		if (iter->second > 1) {
+			--(iter->second);
+			++iter;
+		}
+		else
+			m_antiHammerInfo.erase(iter++);
+	}
+}
+
+void CServerThread::AntiHammerDecay()
 {
 	simple_lock lock(m_global_mutex);
 

@@ -74,7 +74,8 @@ public:
 	 */
 	void GetNotifications(std::list<CServerThread::t_Notification>& list);
 
-	void AntiHammerIncrease(const CStdString& ip);
+	void AntiHammerIncrease(CStdString const& ip);
+	void AntiHammerDecrease(CStdString const& ip);
 
 	CHashThread& GetHashThread();
 
@@ -100,7 +101,7 @@ protected:
 	static int CalcUserID();
 	static std::map<int, t_socketdata> m_userids;
 	static std::map<CStdString, int> m_userIPs;
-	void AntiHammerDecrease();
+	void AntiHammerDecay();
 
 	int m_nRecvCount{};
 	int m_nSendCount{};

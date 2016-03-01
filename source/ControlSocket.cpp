@@ -2292,17 +2292,14 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password)
 	UINT port = 0;
 
 	BOOL bResult = GetPeerName(peerIP, port);
-	if (bResult)
-	{
-		if (!m_status.user.AccessAllowed(peerIP))
-		{
+	if (bResult) {
+		if (!m_status.user.AccessAllowed(peerIP)) {
 			Send(_T("521 This user is not allowed to connect from this IP"));
 			ForceClose(-1);
 			return FALSE;
 		}
 	}
-	else
-	{
+	else {
 		SendStatus(_T("Could not get peer name"), 1);
 		Send(_T("421 Refusing connection. Could not get peer name."));
 		ForceClose(-1);
@@ -2358,6 +2355,8 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password)
 	conndata->user = m_status.username;
 
 	m_owner.SendNotification(FSM_CONNECTIONDATA, (LPARAM)op);
+
+	m_owner.AntiHammerDecrease(m_RemoteIP);
 
 	return TRUE;
 }
