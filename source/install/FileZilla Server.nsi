@@ -5,6 +5,8 @@
 ;Basic Example Script
 ;Written by Joost Verburg
 
+Unicode true
+
 ;Set compressor before outputting anything
 SetCompressor /SOLID LZMA
 
@@ -22,7 +24,7 @@ SetCompressor /SOLID LZMA
   !define VERSION_MAJOR   "0"
   !define VERSION_MINOR   "9"
   !define VERSION_MICRO   "56"
-  !define VERSION_NANO    "0"
+  !define VERSION_NANO    "1"
   !define PRODUCT_VERSION "beta ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}"
   !define VERSION_FULL    "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}.${VERSION_NANO}"
   !define PUBLISHER       "FileZilla Project"
