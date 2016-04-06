@@ -352,10 +352,9 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 			}
 
 			str = _T("");
-			for (std::set<int>::const_iterator iter = portSet.begin(); iter != portSet.end(); iter++)
-			{
+			for (int port : portSet) {
 				CStdString tmp;
-				tmp.Format(_T("%d "), *iter);
+				tmp.Format(_T("%d "), port);
 				str += tmp;
 			}
 			str.TrimRight(' ');
@@ -368,8 +367,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 			str.Replace(_T("\r\n"), _T("\n"));
 			int pos = str.Find(_T("\n"));
 			CStdString line;
-			while (pos != -1)
-			{
+			while (pos != -1) {
 				if (pos)
 				{
 					line = str.Mid(oldpos, pos - oldpos);
@@ -382,8 +380,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 				pos = str.Find(_T("\n"), oldpos);
 			}
 			line = str.Mid(oldpos);
-			if (line != _T(""))
-			{
+			if (line != _T("")) {
 				line = line.Left(CONST_WELCOMEMESSAGE_LINESIZE);
 				msgLines.push_back(line);
 			}
@@ -391,12 +388,13 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 			for (unsigned int i = 0; i < msgLines.size(); i++)
 				str += msgLines[i] + _T("\r\n");
 			str.TrimRight(_T("\r\n"));
-			if (str == _T(""))
-			{
+			if (str == _T("")) {
 				str = _T("%v");
 				str += _T("\r\nwritten by Tim Kosse (tim.kosse@filezilla-project.org)");
 				str += _T("\r\nPlease visit https://filezilla-project.org/");
 			}
+			str.Replace(_T("tim.kosse@gmx.de"), _T("tim.kosse@filezilla-project.org"));
+			str.Replace(_T("http://sourceforge.net/projects/filezilla/"), _T("https://filezilla-project.org/"));
 		}
 		break;
 	case OPTION_ADMINIPBINDINGS:
