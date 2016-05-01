@@ -26,6 +26,7 @@
 #include "tinyxml/tinyxml.h"
 #include "iputils.h"
 #include "OptionLimits.h"
+#include "xml_utils.h"
 
 std::list<COptions *> COptions::m_InstanceList;
 std::recursive_mutex COptions::m_mutex;
@@ -280,14 +281,10 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 	CStdString valuestr;
 	valuestr.Format( _T("%I64d"), value);
 
-	USES_CONVERSION;
-	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-	char* bufferA = T2A(xmlFileName);
-	if (!bufferA)
-		return;
+	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 
 	TiXmlDocument document;
-	if (!document.LoadFile(bufferA))
+	if (!XML::Load(document, xmlFileName))
 		return;
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
@@ -317,7 +314,7 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 	pItem->SetAttribute("type", "numeric");
 	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr).c_str()));
 
-	document.SaveFile(bufferA);
+	XML::Save(document, xmlFileName);
 }
 
 void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
@@ -525,15 +522,12 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 	if (!save)
 		return;
 
-	USES_CONVERSION;
-	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-	char* bufferA = T2A(xmlFileName);
-	if (!bufferA)
-		return;
-
+	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	
 	TiXmlDocument document;
-	if (!document.LoadFile(bufferA))
+	if (!XML::Load(document, xmlFileName)) {
 		return;
+	}
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
 	if (!pRoot)
@@ -544,8 +538,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
 
 	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item"))
-	{
+	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
 		if (!pName)
 			continue;
@@ -563,7 +556,7 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 	pItem->SetAttribute("type", "string");
 	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value).c_str()));
 
-	document.SaveFile(bufferA);
+	XML::Save(document, xmlFileName);
 }
 
 CStdString COptions::GetOption(int nOptionID)
@@ -714,25 +707,20 @@ void COptions::Init()
 	for (int i = 0; i < OPTIONS_NUM; ++i)
 		m_sOptionsCache[i].bCached = FALSE;
 
-	USES_CONVERSION;
-	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-	char* bufferA = T2A(xmlFileName);
-	if (!bufferA) {
-		return;
-	}
+	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 
 	TiXmlDocument document;
 
 	WIN32_FILE_ATTRIBUTE_DATA status{};
 	if (!GetStatus64(xmlFileName, status) ) {
 		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
-		document.SaveFile(bufferA);
+		XML::Save(document, xmlFileName);
 	}
 	else if (status.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 		return;
 	}
 
-	if (!document.LoadFile(bufferA)) {
+	if (!XML::Load(document, xmlFileName)) {
 		return;
 	}
 
@@ -794,14 +782,12 @@ bool COptions::IsNumeric(LPCTSTR str)
 {
 	if (!str)
 		return false;
-	LPCTSTR p=str;
-	while(*p)
-	{
-		if (*p<'0' || *p>'9')
-		{
+	LPCTSTR p = str;
+	while (*p) {
+		if (*p < '0' || *p > '9') {
 			return false;
 		}
-		p++;
+		++p;
 	}
 	return true;
 }
@@ -810,16 +796,11 @@ TiXmlElement *COptions::GetXML()
 {
 	simple_lock lock(m_mutex);
 
-	USES_CONVERSION;
-	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-	char* bufferA = T2A(xmlFileName);
-	if (!bufferA) {
-		return 0;
-	}
+	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 
 	TiXmlDocument *pDocument = new TiXmlDocument;
 
-	if (!pDocument->LoadFile(bufferA)) {
+	if (!XML::Load(*pDocument, xmlFileName)) {
 		delete pDocument;
 		return NULL;
 	}
@@ -852,21 +833,12 @@ BOOL COptions::FreeXML(TiXmlElement *pXML, bool save)
 		return FALSE;
 	}
 
-	USES_CONVERSION;
-	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-	char* bufferA = T2A(xmlFileName);
-	if (!bufferA) {
-		delete pXML->GetDocument();
-		return FALSE;
-	}
-
-	if (!pXML->GetDocument()->SaveFile(bufferA)) {
-		delete pXML->GetDocument();
-		return FALSE;
-	}
+	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	bool ret = XML::Save(*pXML, xmlFileName);
 
 	delete pXML->GetDocument();
-	return TRUE;
+
+	return ret;
 }
 
 BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
@@ -875,17 +847,16 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	DWORD len = 2;
 
 	simple_lock lock(m_mutex);
-	for (i=0; i<OPTIONS_NUM; ++i) {
-		len+=1;
-		if (!m_Options[i].nType)
-		{
+	for (i = 0; i < OPTIONS_NUM; ++i) {
+		len += 1;
+		if (!m_Options[i].nType) {
 			len += 3;
 			auto utf8 = ConvToNetwork(GetOption(i + 1));
 
-			if ((i + 1) != OPTION_ADMINPASS)
+			if ((i + 1) != OPTION_ADMINPASS) {
 				len += utf8.size();
-			else
-			{
+			}
+			else {
 				if (GetOption(i+1).GetLength() < 6 && utf8.size() > 0)
 					len++;
 			}
@@ -1142,25 +1113,20 @@ void COptions::ReloadConfig()
 	for (int i = 0; i < OPTIONS_NUM; i++)
 		m_sOptionsCache[i].bCached = FALSE;
 
-	USES_CONVERSION;
-	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-	char* bufferA = T2A(xmlFileName);
-	if (!bufferA) {
-		return;
-	}
+	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 
 	TiXmlDocument document;
 
 	WIN32_FILE_ATTRIBUTE_DATA status{};
 	if (!GetStatus64(xmlFileName, status) ) {
 		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
-		document.SaveFile(bufferA);
+		XML::Save(document, xmlFileName);
 	}
 	else if (status.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 		return;
 	}
 
-	if (!document.LoadFile(bufferA)) {
+	if (!XML::Load(document, xmlFileName)) {
 		return;
 	}
 
@@ -1217,15 +1183,12 @@ void COptions::ReloadConfig()
 
 void COptions::SaveOptions()
 {
-	USES_CONVERSION;
-	CStdString xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-	char* bufferA = T2A(xmlFileName);
-	if (!bufferA)
-		return;
+	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 
 	TiXmlDocument document;
-	if (!document.LoadFile(bufferA))
+	if (!XML::Load(document, xmlFileName)) {
 		return;
+	}
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
 	if (!pRoot)
@@ -1236,8 +1199,7 @@ void COptions::SaveOptions()
 		pRoot->RemoveChild(pSettings);
 	pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
 
-	for (unsigned int i = 0; i < OPTIONS_NUM; i++)
-	{
+	for (unsigned int i = 0; i < OPTIONS_NUM; ++i) {
 		if (!m_OptionsCache[i].bCached)
 			continue;
 
@@ -1258,5 +1220,5 @@ void COptions::SaveOptions()
 
 	SaveSpeedLimits(pSettings);
 
-	document.SaveFile(bufferA);
+	XML::Save(document, xmlFileName);
 }

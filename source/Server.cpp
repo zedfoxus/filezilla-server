@@ -596,8 +596,6 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 						if (ips != _T(""))
 							ips += _T(" ");
 
-						USES_CONVERSION;
-
 						int pos = ips.Find(' ');
 						while (pos != -1) {
 							CStdString blockedIP = ips.Left(pos);
@@ -615,9 +613,9 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 							m_pOptions->SetOption(OPTION_IPFILTER_DISALLOWED, ips);
 						}
 					}
-					t_controlmessage *msg=new t_controlmessage;
-					msg->command=USERCONTROL_KICK;
-					msg->socketid=nUserID;
+					t_controlmessage *msg = new t_controlmessage;
+					msg->command = USERCONTROL_KICK;
+					msg->socketid = nUserID;
 					iter->second.pThread->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_CONTROL, (LPARAM)msg);
 					char buffer[2];
 					buffer[0] = *pData;

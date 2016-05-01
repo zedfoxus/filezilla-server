@@ -21,4 +21,36 @@ void SetText(TiXmlElement* pElement, const CStdString& text)
 	pElement->LinkEndChild(new TiXmlText(ConvToNetwork(text).c_str()));
 }
 
+
+bool Load(TiXmlDocument & document, CStdString const& file)
+{
+	bool ret = false;
+
+	FILE* f = _wfopen(file, L"rb");
+	if (f) {
+		ret = document.LoadFile(f);
+
+		fclose(f);
+	}
+
+	return ret;
+}
+
+bool Save(TiXmlNode & node, CStdString const& file)
+{
+	bool ret = false;
+
+	auto * document = node.GetDocument();
+	if (document) {
+		FILE* f = _wfopen(file, L"wb");
+		if (f) {
+			ret = document->SaveFile(f);
+		}
+
+		fclose(f);
+	}
+
+	return ret;
+}
+
 }

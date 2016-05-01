@@ -52,7 +52,6 @@ public:
 	void ReloadConfig();
 
 protected:
-
 	static std::recursive_mutex m_mutex;
 	static std::list<COptions *> m_InstanceList;
 	static bool IsNumeric(LPCTSTR str);

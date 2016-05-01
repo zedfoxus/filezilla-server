@@ -24,6 +24,7 @@
 #include "../version.h"
 #include "filezilla server.h"
 #include "../tinyxml/tinyxml.h"
+#include "../xml_utils.h"
 
 #if defined(_DEBUG) 
 #define new DEBUG_NEW
@@ -34,24 +35,6 @@ static char THIS_FILE[] = __FILE__;
 BOOL COptions::m_bInitialized = FALSE;
 
 namespace {
-bool Load(TiXmlDocument& doc, CString const& file)
-{
-	USES_CONVERSION;
-	char* bufferA = T2A(file);
-	if (!bufferA || !*bufferA)
-		return false;
-	return doc.LoadFile(bufferA);
-}
-
-bool Save(TiXmlDocument& doc, CString const& file)
-{
-	USES_CONVERSION;
-	char* bufferA = T2A(file);
-	if (!bufferA || !*bufferA)
-		return false;
-	return doc.SaveFile(bufferA);
-}
-
 TiXmlElement* GetSettings(TiXmlDocument& document)
 {
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
@@ -120,7 +103,7 @@ void COptions::SaveOption(int nOptionID, CString const& value)
 	CString const file = GetFileName(true);
 
 	TiXmlDocument document;
-	Load(document, file);
+	XML::Load(document, file);
 
 	TiXmlElement* pSettings = GetSettings(document);
 	if (!pSettings)
@@ -145,7 +128,7 @@ void COptions::SaveOption(int nOptionID, CString const& value)
 	pItem->SetAttribute("type", m_OptionsCache[nOptionID - 1].nType ? "numeric" : "string");
 	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value).c_str()));
 
-	Save(document, file);
+	XML::Save(document, file);
 }
 
 CString COptions::GetOption(int nOptionID)
@@ -246,7 +229,7 @@ void COptions::Init()
 		m_OptionsCache[i].bCached = FALSE;
 
 	TiXmlDocument document;
-	if (!Load(document, GetFileName(false))) {
+	if (!XML::Load(document, GetFileName(false))) {
 		return;
 	}
 
