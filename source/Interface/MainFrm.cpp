@@ -215,11 +215,19 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_RECVRATE), _T("0 B/s"));
 	SetStatusbarText(m_wndStatusBar.CommandToIndex(ID_INDICATOR_SENDRATE), _T("0 B/s"));
 
-	CConnectDialog dlg(m_pOptions);
-	if (!m_pOptions->GetOptionVal(IOPTION_ALWAYS) && dlg.DoModal() != IDOK)
-		return 0;
 
-	DoConnect();
+	CConnectDialog dlg(m_pOptions);
+	if (!m_pOptions->GetOptionVal(IOPTION_ALWAYS)) {
+		if (!m_pOptions->GetOptionVal(IOPTION_STARTMINIMIZED)) {
+			ShowWindow(SW_SHOW);
+			if (dlg.DoModal() == IDOK) {
+				DoConnect();
+			}
+		}
+	}
+	else {
+		DoConnect();
+	}
 
 	return 0;
 }
