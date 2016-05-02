@@ -144,7 +144,7 @@ CString COptions::GetOption(int nOptionID)
 	switch (nOptionID)
 	{
 	case IOPTION_LASTSERVERADDRESS:
-		m_OptionsCache[nOptionID - 1].str = _T("[::1]");
+		m_OptionsCache[nOptionID - 1].str = _T("localhost");
 		break;
 	default:
 		m_OptionsCache[nOptionID - 1].str = "";
