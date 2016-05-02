@@ -332,6 +332,7 @@ END
 
 IDR_USERLISTTOOLBAR     BITMAP                  "res\\userlisttoolbar.bmp"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Toolbar
@@ -521,21 +522,24 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,0,215,109,10
 END
 
-IDD_CONNECT_DIALOG DIALOGEX 0, 0, 165, 106
+IDD_CONNECT_DIALOG DIALOGEX 0, 0, 245, 147
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Connect to Server"
+CAPTION "Enter server to administrate - FileZilla Server"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    LTEXT           "&Server Address:",IDC_STATIC,7,7,53,8
-    EDITTEXT        IDC_CONNECTDIALOG_ADDRESS,7,18,101,14,ES_AUTOHSCROLL
-    LTEXT           "&Port:",IDC_STATIC,119,7,16,8
-    EDITTEXT        IDC_CONNECTDIALOG_PORT,118,18,40,14,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "Administration password:",IDC_STATIC,7,41,151,8
-    EDITTEXT        IDC_CONNECTDIALOG_PASSWORD,7,51,71,14,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "Please enter the address and port of the FileZilla Server installation you want to administrate.",IDC_STATIC,7,7,231,18
+    LTEXT           "&Host:",IDC_STATIC,7,42,18,8
+    EDITTEXT        IDC_CONNECTDIALOG_ADDRESS,43,40,84,14,ES_AUTOHSCROLL
+    LTEXT           "Hostname or IP address. To refer to this computer, enter localhost.",IDC_STATIC,133,35,103,25
+    LTEXT           "&Port:",IDC_STATIC,7,66,16,8
+    EDITTEXT        IDC_CONNECTDIALOG_PORT,44,64,40,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Enter the administration port (14147 by default), not the FTP port.",IDC_STATIC,93,63,145,17
+    LTEXT           "Pass&word:",IDC_STATIC,7,90,46,8
+    EDITTEXT        IDC_CONNECTDIALOG_PASSWORD,44,88,71,14,ES_PASSWORD | ES_AUTOHSCROLL
     CONTROL         "&Always connect to this server",IDC_CONNECTDIALOG_ALWAYS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,70,108,10
-    DEFPUSHBUTTON   "OK",IDOK,29,85,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,87,85,50,14
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,109,108,10
+    DEFPUSHBUTTON   "&Connect",IDOK,130,126,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,188,126,50,14
 END
 
 IDD_OPTIONS_ADMININTERFACE DIALOGEX 0, 0, 332, 246
@@ -870,9 +874,9 @@ BEGIN
     IDD_CONNECT_DIALOG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 158
+        RIGHTMARGIN, 238
         TOPMARGIN, 7
-        BOTTOMMARGIN, 99
+        BOTTOMMARGIN, 140
     END
 
     IDD_OPTIONS_ADMININTERFACE, DIALOG
@@ -953,9 +957,13 @@ END
 //
 
 IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
+
 IDB_LEDS                BITMAP                  "res\\leds.bmp"
+
 IDB_DONATE              BITMAP                  "res\\donate.bmp"
+
 IDB_TRANSFERINFO        BITMAP                  "res\\transfer_modes.bmp"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1020,15 +1028,25 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "res\\FileZilla server.ico"
+
 IDI_EMPTY               ICON                    "res\\empty.ico"
+
 IDI_HOME                ICON                    "res\\home.ico"
+
 IDI_GREEN               ICON                    "res\\green.ico"
+
 IDI_RED                 ICON                    "res\\red.ico"
+
 IDI_YELLOW              ICON                    "res\\yellow.ico"
+
 IDI_UNKNOWN             ICON                    "res\\unknown.ico"
+
 IDI_DOWN                ICON                    "res\\down.ico"
+
 IDI_UP                  ICON                    "res\\up.ico"
+
 IDI_CERT                ICON                    "res\\certificate.ico"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1169,6 +1187,18 @@ END
 //
 
 IDR_RT_MANIFEST1        RT_MANIFEST             "res\\manifest.xml"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_CONNECT_DIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
