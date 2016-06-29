@@ -557,9 +557,9 @@ void CTransferSocket::OnConnect(int nErrorCode)
 
 		int code = m_pSslLayer->InitSSLConnection(false, m_pOwner->GetSslLayer(), m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TLS_REQUIRE_SESSION_RESUMPTION) != 0);
 		if (code == SSL_FAILURE_LOADDLLS)
-			m_pOwner->SendStatus(_T("Failed to load SSL libraries"), 1);
+			m_pOwner->SendStatus(_T("Failed to load TLS libraries"), 1);
 		else if (code == SSL_FAILURE_INITSSL)
-			m_pOwner->SendStatus(_T("Failed to initialize SSL library"), 1);
+			m_pOwner->SendStatus(_T("Failed to initialize TLS library"), 1);
 
 		if (code)
 		{
@@ -639,9 +639,9 @@ void CTransferSocket::OnAccept(int nErrorCode)
 
 		int code = m_pSslLayer->InitSSLConnection(false, m_pOwner->GetSslLayer(), m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TLS_REQUIRE_SESSION_RESUMPTION) != 0);
 		if (code == SSL_FAILURE_LOADDLLS)
-			m_pOwner->SendStatus(_T("Failed to load SSL libraries"), 1);
+			m_pOwner->SendStatus(_T("Failed to load TLS libraries"), 1);
 		else if (code == SSL_FAILURE_INITSSL)
-			m_pOwner->SendStatus(_T("Failed to initialize SSL library"), 1);
+			m_pOwner->SendStatus(_T("Failed to initialize TLS library"), 1);
 
 		if (code) {
 			EndTransfer(transfer_status_t::noconn);
@@ -982,7 +982,7 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 			}
 			else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_VERBOSE_WARNING) {
 				if (cb.str) {
-					CStdString str = "Data connection SSL warning: ";
+					CStdString str = "Data connection TLS warning: ";
 					str += cb.str;
 
 					m_pOwner->SendStatus(str, 1);
@@ -992,7 +992,7 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 			// Verbose info for debugging
 			else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_VERBOSE_INFO) {
 				if (cb.str) {
-					CStdString str = "SSL info: ";
+					CStdString str = "TLS info: ";
 					str += cb.str;
 
 					m_pOwner->SendStatus(str, 0);
@@ -1001,7 +1001,7 @@ int CTransferSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 #endif
 			else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_INFO_ESTABLISHED) {
 				m_waitingForSslHandshake = false;
-				m_pOwner->SendStatus(_T("SSL connection for data connection established"), 0);
+				m_pOwner->SendStatus(_T("TLS connection for data connection established"), 0);
 
 				// Re-enable Nagle algorithm
 				SetNodelay(false);

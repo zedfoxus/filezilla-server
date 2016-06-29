@@ -183,12 +183,12 @@ BOOL COptionsSslPage::IsDataValid()
 			int res = layer.SetCertKeyFile(m_certificate, m_key, m_pass, &error);
 			if (res == SSL_FAILURE_LOADDLLS) {
 				m_pOptionsDlg->ShowPage(this);
-				AfxMessageBox(_T("Failed to load SSL libraries"));
+				AfxMessageBox(_T("Failed to load TLS libraries"));
 				return FALSE;
 			}
 			else if (res == SSL_FAILURE_INITSSL) {
 				m_pOptionsDlg->ShowPage(this);
-				AfxMessageBox(_T("Failed to initialize SSL libraries"));
+				AfxMessageBox(_T("Failed to initialize TLS libraries"));
 				return FALSE;
 			}
 			else if (res == SSL_FAILURE_VERIFYCERT) {

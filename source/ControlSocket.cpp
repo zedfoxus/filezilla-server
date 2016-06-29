@@ -2533,7 +2533,7 @@ int CControlSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 	for (auto const& cb : callbacks) {
 		if (m_pSslLayer && cb.pLayer == m_pSslLayer) {
 			if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_INFO && cb.nParam2 == SSL_INFO_ESTABLISHED)
-				SendStatus(_T("SSL connection established"), 0);
+				SendStatus(_T("TLS connection established"), 0);
 			else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_INFO && cb.nParam2 == SSL_INFO_SHUTDOWNCOMPLETE) {
 				if (m_shutdown) {
 					Close();
@@ -2551,7 +2551,7 @@ int CControlSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 		}
 		else if (cb.nType == LAYERCALLBACK_LAYERSPECIFIC && cb.nParam1 == SSL_VERBOSE_WARNING) {
 			if (cb.str) {
-				CStdString str = "SSL warning: ";
+				CStdString str = "TLS warning: ";
 				str += cb.str;
 
 				SendStatus(str, 1);
@@ -2574,9 +2574,9 @@ bool CControlSocket::InitImplicitSsl()
 	CString error;
 	res = m_pSslLayer->SetCertKeyFile(m_owner.m_pOptions->GetOption(OPTION_TLSCERTFILE), m_owner.m_pOptions->GetOption(OPTION_TLSKEYFILE), m_owner.m_pOptions->GetOption(OPTION_TLSKEYPASS), &error);
 	if (res == SSL_FAILURE_LOADDLLS)
-		SendStatus(_T("Failed to load SSL libraries"), 1);
+		SendStatus(_T("Failed to load TLS libraries"), 1);
 	else if (res == SSL_FAILURE_INITSSL)
-		SendStatus(_T("Failed to initialize SSL libraries"), 1);
+		SendStatus(_T("Failed to initialize TLS libraries"), 1);
 	else if (res == SSL_FAILURE_VERIFYCERT) {
 		if (error != _T(""))
 			SendStatus(error, 1);
@@ -2587,15 +2587,15 @@ bool CControlSocket::InitImplicitSsl()
 		RemoveAllLayers();
 		delete m_pSslLayer;
 		m_pSslLayer = NULL;
-		Send(_T("431 Could not initialize SSL connection"), 1);
+		Send(_T("431 Could not initialize TLS connection"), 1);
 		return false;
 	}
 
 	int code = m_pSslLayer->InitSSLConnection(false);
 	if (code == SSL_FAILURE_LOADDLLS)
-		SendStatus(_T("Failed to load SSL libraries"), 1);
+		SendStatus(_T("Failed to load TLS libraries"), 1);
 	else if (code == SSL_FAILURE_INITSSL)
-		SendStatus(_T("Failed to initialize SSL library"), 1);
+		SendStatus(_T("Failed to initialize TLS library"), 1);
 
 	if (!code)
 		return true;
@@ -2603,7 +2603,7 @@ bool CControlSocket::InitImplicitSsl()
 	RemoveAllLayers();
 	delete m_pSslLayer;
 	m_pSslLayer = NULL;
-	Send(_T("431 Could not initialize SSL connection"));
+	Send(_T("431 Could not initialize TLS connection"));
 
 	//Close socket
 	Close();
