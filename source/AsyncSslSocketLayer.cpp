@@ -1908,7 +1908,7 @@ bool operator<(tm const& lhs, tm const& rhs) {
 int CAsyncSslSocketLayer::LoadCertKeyFile(char const* cert, char const* key, CString* error, bool checkExpired)
 {
 	ClearErrors();
-	if (!cert || !cert) {
+	if (!cert || !*cert) {
 		error->Format(_T("Could not load certificate file: Invalid file name"));
 		return SSL_FAILURE_VERIFYCERT;
 	}
@@ -1921,7 +1921,7 @@ int CAsyncSslSocketLayer::LoadCertKeyFile(char const* cert, char const* key, CSt
 		return SSL_FAILURE_VERIFYCERT;
 	}
 
-	if (!key || !key) {
+	if (!key || !*key) {
 		error->Format(_T("Could not load key file: Invalid file name"));
 		return SSL_FAILURE_VERIFYCERT;
 	}
