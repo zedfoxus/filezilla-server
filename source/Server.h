@@ -51,7 +51,7 @@ protected:
 	CAdminInterface *m_pAdminInterface;
 	CFileLogger *m_pFileLogger{};
 
-	std::list<CServerThread*> m_ThreadArray;
+	std::vector<CServerThread*> m_ThreadArray;
 	std::list<CServerThread*> m_ClosedThreads;
 
 	std::vector<CServerThread*> m_ThreadNotificationIDs;

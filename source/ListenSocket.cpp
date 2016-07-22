@@ -27,7 +27,7 @@
 #include "iputils.h"
 #include "autobanmanager.h"
 
-CListenSocket::CListenSocket(CServer & server, std::list<CServerThread*> & threadList, bool ssl)
+CListenSocket::CListenSocket(CServer & server, std::vector<CServerThread*> & threadList, bool ssl)
 	: m_server(server)
 	, m_threadList(threadList)
 	, m_ssl(ssl)
@@ -60,7 +60,7 @@ void CListenSocket::OnAccept(int nErrorCode)
 
 	int minnum = 255*255*255;
 	CServerThread *pBestThread = 0;
-	for( auto const& pThread : m_threadList ) {
+	for (auto const& pThread : m_threadList) {
 		int num = pThread->GetNumConnections();
 		if (num < minnum && pThread->IsReady()) {
 			minnum = num;

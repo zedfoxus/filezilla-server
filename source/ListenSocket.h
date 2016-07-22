@@ -29,7 +29,7 @@ class CServer;
 class CListenSocket final: public CAsyncSocketEx
 {
 public:
-	CListenSocket(CServer & server, std::list<CServerThread*> & threadList, bool ssl);
+	CListenSocket(CServer & server, std::vector<CServerThread*> & threadList, bool ssl);
 
 	bool ImplicitTLS() const { return m_ssl; }
 public:
@@ -42,7 +42,7 @@ protected:
 	bool AccessAllowed(CAsyncSocketEx &socket) const;
 
 	CServer & m_server;
-	std::list<CServerThread*> & m_threadList;
+	std::vector<CServerThread*> & m_threadList;
 	bool const m_ssl;
 };
 

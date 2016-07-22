@@ -97,13 +97,11 @@ bool CServer::Create()
 
 	//Create the threads
 	int num = (int)m_pOptions->GetOptionVal(OPTION_THREADNUM);
-	for (int i = 0; i < num; i++)
-	{
+	for (int i = 0; i < num; ++i) {
 		int index = GetNextThreadNotificationID();
 		CServerThread *pThread = new CServerThread(WM_FILEZILLA_SERVERMSG + index);
 		m_ThreadNotificationIDs[index] = pThread;
-		if (pThread->Create(THREAD_PRIORITY_NORMAL, CREATE_SUSPENDED))
-		{
+		if (pThread->Create(THREAD_PRIORITY_NORMAL, CREATE_SUSPENDED)) {
 			pThread->ResumeThread();
 			m_ThreadArray.push_back(pThread);
 		}
@@ -147,24 +145,23 @@ LRESULT CALLBACK CServer::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		return 0;
 	}
 	else if (hWnd && message == WM_DESTROY) {
-		ASSERT( hWnd == pServer->m_hWnd);
+		ASSERT (hWnd == pServer->m_hWnd);
 		HANDLE *handle = new HANDLE[pServer->m_ThreadArray.size()];
 		unsigned int i = 0;
-		std::list<CServerThread *>::iterator iter;
-		for (iter = pServer->m_ThreadArray.begin(); iter != pServer->m_ThreadArray.end(); ++iter, ++i) {
-			handle[i]=(*iter)->m_hThread;
+		for (auto iter = pServer->m_ThreadArray.begin(); iter != pServer->m_ThreadArray.end(); ++iter, ++i) {
+			handle[i] = (*iter)->m_hThread;
 			(*iter)->PostThreadMessage(WM_QUIT, 0, 0);
 		}
-		for (i=0; i < pServer->m_ThreadArray.size(); ++i) {
+		for (i = 0; i < pServer->m_ThreadArray.size(); ++i) {
 			int res = WaitForSingleObject(handle[i], INFINITE);
 			if (res == WAIT_FAILED)
 				res = GetLastError();
 		}
 		delete [] handle;
 		handle = new HANDLE[pServer->m_ClosedThreads.size()];
-		i=0;
-		for (iter = pServer->m_ClosedThreads.begin(); iter != pServer->m_ClosedThreads.end(); ++iter, ++i) {
-			handle[i]=(*iter)->m_hThread;
+		i = 0;
+		for (auto iter = pServer->m_ClosedThreads.begin(); iter != pServer->m_ClosedThreads.end(); ++iter, ++i) {
+			handle[i] = (*iter)->m_hThread;
 			(*iter)->PostThreadMessage(WM_QUIT, 0, 0);
 		}
 		for (i = 0; i < pServer->m_ClosedThreads.size(); ++i) {
@@ -383,8 +380,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 		delete pConnOp;
 	}
 	else if (wParam == FSM_THREADCANQUIT) {
-		std::list<CServerThread *>::iterator iter;
-		for (iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); ++iter) {
+		for (auto iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); ++iter) {
 			if (*iter == pThread) {
 				HANDLE handle = pThread->m_hThread;
 				pThread->PostThreadMessage(WM_QUIT, 0, 0);
@@ -407,7 +403,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				return -1;
 			}
 		}
-		for (iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); ++iter) {
+		for (auto iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); ++iter) {
 			if (*iter == pThread) {
 				HANDLE handle = pThread->m_hThread;
 				pThread->PostThreadMessage(WM_QUIT, 0, 0);
@@ -467,11 +463,10 @@ void CServer::OnClose()
 		return;
 	}
 
-	std::list<CServerThread *>::iterator iter;
-	for (iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); ++iter) {
+	for (auto iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); ++iter) {
 		VERIFY((*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 0));
 	}
-	for (iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); ++iter) {
+	for (auto iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); ++iter) {
 		VERIFY((*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 0));
 	}
 }
@@ -674,13 +669,11 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				unsigned int threadnum = (int)m_pOptions->GetOptionVal(OPTION_THREADNUM);
 				if (m_nServerState & STATE_ONLINE) {
 					if (threadnum > m_ThreadArray.size()) {
-						int newthreads = threadnum - m_ThreadArray.size();
-						for (int i = 0; i < newthreads; ++i) {
+						while (threadnum > m_ThreadArray.size()) {
 							int index = GetNextThreadNotificationID();
 							CServerThread *pThread = new CServerThread(WM_FILEZILLA_SERVERMSG + index);
 							m_ThreadNotificationIDs[index] = pThread;
-							if (pThread->Create(THREAD_PRIORITY_NORMAL, CREATE_SUSPENDED))
-							{
+							if (pThread->Create(THREAD_PRIORITY_NORMAL, CREATE_SUSPENDED)) {
 								pThread->ResumeThread();
 								m_ThreadArray.push_back(pThread);
 							}
@@ -693,9 +686,9 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 						CStdString str;
 						str.Format(_T("Decreasing number of threads to %d."), threadnum);
 						ShowStatus(str, 0);
-						unsigned int i=0;
-						std::list<CServerThread *> newList;
-						for (std::list<CServerThread *>::iterator iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); iter++, i++) {
+						unsigned int i = 0;
+						std::vector<CServerThread *> newList;
+						for (auto iter = m_ThreadArray.begin(); iter != m_ThreadArray.end(); iter++, i++) {
 							if (i >= threadnum) {
 								(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 2);
 								m_ClosedThreads.push_back(*iter);
@@ -703,8 +696,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 							else
 								newList.push_back(*iter);
 						}
-						m_ThreadArray.clear();
-						m_ThreadArray = newList;
+						m_ThreadArray.swap(newList);
 					}
 				}
 				if (listenPorts != m_pOptions->GetOption(OPTION_SERVERPORT) ||
@@ -828,11 +820,10 @@ bool CServer::ToggleActive(int nServerState)
 
 		if (!m_ListenSocketList.empty()) {
 			ShowStatus(_T("Server online"), 0);
-			int i = 0;
 			int num = (m_pOptions ? (int)m_pOptions->GetOptionVal(OPTION_THREADNUM) : 2);
 
 			//Recreate the threads
-			for (i = m_ThreadArray.size(); i < num; ++i) {
+			while (m_ThreadArray.size() < num) {
 				int index = GetNextThreadNotificationID();
 				CServerThread *pThread = new CServerThread(WM_FILEZILLA_SERVERMSG + index);
 				m_ThreadNotificationIDs[index] = pThread;
@@ -842,11 +833,11 @@ bool CServer::ToggleActive(int nServerState)
 				}
 			}
 		}
-		for (std::list<CListenSocket *>::iterator iter = m_ListenSocketList.begin(); iter != m_ListenSocketList.end(); iter++)
+		for (auto iter = m_ListenSocketList.begin(); iter != m_ListenSocketList.end(); ++iter)
 			(*iter)->m_bLocked = nServerState & STATE_LOCKED;
 
 		// Set closing threads to "wait until logout" mode.
-		for (std::list<CServerThread *>::iterator iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); iter++)
+		for (std::list<CServerThread *>::iterator iter = m_ClosedThreads.begin(); iter != m_ClosedThreads.end(); ++iter)
 			(*iter)->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_GOOFFLINE, 2);
 
 		m_nServerState = (m_ListenSocketList.empty() ? 0 : STATE_ONLINE) | (nServerState & STATE_LOCKED);
