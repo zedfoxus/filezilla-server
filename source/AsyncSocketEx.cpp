@@ -216,7 +216,7 @@ public:
 	void RemoveLayers(CAsyncSocketEx *pOrigSocket)
 	{
 		// Remove all layer messages from old socket
-		std::list<MSG> msgList;
+		std::vector<MSG> msgList;
 		MSG msg;
 		while (PeekMessage(&msg, m_hWnd, WM_USER, WM_USER, PM_REMOVE)) {
 			//Verify parameters, lookup socket and notification message
@@ -234,8 +234,8 @@ public:
 			msgList.push_back(msg);
 		}
 
-		for (std::list<MSG>::iterator iter = msgList.begin(); iter != msgList.end(); ++iter) {
-			if (!PostMessage(m_hWnd, iter->message, iter->wParam, iter->lParam)) {
+		for (auto const& msg : msgList) {
+			if (!PostMessage(m_hWnd, msg.message, msg.wParam, msg.lParam)) {
 				CAsyncSocketExLayer::t_LayerNotifyMsg *pMsg = (CAsyncSocketExLayer::t_LayerNotifyMsg *)msg.lParam;
 				delete pMsg;
 			}
