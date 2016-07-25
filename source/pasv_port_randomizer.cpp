@@ -46,8 +46,6 @@ unsigned int PasvPortRandomizer::DoGetPort()
 {
 	uint64_t const now = GetTickCount64();
 
-	simple_lock l(manager_.mutex_);
-
 	while (true) {
 		if (!prev_port_) {
 			prev_port_ = first_port_;
@@ -73,6 +71,8 @@ unsigned int PasvPortRandomizer::DoGetPort()
 				}
 			}
 		}
+
+		std::lock_guard<std::mutex> l(manager_.mutex_[prev_port_]);
 
 		if (!manager_.connecting_[prev_port_].exchange(1)) {
 			if (!allow_reuse_other_ && !allow_reuse_same_) {
@@ -108,7 +108,7 @@ void PasvPortManager::Release(unsigned int p, std::wstring const& peer, bool con
 {
 	if (p && p < 65536) {
 		{
-			simple_lock l(mutex_);
+			std::lock_guard<std::mutex> l(mutex_[p]);
 
 			auto& es = entries_[p];
 			auto it = std::find_if(es.begin(), es.end(), [&](entry const& e) { return e.peer_ == peer; });

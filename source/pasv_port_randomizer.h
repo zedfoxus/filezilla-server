@@ -92,8 +92,6 @@ private:
 	void Release(unsigned int p, std::wstring const& peer, bool connected);
 	void SetConnected(unsigned int p, std::wstring const& peer);
 
-	std::recursive_mutex mutex_;
-
 	void Prune(unsigned int port, uint64_t now);
 
 	struct entry
@@ -102,6 +100,7 @@ private:
 		unsigned int leases_{};
 		uint64_t expiry_{};
 	};
+	std::mutex mutex_[65536];
 	std::vector<entry> entries_[65536];
 	std::atomic_char connecting_[65536];
 };
