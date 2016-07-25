@@ -86,9 +86,9 @@ DWORD CThread::Run()
 	SetEvent(m_hEventStarted);
 	m_started = true;
 	MSG msg;
-	while (GetMessage(&msg, 0, 0, 0))
-	{
-		TranslateMessage(&msg);
+	while (GetMessage(&msg, 0, 0, 0)) {
+		// Since we do not handle keyboard events in the thread, don't translate messages.
+
 		if (!msg.hwnd)
 			OnThreadMessage(msg.message, msg.wParam, msg.lParam);
 		DispatchMessage(&msg);
