@@ -147,16 +147,15 @@ CString CGroupsDlgSharedFolders::Validate()
 	if (!pGroup)
 		return _T("");
 
-	for (std::vector<t_directory>::iterator iter = pGroup->permissions.begin(); iter != pGroup->permissions.end(); ++iter)
-	{
-		if (iter->dir == _T("") || iter->dir == _T("/") || iter->dir == _T("\\"))
-		{
+	for (auto & permission : pGroup->permissions) {
+		if (permission.dir == _T("") || permission.dir == _T("/") || permission.dir == _T("\\")) {
 			m_cDirs.SetFocus();
 			return _T("At least one shared directory is not a valid local path.");
 		}
 
-		if (iter->bIsHome)
-			iter->aliases.clear();
+		if (permission.bIsHome) {
+			permission.aliases.clear();
+		}
 	}
 
 	return _T("");
@@ -566,8 +565,10 @@ BOOL CGroupsDlgSharedFolders::DisplayGroup(const t_group *pGroup)
 		m_cDirs.SetItem(&item);
 
 		CString aliases;
-		for (std::list<CString>::const_iterator iter = pGroup->permissions[j].aliases.begin(); iter != pGroup->permissions[j].aliases.end(); ++iter)
-			aliases += *iter + _T("|");
+		for (auto const& alias : pGroup->permissions[j].aliases) {
+			aliases += alias;
+			aliases += _T("|");
+		}
 		aliases.TrimRight('|');
 		m_cDirs.SetItemText(nItem, 1, aliases);
 	}
@@ -634,7 +635,7 @@ void CGroupsDlgSharedFolders::OnDirmenuEditAliases()
 		aliases.TrimLeft(_T("|"));
 		aliases.TrimRight(_T("|"));
 
-		std::list<CString> aliasList;
+		std::vector<CString> aliasList;
 		aliases += _T("|");
 		int pos;
 
@@ -661,13 +662,13 @@ void CGroupsDlgSharedFolders::OnDirmenuEditAliases()
 		} while (pos != -1);
 
 		aliases.Empty();
-		for( auto const& alias : aliasList ) {
+		for (auto const& alias : aliasList) {
 			aliases += alias + _T("|");
 		}
 		aliases.TrimRight(_T("|"));
 
-		if( valid ) {
-			pGroup->permissions[index].aliases = aliasList;
+		if (valid) {
+			pGroup->permissions[index].aliases = std::move(aliasList);
 			m_cDirs.SetItemText(nItem, 1, aliases);
 		}
 		else {

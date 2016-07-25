@@ -252,8 +252,9 @@ char * t_group::FillBuffer(char *p) const
 
 		*p++ = (char)(permissioniter->aliases.size() >> 8);
 		*p++ = (char)(permissioniter->aliases.size() & 0xff);
-		for (std::list<CStdString>::const_iterator aliasiter = permissioniter->aliases.begin(); aliasiter != permissioniter->aliases.end(); aliasiter++)
-			FillString(p, *aliasiter);
+		for (auto const& alias : permissioniter->aliases) {
+			FillString(p, alias);
+		}
 
 		int rights = 0;
 		rights |= permissioniter->bDirCreate	? 0x0001:0;
@@ -314,18 +315,19 @@ int t_group::GetRequiredBufferLen() const
 		len += GetRequiredStringBufferLen(directory.dir);
 
 		len += 2;
-		for (std::list<CStdString>::const_iterator aliasiter = permissioniter->aliases.begin(); aliasiter != permissioniter->aliases.end(); aliasiter++)
-			len += GetRequiredStringBufferLen(*aliasiter);
+		for (auto const& alias : permissioniter->aliases) {
+			len += GetRequiredStringBufferLen(alias);
+		}
 	}
 
 	// Speed limits.
 	len += 6; // Basic limits.
 	len += 4; // Number of rules.
-	for (int i = 0; i < 2; i++)
-	{
+	for (int i = 0; i < 2; ++i) {
 		SPEEDLIMITSLIST::const_iterator iter;
-		for (iter = SpeedLimits[i].begin(); iter != SpeedLimits[i].end(); iter++)
-			len += iter->GetRequiredBufferLen();
+		for (auto const& limit : SpeedLimits[i]) {
+			len += limit.GetRequiredBufferLen();
+		}
 	}
 
 	len += GetRequiredStringBufferLen(comment);

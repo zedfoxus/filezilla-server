@@ -915,13 +915,12 @@ void CPermissions::SavePermissions(TiXmlElement *pXML, const t_group &user)
 		pPermissions->LinkEndChild(pPermission);
 
 		pPermission->SetAttribute("Dir", ConvToNetwork(user.permissions[i].dir).c_str());
-		if (!user.permissions[i].aliases.empty())
-		{
+		if (!user.permissions[i].aliases.empty()) {
 			TiXmlElement* pAliases = new TiXmlElement("Aliases");
 			pPermission->LinkEndChild(pAliases);
-			for (std::list<CStdString>::const_iterator iter = user.permissions[i].aliases.begin(); iter != user.permissions[i].aliases.end(); iter++) {
+			for (auto const& alias : user.permissions[i].aliases) {
 				TiXmlElement *pAlias = new TiXmlElement("Alias");
-				XML::SetText(pAlias, *iter);
+				XML::SetText(pAlias, alias);
 				pAliases->LinkEndChild(pAlias);
 			}
 		}
@@ -1675,11 +1674,8 @@ void CUser::PrepareAliasMap()
 	 */
 
 	virtualAliases.clear();
-	std::vector<t_directory>::const_iterator permIter;
-	std::list<CStdString>::const_iterator aliasIter;
-	for (permIter = permissions.begin(); permIter != permissions.end(); permIter++) {
-		for (aliasIter = permIter->aliases.begin(); aliasIter != permIter->aliases.end(); aliasIter++) {
-			CStdString alias = *aliasIter;
+	for (auto const& permission : permissions) {
+		for (auto alias : permission.aliases) {
 			DoReplacements(alias);
 
 			if (alias[0] != '/') {
@@ -1691,7 +1687,7 @@ void CUser::PrepareAliasMap()
 			if (dir == _T(""))
 				dir = _T("/");
 			virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.Mid(pos + 1)));
-			virtualAliases[alias + _T("/")] = permIter->dir;
+			virtualAliases[alias + _T("/")] = permission.dir;
 			DoReplacements(virtualAliases[alias + _T("/")]);
 		}
 	}
@@ -1699,9 +1695,8 @@ void CUser::PrepareAliasMap()
 	if (!pOwner)
 		return;
 
-	for (permIter = pOwner->permissions.begin(); permIter != pOwner->permissions.end(); permIter++) {
-		for (aliasIter = permIter->aliases.begin(); aliasIter != permIter->aliases.end(); aliasIter++) {
-			CStdString alias = *aliasIter;
+	for (auto const& permission : pOwner->permissions) {
+		for (auto alias : permission.aliases) {
 			DoReplacements(alias);
 
 			if (alias[0] != '/') {
@@ -1713,7 +1708,7 @@ void CUser::PrepareAliasMap()
 			if (dir == _T(""))
 				dir = _T("/");
 			virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.Mid(pos + 1)));
-			virtualAliases[alias + _T("/")] = permIter->dir;
+			virtualAliases[alias + _T("/")] = permission.dir;
 			DoReplacements(virtualAliases[alias + _T("/")]);
 		}
 	}

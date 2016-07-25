@@ -31,10 +31,12 @@
 #include "autobanmanager.h"
 #include "hash_thread.h"
 
+#include <algorithm>
+
 std::map<int, t_socketdata> CServerThread::m_userids;
 std::recursive_mutex CServerThread::m_global_mutex;
 std::map<CStdString, int> CServerThread::m_userIPs;
-std::list<CServerThread*> CServerThread::m_sInstanceList;
+std::vector<CServerThread*> CServerThread::m_sInstanceList;
 std::map<CStdString, int> CServerThread::m_antiHammerInfo;
 CHashThread* CServerThread::m_hashThread = 0;
 
@@ -78,14 +80,16 @@ BOOL CServerThread::InitInstance()
 	m_nSendCount = 0;
 	m_pOptions = new COptions;
 	m_pAutoBanManager = new CAutoBanManager(m_pOptions);
-	m_pPermissions = new CPermissions(std::bind(&CServerThread::OnPermissionsUpdated, this));
+	m_pPermissions = new CPermissions([this]() { OnPermissionsUpdated(); });
 
 	{
 		simple_lock lock(m_global_mutex);
-		if (m_sInstanceList.empty())
+		if (m_sInstanceList.empty()) {
 			m_bIsMaster = TRUE;
-		else
+		}
+		else {
 			m_bIsMaster = FALSE;
+		}
 		m_sInstanceList.push_back(this);
 	}
 
@@ -120,17 +124,20 @@ DWORD CServerThread::ExitInstance()
 	WSACleanup();
 	m_hashThread->Stop(this);
 
-	if (m_bIsMaster)
-	{
+	if (m_bIsMaster) {
 		simple_lock lock(m_mutex);
 		delete m_pExternalIpCheck;
 		m_pExternalIpCheck = NULL;
 	}
 
 	simple_lock lock(m_global_mutex);
-	m_sInstanceList.remove(this);
-	if (!m_sInstanceList.empty())
+	auto it = std::find(m_sInstanceList.begin(), m_sInstanceList.end(), this);
+	if (it != m_sInstanceList.end()) {
+		m_sInstanceList.erase(it);
+	}
+	if (!m_sInstanceList.empty()) {
 		m_sInstanceList.front()->m_bIsMaster = TRUE;
+	}
 	else {
 		delete m_hashThread;
 		m_hashThread = 0;
@@ -473,7 +480,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 				long long nRemaining = limit;
 				long long nThreadLimit = limit / m_sInstanceList.size();
 
-				std::list<CServerThread *> fullUsageList;
+				std::vector<CServerThread *> fullUsageList;
 
 				for (auto & pThread : m_sInstanceList) {
 					pThread->m_mutex.lock();
@@ -498,7 +505,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 
 				// fullUsageList now contains all threads which did use up their assigned quota
 				if (!fullUsageList.empty()) {
-					std::list<CServerThread *> fullUsageList2;
+					std::vector<CServerThread *> fullUsageList2;
 					nThreadLimit = nRemaining / fullUsageList.size();
 					for (auto & pThread : fullUsageList) {
 						// Thread has already been locked
@@ -635,7 +642,7 @@ void CServerThread::ProcessNewSlQuota()
 		long long nRemaining = m_SlQuotas[i].nBytesAllowedToTransfer;
 		long long nThreadLimit = nRemaining / m_sInstanceList.size();
 
-		std::list<CControlSocket *> fullUsageList;
+		std::vector<CControlSocket *> fullUsageList;
 
 		for (auto & it : m_LocalUserIDs ) {
 			CControlSocket *pControlSocket = it.second;
@@ -661,7 +668,7 @@ void CServerThread::ProcessNewSlQuota()
 		}
 
 		if (!fullUsageList.empty()) {
-			std::list<CControlSocket *> fullUsageList2;
+			std::vector<CControlSocket *> fullUsageList2;
 
 			nThreadLimit = nRemaining / fullUsageList.size();
 			for (auto & pControlSocket : fullUsageList ) {

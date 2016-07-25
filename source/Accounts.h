@@ -12,13 +12,8 @@
 class t_directory
 {
 public:
-#ifdef SERVICE
 	CStdString dir;
-	std::list<CStdString> aliases;
-#else
-	CStdString dir;
-	std::list<CStdString> aliases;
-#endif
+	std::vector<CStdString> aliases;
 	BOOL bFileRead{}, bFileWrite{}, bFileDelete{}, bFileAppend{};
 	BOOL bDirCreate{}, bDirDelete{}, bDirList{}, bDirSubdirs{}, bIsHome{};
 	BOOL bAutoCreate{};

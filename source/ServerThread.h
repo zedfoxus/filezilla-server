@@ -113,7 +113,7 @@ protected:
 	unsigned int m_timerid{};
 
 	//Speed limit code
-	static std::list<CServerThread *> m_sInstanceList; //First instance is the SL master
+	static std::vector<CServerThread *> m_sInstanceList; //First instance is the SL master
 	BOOL m_bIsMaster{};
 	int m_nLoopCount{};
 
@@ -125,7 +125,7 @@ protected:
 	t_Quota m_SlQuotas[2];
 
 	CStdString m_RawWelcomeMessage;
-	std::list<CStdString> m_ParsedWelcomeMessage;
+	std::vector<CStdString> m_ParsedWelcomeMessage;
 	CExternalIpCheck *m_pExternalIpCheck{};
 
 	std::list<t_Notification> m_pendingNotifications;
