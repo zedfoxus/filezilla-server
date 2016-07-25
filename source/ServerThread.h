@@ -137,6 +137,8 @@ protected:
 	int m_antiHammerTimer{};
 
 	static CHashThread* m_hashThread;
+
+	CAsyncSocketEx* threadSocketData_{};
 };
 
 #endif // AFX_SERVERTHREAD_H__4F566540_62DF_4338_85DE_EC699EB6640C__INCLUDED_

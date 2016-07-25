@@ -65,6 +65,9 @@ BOOL CServerThread::InitInstance()
 		res = FALSE;
 	}
 
+	threadSocketData_ = new CAsyncSocketEx;
+	threadSocketData_->InitAsyncSocketExInstance();
+
 	m_timerid = SetTimer(0, 0, 1000, 0);
 	m_nRateTimer = SetTimer(0, 0, 100, 0);
 
@@ -103,6 +106,8 @@ BOOL CServerThread::InitInstance()
 
 DWORD CServerThread::ExitInstance()
 {
+	delete threadSocketData_;
+
 	ASSERT(m_pPermissions);
 	delete m_pPermissions;
 	m_pPermissions = 0;
