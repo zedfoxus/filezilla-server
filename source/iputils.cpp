@@ -108,7 +108,7 @@ static unsigned long const prefixMasksV4[] = {
 	0xffffffffu
 };
 
-bool MatchesFilter(CStdString filter, CStdString ip)
+bool MatchesFilter(CStdString const& filter, CStdString ip)
 {
 	// A single asterix matches all IPs.
 	if (filter == _T("*"))
@@ -185,7 +185,7 @@ bool MatchesFilter(CStdString filter, CStdString ip)
 	}
 }
 
-bool ParseIPFilter(CStdString in, std::list<CStdString>* output /*=0*/)
+bool ParseIPFilter(CStdString in, std::vector<CStdString>* output /*=0*/)
 {
 	bool valid = true;
 
@@ -198,20 +198,21 @@ bool ParseIPFilter(CStdString in, std::list<CStdString>* output /*=0*/)
 	in += _T(" ");
 
 	int pos;
-	while ((pos = in.Find(_T(" "))) != -1)
-	{
+	while ((pos = in.Find(_T(" "))) != -1) {
 		CStdString ip = in.Left(pos);
-		if (ip == _T(""))
+		if (ip == _T("")) {
 			break;
+		}
 		in = in.Mid(pos + 1);
 
-		if (ip == _T("*") || IsValidAddressFilter(ip))
-		{
-			if (output)
+		if (ip == _T("*") || IsValidAddressFilter(ip)) {
+			if (output) {
 				output->push_back(ip);
+			}
 		}
-		else
+		else {
 			valid = false;
+		}
 	}
 
 	return valid;

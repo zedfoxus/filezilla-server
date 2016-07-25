@@ -121,11 +121,12 @@ BOOL CUsersDlgIpFilter::DisplayUser(t_user *pUser)
 		return TRUE;
 	}
 
-	std::list<CString>::const_iterator iter;
-	for (iter = pUser->disallowedIPs.begin(); iter != pUser->disallowedIPs.end(); ++iter)
-		m_DisallowedAddresses += *iter + "\r\n";
-	for (iter = pUser->allowedIPs.begin(); iter != pUser->allowedIPs.end(); ++iter)
-		m_AllowedAddresses += *iter + "\r\n";
+	for (auto const& disallowedIP : pUser->disallowedIPs) {
+		m_DisallowedAddresses += disallowedIP + "\r\n";
+	}
+	for (auto const& allowedIP : pUser->allowedIPs) {
+		m_AllowedAddresses += allowedIP + "\r\n";
+	}
 
 	UpdateData(FALSE);
 

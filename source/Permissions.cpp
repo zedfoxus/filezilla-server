@@ -1379,45 +1379,46 @@ void CPermissions::ReloadConfig()
 
 void CPermissions::ReadIpFilter(TiXmlElement *pXML, t_group &group)
 {
-	for (TiXmlElement* pFilter = pXML->FirstChildElement("IpFilter"); pFilter; pFilter = pFilter->NextSiblingElement("IpFilter"))
-	{
-		for (TiXmlElement* pDisallowed = pFilter->FirstChildElement("Disallowed"); pDisallowed; pDisallowed = pDisallowed->NextSiblingElement("Disallowed"))
-		{
-			for (TiXmlElement* pIP = pDisallowed->FirstChildElement("IP"); pIP; pIP = pIP->NextSiblingElement("IP"))
-			{
+	for (TiXmlElement* pFilter = pXML->FirstChildElement("IpFilter"); pFilter; pFilter = pFilter->NextSiblingElement("IpFilter")) {
+		for (TiXmlElement* pDisallowed = pFilter->FirstChildElement("Disallowed"); pDisallowed; pDisallowed = pDisallowed->NextSiblingElement("Disallowed")) {
+			for (TiXmlElement* pIP = pDisallowed->FirstChildElement("IP"); pIP; pIP = pIP->NextSiblingElement("IP")) {
 				CStdString ip = XML::ReadText(pIP);
-				if (ip == _T(""))
+				if (ip == _T("")) {
 					continue;
+				}
 
-				if (group.disallowedIPs.size() >= 30000)
+				if (group.disallowedIPs.size() >= 30000) {
 					break;
+				}
 
-				if (ip == _T("*"))
+				if (ip == _T("*")) {
 					group.disallowedIPs.push_back(ip);
-				else
-				{
-					if (IsValidAddressFilter(ip))
+				}
+				else {
+					if (IsValidAddressFilter(ip)) {
 						group.disallowedIPs.push_back(ip);
+					}
 				}
 			}
 		}
-		for (TiXmlElement* pAllowed = pFilter->FirstChildElement("Allowed"); pAllowed; pAllowed = pAllowed->NextSiblingElement("Allowed"))
-		{
-			for (TiXmlElement* pIP = pAllowed->FirstChildElement("IP"); pIP; pIP = pIP->NextSiblingElement("IP"))
-			{
+		for (TiXmlElement* pAllowed = pFilter->FirstChildElement("Allowed"); pAllowed; pAllowed = pAllowed->NextSiblingElement("Allowed")) {
+			for (TiXmlElement* pIP = pAllowed->FirstChildElement("IP"); pIP; pIP = pIP->NextSiblingElement("IP")) {
 				CStdString ip = XML::ReadText(pIP);
-				if (ip == _T(""))
+				if (ip == _T("")) {
 					continue;
+				}
 
-				if (group.allowedIPs.size() >= 30000)
+				if (group.allowedIPs.size() >= 30000) {
 					break;
+				}
 
-				if (ip == _T("*"))
+				if (ip == _T("*")) {
 					group.allowedIPs.push_back(ip);
-				else
-				{
-					if (IsValidAddressFilter(ip))
+				}
+				else {
+					if (IsValidAddressFilter(ip)) {
 						group.allowedIPs.push_back(ip);
+					}
 				}
 			}
 		}
@@ -1430,19 +1431,16 @@ void CPermissions::SaveIpFilter(TiXmlElement *pXML, const t_group &group)
 
 	TiXmlElement* pDisallowed = pFilter->LinkEndChild(new TiXmlElement("Disallowed"))->ToElement();
 
-	std::list<CStdString>::const_iterator iter;
-	for (iter = group.disallowedIPs.begin(); iter != group.disallowedIPs.end(); iter++)
-	{
+	for (auto const& disallowedIP : group.disallowedIPs) {
 		TiXmlElement* pIP = pDisallowed->LinkEndChild(new TiXmlElement("IP"))->ToElement();
-		XML::SetText(pIP, *iter);
+		XML::SetText(pIP, disallowedIP);
 	}
 
 	TiXmlElement* pAllowed = pFilter->LinkEndChild(new TiXmlElement("Allowed"))->ToElement();
 
-	for (iter = group.allowedIPs.begin(); iter != group.allowedIPs.end(); iter++)
-	{
+	for (auto const& allowedIP : group.allowedIPs) {
 		TiXmlElement* pIP = pAllowed->LinkEndChild(new TiXmlElement("IP"))->ToElement();
-		XML::SetText(pIP, *iter);
+		XML::SetText(pIP, allowedIP);
 	}
 }
 

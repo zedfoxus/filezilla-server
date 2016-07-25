@@ -232,59 +232,57 @@ char * t_group::FillBuffer(char *p) const
 
 	*p++ = options & 0xff;
 
-	std::list<CStdString>::const_iterator ipLimitIter;
-
 	*p++ = (char)(disallowedIPs.size() >> 8);
 	*p++ = (char)(disallowedIPs.size() & 0xff);
-	for (ipLimitIter = disallowedIPs.begin(); ipLimitIter != disallowedIPs.end(); ipLimitIter++)
-		FillString(p, *ipLimitIter);
+	for (auto const& disallowedIP : disallowedIPs) {
+		FillString(p, disallowedIP);
+	}
 
 	*p++ = (char)(allowedIPs.size() >> 8);
 	*p++ = (char)(allowedIPs.size() & 0xff);
-	for (ipLimitIter = allowedIPs.begin(); ipLimitIter != allowedIPs.end(); ipLimitIter++)
-		FillString(p, *ipLimitIter);
+	for (auto const& allowedIP : allowedIPs) {
+		FillString(p, allowedIP);
+	}
 
 	*p++ = (char)(permissions.size() >> 8);
 	*p++ = (char)(permissions.size() & 0xff);
-	for (std::vector<t_directory>::const_iterator permissioniter = permissions.begin(); permissioniter!=permissions.end(); permissioniter++)
-	{
-		FillString(p, permissioniter->dir);
+	for (auto const& permission : permissions) {
+		FillString(p, permission.dir);
 
-		*p++ = (char)(permissioniter->aliases.size() >> 8);
-		*p++ = (char)(permissioniter->aliases.size() & 0xff);
-		for (auto const& alias : permissioniter->aliases) {
+		*p++ = (char)(permission.aliases.size() >> 8);
+		*p++ = (char)(permission.aliases.size() & 0xff);
+		for (auto const& alias : permission.aliases) {
 			FillString(p, alias);
 		}
 
 		int rights = 0;
-		rights |= permissioniter->bDirCreate	? 0x0001:0;
-		rights |= permissioniter->bDirDelete	? 0x0002:0;
-		rights |= permissioniter->bDirList		? 0x0004:0;
-		rights |= permissioniter->bDirSubdirs	? 0x0008:0;
-		rights |= permissioniter->bFileAppend	? 0x0010:0;
-		rights |= permissioniter->bFileDelete	? 0x0020:0;
-		rights |= permissioniter->bFileRead		? 0x0040:0;
-		rights |= permissioniter->bFileWrite	? 0x0080:0;
-		rights |= permissioniter->bIsHome		? 0x0100:0;
-		rights |= permissioniter->bAutoCreate	? 0x0200:0;
+		rights |= permission.bDirCreate		? 0x0001:0;
+		rights |= permission.bDirDelete		? 0x0002:0;
+		rights |= permission.bDirList		? 0x0004:0;
+		rights |= permission.bDirSubdirs	? 0x0008:0;
+		rights |= permission.bFileAppend	? 0x0010:0;
+		rights |= permission.bFileDelete	? 0x0020:0;
+		rights |= permission.bFileRead		? 0x0040:0;
+		rights |= permission.bFileWrite		? 0x0080:0;
+		rights |= permission.bIsHome		? 0x0100:0;
+		rights |= permission.bAutoCreate	? 0x0200:0;
 		*p++ = (char)(rights >> 8);
 		*p++ = (char)(rights & 0xff);
 	}
 
-	for (int i = 0; i < 2; i++)
-	{
+	for (int i = 0; i < 2; ++i) {
 		*p++ = (char)((nSpeedLimitType[i] & 3) + ((nBypassServerSpeedLimit[i] & 3) << 2));
 		*p++ = (char)(nSpeedLimit[i] >> 8);
 		*p++ = (char)(nSpeedLimit[i] & 0xff);
 
-		SPEEDLIMITSLIST::const_iterator iter;
-
 		*p++ = (char)(SpeedLimits[i].size() >> 8);
 		*p++ = (char)(SpeedLimits[i].size() & 0xff);
-		for (iter = SpeedLimits[i].begin(); (iter != SpeedLimits[i].end()) && p; iter++)
-			p = iter->FillBuffer(p);
-		if (!p)
-			return NULL;
+		for (auto const& limit : SpeedLimits[i]){
+			p = limit.FillBuffer(p);
+			if (!p) {
+				return 0;
+			}
+		}
 	}
 
 	FillString(p, comment);
@@ -300,22 +298,21 @@ int t_group::GetRequiredBufferLen() const
 	len += GetRequiredStringBufferLen(group);
 
 	len += 4;
-	std::list<CStdString>::const_iterator ipLimitIter;
-	for (ipLimitIter = disallowedIPs.begin(); ipLimitIter != disallowedIPs.end(); ipLimitIter++)
-		len += GetRequiredStringBufferLen(*ipLimitIter);
-	for (ipLimitIter = allowedIPs.begin(); ipLimitIter != allowedIPs.end(); ipLimitIter++)
-		len += GetRequiredStringBufferLen(*ipLimitIter);
+	for (auto const& disallowedIP : disallowedIPs) {
+		len += GetRequiredStringBufferLen(disallowedIP);
+	}
+	for (auto const& allowedIP : allowedIPs) {
+		len += GetRequiredStringBufferLen(allowedIP);
+	}
 
 	len += 2;
-	for (std::vector<t_directory>::const_iterator permissioniter = permissions.begin(); permissioniter!=permissions.end(); permissioniter++)
-	{
-		t_directory directory = *permissioniter;
+	for (auto const& permission : permissions) {
 		len += 2;
 
-		len += GetRequiredStringBufferLen(directory.dir);
+		len += GetRequiredStringBufferLen(permission.dir);
 
 		len += 2;
-		for (auto const& alias : permissioniter->aliases) {
+		for (auto const& alias : permission.aliases) {
 			len += GetRequiredStringBufferLen(alias);
 		}
 	}
@@ -324,7 +321,6 @@ int t_group::GetRequiredBufferLen() const
 	len += 6; // Basic limits.
 	len += 4; // Number of rules.
 	for (int i = 0; i < 2; ++i) {
-		SPEEDLIMITSLIST::const_iterator iter;
 		for (auto const& limit : SpeedLimits[i]) {
 			len += limit.GetRequiredBufferLen();
 		}
@@ -351,12 +347,14 @@ int t_group::GetCurrentSpeedLimit(sltype type) const
 	case 2:
 		return nSpeedLimit[type];
 	case 3:
-		if( !SpeedLimits[type].empty() )	{
+		if (!SpeedLimits[type].empty()) {
 			SYSTEMTIME st;
 			GetLocalTime(&st);
-			for (SPEEDLIMITSLIST::const_iterator iter = SpeedLimits[type].begin(); iter != SpeedLimits[type].end(); iter++)
-				if (iter->IsItActive(st))
-					return iter->m_Speed;
+			for (auto const& limit : SpeedLimits[type]) {
+				if (limit.IsItActive(st)) {
+					return limit.m_Speed;
+				}
+			}
 		}
 		if (pOwner)
 			return pOwner->GetCurrentSpeedLimit(type);
@@ -395,15 +393,14 @@ bool t_group::IsEnabled() const
 	}
 }
 
-bool t_group::AccessAllowed(const CStdString& ip) const
+bool t_group::AccessAllowed(CStdString const& ip) const
 {
 	bool disallowed = false;
 
-	std::list<CStdString>::const_iterator iter;
-	for (iter = disallowedIPs.begin(); iter != disallowedIPs.end(); iter++)
-	{
-		if (disallowed = MatchesFilter(*iter, ip))
+	for (auto const& disallowedIP : disallowedIPs) {
+		if (disallowed = MatchesFilter(disallowedIP, ip)) {
 			break;
+		}
 	}
 
 	if (!disallowed)
@@ -415,10 +412,10 @@ bool t_group::AccessAllowed(const CStdString& ip) const
 			return true;
 	}
 
-	for (iter = allowedIPs.begin(); iter != allowedIPs.end(); iter++)
-	{
-		if (MatchesFilter(*iter, ip))
+	for (auto const& allowedIP : allowedIPs) {
+		if (MatchesFilter(allowedIP, ip)) {
 			return true;
+		}
 	}
 
 	if (pOwner && !disallowed)

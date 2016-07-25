@@ -79,14 +79,12 @@ CString CGroupsDlgIpFilter::Validate()
 {
 	UpdateData(TRUE);
 
-	if (!ParseIPFilter(m_DisallowedAddresses))
-	{
+	if (!ParseIPFilter(m_DisallowedAddresses)) {
 		GetDlgItem(IDC_GROUPS_IPFILTER_DISALLOWED)->SetFocus();
 		return _T("Invalid IP address/range/mask");
 	}
 
-	if (!ParseIPFilter(m_AllowedAddresses))
-	{
+	if (!ParseIPFilter(m_AllowedAddresses)) {
 		GetDlgItem(IDC_GROUPS_IPFILTER_ALLOWED)->SetFocus();
 		return _T("Invalid IP address/range/mask");
 	}
@@ -122,11 +120,12 @@ BOOL CGroupsDlgIpFilter::DisplayGroup(t_group *pGroup)
 		return TRUE;
 	}
 
-	std::list<CString>::const_iterator iter;
-	for (iter = pGroup->disallowedIPs.begin(); iter != pGroup->disallowedIPs.end(); ++iter)
-		m_DisallowedAddresses += *iter + _T("\r\n");
-	for (iter = pGroup->allowedIPs.begin(); iter != pGroup->allowedIPs.end(); ++iter)
-		m_AllowedAddresses += *iter + _T("\r\n");
+	for (auto const& disallowedIP : pGroup->disallowedIPs) {
+		m_DisallowedAddresses += disallowedIP + "\r\n";
+	}
+	for (auto const& allowedIP : pGroup->allowedIPs) {
+		m_AllowedAddresses += allowedIP + "\r\n";
+	}
 
 	UpdateData(FALSE);
 

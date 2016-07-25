@@ -25,7 +25,7 @@
 
 bool IsLocalhost(const CStdString& ip);
 bool IsValidAddressFilter(CStdString& filter);
-bool MatchesFilter(CStdString filter, CStdString ip);
+bool MatchesFilter(CStdString const& filter, CStdString ip);
 bool IsIpAddress(const CStdString& address, bool allowNull = false);
 
 // Also verifies that it is a correct IPv6 address
@@ -33,7 +33,7 @@ CStdString GetIPV6LongForm(CStdString short_address);
 CStdString GetIPV6ShortForm(const CStdString& ip);
 bool IsRoutableAddress(const CStdString& address);
 
-bool ParseIPFilter(CStdString in, std::list<CStdString>* output = 0);
+bool ParseIPFilter(CStdString in, std::vector<CStdString>* output = 0);
 
 // Checks if FZS is running behind an IPv4 NAT
 // Simple heuristic: Returns true if at least one adapter has an
