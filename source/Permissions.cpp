@@ -161,8 +161,8 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 		BOOL isexe = FALSE;
 		if (nameLen > 4) {
 			CStdStringA ext = name + nameLen - 4;
-			ext.MakeLower();
 			if (ext.ReverseFind('.') != -1) {
+				ext.MakeLower();
 				if (ext == ".exe")
 					isexe = TRUE;
 				else if (ext == ".bat")
