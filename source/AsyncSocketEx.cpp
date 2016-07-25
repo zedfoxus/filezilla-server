@@ -66,8 +66,7 @@ to tim.kosse@filezilla-project.org
 
 #include "AsyncSocketExLayer.h"
 
-std::recursive_mutex CAsyncSocketEx::m_mutex;
-CAsyncSocketEx::t_AsyncSocketExThreadDataList *CAsyncSocketEx::m_spAsyncSocketExThreadDataList = 0;
+thread_local CAsyncSocketEx::t_AsyncSocketExThreadData* CAsyncSocketEx::thread_local_data = 0;
 
 #ifndef _AFX
 #ifndef VERIFY
@@ -957,43 +956,23 @@ BOOL CAsyncSocketEx::InitAsyncSocketExInstance()
 
 	DWORD id = GetCurrentThreadId();
 
-	simple_lock lock(m_mutex);
-
-	//Get thread specific data
-	t_AsyncSocketExThreadDataList *pList = m_spAsyncSocketExThreadDataList;
-	while (pList) {
-		ASSERT(pList->pThreadData);
-		ASSERT(pList->pThreadData->nInstanceCount > 0);
-
-		if (pList->pThreadData->nThreadId == id) {
-			m_pLocalAsyncSocketExThreadData = pList->pThreadData;
-			++m_pLocalAsyncSocketExThreadData->nInstanceCount;
-			break;
-		}
-		pList = pList->pNext;
+	// Get thread specific data
+	if (!thread_local_data) {
+		thread_local_data = new t_AsyncSocketExThreadData;
+		thread_local_data->m_pHelperWindow = new CAsyncSocketExHelperWindow(thread_local_data);
 	}
+	m_pLocalAsyncSocketExThreadData = thread_local_data;
+	++m_pLocalAsyncSocketExThreadData->nInstanceCount;
 
-	if (!pList) {
-		// Current thread has no sockets
-		//Initialize data for current thread
-		pList = new t_AsyncSocketExThreadDataList;
-		pList->pNext = m_spAsyncSocketExThreadDataList;
-		m_spAsyncSocketExThreadDataList = pList;
-
-		m_pLocalAsyncSocketExThreadData = new t_AsyncSocketExThreadData;
-		m_pLocalAsyncSocketExThreadData->nInstanceCount = 1;
-		m_pLocalAsyncSocketExThreadData->nThreadId = id;
-		m_pLocalAsyncSocketExThreadData->m_pHelperWindow = new CAsyncSocketExHelperWindow(m_pLocalAsyncSocketExThreadData);
-		m_spAsyncSocketExThreadDataList->pThreadData = m_pLocalAsyncSocketExThreadData;
-	}
 	return TRUE;
 }
 
 void CAsyncSocketEx::FreeAsyncSocketExInstance()
 {
 	//Check if already freed
-	if (!m_pLocalAsyncSocketExThreadData)
+	if (!m_pLocalAsyncSocketExThreadData) {
 		return;
+	}
 
 	for (std::list<CAsyncSocketEx*>::iterator iter = m_pLocalAsyncSocketExThreadData->layerCloseNotify.begin(); iter != m_pLocalAsyncSocketExThreadData->layerCloseNotify.end(); iter++)
 	{
@@ -1006,40 +985,11 @@ void CAsyncSocketEx::FreeAsyncSocketExInstance()
 		break;
 	}
 
-	DWORD id = m_pLocalAsyncSocketExThreadData->nThreadId;
-	simple_lock lock(m_mutex);
-
-	ASSERT(m_spAsyncSocketExThreadDataList);
-	t_AsyncSocketExThreadDataList *pList = m_spAsyncSocketExThreadDataList;
-	t_AsyncSocketExThreadDataList *pPrev=0;
-
-	//Serach for data for current thread and decrease instance count
-	while (pList) {
-		ASSERT(pList->pThreadData);
-		ASSERT(pList->pThreadData->nInstanceCount > 0);
-
-		if (pList->pThreadData->nThreadId == id) {
-			ASSERT(m_pLocalAsyncSocketExThreadData == pList->pThreadData);
-			--m_pLocalAsyncSocketExThreadData->nInstanceCount;
-
-			//Freeing last instance?
-			//If so, destroy helper window
-			if (!m_pLocalAsyncSocketExThreadData->nInstanceCount) {
-				delete m_pLocalAsyncSocketExThreadData->m_pHelperWindow;
-				delete m_pLocalAsyncSocketExThreadData;
-				if (pPrev)
-					pPrev->pNext = pList->pNext;
-				else
-					m_spAsyncSocketExThreadDataList = pList->pNext;
-				delete pList;
-				break;
-			}
-
-			break;
-		}
-		pPrev = pList;
-		pList = pList->pNext;
-		ASSERT(pList);
+	if (!--m_pLocalAsyncSocketExThreadData->nInstanceCount) {
+		m_pLocalAsyncSocketExThreadData = 0;
+		delete thread_local_data->m_pHelperWindow;
+		delete thread_local_data;
+		thread_local_data = 0;
 	}
 }
 

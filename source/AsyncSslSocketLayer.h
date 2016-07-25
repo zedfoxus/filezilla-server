@@ -102,6 +102,7 @@ Version 2.0:
 #include "misc/dll.h"
 
 #include <memory>
+#include <mutex>
 
 // Details of SSL certificate, can be used by app to verify if certificate is valid
 struct t_SslCertData final

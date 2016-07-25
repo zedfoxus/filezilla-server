@@ -72,8 +72,6 @@ to tim.kosse@filezilla-project.org
 
 #define FD_FORCEREAD (1<<15)
 
-#include <mutex>
-
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 
@@ -227,6 +225,9 @@ public:
 	BOOL TriggerEvent(long lEvent);
 
 	bool SetNodelay(bool nodelay);
+
+	//Initializes Thread data and helper window, fills m_pLocalAsyncSocketExThreadData
+	BOOL InitAsyncSocketExInstance();
 protected:
 	//Strucure to hold the socket data
 	struct t_AsyncSocketExData
@@ -255,26 +256,16 @@ protected:
 	//Detaches socket handle to helper window
 	void DetachHandle();
 
-	static std::recursive_mutex m_mutex;
-
 	//Pointer to the data of the local thread
 	struct t_AsyncSocketExThreadData
 	{
 		CAsyncSocketExHelperWindow *m_pHelperWindow{};
 		int nInstanceCount{};
-		DWORD nThreadId{};
 		std::list<CAsyncSocketEx*> layerCloseNotify;
 	} *m_pLocalAsyncSocketExThreadData{};
 
 	//List of the data structures for all threads
-	static struct t_AsyncSocketExThreadDataList
-	{
-		t_AsyncSocketExThreadDataList *pNext{};
-		t_AsyncSocketExThreadData *pThreadData{};
-	} *m_spAsyncSocketExThreadDataList;
-
-	//Initializes Thread data and helper window, fills m_pLocalAsyncSocketExThreadData
-	BOOL InitAsyncSocketExInstance();
+	static thread_local t_AsyncSocketExThreadData* thread_local_data;
 
 	//Destroys helper window after last instance of CAsyncSocketEx in current thread has been closed
 	void FreeAsyncSocketExInstance();
@@ -318,9 +309,6 @@ private:
 	BOOL GetPeerName(sockaddr_storage & sockAddr);
 	BOOL GetSockName(sockaddr_storage & sockAddr);
 };
-
-typedef std::lock_guard<std::recursive_mutex> simple_lock;
-typedef std::unique_lock<std::recursive_mutex> scoped_lock;
 
 #define LAYERCALLBACK_STATECHANGE 0
 #define LAYERCALLBACK_LAYERSPECIFIC 1

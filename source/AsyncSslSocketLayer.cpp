@@ -93,6 +93,10 @@ Version 2.0:
 
 #include <algorithm>
 
+typedef std::lock_guard<std::recursive_mutex> simple_lock;
+typedef std::unique_lock<std::recursive_mutex> scoped_lock;
+
+
 // Simple macro to declare function type and function pointer based on the
 // three given parametrs:
 // r - return type,
