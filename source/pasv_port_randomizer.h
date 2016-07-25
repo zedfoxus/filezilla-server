@@ -1,6 +1,8 @@
 #ifndef FZS_PASV_PORT_RANDOMIZER_HEADER
 #define FZS_PASV_PORT_RANDOMIZER_HEADER
 
+#include <atomic>
+
 /*
 FTP suffers from connection stealing attacks. The only actual solution
 to this problem that prevents all attacks is TLS session resumption.
@@ -101,7 +103,7 @@ private:
 		uint64_t expiry_{};
 	};
 	std::vector<entry> entries_[65536];
-	bool connecting_[65536];
+	std::atomic_char connecting_[65536];
 };
 
 #endif

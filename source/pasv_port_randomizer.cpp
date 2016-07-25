@@ -74,8 +74,10 @@ unsigned int PasvPortRandomizer::DoGetPort()
 			}
 		}
 
-		if (!manager_.connecting_[prev_port_]) {
-			manager_.Prune(prev_port_, now);
+		if (!manager_.connecting_[prev_port_].exchange(1)) {
+			if (!allow_reuse_other_ && !allow_reuse_same_) {
+				manager_.Prune(prev_port_, now);
+			}
 
 			auto& es = manager_.entries_[prev_port_];
 			auto it = std::find_if(es.begin(), es.end(), [&](PasvPortManager::entry const& e){ return e.peer_ == peerIP_; });
@@ -83,7 +85,6 @@ unsigned int PasvPortRandomizer::DoGetPort()
 				if (allow_reuse_same_) {
 					++it->leases_;
 					it->expiry_ = now + 1000 * 60 * 4; // 4 minute TIME_WAIT
-					manager_.connecting_[prev_port_] = true;
 					return prev_port_;
 				}
 			}
@@ -93,9 +94,9 @@ unsigned int PasvPortRandomizer::DoGetPort()
 				e.expiry_ = now + 1000 * 60 * 4; // 4 minute TIME_WAIT
 				e.peer_ = peerIP_;
 				es.push_back(e);
-				manager_.connecting_[prev_port_] = true;
 				return prev_port_;
 			}
+			manager_.connecting_[prev_port_] = 0;
 		}
 	}
 
@@ -106,17 +107,19 @@ unsigned int PasvPortRandomizer::DoGetPort()
 void PasvPortManager::Release(unsigned int p, std::wstring const& peer, bool connected)
 {
 	if (p && p < 65536) {
-		simple_lock l(mutex_);
-		
-		auto& es = entries_[p];
-		auto it = std::find_if(es.begin(), es.end(), [&](entry const& e){ return e.peer_ == peer; });
-		if (it != es.end() && it->leases_) {
-			--it->leases_;
-			it->expiry_ = GetTickCount64() + 1000 * 60 * 4; // 4 minute TIME_WAIT
+		{
+			simple_lock l(mutex_);
+
+			auto& es = entries_[p];
+			auto it = std::find_if(es.begin(), es.end(), [&](entry const& e) { return e.peer_ == peer; });
+			if (it != es.end() && it->leases_) {
+				--it->leases_;
+				it->expiry_ = GetTickCount64() + 1000 * 60 * 4; // 4 minute TIME_WAIT
+			}
 		}
 
 		if (!connected) {
-			connecting_[p] = false;
+			connecting_[p] = 0;
 		}
 	}
 }
@@ -125,19 +128,18 @@ void PasvPortManager::Release(unsigned int p, std::wstring const& peer, bool con
 void PasvPortManager::SetConnected(unsigned int p, std::wstring const& peer)
 {
 	if (p && p < 65536) {
-		simple_lock l(mutex_);
-		connecting_[p] = false;
+		connecting_[p] = 0;
 	}
 }
 
 
 void PasvPortManager::Prune(unsigned int port, uint64_t const now)
 {
+	auto const predicate = [now](entry const& e) {
+		return !e.leases_ && e.expiry_ < now;
+	};
 	entries_[port].erase(
-			std::remove_if(entries_[port].begin(), entries_[port].end(), 
-			[&](entry const& e) {
-				return !e.leases_ && e.expiry_ < now;
-			}),
+			std::remove_if(entries_[port].begin(), entries_[port].end(), predicate),
 		entries_[port].end());
 }
 
