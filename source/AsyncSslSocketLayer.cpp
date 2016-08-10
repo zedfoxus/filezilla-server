@@ -952,7 +952,7 @@ BOOL CAsyncSslSocketLayer::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 }
 
 namespace {
-TCHAR toHexDigit(unsigned char c)
+unsigned char toHexDigit(unsigned char c)
 {
 	if (c >= 10) {
 		return c + 'A' - 10;

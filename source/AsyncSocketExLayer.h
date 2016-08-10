@@ -90,7 +90,7 @@ protected:
 	virtual void Close();
 	virtual BOOL Connect(LPCTSTR lpszHostAddress, UINT nHostPort);
 	virtual BOOL Connect( const SOCKADDR* lpSockAddr, int nSockAddrLen );
-	virtual BOOL Create(UINT nSocketPort = 0, int nSocketType = SOCK_STREAM,
+	virtual bool Create(UINT nSocketPort = 0, int nSocketType = SOCK_STREAM,
 				long lEvent = FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT |
 							FD_CONNECT | FD_CLOSE,
 				LPCTSTR lpszSocketAddress = NULL, int nFamily = AF_INET,
@@ -106,7 +106,7 @@ protected:
 	void CloseNext();
 	BOOL ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort);
 	BOOL ConnectNext( const SOCKADDR* lpSockAddr, int nSockAddrLen );
-	BOOL CreateNext(UINT nSocketPort, int nSocketType, long lEvent, LPCTSTR lpszSocketAddress, int nFamily = AF_INET, bool reusable = false);
+	bool CreateNext(UINT nSocketPort, int nSocketType, long lEvent, LPCTSTR lpszSocketAddress, int nFamily = AF_INET, bool reusable = false);
 	BOOL ListenNext( int nConnectionBacklog);
 	int ReceiveNext(void *lpBuf, int nBufLen, int nFlags = 0);
 	int SendNext(const void *lpBuf, int nBufLen, int nFlags = 0);

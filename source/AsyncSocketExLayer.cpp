@@ -541,71 +541,67 @@ void CAsyncSocketExLayer::CallEvent(int nEvent, int nErrorCode)
 }
 
 //Creates a socket
-BOOL CAsyncSocketExLayer::Create(UINT nSocketPort, int nSocketType,
+bool CAsyncSocketExLayer::Create(UINT nSocketPort, int nSocketType,
 			long lEvent, LPCTSTR lpszSocketAddress, int nFamily /*=AF_INET*/, bool reusable /*=false*/)
 {
 	return CreateNext(nSocketPort, nSocketType, lEvent, lpszSocketAddress, nFamily, reusable);
 }
 
-BOOL CAsyncSocketExLayer::CreateNext(UINT nSocketPort, int nSocketType, long lEvent, LPCTSTR lpszSocketAddress, int nFamily /*=AF_INET*/, bool reusable /*=false*/)
+bool CAsyncSocketExLayer::CreateNext(UINT nSocketPort, int nSocketType, long lEvent, LPCTSTR lpszSocketAddress, int nFamily /*=AF_INET*/, bool reusable /*=false*/)
 {
 	ASSERT(GetLayerState()==notsock);
-	BOOL res = FALSE;
+	bool res = false;
 
 	m_nFamily = nFamily;
 
-	if (m_pNextLayer)
+	if (m_pNextLayer) {
 		res = m_pNextLayer->Create(nSocketPort, nSocketType, lEvent, lpszSocketAddress, nFamily);
-	else if (m_nFamily == AF_UNSPEC)
-	{
+	}
+	else if (m_nFamily == AF_UNSPEC) {
 		m_lEvent = lEvent;
 		delete [] m_lpszSocketAddress;
-		if (lpszSocketAddress && *lpszSocketAddress)
-		{
+		if (lpszSocketAddress && *lpszSocketAddress) {
 			m_lpszSocketAddress = new TCHAR[_tcslen(lpszSocketAddress) + 1];
 			_tcscpy(m_lpszSocketAddress, lpszSocketAddress);
 		}
-		else
+		else {
 			m_lpszSocketAddress = 0;
+		}
 		m_nSocketPort = nSocketPort;
-		res = TRUE;
+		res = true;
 	}
-	else
-	{
+	else {
 		SOCKET hSocket = socket(nFamily, nSocketType, 0);
 		if (hSocket == INVALID_SOCKET) {
 			m_pOwnerSocket->Close();
-			return FALSE;
+			return false;
 		}
 		m_pOwnerSocket->AttachHandle(hSocket, nFamily);
 		if (!m_pOwnerSocket->AsyncSelect(lEvent)) {
 			m_pOwnerSocket->Close();
-			return FALSE;
+			return false;
 		}
-		if (m_pOwnerSocket->m_pFirstLayer)
-		{
-			if (WSAAsyncSelect(m_pOwnerSocket->m_SocketData.hSocket, m_pOwnerSocket->GetHelperWindowHandle(), m_pOwnerSocket->m_SocketData.nSocketIndex+WM_SOCKETEX_NOTIFY, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE) )
-			{
+		if (m_pOwnerSocket->m_pFirstLayer) {
+			if (WSAAsyncSelect(m_pOwnerSocket->m_SocketData.hSocket, m_pOwnerSocket->GetHelperWindowHandle(), m_pOwnerSocket->m_SocketData.nSocketIndex+WM_SOCKETEX_NOTIFY, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE) ) {
 				m_pOwnerSocket->Close();
-				return FALSE;
+				return false;
 			}
 		}
 
-		if (reusable && nSocketPort != 0)
-		{
+		if (reusable && nSocketPort != 0) {
 			BOOL value = TRUE;
 			m_pOwnerSocket->SetSockOpt(SO_REUSEADDR, reinterpret_cast<const void*>(&value), sizeof(value));
 		}
 
-		if (!m_pOwnerSocket->Bind(nSocketPort, lpszSocketAddress))
-		{
+		if (!m_pOwnerSocket->Bind(nSocketPort, lpszSocketAddress)) {
 			m_pOwnerSocket->Close();
-			return FALSE;
+			return false;
 		}
-		res = TRUE;
+		res = true;
 	}
-	if (res)
+	if (res) {
 		SetLayerState(unconnected);
+	}
 	return res;
 }
 

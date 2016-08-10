@@ -408,50 +408,53 @@ void CUsersDlg::OnUserrename()
 	OnUsermenuRename();
 }
 
-BOOL CUsersDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
+bool CUsersDlg::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 {
-	if (!pBuffer)
-		return FALSE;
+	if (!pBuffer) {
+		return false;
+	}
 
 	DWORD len = 3 * 2;
+	if (m_GroupsList.size() > 0xffffff || m_UsersList.size() > 0xffffff) {
+		return false;
+	}
 	for (auto const& group : m_GroupsList) {
 		len += group.GetRequiredBufferLen();
 	}
-
 	for (auto const& user : m_UsersList) {
 		len += user.GetRequiredBufferLen();
 	}
 
-	*pBuffer = new char[len];
-	char *p = *pBuffer;
+	*pBuffer = new unsigned char[len];
+	unsigned char *p = *pBuffer;
 
-	*p++ = (m_GroupsList.size() / 256) / 256;
+	*p++ = ((m_GroupsList.size() / 256) / 256) & 255;
 	*p++ = (m_GroupsList.size() / 256) % 256;
 	*p++ = m_GroupsList.size() % 256;
 	for (auto const& group : m_GroupsList) {
 		p = group.FillBuffer(p);
 		if (!p) {
 			delete[] * pBuffer;
-			*pBuffer = NULL;
-			return FALSE;
+			*pBuffer = 0;
+			return false;
 		}
 	}
 
-	*p++ = (m_UsersList.size() / 256) / 256;
+	*p++ = ((m_UsersList.size() / 256) / 256) & 255;
 	*p++ = (m_UsersList.size() / 256) % 256;
 	*p++ = m_UsersList.size() % 256;
 	for (auto const& user : m_UsersList) {
 		p = user.FillBuffer(p);
 		if (!p) {
 			delete[] * pBuffer;
-			*pBuffer = NULL;
-			return FALSE;
+			*pBuffer = 0;
+			return false;
 		}
 	}
 
 	*nBufferLength = len;
 
-	return TRUE;
+	return true;
 }
 
 BOOL CUsersDlg::Init(unsigned char *pData, DWORD dwDataLength)

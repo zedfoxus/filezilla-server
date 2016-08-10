@@ -115,7 +115,7 @@ public:
 	virtual ~CAsyncSocketEx();
 
 	//Creates a socket.
-	BOOL Create(UINT nSocketPort = 0, int nSocketType = SOCK_STREAM,
+	bool Create(UINT nSocketPort = 0, int nSocketType = SOCK_STREAM,
 				long lEvent = FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT |	FD_CONNECT | FD_CLOSE,
 				LPCTSTR lpszSocketAddress = NULL, int nFamily = AF_INET, bool reusable = false);
 
@@ -227,7 +227,7 @@ public:
 	bool SetNodelay(bool nodelay);
 
 	//Initializes Thread data and helper window, fills m_pLocalAsyncSocketExThreadData
-	BOOL InitAsyncSocketExInstance();
+	bool InitAsyncSocketExInstance();
 protected:
 	//Strucure to hold the socket data
 	struct t_AsyncSocketExData

@@ -95,46 +95,40 @@ int CSpeedLimit::GetRequiredBufferLen() const
 
 }
 
-char * CSpeedLimit::FillBuffer(char *p) const
+unsigned char * CSpeedLimit::FillBuffer(unsigned char *p) const
 {
 	*p++ = m_Speed >> 24;
 	*p++ = (m_Speed >> 16) % 256;
 	*p++ = (m_Speed >> 8) % 256;
 	*p++ = m_Speed % 256;
 
-	if (m_DateCheck)
-	{
+	if (m_DateCheck) {
 		*p++ = m_Date.y >> 8;
 		*p++ = m_Date.y % 256;
 		*p++ = m_Date.m;
 		*p++ = m_Date.d;
 	}
-	else
-	{
+	else {
 		memset(p, 0, 4);
 		p += 4;
 	}
 
-	if (m_FromCheck)
-	{
+	if (m_FromCheck) {
 		*p++ = m_FromTime.h;
 		*p++ = m_FromTime.m;
 		*p++ = m_FromTime.s;
 	}
-	else
-	{
+	else {
 		memset(p, 0, 3);
 		p += 3;
 	}
 
-	if (m_ToCheck)
-	{
+	if (m_ToCheck) {
 		*p++ = m_ToTime.h;
 		*p++ = m_ToTime.m;
 		*p++ = m_ToTime.s;
 	}
-	else
-	{
+	else {
 		memset(p, 0, 3);
 		p += 3;
 	}

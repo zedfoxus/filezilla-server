@@ -945,17 +945,21 @@ void CPermissions::SavePermissions(TiXmlElement *pXML, const t_group &user)
 	}
 }
 
-BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
+bool CPermissions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 {
 	// This function returns all account data as a command string which will be
 	// sent to the user interface.
-	if (!pBuffer || !nBufferLength)
-		return FALSE;
+	if (!pBuffer || !nBufferLength) {
+		return false;
+	}
 
 	simple_lock lock(m_mutex);
 
 	// First calculate the required buffer length
 	DWORD len = 3 * 2;
+	if (m_sGroupsList.size() > 0xffffff || m_sUsersList.size() > 0xffffff) {
+		return false;
+	}
 	for (auto const& group : m_sGroupsList) {
 		len += group.GetRequiredBufferLen();
 	}
@@ -964,11 +968,11 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	}
 
 	// Allocate memory
-	*pBuffer = new char[len];
-	char* p  = *pBuffer;
+	*pBuffer = new unsigned char[len];
+	unsigned char* p  = *pBuffer;
 
 	// Write groups to buffer
-	*p++ = (m_sGroupsList.size() / 256) / 256;
+	*p++ = ((m_sGroupsList.size() / 256) / 256) & 255;
 	*p++ = (m_sGroupsList.size() / 256) % 256;
 	*p++ = m_sGroupsList.size() % 256;
 	for (auto const& group : m_sGroupsList) {
@@ -981,7 +985,7 @@ BOOL CPermissions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	}
 
 	// Write users to buffer
-	*p++ = (m_sUsersList.size() / 256) / 256;
+	*p++ = ((m_sUsersList.size() / 256) / 256) & 255;
 	*p++ = (m_sUsersList.size() / 256) % 256;
 	*p++ = m_sUsersList.size() % 256;
 	for (auto const& iter : m_sUsersList ) {

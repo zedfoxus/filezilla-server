@@ -44,7 +44,7 @@ public:
 	COptionsDlg(COptions *pInterfaceOptions, bool localConnection);
 	virtual ~COptionsDlg();
 	BOOL Init(unsigned char *pData, DWORD dwDataLength);
-	BOOL GetAsCommand(char **pBuffer, DWORD *nBufferLength);
+	bool GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength);
 	COptions *m_pInterfaceOptions;
 
 	bool IsLocalConnection() const { return m_localConnection; }

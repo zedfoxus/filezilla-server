@@ -253,7 +253,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				auto utf8 = ConvToNetwork(pData->ip);
 				len = 2 + 4 + 2 + utf8.size() + 4;
 				buffer = new unsigned char[len];
-				buffer[2 + 4] = utf8.size() / 256;
+				buffer[2 + 4] = (utf8.size() / 256) & 0xff;
 				buffer[2 + 4 + 1] = utf8.size() % 256;
 				memcpy(buffer + 2 + 4 + 2, utf8.c_str(), utf8.size());
 				memcpy(buffer + 2 + 4 + 2 + utf8.size(), &pData->port, 4);
@@ -269,7 +269,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				auto utf8 = ConvToNetwork(pData->user);
 				len = 2 + 4 + 2 + utf8.size();
 				buffer = new unsigned char[len];
-				buffer[2 + 4] = utf8.size() / 256;
+				buffer[2 + 4] = (utf8.size() / 256) & 0xff;
 				buffer[2 + 4 + 1] = utf8.size() % 256;
 				memcpy(buffer + 2 + 4 + 2, utf8.c_str(), utf8.size());
 
@@ -296,8 +296,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				data.currentOffset = pData->startOffset;
 				data.totalSize = pData->totalSize;
 
-				if (data.transferMode)
-				{
+				if (data.transferMode) {
 					auto physicalFile = ConvToNetwork(pData->physicalFile);
 					auto logicalFile = ConvToNetwork(pData->logicalFile);
 					len = 2 + 4 + 1 + 2 + physicalFile.size() + 2 + logicalFile.size();
@@ -317,12 +316,12 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 						*p |= 0x40;
 					p++;
 
-					*p++ = physicalFile.size() / 256;
+					*p++ = (physicalFile.size() / 256) & 0xff;
 					*p++ = physicalFile.size() % 256;
 					memcpy(p, physicalFile.c_str(), physicalFile.size());
 					p += physicalFile.size();
 
-					*p++ = logicalFile.size() / 256;
+					*p++ = (logicalFile.size() / 256) & 0xff;
 					*p++ = logicalFile.size() % 256;
 					memcpy(p, logicalFile.c_str(), logicalFile.size());
 					p += logicalFile.size();
@@ -493,18 +492,18 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length") + 1);
 		break;
 	case 3:
-		if (!nDataLength)
+		if (!nDataLength) {
 			pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length") + 1);
+		}
 		else if (*pData == USERCONTROL_GETLIST) {
-			int len = 3;
+			int len = 4;
 			std::map<int, t_connectiondata>::iterator iter;
 			for (iter = m_UsersList.begin(); iter != m_UsersList.end(); ++iter) {
 				const t_connectiondata& data = iter->second;
 				auto ip = ConvToNetwork(data.ip);
 				auto user = ConvToNetwork(data.user);
 				len += 4 + ip.size() + 2 + 4 + user.size() + 2 + 1;
-				if (data.transferMode)
-				{
+				if (data.transferMode) {
 					auto physicalFile = ConvToNetwork(data.physicalFile);
 					auto logicalFile = ConvToNetwork(data.logicalFile);
 					len += 2 + physicalFile.size() + 2 + logicalFile.size();
@@ -517,17 +516,18 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			}
 			unsigned char *buffer = new unsigned char[len];
 			buffer[0] = USERCONTROL_GETLIST;
-			buffer[1] = m_UsersList.size() / 256;
-			buffer[2] = m_UsersList.size() % 256;
-			unsigned char *p = buffer + 3;
+			buffer[1] = ((m_UsersList.size() / 256) / 256) & 0xff;
+			buffer[2] = (m_UsersList.size() / 256) & 0xff;
+			buffer[3] = m_UsersList.size() % 256;
+			unsigned char *p = buffer + 4;
 			for (iter = m_UsersList.begin(); iter != m_UsersList.end(); ++iter) {
 				const t_connectiondata& data = iter->second;
 				auto ip = ConvToNetwork(data.ip);
 				auto user = ConvToNetwork(data.user);
 
 				memcpy(p, &data.userid, 4);
-				p+=4;
-				*p++ = ip.size() / 256;
+				p += 4;
+				*p++ = (ip.size() / 256) & 0xff;
 				*p++ = ip.size() % 256;
 				memcpy(p, ip.c_str(), ip.size());
 				p += ip.size();
@@ -535,7 +535,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				memcpy(p, &data.port, 4);
 				p += 4;
 
-				*p++ = user.size() / 256;
+				*p++ = (user.size() / 256) & 0xff;
 				*p++ = user.size() % 256;
 				memcpy(p, user.c_str(), user.size());
 				p += user.size();
@@ -543,20 +543,22 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				*p = data.transferMode;
 				if (data.transferMode) {
 					// Bit 5 and 6 indicate presence of currentOffset and totalSize.
-					if (data.currentOffset != 0)
+					if (data.currentOffset != 0) {
 						*p |= 0x20;
-					if (data.totalSize != -1)
+					}
+					if (data.totalSize != -1) {
 						*p |= 0x40;
+					}
 					p++;
 
 					auto physicalFile = ConvToNetwork(data.physicalFile);
-					*p++ = physicalFile.size() / 256;
+					*p++ = (physicalFile.size() / 256) & 0xff;
 					*p++ = physicalFile.size() % 256;
 					memcpy(p, physicalFile.c_str(), physicalFile.size());
 					p += physicalFile.size();
 
 					auto logicalFile = ConvToNetwork(data.logicalFile);
-					*p++ = logicalFile.size() / 256;
+					*p++ = (logicalFile.size() / 256) & 0xff;
 					*p++ = logicalFile.size() % 256;
 					memcpy(p, logicalFile.c_str(), logicalFile.size());
 					p += logicalFile.size();
@@ -570,8 +572,9 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 						p += 8;
 					}
 				}
-				else
+				else {
 					p++;
+				}
 			}
 			m_pAdminInterface->SendCommand(1, 3, buffer, len);
 			delete [] buffer;
@@ -630,7 +633,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 		break;
 	case 5:
 		if (!nDataLength) {
-			char *pBuffer = NULL;
+			unsigned char *pBuffer = NULL;
 			DWORD nBufferLength = 0;
 			if (m_pOptions && m_pOptions->GetAsCommand(&pBuffer, &nBufferLength)) {
 				pAdminSocket->SendCommand(1, 5, pBuffer, nBufferLength);
@@ -735,7 +738,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 		break;
 	case 6:
 		if (!nDataLength) {
-			char *pBuffer = NULL;
+			unsigned char *pBuffer = NULL;
 			DWORD nBufferLength = 0;
 			CPermissions permissions = CPermissions(std::function<void()>());
 			permissions.GetAsCommand(&pBuffer, &nBufferLength);
@@ -1198,7 +1201,7 @@ void CServer::VerifyPassiveModeSettings(CAdminSocket *pAdminSocket)
 {
 	bool nat = IsBehindIPv4Nat();
 	bool listensIPv4 = false;
-	int passiveIPType = m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE);
+	auto passiveIPType = m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE);
 
 	for (auto const& s : m_ListenSocketList) {
 		auto family = s->GetFamily();

@@ -34,7 +34,7 @@ public:
 	bool IsItActive(const SYSTEMTIME &time) const;
 
 	int GetRequiredBufferLen() const;
-	char * FillBuffer(char *p) const;
+	unsigned char * FillBuffer(unsigned char *p) const;
 	unsigned char * ParseBuffer(unsigned char *pBuffer, int length);
 
 	BOOL m_DateCheck{};

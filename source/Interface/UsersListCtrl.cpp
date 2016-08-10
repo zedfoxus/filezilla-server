@@ -511,29 +511,29 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 	switch (type)
 	{
 	case USERCONTROL_GETLIST:
-		if (dwDataLength < 3)
+		if (dwDataLength < 4) {
 			return FALSE;
-		else
-		{
-			for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); ++iter)
+		}
+		else {
+			for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); ++iter) {
 				delete *iter;
+			}
 
 			m_connectionDataMap.clear();
 			m_connectionDataArray.clear();
 
-			int num = pData[1] * 256 + pData[2];
-			unsigned int pos = 3;
-			for (int i = 0; i < num; i++)
-			{
-				if ((pos + 6) > dwDataLength)
+			int num = pData[1] * 256 * 256 + pData[1] * 256 + pData[2];
+			unsigned int pos = 4;
+			for (int i = 0; i < num; ++i) {
+				if ((pos + 6) > dwDataLength) {
 					return FALSE;
+				}
 				CConnectionData* pConnectionData = new CConnectionData;;
 				memcpy(&pConnectionData->userid, pData+pos, 4);
 				pos += 4;
 				int len = pData[pos] * 256 + pData[pos+1];
-				pos+=2;
-				if (pos+len > dwDataLength)
-				{
+				pos += 2;
+				if (pos+len > dwDataLength) {
 					delete pConnectionData;
 					return FALSE;
 				}
@@ -545,19 +545,17 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 				pConnectionData->columnText[COLUMN_IP] = ConvFromNetwork(ip);
 				delete [] ip;
 
-				if ((pos+6) > dwDataLength)
-				{
+				if ((pos+6) > dwDataLength) {
 					delete pConnectionData;
 					return FALSE;
 				}
 				memcpy(&pConnectionData->port, pData+pos, 4);
 
-				pos+=4;
+				pos += 4;
 
 				len = pData[pos] * 256 + pData[pos+1];
-				pos+=2;
-				if ((pos + len + 1) > dwDataLength)
-				{
+				pos += 2;
+				if ((pos + len + 1) > dwDataLength) {
 					delete pConnectionData;
 					return FALSE;
 				}
@@ -571,18 +569,15 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 
 				pConnectionData->transferMode = pData[pos++];
 
-				if (pConnectionData->transferMode)
-				{
-					if ((pos + 2) > dwDataLength)
-					{
+				if (pConnectionData->transferMode) {
+					if ((pos + 2) > dwDataLength) {
 						delete pConnectionData;
 						return FALSE;
 					}
 					len = pData[pos] * 256 + pData[pos+1];
 					pos += 2;
 
-					if ((pos+len) > dwDataLength)
-					{
+					if ((pos+len) > dwDataLength) {
 						delete pConnectionData;
 						return FALSE;
 					}
@@ -594,8 +589,7 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 					pConnectionData->physicalFile = ConvFromNetwork(physicalFile);
 					delete [] physicalFile;
 
-					if ((pos + 2) > dwDataLength)
-					{
+					if ((pos + 2) > dwDataLength) {
 						delete pConnectionData;
 						return FALSE;
 					}
@@ -603,8 +597,7 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 					pos += 2;
 
 
-					if ((pos+len) > dwDataLength)
-					{
+					if ((pos+len) > dwDataLength) {
 						delete pConnectionData;
 						return FALSE;
 					}
@@ -616,27 +609,26 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 					pConnectionData->logicalFile = ConvFromNetwork(logicalFile);
 					delete [] logicalFile;
 
-					if (pConnectionData->transferMode & 0x20)
-					{
+					if (pConnectionData->transferMode & 0x20) {
 						memcpy(&pConnectionData->currentOffset, pData + pos, 8);
 						pos += 8;
 					}
-					else
+					else {
 						pConnectionData->currentOffset = 0;
+					}
 
-					if (pConnectionData->transferMode & 0x40)
-					{
+					if (pConnectionData->transferMode & 0x40) {
 						memcpy(&pConnectionData->totalSize, pData + pos, 8);
 						pos += 8;
 					}
-					else
+					else {
 						pConnectionData->totalSize = -1;
+					}
 
 					// Filter out indicator bits
 					pConnectionData->transferMode &= 0x9F;
 				}
-				else
-				{
+				else {
 					pConnectionData->currentOffset = 0;
 					pConnectionData->totalSize = -1;
 				}
@@ -646,11 +638,12 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 				pConnectionData->listIndex = m_connectionDataArray.size();
 				m_connectionDataArray.push_back(pConnectionData);
 
-				if (pConnectionData->columnText[COLUMN_USER] == _T(""))
+				if (pConnectionData->columnText[COLUMN_USER] == _T("")) {
 					pConnectionData->columnText[COLUMN_USER] = _T("(not logged in)");
-				else
+				}
+				else {
 					pConnectionData->itemImages[COLUMN_ID] = 4;
-
+				}
 
 				pConnectionData->itemImages[COLUMN_TRANSFERINIT] = pConnectionData->transferMode;
 				pConnectionData->columnText[COLUMN_TRANSFERINIT] = m_showPhysical ? pConnectionData->physicalFile : pConnectionData->logicalFile;

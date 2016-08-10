@@ -236,11 +236,11 @@ bool COptionsDlg::IsNumeric(LPCTSTR str)
 	LPCTSTR p=str;
 	while(*p)
 	{
-		if (*p<'0' || *p>'9')
-		{
-			return false;
-		}
-		p++;
+	if (*p<'0' || *p>'9')
+	{
+		return false;
+	}
+	p++;
 	}
 	return true;
 }
@@ -259,15 +259,15 @@ BOOL COptionsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 		return FALSE;
 
 	for (int i = 0; i < num; ++i) {
-		if (static_cast<DWORD>(p-pData) >= dwDataLength)
+		if (static_cast<DWORD>(p - pData) >= dwDataLength)
 			return FALSE;
 		int nType = *p++;
 		if (!nType) {
-			if (static_cast<DWORD>(p-pData+3) >= dwDataLength)
+			if (static_cast<DWORD>(p - pData + 3) >= dwDataLength)
 				return 2;
-			int len= *p * 256 * 256 + p[1] * 256 + p[2];
-			p+=3;
-			if (static_cast<DWORD>(p-pData+len)>dwDataLength)
+			int len = *p * 256 * 256 + p[1] * 256 + p[2];
+			p += 3;
+			if (static_cast<DWORD>(p - pData + len) > dwDataLength)
 				return FALSE;
 			m_OptionsCache[i].nType = 0;
 
@@ -277,10 +277,10 @@ BOOL COptionsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 			m_OptionsCache[i].str = ConvFromNetwork(tmp);
 			p += len;
 
-			delete [] tmp;
+			delete[] tmp;
 		}
 		else if (nType == 1) {
-			if (static_cast<DWORD>(p-pData+8)>dwDataLength)
+			if (static_cast<DWORD>(p - pData + 8) > dwDataLength)
 				return FALSE;
 			m_OptionsCache[i].nType = 1;
 			memcpy(&m_OptionsCache[i].value, p, 8);
@@ -318,7 +318,7 @@ BOOL COptionsDlg::Init(unsigned char *pData, DWORD dwDataLength)
 	return TRUE;
 }
 
-BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
+bool COptionsDlg::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 {
 	DWORD len = 2;
 	int i;
@@ -327,7 +327,7 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 		if (!m_Options[i].nType) {
 			int strlen = ConvToNetwork(GetOption(i + 1)).size();
 			if (strlen > 0xFFFFFF)
-				return FALSE;
+				return false;
 			len += strlen;
 			len += 3;
 		}
@@ -335,6 +335,9 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 			len += 8;
 	}
 	len += 4; //Number of rules
+	if (m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.size() > 0xffff || m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.size() > 0xffff) {
+		return false;
+	}
 	for (auto const& limit : m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits) {
 		len += limit.GetRequiredBufferLen();
 	}
@@ -342,20 +345,19 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 		len += limit.GetRequiredBufferLen();
 	}
 
-	*pBuffer = new char[len];
-	char *p = *pBuffer;
+	*pBuffer = new unsigned char[len];
+	unsigned char *p = *pBuffer;
 	*p++ = OPTIONS_NUM / 256;
 	*p++ = OPTIONS_NUM % 256;
-	for (i = 0; i < OPTIONS_NUM; ++i)
-	{
+	for (i = 0; i < OPTIONS_NUM; ++i) {
 		*p++ = m_Options[i].nType;
 		switch (m_Options[i].nType) {
 		case 0:
 			{
 				auto utf8 = ConvToNetwork(GetOption(i + 1));
 				int slen = utf8.size();
-				*p++ = (slen / 256) / 256;
-				*p++ = slen / 256;
+				*p++ = ((slen / 256) / 256) & 0xffu;
+				*p++ = (slen / 256) & 0xffu;
 				*p++ = slen % 256;
 				memcpy(p, utf8.c_str(), slen);
 				p += slen;
@@ -369,17 +371,17 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 			}
 			break;
 		default:
-			ASSERT(FALSE);
+			return false;
 		}
 	}
 
-	*p++ = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.size() >> 8;
+	*p++ = (m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.size() >> 8) & 0xffu;
 	*p++ = m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits.size() % 256;
 	for (auto const& limit : m_pOptionsSpeedLimitPage->m_DownloadSpeedLimits) {
 		p = limit.FillBuffer(p);
 	}
 
-	*p++ = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.size() >> 8;
+	*p++ = (m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.size() >> 8) & 0xffu;
 	*p++ = m_pOptionsSpeedLimitPage->m_UploadSpeedLimits.size() % 256;
 	for (auto const& limit : m_pOptionsSpeedLimitPage->m_UploadSpeedLimits) {
 		p = limit.FillBuffer(p);
@@ -387,5 +389,5 @@ BOOL COptionsDlg::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 
 	*nBufferLength = len;
 
-	return TRUE;
+	return true;
 }

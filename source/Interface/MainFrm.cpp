@@ -1139,33 +1139,29 @@ BOOL CMainFrame::OnEraseBkgnd(CDC* pDC)
 
 LRESULT CMainFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	if (message == WM_APP)
-	{
-		if ((m_nEdit & 0x1C) == 0x0C)
-		{
+	if (message == WM_APP) {
+		if ((m_nEdit & 0x1C) == 0x0C) {
 			m_nEdit |= 0x10;
-			if (m_pOptionsDlg->Show())
-			{
-				char *pBuffer;
+			if (m_pOptionsDlg->Show()) {
+				unsigned char *pBuffer{};
 				DWORD dwBufferLength;
-				if (m_pOptionsDlg->GetAsCommand(&pBuffer, &dwBufferLength))
-				{
+				if (m_pOptionsDlg->GetAsCommand(&pBuffer, &dwBufferLength)) {
 					SendCommand(5, pBuffer, dwBufferLength);
 					ShowStatus(_T("Sending settings, please wait..."), 0);
 					delete [] pBuffer;
 				}
-				else
+				else {
 					ShowStatus(_T("Could not serialize settings, too much data."), 1);
+				}
 			}
 			delete m_pOptionsDlg;
 			m_pOptionsDlg = 0;
 			m_nEdit = 0;
 		}
-		else if ((m_nEdit & 0x19) == 0x09)
-		{
+		else if ((m_nEdit & 0x19) == 0x09) {
 			m_nEdit |= 0x10;
 			if (m_pUsersDlg->DoModal() == IDOK) {
-				char *pBuffer;
+				unsigned char *pBuffer{};
 				DWORD dwBufferLength;
 				if (m_pUsersDlg->GetAsCommand(&pBuffer, &dwBufferLength)) {
 					SendCommand(6, pBuffer, dwBufferLength);
@@ -1177,11 +1173,10 @@ LRESULT CMainFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 			m_pUsersDlg = 0;
 			m_nEdit = 0;
 		}
-		else if ((m_nEdit & 0x1A) == 0x0A)
-		{
+		else if ((m_nEdit & 0x1A) == 0x0A) {
 			m_nEdit |= 0x10;
 			if (m_pGroupsDlg->DoModal() == IDOK) {
-				char *pBuffer;
+				unsigned char *pBuffer;
 				DWORD dwBufferLength;
 				if (m_pGroupsDlg->GetAsCommand(&pBuffer, &dwBufferLength)) {
 					SendCommand(6, pBuffer, dwBufferLength);

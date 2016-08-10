@@ -841,7 +841,7 @@ BOOL COptions::FreeXML(TiXmlElement *pXML, bool save)
 	return ret;
 }
 
-BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
+bool COptions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 {
 	int i;
 	DWORD len = 2;
@@ -866,29 +866,35 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	}
 
 	len += 4;
-	SPEEDLIMITSLIST::const_iterator iter;
-	for (i = 0; i < 2; i++)
-		for (iter = m_sSpeedLimits[i].begin(); iter != m_sSpeedLimits[i].end(); iter++)
-			len += iter->GetRequiredBufferLen();
+	for (i = 0; i < 2; ++i) {
+		if (m_sSpeedLimits[i].size() > 0xffff) {
+			return false;
+		}
+		for (auto const& limit : m_sSpeedLimits[i]) {
+			len += limit.GetRequiredBufferLen();
+		}
+	}
 
-	*pBuffer=new char[len];
-	char *p=*pBuffer;
+	*pBuffer = new unsigned char[len];
+	unsigned char *p = *pBuffer;
 	*p++ = OPTIONS_NUM / 256;
 	*p++ = OPTIONS_NUM % 256;
-	for (i=0; i<OPTIONS_NUM; ++i) {
+	for (i = 0; i < OPTIONS_NUM; ++i) {
 		*p++ = m_Options[i].nType;
-		switch(m_Options[i].nType) {
+		switch (m_Options[i].nType) {
 		case 0:
 			{
 				CStdString str = GetOption(i+1);
-				if ((i+1)==OPTION_ADMINPASS) //Do NOT send admin password,
+				if ((i+1) == OPTION_ADMINPASS) //Do NOT send admin password,
 											 //instead send empty string if admin pass is set
 											 //and send a single char if admin pass is invalid (len < 6)
 				{
-					if (str.GetLength() >= 6 || str == _T(""))
+					if (str.GetLength() >= 6 || str == _T("")) {
 						str = _T("");
-					else
+					}
+					else {
 						str = _T("*");
+					}
 				}
 
 				auto utf8 = ConvToNetwork(str);
@@ -914,10 +920,11 @@ BOOL COptions::GetAsCommand(char **pBuffer, DWORD *nBufferLength)
 	}
 
 	for (i = 0; i < 2; ++i) {
-		*p++ = m_sSpeedLimits[i].size() >> 8;
+		*p++ = (m_sSpeedLimits[i].size() >> 8) & 0xffu;
 		*p++ = m_sSpeedLimits[i].size() % 256;
-		for (iter = m_sSpeedLimits[i].begin(); iter != m_sSpeedLimits[i].end(); iter++)
-			p = iter->FillBuffer(p);
+		for (auto const& limit : m_sSpeedLimits[i]) {
+			p = limit.FillBuffer(p);
+		}
 	}
 
 	*nBufferLength = len;

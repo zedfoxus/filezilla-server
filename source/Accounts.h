@@ -33,8 +33,8 @@ public:
 
 	virtual int GetRequiredBufferLen() const;
 	virtual int GetRequiredStringBufferLen(const CStdString& str) const;
-	virtual char * FillBuffer(char *p) const;
-	virtual void FillString(char *&p, const CStdString& str) const;
+	virtual unsigned char * FillBuffer(unsigned char *p) const;
+	virtual void FillString(unsigned char *&p, CStdString const& str) const;
 	virtual unsigned char * ParseBuffer(unsigned char *pBuffer, int length);
 
 	virtual bool BypassUserLimit() const;
@@ -78,7 +78,7 @@ public:
 	t_user();
 
 	virtual int GetRequiredBufferLen() const;
-	virtual char * FillBuffer(char *p) const;
+	virtual unsigned char * FillBuffer(unsigned char *p) const;
 	virtual unsigned char * ParseBuffer(unsigned char *pBuffer, int length);
 	void generateSalt(); // Generates a new random salt of length 64, using all printable ASCII characters.
 

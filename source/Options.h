@@ -35,7 +35,7 @@ class COptions final
 	friend COptionsHelperWindow;
 
 public:
-	BOOL GetAsCommand(char **pBuffer, DWORD *nBufferLength);
+	bool GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength);
 	CStdString GetOption(int nOptionID);
 	_int64 GetOptionVal(int nOptionID);
 

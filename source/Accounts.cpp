@@ -206,19 +206,19 @@ int t_group::GetRequiredStringBufferLen(const CStdString& str) const
 	return utf8.size() + 2;
 }
 
-void t_group::FillString(char *& p, const CStdString& str) const
+void t_group::FillString(unsigned char *& p, CStdString const& str) const
 {
 	auto utf8 = ConvToNetwork(str);
 
-	int len = utf8.size();
-	*p++ = (char)(len >> 8);
-	*p++ = (char)(len & 0xff);
+	size_t len = utf8.size();
+	*p++ = (len >> 8) & 0xffu;
+	*p++ = len & 0xffu;
 
 	memcpy(p, utf8.c_str(), len);
 	p += len;
 }
 
-char * t_group::FillBuffer(char *p) const
+unsigned char * t_group::FillBuffer(unsigned char *p) const
 {
 	FillString(p, group);
 
@@ -445,11 +445,12 @@ unsigned char * t_user::ParseBuffer(unsigned char *pBuffer, int length)
 	return p;
 }
 
-char * t_user::FillBuffer(char *p) const
+unsigned char * t_user::FillBuffer(unsigned char *p) const
 {
 	p = t_group::FillBuffer(p);
-	if (!p)
+	if (!p) {
 		return NULL;
+	}
 
 	FillString(p, user);
 	FillString(p, password);

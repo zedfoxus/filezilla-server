@@ -144,7 +144,7 @@ public:
 	CUser GetUser(CStdString const& username) const;
 	bool CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswordCheck = FALSE);
 
-	BOOL GetAsCommand(char **pBuffer, DWORD *nBufferLength);
+	bool GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength);
 	BOOL ParseUsersCommand(unsigned char *pData, DWORD dwDataLength);
 	void AutoCreateDirs(CUser const& user);
 	void ReloadConfig();

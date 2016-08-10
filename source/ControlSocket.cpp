@@ -188,7 +188,7 @@ bool CControlSocket::GetCommand(CStdString &command, CStdString &args)
 		}
 		else {
 			CStdString msg = str2;
-			for (int i = 5; i < msg.size(); ++i) {
+			for (size_t i = 5; i < msg.size(); ++i) {
 				msg[i] = '*';
 			}
 			SendStatus(msg, 2);
@@ -1482,7 +1482,7 @@ void CControlSocket::ParseCommand()
 					break;
 				}
 
-				m_pSslLayer = new CAsyncSslSocketLayer(m_owner.m_pOptions->GetOptionVal(OPTION_TLS_MINVERSION));
+				m_pSslLayer = new CAsyncSslSocketLayer(static_cast<int>(m_owner.m_pOptions->GetOptionVal(OPTION_TLS_MINVERSION)));
 				BOOL res = AddLayer(m_pSslLayer);
 
 				if (res) {
@@ -2564,7 +2564,7 @@ int CControlSocket::OnLayerCallback(std::list<t_callbackMsg> const& callbacks)
 
 bool CControlSocket::InitImplicitSsl()
 {
-	m_pSslLayer = new CAsyncSslSocketLayer(m_owner.m_pOptions->GetOptionVal(OPTION_TLS_MINVERSION));
+	m_pSslLayer = new CAsyncSslSocketLayer(static_cast<int>(m_owner.m_pOptions->GetOptionVal(OPTION_TLS_MINVERSION)));
 	int res = AddLayer(m_pSslLayer) ? 1 : 0;
 	if (!res) {
 		delete m_pSslLayer;

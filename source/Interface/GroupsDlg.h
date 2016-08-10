@@ -40,7 +40,7 @@ class CGroupsDlg : public CSAPrefsDialog
 public:
 	CGroupsDlg(CWnd* pParent, bool localConnection);
 	~CGroupsDlg();
-	BOOL GetAsCommand(char **pBuffer, DWORD *nBufferLength);
+	bool GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength);
 	BOOL Init(unsigned char *pData, DWORD dwDataLength);
 	t_group* GetCurrentGroup();
 	bool IsLocalConnection() const { return m_localConnection; }

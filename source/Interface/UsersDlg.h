@@ -41,7 +41,7 @@ class CUsersDlg : public CSAPrefsDialog
 public:
 	CUsersDlg(CWnd* pParent, bool localConnection);   // Standardkonstruktor
 	~CUsersDlg();
-	BOOL GetAsCommand(char **pBuffer, DWORD *nBufferLength);
+	bool GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength);
 	BOOL Init(unsigned char *pData, DWORD dwDataLength);
 	t_user* GetCurrentUser();
 	bool IsLocalConnection() const { return m_localConnection; }
