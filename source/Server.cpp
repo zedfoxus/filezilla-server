@@ -1090,7 +1090,7 @@ bool CServer::CreateListenSocket(CStdString ports, bool ssl)
 			else
 				family = AF_INET;
 
-			if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, ip, family) || !pListenSocket->Listen(16)) {
+			if (!pListenSocket->Create(nPort, SOCK_STREAM, FD_ACCEPT, ip, family) || !pListenSocket->Listen(32)) {
 				delete pListenSocket;
 				bError = true;
 				str += _T(" ") + ip;
