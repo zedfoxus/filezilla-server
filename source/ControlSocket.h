@@ -61,12 +61,12 @@ public:
 	CTransferSocket* GetTransferSocket();
 	void ProcessTransferMsg();
 	void ParseCommand();
-	t_command MapCommand(CStdString const& command, CStdString const& args);
+	t_command const& MapCommand(CStdString const& command, CStdString const& args);
 	int m_userid{};
 	BOOL Send(LPCTSTR str, bool sendStatus = true, bool newline = true);
 	void SendStatus(LPCTSTR status,int type);
 	CStdString PrepareSend(CStdString const& str, bool sendStatus = true);
-	BOOL GetCommand(CStdString &command, CStdString &args);
+	bool GetCommand(CStdString &command, CStdString &args);
 	bool InitImplicitSsl();
 
 	virtual void OnReceive(int nErrorCode);

@@ -168,12 +168,13 @@ void CControlSocket::OnReceive(int nErrorCode)
 	delete [] buffer;
 }
 
-BOOL CControlSocket::GetCommand(CStdString &command, CStdString &args)
+bool CControlSocket::GetCommand(CStdString &command, CStdString &args)
 {
 	//Get first command from input buffer
 	CStdStringA str;
-	if (m_RecvLineBuffer.empty())
-		return FALSE;
+	if (m_RecvLineBuffer.empty()) {
+		return false;
+	}
 	str = m_RecvLineBuffer.front();
 	m_RecvLineBuffer.pop_front();
 
@@ -181,46 +182,46 @@ BOOL CControlSocket::GetCommand(CStdString &command, CStdString &args)
 	CStdString str2 = ConvFromNetwork(str);
 
 	//Hide passwords if the server admin wants to.
-	if (!str2.Left(5).CompareNoCase(_T("PASS ")))
-	{	if (m_owner.m_pOptions->GetOptionVal(OPTION_LOGSHOWPASS))
+	if (!str2.Left(5).CompareNoCase(_T("PASS "))) {
+		if (m_owner.m_pOptions->GetOptionVal(OPTION_LOGSHOWPASS)) {
 			SendStatus(str2, 2);
-		else
-		{
+		}
+		else {
 			CStdString msg = str2;
-			for (int i = 5; i < msg.GetLength(); i++)
+			for (int i = 5; i < msg.size(); ++i) {
 				msg[i] = '*';
+			}
 			SendStatus(msg, 2);
 		}
 	}
-	else
+	else {
 		SendStatus(str2, 2);
+	}
 
-	//Split command and arguments
+	// Split command and arguments
 	int pos = str2.Find(_T(" "));
-	if (pos != -1)
-	{
+	if (pos != -1) {
 		command = str2.Left(pos);
-		if (pos == str2.GetLength() - 1)
-			args = _T("");
-		else
-		{
+		if (pos == str2.GetLength() - 1) {
+			args.clear();
+		}
+		else {
 			args = str2.Mid(pos + 1);
-			if (args == _T(""))
-			{
+			if (args.empty()) {
 				Send(_T("501 Syntax error, failed to decode string"));
-				return FALSE;
+				return false;
 			}
 		}
 	}
-	else
-	{
-		args = _T("");
+	else {
+		args.clear();
 		command = str2;
 	}
-	if (command == _T(""))
-		return FALSE;
+	if (command.empty()) {
+		return false;
+	}
 	command.MakeUpper();
-	return TRUE;
+	return true;
 }
 
 void CControlSocket::SendStatus(LPCTSTR status, int type)
@@ -395,13 +396,13 @@ enum class commands {
 	MLST,
 	MLSD,
 	SITE,
-	PASVSMC, // some bugged SMC routers convert incoming PASV into P@SW
 	STRU,
 	CLNT,
 	MFMT,
 	HASH
 };
 
+t_command const invalid_command = {commands::invalid, false, false};
 std::map<CStdString, t_command> const command_map = {
 	{_T("USER"), {commands::USER, true,  true}},
 	{_T("PASS"), {commands::PASS, false, true}},
@@ -448,17 +449,14 @@ std::map<CStdString, t_command> const command_map = {
 	{_T("MLST"), {commands::MLST, false, false}},
 	{_T("MLSD"), {commands::MLSD, false, false}},
 	{_T("SITE"), {commands::SITE, true,  true}},
-	{_T("P@SW"), {commands::PASVSMC, false, false}},
 	{_T("STRU"), {commands::STRU, true, false}},
 	{_T("CLNT"), {commands::CLNT, true, true}},
 	{_T("MFMT"), {commands::MFMT, true, false}},
 	{_T("HASH"), {commands::HASH, true, false}}
 };
 
-t_command CControlSocket::MapCommand(CStdString const& command, CStdString const& args)
+t_command const& CControlSocket::MapCommand(CStdString const& command, CStdString const& args)
 {
-	t_command ret = {commands::invalid, false, false};
-
 	auto const& it = command_map.find(command);
 	if( it != command_map.end() ) {
 		//Does the command needs an argument?
@@ -477,17 +475,18 @@ t_command CControlSocket::MapCommand(CStdString const& command, CStdString const
 		}
 		else {
 			// Valid command!
-			ret = it->second;
+			return it->second;
 		}
 	}
 	else {
 		//Command not recognized
 		Send(_T("500 Syntax error, command unrecognized."));
-		if (!m_RecvLineBuffer.empty())
+		if (!m_RecvLineBuffer.empty()) {
 			m_owner.PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_COMMAND, m_userid);
+		}
 	}
 
-	return ret;
+	return invalid_command;
 }
 
 void CControlSocket::ParseCommand()
@@ -501,7 +500,7 @@ void CControlSocket::ParseCommand()
 	if (!GetCommand(command, args))
 		return;
 
-	t_command cmd = MapCommand(command, args);
+	t_command const& cmd = MapCommand(command, args);
 	if (cmd.id == commands::invalid) {
 		return;
 	}
@@ -694,7 +693,6 @@ void CControlSocket::ParseCommand()
 			break;
 		}
 	case commands::PASV:
-	case commands::PASVSMC:
 		{
 			if (GetFamily() != AF_INET) {
 				Send(_T("500 You are connected using IPv6. PASV is only for IPv4. You have to use the EPSV command instead."));
@@ -722,10 +720,7 @@ void CControlSocket::ParseCommand()
 				pasvIP.Replace(_T("."), _T(","));
 				//Put the answer together
 				CStdString str;
-				if (cmd.id == commands::PASVSMC)
-					str.Format(_T("227 Warning: Router with P@SW bug detected. Entering Passive Mode (%s,%d,%d)"), pasvIP, port / 256, port % 256);
-				else
-					str.Format(_T("227 Entering Passive Mode (%s,%d,%d)"), pasvIP, port / 256, port % 256);
+				str.Format(_T("227 Entering Passive Mode (%s,%d,%d)"), pasvIP, port / 256, port % 256);
 				Send(str);
 			}
 			else {
