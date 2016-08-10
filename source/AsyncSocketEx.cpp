@@ -90,47 +90,47 @@ public:
 		//Initialize data
 		m_pAsyncSocketExWindowData = new t_AsyncSocketExWindowData[512]; //Reserve space for 512 active sockets
 		memset(m_pAsyncSocketExWindowData, 0, 512*sizeof(t_AsyncSocketExWindowData));
-		m_nWindowDataSize=512;
-		m_nSocketCount=0;
-		m_nWindowDataPos=0;
+		m_nWindowDataSize = 512;
+		m_nSocketCount = 0;
+		m_nWindowDataPos = 0;
 		m_pThreadData = pThreadData;
 
 		//Create window
 		WNDCLASSEX wndclass;
-		wndclass.cbSize=sizeof wndclass;
-		wndclass.style=0;
-		wndclass.lpfnWndProc=WindowProc;
-		wndclass.cbClsExtra=0;
-		wndclass.cbWndExtra=0;
-		wndclass.hInstance=GetModuleHandle(0);
-		wndclass.hIcon=0;
-		wndclass.hCursor=0;
-		wndclass.hbrBackground=0;
-		wndclass.lpszMenuName=0;
-		wndclass.lpszClassName=_T("CAsyncSocketEx Helper Window");
-		wndclass.hIconSm=0;
+		wndclass.cbSize = sizeof wndclass;
+		wndclass.style = 0;
+		wndclass.lpfnWndProc = WindowProc;
+		wndclass.cbClsExtra = 0;
+		wndclass.cbWndExtra = 0;
+		wndclass.hInstance = GetModuleHandle(0);
+		wndclass.hIcon = 0;
+		wndclass.hCursor = 0;
+		wndclass.hbrBackground = 0;
+		wndclass.lpszMenuName = 0;
+		wndclass.lpszClassName = _T("CAsyncSocketEx Helper Window");
+		wndclass.hIconSm = 0;
 
 		RegisterClassEx(&wndclass);
 
-		m_hWnd=CreateWindow(_T("CAsyncSocketEx Helper Window"), _T("CAsyncSocketEx Helper Window"), 0, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(0));
+		m_hWnd = CreateWindow(_T("CAsyncSocketEx Helper Window"), _T("CAsyncSocketEx Helper Window"), 0, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(0));
 		ASSERT(m_hWnd);
-		if (m_hWnd)
+		if (m_hWnd) {
 			SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR)this);
+		}
 	};
 
 	virtual ~CAsyncSocketExHelperWindow()
 	{
 		//Clean up socket storage
 		delete [] m_pAsyncSocketExWindowData;
-		m_pAsyncSocketExWindowData=0;
-		m_nWindowDataSize=0;
-		m_nSocketCount=0;
+		m_pAsyncSocketExWindowData = 0;
+		m_nWindowDataSize = 0;
+		m_nSocketCount = 0;
 
 		//Destroy window
-		if (m_hWnd)
-		{
+		if (m_hWnd) {
 			DestroyWindow(m_hWnd);
-			m_hWnd=0;
+			m_hWnd = 0;
 		}
 	}
 
@@ -138,24 +138,24 @@ public:
 	BOOL AddSocket(CAsyncSocketEx *pSocket, int &nSocketIndex)
 	{
 		ASSERT(pSocket);
-		if (!pSocket)
+		if (!pSocket) {
 			return FALSE;
-		if (!m_nWindowDataSize)
-		{
+		}
+		if (!m_nWindowDataSize) {
 			ASSERT(!m_nSocketCount);
-			m_nWindowDataSize=512;
-			m_pAsyncSocketExWindowData=new t_AsyncSocketExWindowData[512]; //Reserve space for 512 active sockets
-			memset(m_pAsyncSocketExWindowData, 0, 512*sizeof(t_AsyncSocketExWindowData));
+			m_nWindowDataSize = 512;
+			m_pAsyncSocketExWindowData = new t_AsyncSocketExWindowData[512]; //Reserve space for 512 active sockets
+			memset(m_pAsyncSocketExWindowData, 0, 512 * sizeof(t_AsyncSocketExWindowData));
 		}
 
-		if (nSocketIndex!=-1)
-		{
+		if (nSocketIndex != -1) {
 			ASSERT(m_pAsyncSocketExWindowData);
 			ASSERT(m_nWindowDataSize>nSocketIndex);
-			ASSERT(m_pAsyncSocketExWindowData[nSocketIndex].m_pSocket==pSocket);
+			ASSERT(m_pAsyncSocketExWindowData[nSocketIndex].m_pSocket == pSocket);
 			ASSERT(m_nSocketCount);
-			if (!m_pAsyncSocketExWindowData)
+			if (!m_pAsyncSocketExWindowData) {
 				return FALSE;
+			}
 			return TRUE;
 		}
 
@@ -169,7 +169,7 @@ public:
 			t_AsyncSocketExWindowData *tmp = m_pAsyncSocketExWindowData;
 			m_pAsyncSocketExWindowData = new t_AsyncSocketExWindowData[m_nWindowDataSize];
 			memcpy(m_pAsyncSocketExWindowData, tmp, nOldWindowDataSize * sizeof(t_AsyncSocketExWindowData));
-			memset(m_pAsyncSocketExWindowData+nOldWindowDataSize, 0, (m_nWindowDataSize-nOldWindowDataSize)*sizeof(t_AsyncSocketExWindowData));
+			memset(m_pAsyncSocketExWindowData + nOldWindowDataSize, 0, (m_nWindowDataSize - nOldWindowDataSize) * sizeof(t_AsyncSocketExWindowData));
 			delete [] tmp;
 		}
 
@@ -194,12 +194,12 @@ public:
 		ASSERT(pSocket);
 		if (!pSocket)
 			return FALSE;
-		if (nSocketIndex==-1)
+		if (nSocketIndex == -1)
 			return TRUE;
 
 		// Remove additional messages from queue
 		MSG msg;
-		while (PeekMessage(&msg, m_hWnd, WM_SOCKETEX_NOTIFY + nSocketIndex, WM_SOCKETEX_NOTIFY + nSocketIndex, PM_REMOVE));
+		while (PeekMessage(&msg, m_hWnd, WM_SOCKETEX_NOTIFY + nSocketIndex, WM_SOCKETEX_NOTIFY + nSocketIndex, PM_REMOVE | PM_NOYIELD));
 
 		ASSERT(m_pAsyncSocketExWindowData);
 		ASSERT(m_nWindowDataSize > 0);
@@ -217,7 +217,7 @@ public:
 		// Remove all layer messages from old socket
 		std::vector<MSG> msgList;
 		MSG msg;
-		while (PeekMessage(&msg, m_hWnd, WM_USER, WM_USER, PM_REMOVE)) {
+		while (PeekMessage(&msg, m_hWnd, WM_USER, WM_USER, PM_REMOVE | PM_NOYIELD)) {
 			//Verify parameters, lookup socket and notification message
 			//Verify parameters
 			if (msg.wParam >= static_cast<UINT>(m_nWindowDataSize)) //Index is within socket storage

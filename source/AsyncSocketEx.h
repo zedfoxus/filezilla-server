@@ -134,10 +134,10 @@ public:
 	static int GetLastError();
 
 	//Gets the address of the peer socket to which the socket is connected.
-	BOOL GetPeerName( CStdString& rPeerAddress, UINT& rPeerPort );
+	BOOL GetPeerName(CStdString& rPeerAddress, UINT& rPeerPort);
 
 	//Gets the local name for a socket.
-	BOOL GetSockName( CStdString& rSocketAddress, UINT& rSocketPort );
+	BOOL GetSockName(CStdString& rSocketAddress, UINT& rSocketPort);
 
 	//Retrieves a socket option.
 	BOOL GetSockOpt(int nOptionName, void* lpOptionValue, int* lpOptionLen, int nLevel = SOL_SOCKET);
