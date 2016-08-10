@@ -84,14 +84,12 @@ unsigned int PasvPortRandomizer::DoGetPort()
 			if (it != es.end()) {
 				if (allow_reuse_same_) {
 					++it->leases_;
-					it->expiry_ = now + 1000 * 60 * 4; // 4 minute TIME_WAIT
 					return prev_port_;
 				}
 			}
 			else if (es.empty() || allow_reuse_other_) {
 				PasvPortManager::entry e;
 				e.leases_ = 1;
-				e.expiry_ = now + 1000 * 60 * 4; // 4 minute TIME_WAIT
 				e.peer_ = peerIP_;
 				es.push_back(e);
 				return prev_port_;
