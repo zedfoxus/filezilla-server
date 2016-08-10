@@ -56,13 +56,13 @@ unsigned int PasvPortRandomizer::DoGetPort()
 				prev_port_ = min_;
 			}
 			if (prev_port_ == first_port_) {
-				// Wraparaound, relax requirements
+				// Wraparound, relax requirements
 				if (!allow_reuse_other_) {
 					// Should not be a problem other than when using server-to-server transfers
 					allow_reuse_other_ = true;
 				}
 				else if (!allow_reuse_same_) {
-					// This can be problematic in case of peer port is the same due to the socket pair's TIME_WAIT state.
+					// This can be problematic in case peer port is the same due to the socket pair's TIME_WAIT state.
 					allow_reuse_same_ = true;
 				}
 				else {
@@ -135,7 +135,7 @@ void PasvPortManager::SetConnected(unsigned int p, std::wstring const& peer)
 
 void PasvPortManager::Prune(unsigned int port, uint64_t const now)
 {
-	auto const predicate = [now](entry const& e) {
+	auto const predicate = [&now](entry const& e) {
 		return !e.leases_ && e.expiry_ < now;
 	};
 	entries_[port].erase(
