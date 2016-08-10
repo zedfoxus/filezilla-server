@@ -138,8 +138,6 @@ public:
 	// Directory listing format used by MLSD
 	static void AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
 
-	CStdString GetHomeDir(CUser const& user, bool physicalPath = false) const;
-
 	int CheckDirectoryPermissions(CUser const& user, CStdString dirname, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
 	int CheckFilePermissions(CUser const& user, CStdString filename, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
 
@@ -154,6 +152,8 @@ public:
 	int GetFact(CUser const& user, CStdString const& currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3]);
 
 protected:
+	CStdString GetHomeDir(CUser const& user) const;
+
 	bool Init();
 	void UpdateInstances();
 	void UpdatePermissions(bool notifyOwner);

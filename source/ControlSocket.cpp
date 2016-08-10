@@ -532,7 +532,7 @@ void CControlSocket::ParseCommand()
 				Send(_T("530 This server does not allow plain FTP. You have to use FTP over TLS."));
 				break;
 			}
-			RenName = _T("");
+			RenName.clear();
 			args.MakeLower();
 			m_status.username = args;
 			UpdateUser();
@@ -577,8 +577,7 @@ void CControlSocket::ParseCommand()
 				break;
 			}
 
-			if (args == _T(""))
-			{
+			if (args == _T("")) {
 				CStdString str;
 				str.Format(_T("250 Broken client detected, missing argument to CWD. \"%s\" is current directory."), m_CurrentServerDir);
 				Send(str);
@@ -586,26 +585,22 @@ void CControlSocket::ParseCommand()
 			}
 
 			int res = m_owner.m_pPermissions->ChangeCurrentDir(m_status.user, m_CurrentServerDir, args);
-			if (!res)
-			{
+			if (!res) {
 				CStdString str;
 				str.Format(_T("250 CWD successful. \"%s\" is current directory."), m_CurrentServerDir);
 				Send(str);
 			}
-			else if (res & PERMISSION_DENIED)
-			{
+			else if (res & PERMISSION_DENIED) {
 				CStdString str;
 				str.Format(_T("550 CWD failed. \"%s\": Permission denied."), args);
 				Send(str);
 			}
-			else if (res & PERMISSION_INVALIDNAME)
-			{
+			else if (res & PERMISSION_INVALIDNAME) {
 				CStdString str;
 				str.Format(_T("550 CWD failed. \"%s\": Filename invalid."), args);
 				Send(str);
 			}
-			else if (res)
-			{
+			else if (res) {
 				CStdString str;
 				str.Format(_T("550 CWD failed. \"%s\": directory not found."), args);
 				Send(str);
@@ -908,12 +903,15 @@ void CControlSocket::ParseCommand()
 				str.Format(_T("200 CDUP successful. \"%s\" is current directory."), m_CurrentServerDir);
 				Send(str);
 			}
-			else if (res & PERMISSION_DENIED)
+			else if (res & PERMISSION_DENIED) {
 				Send(_T("550 CDUP failed, permission denied."));
-			else if (res & PERMISSION_INVALIDNAME)
+			}
+			else if (res & PERMISSION_INVALIDNAME) {
 				Send(_T("550 CDUP failed, filename invalid."));
-			else if (res)
+			}
+			else if (res) {
 				Send(_T("550 CDUP failed, directory not found."));
+			}
 		}
 		break;
 	case commands::RETR:
@@ -2314,10 +2312,18 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password)
 		return FALSE;
 	}
 
-	m_CurrentServerDir = m_owner.m_pPermissions->GetHomeDir(m_status.user);
-	if (m_CurrentServerDir == _T("")) {
-		Send(_T("550 Could not get home dir!"));
-		ForceClose(-1);
+	CStdString args = _T("/");
+	int res = m_owner.m_pPermissions->ChangeCurrentDir(m_status.user, m_CurrentServerDir, args);
+	if (res) {
+		if (res & PERMISSION_NOTFOUND) {
+			Send(_T("550 Home directory does not exist"));
+		}
+		else if (res & PERMISSION_DENIED) {
+			Send(_T("550 User does not have permission to access own home directory"));
+		}
+		else {
+			Send(_T("550 Home directory could not be accessed"));
+		}
 		return FALSE;
 	}
 

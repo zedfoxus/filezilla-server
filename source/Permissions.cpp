@@ -637,17 +637,13 @@ int CPermissions::CheckFilePermissions(CUser const& user, CStdString filename, C
 	return res;
 }
 
-CStdString CPermissions::GetHomeDir(const CUser &user, bool physicalPath /*=false*/) const
+CStdString CPermissions::GetHomeDir(CUser const& user) const
 {
-	if (user.homedir == _T(""))
-		return _T("");
+	if (user.homedir.empty()) {
+		return CStdString();
+	}
 
-	if (!physicalPath)
-		return _T("/");
-
-	CStdString path;
-	path = user.homedir;
-
+	CStdString path = user.homedir;
 	user.DoReplacements(path);
 
 	return path;
@@ -674,57 +670,71 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	std::list<CStdString> PathPieces;
 	int pos;
 
-	while((pos = directory.Find('/')) != -1)
-	{
+	while((pos = directory.Find('/')) != -1) {
 		PathPieces.push_back(directory.Left(pos));
 		directory = directory.Mid(pos + 1);
 	}
-	if (directory != _T(""))
+	if (directory != _T("")) {
 		PathPieces.push_back(directory);
+	}
 
 	// Get absolute local path
 	// -----------------------
 
 	//First get the home dir
-	CStdString homepath = GetHomeDir(user, true);
-	if (homepath.empty()) //No homedir found
+	CStdString homepath = GetHomeDir(user);
+	if (homepath.empty()) {
+		//No homedir found
 		return PERMISSION_DENIED;
+	}
 
 	// Reassamble path to get local path
 	CStdString path = homepath; // Start with homedir as root
 
 	CStdString virtualPath = _T("/");
-	// Go through all pieces
-	for (auto const& piece : PathPieces) {
-		// Check if piece exists
-		virtualPath += piece + _T("/");
-		DWORD nAttributes = GetFileAttributes(path + _T("\\") + piece);
-		if (nAttributes != 0xFFFFFFFF)
-		{
-			if (!(nAttributes & FILE_ATTRIBUTE_DIRECTORY))
-				return PERMISSION_FILENOTDIR;
-			path += _T("\\") + piece;
-			continue;
+	if (PathPieces.empty()) {
+		DWORD nAttributes = GetFileAttributes(path);
+		if (nAttributes == 0xFFFFFFFF) {
+			return PERMISSION_NOTFOUND;
 		}
-		else
-		{
-			// Physical path did not exist, check aliases
-			const CStdString& target = user.GetAliasTarget(virtualPath);
-
-			if (!target.empty()) {
-				if (target.Right(1) != _T(":")) {
-					nAttributes = GetFileAttributes(target);
-					if (nAttributes == 0xFFFFFFFF)
-						return PERMISSION_NOTFOUND;
-					else if (!(nAttributes & FILE_ATTRIBUTE_DIRECTORY))
-						return PERMISSION_FILENOTDIR;
+		if (!(nAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+			return PERMISSION_FILENOTDIR;
+		}
+	}
+	else {
+		// Go through all pieces
+		for (auto const& piece : PathPieces) {
+			// Check if piece exists
+			virtualPath += piece + _T("/");
+			DWORD nAttributes = GetFileAttributes(path + _T("\\") + piece);
+			if (nAttributes != 0xFFFFFFFF) {
+				if (!(nAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+					return PERMISSION_FILENOTDIR;
 				}
-				path = target;
+				path += _T("\\") + piece;
 				continue;
 			}
+			else {
+				// Physical path did not exist, check aliases
+				const CStdString& target = user.GetAliasTarget(virtualPath);
 
+				if (!target.empty()) {
+					if (target.Right(1) != _T(":")) {
+						nAttributes = GetFileAttributes(target);
+						if (nAttributes == 0xFFFFFFFF) {
+							return PERMISSION_NOTFOUND;
+						}
+						else if (!(nAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+							return PERMISSION_FILENOTDIR;
+						}
+					}
+					path = target;
+					continue;
+				}
+
+			}
+			return PERMISSION_NOTFOUND;
 		}
-		return PERMISSION_NOTFOUND;
 	}
 	const CStdString realpath = path;
 
@@ -740,18 +750,15 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	 */
 	truematch = TRUE;
 
-	while (path != _T(""))
-	{
+	while (path != _T("")) {
 		BOOL bFoundMatch = FALSE;
 		unsigned int i;
 
 		// Check user permissions
-		for (i = 0; i < user.permissions.size(); i++)
-		{
+		for (i = 0; i < user.permissions.size(); ++i) {
 			CStdString permissionPath = user.permissions[i].dir;
 			user.DoReplacements(permissionPath);
-			if (!permissionPath.CompareNoCase(path))
-			{
+			if (!permissionPath.CompareNoCase(path)) {
 				bFoundMatch = TRUE;
 				ret = user.permissions[i];
 				break;
@@ -759,35 +766,36 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 		}
 
 		// Check owner (group) permissions
-		if (!bFoundMatch && user.pOwner)
-			for (i = 0; i < user.pOwner->permissions.size(); i++)
-			{
+		if (!bFoundMatch && user.pOwner) {
+			for (i = 0; i < user.pOwner->permissions.size(); ++i) {
 				CStdString permissionPath = user.pOwner->permissions[i].dir;
 				user.DoReplacements(permissionPath);
-				if (!permissionPath.CompareNoCase(path))
-				{
+				if (!permissionPath.CompareNoCase(path)) {
 					bFoundMatch = TRUE;
 					ret = user.pOwner->permissions[i];
 					break;
 				}
 			}
+		}
 
-		if (!bFoundMatch)
-		{
+		if (!bFoundMatch) {
 			// No match found, remove last segment and try again
 			int pos = path.ReverseFind('\\');
-			if (pos != -1)
+			if (pos != -1) {
 				path = path.Left(pos);
-			else
+			}
+			else {
 				return PERMISSION_DENIED;
+			}
 			truematch = FALSE;
 			continue;
 		}
 		ret.dir = realpath;
 
 		// We can check the bDirSubdirs permission right here
-		if (!truematch && !ret.bDirSubdirs)
+		if (!truematch && !ret.bDirSubdirs) {
 			return PERMISSION_DENIED;
+		}
 
 		return 0;
 	}
