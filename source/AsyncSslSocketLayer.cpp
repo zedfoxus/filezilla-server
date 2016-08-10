@@ -1082,8 +1082,10 @@ int CAsyncSslSocketLayer::InitSSLConnection(bool clientMode, CAsyncSslSocketLaye
 	}
 	pSSL_set_ex_data(m_ssl, 0, this);
 
-	// Disable DES and other weak and export ciphers
-	pSSL_set_cipher_list(m_ssl, "DEFAULT:!eNULL:!aNULL:!DES:!3DES:!WEAK:!EXP:!LOW:!MD5:!RC4");
+	// Disable (3)DES, RC4 and other weak and export ciphers
+	// Also disable rarely used SEED and IDEA
+	// We do not make use of PSK and SRP so disable them as well for good measure.
+	pSSL_set_cipher_list(m_ssl, "DEFAULT:!eNULL:!aNULL:!DES:!3DES:!WEAK:!EXP:!LOW:!MD5:!RC4:!SEED:!IDEA:!PSK:!SRP");
 
 	// Enable Diffie-Hellman
 	if (m_dh) {
