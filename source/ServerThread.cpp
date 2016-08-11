@@ -403,12 +403,10 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 		int bufferLen = 2 + m_LocalUserIDs.size() * 12;
 		unsigned char* buffer = new unsigned char[bufferLen];
 		unsigned char* p = buffer + 2;
-		for (std::map<int, CControlSocket *>::iterator iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); iter++)
-		{
+		for (std::map<int, CControlSocket *>::iterator iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); ++iter) {
 			CControlSocket* pSocket = iter->second;
 			CTransferSocket* pTransferSocket = pSocket->GetTransferSocket();
-			if (pTransferSocket && pTransferSocket->WasActiveSinceCheck())
-			{
+			if (pTransferSocket && pTransferSocket->WasActiveSinceCheck()) {
 				memcpy(p, &iter->first, 4);
 				p += 4;
 				__int64 offset = pTransferSocket->GetCurrentFileOffset();
@@ -418,10 +416,10 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 			iter->second->CheckForTimeout();
 		}
 
-		if ((p - buffer) <= 2)
+		if ((p - buffer) <= 2) {
 			delete [] buffer;
-		else
-		{
+		}
+		else {
 			t_connectiondata_transferoffsets* conndata = new t_connectiondata_transferoffsets;
 			conndata->pData = buffer;
 			conndata->len = p - buffer;
@@ -449,7 +447,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 		if (m_bIsMaster) {
 			simple_lock glock(m_global_mutex);
 
-			//Only update the speed limits from the rule set every 2 seconds to improve performance
+			// Only update the speed limits from the rule set every 2 seconds to improve performance
 			if (!m_nLoopCount) {
 				m_lastLimits[download] = m_pOptions->GetCurrentSpeedLimit(download);
 				m_lastLimits[upload] = m_pOptions->GetCurrentSpeedLimit(upload);
@@ -545,8 +543,9 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 		simple_lock lock(m_mutex);
 		m_pExternalIpCheck->OnTimer();
 	}
-	else if (wParam == m_antiHammerTimer && m_bIsMaster)
+	else if (wParam == m_antiHammerTimer && m_bIsMaster) {
 		AntiHammerDecay();
+	}
 }
 
 const int CServerThread::GetGlobalNumConnections()

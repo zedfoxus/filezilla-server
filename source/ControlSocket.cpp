@@ -2095,20 +2095,25 @@ void CControlSocket::CheckForTimeout()
 			TriggerEvent(FD_FORCEREAD);
 		}
 	}
-	if (m_status.hammerValue > 0)
-		m_status.hammerValue--;
+	if (m_status.hammerValue > 0) {
+		--m_status.hammerValue;
+	}
 
 	if (m_transferstatus.socket) {
-		if (m_transferstatus.socket->CheckForTimeout())
+		if (m_transferstatus.socket->CheckForTimeout()) {
 			return;
+		}
 	}
 	_int64 timeout;
-	if (m_shutdown)
+	if (m_shutdown) {
 		timeout = 3;
-	else
+	}
+	else {
 		timeout = m_owner.m_pOptions->GetOptionVal(OPTION_TIMEOUT);
-	if (!timeout)
+	}
+	if (!timeout) {
 		return;
+	}
 	SYSTEMTIME sCurrentTime;
 	GetSystemTime(&sCurrentTime);
 	FILETIME fCurrentTime;
@@ -2125,22 +2130,23 @@ void CControlSocket::CheckForTimeout()
 		return;
 	}
 	if (m_status.loggedon) { //Transfer timeout
-		_int64 nNoTransferTimeout=m_owner.m_pOptions->GetOptionVal(OPTION_NOTRANSFERTIMEOUT);
-		if (!nNoTransferTimeout)
+		_int64 nNoTransferTimeout = m_owner.m_pOptions->GetOptionVal(OPTION_NOTRANSFERTIMEOUT);
+		if (!nNoTransferTimeout) {
 			return;
+		}
 		SystemTimeToFileTime(&m_LastTransferTime, &fLastTime);
 		elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
-		if (elapsed>(nNoTransferTimeout*10000000))
-		{
+		if (elapsed>(nNoTransferTimeout*10000000)) {
 			ForceClose(2);
 			return;
 		}
 	}
 	else { //Login timeout
-		_int64 nLoginTimeout=m_owner.m_pOptions->GetOptionVal(OPTION_LOGINTIMEOUT);
-		if (!nLoginTimeout)
+		_int64 nLoginTimeout = m_owner.m_pOptions->GetOptionVal(OPTION_LOGINTIMEOUT);
+		if (!nLoginTimeout) {
 			return;
-		if (!SystemTimeToFileTime(&m_LoginTime, &fLastTime)) {
+		}
+		else if (!SystemTimeToFileTime(&m_LoginTime, &fLastTime)) {
 			return;
 		}
 		elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
@@ -2154,14 +2160,16 @@ void CControlSocket::CheckForTimeout()
 void CControlSocket::WaitGoOffline()
 {
 	if (m_transferstatus.socket) {
-		if (!m_transferstatus.socket->Started())
+		if (!m_transferstatus.socket->Started()) {
 			ForceClose(0);
-		else
+		}
+		else {
 			m_bWaitGoOffline = true;
+		}
 	}
-	else
+	else {
 		ForceClose(0);
-
+	}
 }
 
 void CControlSocket::ResetTransferSocket( bool send_info )

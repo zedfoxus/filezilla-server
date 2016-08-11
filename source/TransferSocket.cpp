@@ -533,36 +533,35 @@ void CTransferSocket::OnSend(int nErrorCode)
 
 void CTransferSocket::OnConnect(int nErrorCode)
 {
-	if (nErrorCode)
-	{
+	if (nErrorCode) {
 		EndTransfer(transfer_status_t::noconn);
 		return;
 	}
 
 	int size = (int)m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_BUFFERSIZE2);
-	if (size > 0)
-	{
-		if (m_nMode == TRANSFERMODE_RECEIVE)
+	if (size > 0) {
+		if (m_nMode == TRANSFERMODE_RECEIVE) {
 			SetSockOpt(SO_RCVBUF, &size, sizeof(int));
-		else
-			SetSockOpt(SO_SNDBUF, &size, sizeof(int));
+		}
 	}
 
-	if (m_use_ssl) {
+	if (m_use_tls) {
 		// Disable Nagle algorithm for duration of the handshake.
 		SetNodelay(true);
-		if (!m_pSslLayer)
+		if (!m_pSslLayer) {
 			m_pSslLayer = new CAsyncSslSocketLayer(m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TLS_MINVERSION));
+		}
 		VERIFY(AddLayer(m_pSslLayer));
 
 		int code = m_pSslLayer->InitSSLConnection(false, m_pOwner->GetSslLayer(), m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TLS_REQUIRE_SESSION_RESUMPTION) != 0);
-		if (code == SSL_FAILURE_LOADDLLS)
+		if (code == SSL_FAILURE_LOADDLLS) {
 			m_pOwner->SendStatus(_T("Failed to load TLS libraries"), 1);
-		else if (code == SSL_FAILURE_INITSSL)
+		}
+		else if (code == SSL_FAILURE_INITSSL) {
 			m_pOwner->SendStatus(_T("Failed to initialize TLS library"), 1);
+		}
 
-		if (code)
-		{
+		if (code) {
 			EndTransfer(transfer_status_t::noconn);
 			return;
 		}
@@ -571,9 +570,9 @@ void CTransferSocket::OnConnect(int nErrorCode)
 
 	m_on_connect_called = true;
 
-	if (!m_bStarted)
+	if (!m_bStarted) {
 		InitTransfer(FALSE);
-
+	}
 }
 
 void CTransferSocket::OnClose(int nErrorCode)
@@ -629,7 +628,7 @@ void CTransferSocket::OnAccept(int nErrorCode)
 			SetSockOpt(SO_SNDBUF, &size, sizeof(int));
 	}
 
-	if (m_use_ssl) {
+	if (m_use_tls) {
 		// Disable Nagle algorithm for duration of the handshake.
 		SetNodelay(true);
 
@@ -916,8 +915,12 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 
 BOOL CTransferSocket::CheckForTimeout()
 {
-	if (!m_bReady)
+	if (!m_bReady) {
 		return FALSE;
+	}
+
+	// CheckForTimeout is called once per second. Misuse it to also trigger updating of the send buffer size.
+	UpdateSendBufferSize();
 
 	_int64 timeout = m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TIMEOUT);
 
@@ -946,8 +949,9 @@ BOOL CTransferSocket::CheckForTimeout()
 		EndTransfer(transfer_status_t::noconn);
 		return TRUE;
 	}
-	else if (!timeout)
+	else if (!timeout) {
 		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -967,7 +971,7 @@ bool CTransferSocket::UseSSL(bool use)
 	if (m_pSslLayer)
 		return false;
 
-	m_use_ssl = use;
+	m_use_tls = use;
 
 	return true;
 }
@@ -1071,4 +1075,19 @@ bool CTransferSocket::CreateListenSocket(PortLease&& port, int family)
 {
 	portLease_ = std::move(port);
 	return Create(portLease_.GetPort(), SOCK_STREAM, FD_ACCEPT, 0, family);
+}
+
+void CTransferSocket::UpdateSendBufferSize()
+{
+	if (m_bStarted && (m_nMode == TRANSFERMODE_SEND || m_nMode == TRANSFERMODE_LIST)) {
+		auto fd = GetSocketHandle();
+		if (fd != INVALID_SOCKET) {
+			ULONG v{};
+			DWORD outlen{};
+			if (!WSAIoctl(fd, SIO_IDEAL_SEND_BACKLOG_QUERY, 0, 0, &v, sizeof(v), &outlen, 0, 0)) {
+				int size = static_cast<int>(v);
+				SetSockOpt(SO_SNDBUF, &size, sizeof(int));
+			}
+		}
+	}
 }

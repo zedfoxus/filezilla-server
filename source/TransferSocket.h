@@ -80,6 +80,8 @@ protected:
 	virtual void OnAccept(int nErrorCode);
 	virtual void OnReceive(int nErrorCode);
 
+	void UpdateSendBufferSize();
+
 	virtual int OnLayerCallback(std::list<t_callbackMsg> const& callbacks);
 
 	void EndTransfer(transfer_status_t status);
@@ -104,7 +106,7 @@ protected:
 	bool m_wasActiveSinceCheck;
 
 	CAsyncSslSocketLayer* m_pSslLayer;
-	bool m_use_ssl{};
+	bool m_use_tls{};
 
 	unsigned int m_nBufSize;
 	bool m_useZlib;
