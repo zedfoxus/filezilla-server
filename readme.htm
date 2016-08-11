@@ -1,4 +1,4 @@
-<p align="center"><b><u>FileZilla Server version 0.9.57 beta</u></b></p>
+<p align="center"><b><u>FileZilla Server version 0.9.58 beta</u></b></p>
 <p align="center">Copyright 2001-2016<br>
 by <a href="mailto:tim.kosse@filezilla-project.org">Tim Kosse</a><a href="https://filezilla-project.org/"><br>
 https://filezilla-project.org/</a></p>
@@ -67,6 +67,21 @@ as restoring it to normal size.</p>
 </table>
 <p align="left"><b><u>Version History:</u></b></p>
 <p>For a more detailed list of changes, please have a look at the SVN changelog located at <a href="https://filezilla-project.org/changelog.php?type=2">https://filezilla-project.org/changelog.php?type=2</a>.</p>
+
+<p><b>Version 0.9.58</b></p>
+<blockquote>
+  <u>New features and improvements:</u>
+  <ul>
+    <li>TCP send buffer auto-tuning</li>
+    <li>Performance improvements to reduce CPU usage under high load</li>
+    <li>Disabled IDEA and SEED ciphers for FTP over TLS</li>
+  </ul>
+  <u>Bug fixes:</u>
+  <ul>
+    <li>Fixed potential crash if closing connections with pending socket messages</li>
+    <li>A missing home directory is no longer treaded like an empty directory</li>
+  </ul>
+</blockquote>
 
 <p><b>Version 0.9.57</b></p>
 <blockquote>
