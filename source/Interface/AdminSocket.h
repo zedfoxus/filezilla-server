@@ -70,7 +70,7 @@ struct t_data
 	};
 	std::list<t_data> m_SendBuffer;
 
-	bool m_bClosed;
+	bool m_bClosed{};
 	virtual void OnReceive(int nErrorCode);
 	virtual void OnConnect(int nErrorCode);
 	virtual void OnSend(int nErrorCode);
@@ -79,9 +79,9 @@ struct t_data
 
 	unsigned char *m_pRecvBuffer;
 	unsigned int m_nRecvBufferLen;
-	unsigned int m_nRecvBufferPos;
+	unsigned int m_nRecvBufferPos{};
 
-	int m_nConnectionState;
+	int m_nConnectionState{};
 };
 
-#endif // !defined(AFX_ADMINSOCKET_H__4FDF0C68_9EA7_440B_A4ED_2DC358E4A054__INCLUDED_)
+#endif

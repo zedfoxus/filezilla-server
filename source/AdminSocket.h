@@ -51,11 +51,9 @@ protected:
 	virtual void OnSend(int nErrorCode);
 	struct t_data
 	{
-		t_data()
-			: dwLength()
-		{}
+		t_data() = default;
 
-		explicit t_data( DWORD len )
+		explicit t_data(DWORD len)
 			: pData(new unsigned char[len])
 			, dwLength(len)
 		{
@@ -63,7 +61,7 @@ protected:
 
 		std::shared_ptr<unsigned char> pData;
 		DWORD dwOffset{};
-		DWORD const dwLength;
+		DWORD dwLength{};
 	};
 	std::list<t_data> m_SendBuffer;
 
@@ -77,4 +75,4 @@ protected:
 	FILETIME m_LastRecvTime = FILETIME();
 };
 
-#endif // !defined(AFX_ADMINSOCKET_H__C8A04733_3DF9_41C9_B596_DCDE8246AE88__INCLUDED_)
+#endif
