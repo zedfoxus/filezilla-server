@@ -40,6 +40,8 @@ public:
 	CAdminSocket(CAdminInterface *pAdminInterface);
 	virtual ~CAdminSocket();
 
+	void Delete();
+
 protected:
 	bool SendPendingData();
 
@@ -59,7 +61,7 @@ protected:
 		{
 		}
 
-		std::shared_ptr<unsigned char> pData;
+		std::unique_ptr<unsigned char[]> pData;
 		DWORD dwOffset{};
 		DWORD dwLength{};
 	};
@@ -73,6 +75,8 @@ protected:
 	unsigned char m_Nonce1[8];
 	unsigned char m_Nonce2[8];
 	FILETIME m_LastRecvTime = FILETIME();
+
+	bool m_inside_callback{};
 };
 
 #endif

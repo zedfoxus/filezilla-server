@@ -57,26 +57,27 @@ BOOL CAdminInterface::SendCommand(int nType, int nID, const void *pData, int nDa
 
 	std::list<CAdminSocket *> deleteList;
 	std::list<CAdminSocket *>::iterator iter;
-	for (iter = m_AdminSocketList.begin(); iter != m_AdminSocketList.end(); iter++)
-		if (!(*iter)->SendCommand(nType, nID, pData, nDataLength))
-		{
+	for (iter = m_AdminSocketList.begin(); iter != m_AdminSocketList.end(); ++iter) {
+		if (!(*iter)->SendCommand(nType, nID, pData, nDataLength)) {
 			deleteList.push_back(*iter);
 		}
+	}
 
-	for (iter = deleteList.begin(); iter != deleteList.end(); iter++)
+	for (iter = deleteList.begin(); iter != deleteList.end(); ++iter) {
 		VERIFY(Remove(*iter));
+	}
 	return TRUE;
 }
 
 BOOL CAdminInterface::Remove(CAdminSocket *pAdminSocket)
 {
-	for (std::list<CAdminSocket *>::iterator iter = m_AdminSocketList.begin(); iter != m_AdminSocketList.end(); iter++)
-		if (*iter == pAdminSocket)
-		{
-			delete *iter;
+	for (auto iter = m_AdminSocketList.begin(); iter != m_AdminSocketList.end(); ++iter) {
+		if (*iter == pAdminSocket) {
 			m_AdminSocketList.erase(iter);
+			pAdminSocket->Delete();
 			return TRUE;
 		}
+	}
 	return FALSE;
 }
 
@@ -89,13 +90,15 @@ BOOL CAdminInterface::ProcessCommand(CAdminSocket *pAdminSocket, int nID, void *
 void CAdminInterface::CheckForTimeout()
 {
 	std::list<CAdminSocket *> deleteList;
-	std::list<CAdminSocket *>::iterator iter;
-	for (iter=m_AdminSocketList.begin(); iter!=m_AdminSocketList.end(); iter++)
-		if ((*iter)->CheckForTimeout())
+	for (auto iter = m_AdminSocketList.begin(); iter != m_AdminSocketList.end(); ++iter) {
+		if ((*iter)->CheckForTimeout()) {
 			deleteList.push_back(*iter);
+		}
+	}
 
-	for (iter=deleteList.begin(); iter!=deleteList.end(); iter++)
+	for (auto iter = deleteList.begin(); iter != deleteList.end(); ++iter) {
 		VERIFY(Remove(*iter));
+	}
 }
 
 void CAdminInterface::LoggedOn(CAdminSocket *pAdminSocket)

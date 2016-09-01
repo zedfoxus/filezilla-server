@@ -118,23 +118,23 @@ BOOL CAdminSocket::SendCommand(int nType, int nID, const void *pData, int nDataL
 	}
 
 	t_data data(nDataLength + 5);
-	*data.pData = nType;
-	*data.pData |= nID << 2;
-	memcpy(&*data.pData + 1, &nDataLength, 4);
+	data.pData[0] = nType;
+	data.pData[0] |= nID << 2;
+	memcpy(data.pData.get() + 1, &nDataLength, 4);
 	if (pData) {
-		memcpy(&*data.pData + 5, pData, nDataLength);
+		memcpy(data.pData.get() + 5, pData, nDataLength);
 	}
 
-	m_SendBuffer.push_back(data);
+	m_SendBuffer.emplace_back(std::move(data));
 
 	return SendPendingData();
 }
 
 bool CAdminSocket::SendPendingData()
 {
-	for( auto it = m_SendBuffer.begin(); it != m_SendBuffer.end(); it = m_SendBuffer.erase(it) ) {
+	for (auto it = m_SendBuffer.begin(); it != m_SendBuffer.end(); it = m_SendBuffer.erase(it)) {
 		auto& data = *it;
-		int nSent = Send(&*data.pData + data.dwOffset, data.dwLength - data.dwOffset);
+		int nSent = Send(data.pData.get() + data.dwOffset, data.dwLength - data.dwOffset);
 		if (!nSent) {
 			return false;
 		}
@@ -169,8 +169,8 @@ void CAdminSocket::OnReceive(int nErrorCode)
 		VERIFY(SystemTimeToFileTime(&sTime, &m_LastRecvTime));
 
 		m_nRecvBufferPos += numread;
-		if (m_nRecvBufferLen-m_nRecvBufferPos < (BUFSIZE/4)) {
-			unsigned char *tmp=m_pRecvBuffer;
+		if (m_nRecvBufferLen - m_nRecvBufferPos < (BUFSIZE/4)) {
+			unsigned char *tmp = m_pRecvBuffer;
 			m_nRecvBufferLen *= 2;
 			m_pRecvBuffer = new unsigned char[m_nRecvBufferLen];
 			memcpy(m_pRecvBuffer, tmp, m_nRecvBufferPos);
@@ -291,7 +291,14 @@ int CAdminSocket::ParseRecvBuffer()
 				FinishLogon();
 			}
 			else {
+				// This callback can result in this to be deleted.
+				m_inside_callback = true;
 				m_pAdminInterface->ProcessCommand(this, nID, m_pRecvBuffer + 5, len);
+				if (!m_inside_callback) {
+					delete this;
+					return -1;
+				}
+				m_inside_callback = false;
 			}
 			memmove(m_pRecvBuffer, m_pRecvBuffer +len + 5, m_nRecvBufferPos - len - 5);
 			m_nRecvBufferPos -= len + 5;
@@ -310,13 +317,14 @@ BOOL CAdminSocket::SendCommand(LPCTSTR pszCommand, int nTextType)
 	DWORD nDataLength = utf8.size() + 1;
 
 	t_data data(nDataLength + 5);
-	*data.pData = 2;
-	*data.pData |= 1 << 2;
-	memcpy(&*data.pData + 1, &nDataLength, 4);
-	*(&*data.pData+5) = nTextType;
-	memcpy(reinterpret_cast<char *>(&*data.pData+6), utf8.c_str(), nDataLength - 1);
+	data.pData[0] = 2;
+	data.pData[0] |= 1 << 2;
+	memcpy(data.pData.get() + 1, &nDataLength, 4);
 
-	m_SendBuffer.push_back(data);
+	data.pData[5] = nTextType;
+	memcpy(reinterpret_cast<char *>(data.pData.get() + 6), utf8.c_str(), nDataLength - 1);
+
+	m_SendBuffer.emplace_back(std::move(data));
 
 	return SendPendingData();
 }
@@ -350,4 +358,16 @@ BOOL CAdminSocket::FinishLogon()
 	m_pAdminInterface->LoggedOn(this);
 
 	return TRUE;
+}
+
+void CAdminSocket::Delete()
+{
+	Close();
+
+	if (!m_inside_callback) {
+		delete this;
+	}
+	else {
+		m_inside_callback = false;
+	}
 }

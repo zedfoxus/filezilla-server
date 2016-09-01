@@ -488,8 +488,9 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			buffer[1] = m_nServerState % 256;
 			pAdminSocket->SendCommand(1, 2, buffer, 2);
 		}
-		else
+		else {
 			pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length") + 1);
+		}
 		break;
 	case 3:
 		if (!nDataLength) {
@@ -508,10 +509,12 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 					auto logicalFile = ConvToNetwork(data.logicalFile);
 					len += 2 + physicalFile.size() + 2 + logicalFile.size();
 
-					if (data.currentOffset != 0)
+					if (data.currentOffset != 0) {
 						len += 8;
-					if (data.totalSize != -1)
+					}
+					if (data.totalSize != -1) {
 						len += 8;
+					}
 				}
 			}
 			unsigned char *buffer = new unsigned char[len];
@@ -628,8 +631,9 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				}
 			}
 		}
-		else
-			pAdminSocket->SendCommand(1, 1, "\001Protocol error: Invalid data", strlen("\001Protocol error: Invalid data")+1);
+		else {
+			pAdminSocket->SendCommand(1, 1, "\001Protocol error: Invalid data", strlen("\001Protocol error: Invalid data") + 1);
+		}
 		break;
 	case 5:
 		if (!nDataLength) {
@@ -641,8 +645,9 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			}
 		}
 		else if (m_pOptions) {
-			if (nDataLength < 2)
-				pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length")+1);
+			if (nDataLength < 2) {
+				pAdminSocket->SendCommand(1, 1, "\001Protocol error: Unexpected data length", strlen("\001Protocol error: Unexpected data length") + 1);
+			}
 			else {
 				CStdString const listenPorts = m_pOptions->GetOption(OPTION_SERVERPORT);
 				CStdString const listenPortsSsl = m_pOptions->GetOption(OPTION_TLSPORTS);
@@ -654,10 +659,12 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				CStdString peerIP;
 				UINT port = 0;
 				bool bLocal = false;
-				if (!pAdminSocket->GetPeerName(peerIP, port))
+				if (!pAdminSocket->GetPeerName(peerIP, port)) {
 					return FALSE;
-				else
+				}
+				else {
 					bLocal = IsLocalhost(peerIP);
+				}
 
 				if (!m_pOptions->ParseOptionsCommand(pData, nDataLength, bLocal)) {
 					pAdminSocket->SendCommand(1, 1, "\001Protocol error: Invalid data, could not import settings.", strlen("\001Protocol error: Invalid data, could not import settings.")+1);
