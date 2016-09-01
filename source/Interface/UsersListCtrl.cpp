@@ -522,7 +522,7 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 			m_connectionDataMap.clear();
 			m_connectionDataArray.clear();
 
-			int num = pData[1] * 256 * 256 + pData[1] * 256 + pData[2];
+			int num = pData[1] * 256 * 256 + pData[2] * 256 + pData[3];
 			unsigned int pos = 4;
 			for (int i = 0; i < num; ++i) {
 				if ((pos + 6) > dwDataLength) {
