@@ -1,4 +1,4 @@
-<p align="center"><b><u>FileZilla Server version 0.9.58 beta</u></b></p>
+<p align="center"><b><u>FileZilla Server version 0.9.59 beta</u></b></p>
 <p align="center">Copyright 2001-2016<br>
 by <a href="mailto:tim.kosse@filezilla-project.org">Tim Kosse</a><a href="https://filezilla-project.org/"><br>
 https://filezilla-project.org/</a></p>
@@ -6,7 +6,7 @@ https://filezilla-project.org/</a></p>
 <ul>
   <li>almost unlimited number of users</li>
   <li>multi-threaded engine</li>
-  <li>runs as service under Windows Vista, 7, 8 and 8.1</li>
+  <li>runs as service under Windows Vista, 7, 8, 8.1 and 10</li>
   <li>anti fxp / bounce attack filter</li>
   <li>secure password storage (as MD5 hash)</li>
   <li>real-time user/group management</li>
@@ -67,6 +67,17 @@ as restoring it to normal size.</p>
 </table>
 <p align="left"><b><u>Version History:</u></b></p>
 <p>For a more detailed list of changes, please have a look at the SVN changelog located at <a href="https://filezilla-project.org/changelog.php?type=2">https://filezilla-project.org/changelog.php?type=2</a>.</p>
+
+<p><b>Version 0.9.59</b></p>
+<blockquote>
+  <u>Bug fixes:</u>
+  <ul>
+    <li>Updated OpenSSL to 1.0.2i due to several security vulnerabilities in OpenSSL</li>
+    <li>Fixed getting list of connected users when connecting with the admin interface</li>
+    <li>Fixed crash if the administration connection is closed while an administrative command is being processed</li>
+  </ul>
+</blockquote>
+
 
 <p><b>Version 0.9.58</b></p>
 <blockquote>
