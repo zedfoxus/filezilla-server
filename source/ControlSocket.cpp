@@ -2320,21 +2320,6 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password)
 		return FALSE;
 	}
 
-	CStdString args = _T("/");
-	int res = m_owner.m_pPermissions->ChangeCurrentDir(m_status.user, m_CurrentServerDir, args);
-	if (res) {
-		if (res & PERMISSION_NOTFOUND) {
-			Send(_T("550 Home directory does not exist"));
-		}
-		else if (res & PERMISSION_DENIED) {
-			Send(_T("550 User does not have permission to access own home directory"));
-		}
-		else {
-			Send(_T("550 Home directory could not be accessed"));
-		}
-		return FALSE;
-	}
-
 	m_status.ip = peerIP;
 
 	count = GetUserCount(m_status.user.user);
@@ -2352,9 +2337,24 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password)
 	IncUserCount(m_status.username);
 	m_status.loggedon = TRUE;
 
-	GetSystemTime(&m_LastTransferTime);
-
 	m_owner.m_pPermissions->AutoCreateDirs(m_status.user);
+
+	CStdString args = _T("/");
+	int res = m_owner.m_pPermissions->ChangeCurrentDir(m_status.user, m_CurrentServerDir, args);
+	if (res) {
+		if (res & PERMISSION_NOTFOUND) {
+			Send(_T("550 Home directory does not exist"));
+		}
+		else if (res & PERMISSION_DENIED) {
+			Send(_T("550 User does not have permission to access own home directory"));
+		}
+		else {
+			Send(_T("550 Home directory could not be accessed"));
+		}
+		return FALSE;
+	}
+
+	GetSystemTime(&m_LastTransferTime);
 
 	t_connectiondata_changeuser *conndata = new t_connectiondata_changeuser;
 	t_connop *op = new t_connop;
