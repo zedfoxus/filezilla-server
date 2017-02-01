@@ -92,6 +92,8 @@ Version 2.0:
 #include "AsyncSslSocketLayer.h"
 
 #include <algorithm>
+#include <random>
+#include <type_traits>
 
 typedef std::lock_guard<std::recursive_mutex> simple_lock;
 typedef std::unique_lock<std::recursive_mutex> scoped_lock;
@@ -1841,9 +1843,12 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 
 	rsa = NULL;
 
-	pX509_set_version(x,2);
-	pASN1_INTEGER_set(pX509_get_serialNumber(x), 0/*serial*/);
-	pX509_gmtime_adj(X509_get_notBefore(x),0);
+	std::random_device rd;
+	auto serial = std::uniform_int_distribution<long>(1, std::numeric_limits<long>::max())(rd);
+	
+	pX509_set_version(x, 2);
+	pASN1_INTEGER_set(pX509_get_serialNumber(x), serial);
+	pX509_gmtime_adj(X509_get_notBefore(x), 0);
 	pX509_gmtime_adj(X509_get_notAfter(x),(long)60*60*24*days);
 	pX509_set_pubkey(x,pk);
 
