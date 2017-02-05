@@ -342,7 +342,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 					if (m_hFile != INVALID_HANDLE_VALUE) {
 						DWORD numread;
 						if (!ReadFile(m_hFile, m_pBuffer2, m_nBufSize, &numread, 0)) {
-							EndTransfer(transfer_status_t::noaccess); // TODO: Better reason
+							EndTransfer(transfer_status_t::err_file_read);
 							return;
 						}
 						m_currentFileOffset += numread;
@@ -443,7 +443,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				DWORD numread;
 				if (m_nBufSize - m_nBufferPos && m_hFile != INVALID_HANDLE_VALUE) {
 					if (!ReadFile(m_hFile, m_pBuffer+m_nBufferPos, m_nBufSize-m_nBufferPos, &numread, 0)) {
-						EndTransfer(transfer_status_t::noaccess); //TODO: Better reason
+						EndTransfer(transfer_status_t::err_file_read);
 						return;
 					}
 
@@ -680,7 +680,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 		obeySpeedLimit = false;
 	}
 	else if (nErrorCode) {
-		EndTransfer(transfer_status_t::noaccess);
+		EndTransfer(transfer_status_t::closed_aborted);
 		return;
 	}
 	else if (GetState() == closed) {
@@ -751,7 +751,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			while (res == Z_OK) {
 				DWORD numwritten;
 				if (!WriteFile(m_hFile, m_pBuffer2, m_nBufSize - m_zlibStream.avail_out, &numwritten, 0) || numwritten != m_nBufSize - m_zlibStream.avail_out) {
-					EndTransfer(transfer_status_t::noaccess); // TODO: Better reason
+					EndTransfer(transfer_status_t::err_file_write);
 					return;
 				}
 				m_currentFileOffset += numwritten;
@@ -763,7 +763,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			if (res == Z_STREAM_END) {
 				DWORD numwritten;
 				if (!WriteFile(m_hFile, m_pBuffer2, m_nBufSize - m_zlibStream.avail_out, &numwritten, 0) || numwritten != m_nBufSize - m_zlibStream.avail_out) {
-					EndTransfer(transfer_status_t::noaccess); // TODO: Better reason
+					EndTransfer(transfer_status_t::err_file_write);
 					return;
 				}
 				m_currentFileOffset += numwritten;
@@ -776,7 +776,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 		else {
 			DWORD numwritten;
 			if (!WriteFile(m_hFile, m_pBuffer, numread, &numwritten, 0) || numwritten!=(unsigned int)numread) {
-				EndTransfer(transfer_status_t::noaccess); //TODO: Better reason
+				EndTransfer(transfer_status_t::err_file_write);
 				return;
 			}
 			m_currentFileOffset += numwritten;
@@ -868,7 +868,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			shareMode |= FILE_SHARE_WRITE;
 		m_hFile = CreateFile(m_Filename, GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
 		if (m_hFile == INVALID_HANDLE_VALUE) {
-			EndTransfer(transfer_status_t::noaccess);
+			EndTransfer(transfer_status_t::err_file_open);
 			return FALSE;
 		}
 		DWORD low = (DWORD)(m_nRest&0xFFFFFFFF);
@@ -877,7 +877,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			high = 0;
 			low = SetFilePointer(m_hFile, 0, &high, FILE_END);
 			if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR) {
-				EndTransfer(transfer_status_t::noaccess);
+				EndTransfer(transfer_status_t::err_file_seek);
 				return FALSE;
 			}
 		}
@@ -911,14 +911,14 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 			}
 			m_hFile = CreateFile(m_Filename, GENERIC_WRITE, shareMode, 0, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, 0);
 			if (m_hFile == INVALID_HANDLE_VALUE) {
-				EndTransfer(transfer_status_t::noaccess);
+				EndTransfer(transfer_status_t::err_file_open);
 				return FALSE;
 			}
 			DWORD low = (DWORD)(m_nRest&0xFFFFFFFF);
 			LONG high = (LONG)(m_nRest>>32);
 			low = SetFilePointer(m_hFile, low, &high, FILE_BEGIN);
 			if (low == 0xFFFFFFFF && GetLastError() != NO_ERROR) {
-				EndTransfer(transfer_status_t::noaccess);
+				EndTransfer(transfer_status_t::err_file_seek);
 				return FALSE;
 			}
 			SetEndOfFile(m_hFile);

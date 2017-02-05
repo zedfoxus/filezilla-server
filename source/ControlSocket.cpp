@@ -1954,8 +1954,9 @@ void CControlSocket::ProcessTransferMsg()
 	int mode = m_transferstatus.socket->GetMode();
 	_int64 zlibBytesIn = 0;
 	_int64 zlibBytesOut = 0;
-	if (m_transferMode == mode_zlib)
+	if (m_transferMode == mode_zlib) {
 		m_transferstatus.socket->GetZlibStats(zlibBytesIn, zlibBytesOut);
+	}
 
 	CStdString resource = m_transferstatus.resource;
 	ResetTransferstatus();
@@ -1989,12 +1990,29 @@ void CControlSocket::ProcessTransferMsg()
 		}
 		Send(msg);
 	}
-	else if (status == transfer_status_t::closed_aborted)
+	else if (status == transfer_status_t::closed_aborted) {
 		Send(_T("426 Connection closed; aborted transfer of \"") + resource + _T("\""));
-	else if (status == transfer_status_t::noconn)
-		Send(_T("425 Can't open data connection for transfer of \"") + resource + _T("\""));
-	else if (status == transfer_status_t::noaccess)
-		Send(_T("550 can't access file."));
+	}
+	else if (status == transfer_status_t::noconn) {
+		Send(_T("425 Can't open data connection fortransfer of \"") + resource + _T("\""));
+	}
+	else if (status == transfer_status_t::err_file_open) {
+		if (mode == TRANSFERMODE_RECEIVE) {
+			Send(_T("550 Could not open file for writing."));
+		}
+		else {
+			Send(_T("550 Could not open file for reading."));
+		}
+	}
+	else if (status == transfer_status_t::err_file_seek) {
+		Send(_T("550 Could not seek to resume offset."));
+	}
+	else if (status == transfer_status_t::err_file_read) {
+		Send(_T("550 Reading from file failed."));
+	}
+	else if (status == transfer_status_t::err_file_write) {
+		Send(_T("550 Writing to file failed."));
+	}
 	else if (status == transfer_status_t::timeout) {
 		Send(_T("426 Connection timed out, aborting transfer of \"") + resource + _T("\""));
 		ForceClose(1);
