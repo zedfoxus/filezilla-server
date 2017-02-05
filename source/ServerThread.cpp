@@ -477,7 +477,7 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 
 				limit *= 100;
 
-				long long nRemaining = limit = m_carryover[i];
+				long long nRemaining = limit + m_carryover[i];
 				long long nThreadLimit = limit / m_sInstanceList.size();
 
 				std::vector<CServerThread *> fullUsageList;
