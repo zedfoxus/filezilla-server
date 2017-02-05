@@ -47,6 +47,7 @@ CServerThread::CServerThread(int nNotificationMessageId)
 	: m_nNotificationMessageId(nNotificationMessageId)
 {
 	m_lastLimits[0] = m_lastLimits[1] = 0;
+	m_carryover[0] = m_carryover[1] = 0;
 }
 
 CServerThread::~CServerThread()
@@ -470,12 +471,13 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 						pThread->m_SlQuotas[i].nBytesAllowedToTransfer = -1;
 						pThread->m_SlQuotas[i].nTransferred = 0;
 					}
+					m_carryover[i] = 0;
 					continue;
 				}
 
 				limit *= 100;
 
-				long long nRemaining = limit;
+				long long nRemaining = limit = m_carryover[i];
 				long long nThreadLimit = limit / m_sInstanceList.size();
 
 				std::vector<CServerThread *> fullUsageList;
@@ -533,7 +535,14 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 							// Finally unlock threads
 							pThread->m_mutex.unlock();
 						}
+						nRemaining = 0;
 					}
+				}
+				if (nRemaining < limit) {
+					m_carryover[i] = nRemaining;
+				}
+				else {
+					m_carryover[i] = limit;
 				}
 			}
 		}
@@ -635,10 +644,11 @@ void CServerThread::ProcessNewSlQuota()
 				pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer = -1;
 				pControlSocket->m_SlQuotas[i].nTransferred = 0;
 			}
+			m_SlQuotas[i].carryover = 0;
 			continue;
 		}
 
-		long long nRemaining = m_SlQuotas[i].nBytesAllowedToTransfer;
+		long long nRemaining = m_SlQuotas[i].nBytesAllowedToTransfer + m_SlQuotas[i].carryover;
 		long long nThreadLimit = nRemaining / m_sInstanceList.size();
 
 		std::vector<CControlSocket *> fullUsageList;
@@ -692,7 +702,14 @@ void CServerThread::ProcessNewSlQuota()
 					pControlSocket->m_SlQuotas[i].nTransferred = 0;
 					pControlSocket->m_SlQuotas[i].nBytesAllowedToTransfer = nThreadLimit;
 				}
+				nRemaining = 0;
 			}
+		}
+		if (nRemaining < m_SlQuotas[i].nBytesAllowedToTransfer) {
+			m_SlQuotas[i].carryover = nRemaining;
+		}
+		else {
+			m_SlQuotas[i].carryover = m_SlQuotas[i].nBytesAllowedToTransfer;
 		}
 	}
 

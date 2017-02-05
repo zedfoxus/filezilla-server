@@ -118,9 +118,11 @@ protected:
 	int m_nLoopCount{};
 
 	int m_lastLimits[2];
+	long long m_carryover[2];
 	struct t_Quota {
 		long long nBytesAllowedToTransfer{-1};
 		long long nTransferred{};
+		long long carryover{};
 	};
 	t_Quota m_SlQuotas[2];
 
