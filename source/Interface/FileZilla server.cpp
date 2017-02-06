@@ -140,13 +140,10 @@ public:
 // Dialogdaten
 	//{{AFX_DATA(CAboutDlg)
 	enum { IDD = IDD_ABOUTBOX };
-	//CStatic	m_cDonate;
 	CStatic	m_cVersion;
 	CHyperLink m_mail;
 	CHyperLink m_homepage;
 	//}}AFX_DATA
-
-	CHyperLink m_cDonate;
 
 	// Überladungen für virtuelle Funktionen, die vom Anwendungs-Assistenten erzeugt wurden
 	//{{AFX_VIRTUAL(CAboutDlg)
@@ -209,8 +206,6 @@ BOOL CAboutDlg::OnInitDialog()
 	m_mail.SetColors(0xFF0000, 0xFF0000,
 				   0xFF0000, 0xFF);
 	m_mail.SetURL("mailto:tim.kosse@filezilla-project.org");
-
-	m_cDonate.SubclassDlgItem(IDC_DONATE, this, _T("https://www.paypal.com/xclick/business=Tim.Kosse%40gmx.de&item_name=FileZilla&cn=Enter+your+comments+here&tax=0&currency_code=USD"));
 
 	m_cVersion.SetWindowText(GetProductVersionString());
 	return TRUE;  // return TRUE unless you set the focus to a control

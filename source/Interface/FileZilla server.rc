@@ -387,7 +387,6 @@ BEGIN
     LTEXT           "Tim Kosse",IDC_MAIL,83,35,34,8
     LTEXT           "Homepage:",IDC_STATIC,39,49,38,8
     LTEXT           "https://filezilla-project.org/",IDC_HOMEPAGE,83,49,129,8
-    CONTROL         IDB_DONATE,IDC_DONATE,"Static",SS_BITMAP,168,17,41,19
     DEFPUSHBUTTON   "OK",IDOK,85,64,50,14,WS_GROUP
 END
 
@@ -959,8 +958,6 @@ END
 IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
 
 IDB_LEDS                BITMAP                  "res\\leds.bmp"
-
-IDB_DONATE              BITMAP                  "res\\donate.bmp"
 
 IDB_TRANSFERINFO        BITMAP                  "res\\transfer_modes.bmp"
 
