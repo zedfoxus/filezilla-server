@@ -75,9 +75,10 @@ BOOL CFileLogger::CheckLogFile()
 	//Get logfile path
 	TCHAR path[MAX_PATH + 1000]; //Make it large enough
 	GetModuleFileName( 0, path, MAX_PATH );
-	LPTSTR pos=_tcsrchr(path, '\\');
-	if (pos)
-		*++pos=0;
+	LPTSTR pos = _tcsrchr(path, '\\');
+	if (pos) {
+		*++pos = 0;
+	}
 	_tcscat(path, _T("Logs\\"));
 
 	//Get logfile name
@@ -103,11 +104,13 @@ BOOL CFileLogger::CheckLogFile()
 		_tcscpy(m_pFileName, filename);
 		_tcscat(buffer, filename);
 
-		if (m_hLogFile != INVALID_HANDLE_VALUE)
+		if (m_hLogFile != INVALID_HANDLE_VALUE) {
 			CloseHandle(m_hLogFile);
+		}
 		m_hLogFile = CreateFile(buffer, GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, 0, 0);
-		if (m_hLogFile == INVALID_HANDLE_VALUE)
+		if (m_hLogFile == INVALID_HANDLE_VALUE) {
 			return FALSE;
+		}
 
 		SetFilePointer(m_hLogFile, 0, 0, FILE_END);
 	}
@@ -136,25 +139,25 @@ BOOL CFileLogger::CheckLogFile()
 		hFind = FindFirstFile(buffer, &NextFindFileData);
 
 		_int64 nDeleteTime = (_int64)m_pOptions->GetOptionVal(OPTION_LOGDELETETIME);
-		if (nDeleteTime)
-			nDeleteTime = (nDeleteTime+1) * 60 * 60 * 24 * 10000000;
+		if (nDeleteTime) {
+			nDeleteTime = (nDeleteTime + 1) * 60 * 60 * 24 * 10000000;
+		}
 
 		//Count total size of all logs, delete the oldest log if exceeding limit
 		_int64 totalsize = 0;
 		CStdString oldestname;
 		_int64 oldestDate = 0;
 
-		while (hFind != INVALID_HANDLE_VALUE)
-		{
-			FindFileData=NextFindFileData;
-			if (!FindNextFile(hFind, &NextFindFileData))
-			{
+		while (hFind != INVALID_HANDLE_VALUE) {
+			FindFileData = NextFindFileData;
+			if (!FindNextFile(hFind, &NextFindFileData)) {
 				FindClose(hFind);
 				hFind = INVALID_HANDLE_VALUE;
 			}
 
-			if (!_tcscmp(FindFileData.cFileName, _T(".")) || !_tcscmp(FindFileData.cFileName, _T("..")))
+			if (!_tcscmp(FindFileData.cFileName, _T(".")) || !_tcscmp(FindFileData.cFileName, _T(".."))) {
 				continue;
+			}
 
 			_int64 size = ((_int64)FindFileData.nFileSizeHigh<<32) + FindFileData.nFileSizeLow;
 			if (!_tcscmp(FindFileData.cFileName, m_pFileName))
@@ -168,29 +171,26 @@ BOOL CFileLogger::CheckLogFile()
 			TCHAR filename[MAX_PATH + 1000];
 			_tcscpy(filename, path);
 			_tcscat(filename, FindFileData.cFileName);
-			if (nDeleteTime && span > nDeleteTime)
+			if (nDeleteTime && span > nDeleteTime) {
 				DeleteFile(filename); //File is too old, delete it
-			else
-			{
+			}
+			else {
 				totalsize += size;
-				if (curtime < oldestDate || !oldestDate)
-				{
+				if (curtime < oldestDate || !oldestDate) {
 					oldestDate = curtime;
 					oldestname = filename;
 				}
 			}
 		}
 
-		if (_tcscmp(oldestname, _T("")) && nLimit && totalsize > nLimit*1024)
-		{
+		if (_tcscmp(oldestname, _T("")) && nLimit && totalsize > nLimit*1024) {
 			DeleteFile(oldestname);
 			return TRUE;
 		}
 	}
 
 	//Single logfile, check size...
-	if (nLimit)
-	{
+	if (nLimit) {
 		_int64 size = GetPosition64(m_hLogFile);
 		size /= 1024;
 		if (size > nLimit) //Log file too large, shrink it...
