@@ -37,12 +37,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(zlib_lib_debug);$(LibraryPath)</LibraryPath>
-    <IncludePath>$(zlib_include);$(openssl_include);$(IncludePath)</IncludePath>
+    <LibraryPath>$(libfilezilla_lib);$(zlib_lib_debug);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(libfilezilla_include);$(zlib_include);$(openssl_include);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LibraryPath>$(zlib_lib_release);$(LibraryPath)</LibraryPath>
-    <IncludePath>$(zlib_include);$(openssl_include);$(IncludePath)</IncludePath>
+    <LibraryPath>$(libfilezilla_lib);$(zlib_lib_release);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(libfilezilla_include);$(zlib_include);$(openssl_include);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>

@@ -16,9 +16,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-// ControlSocket.cpp: Implementierungsdatei
-//
-
 #include "stdafx.h"
 #include "ControlSocket.h"
 #include "transfersocket.h"
@@ -31,20 +28,16 @@
 #include "autobanmanager.h"
 #include "pasv_port_randomizer.h"
 
-/////////////////////////////////////////////////////////////////////////////
-// CControlSocket
-
 std::map<CStdString, int> CControlSocket::m_UserCount;
 std::recursive_mutex CControlSocket::m_mutex;
 
 CControlSocket::CControlSocket(CServerThread & owner)
 	: m_owner(owner)
+	, m_lastCmdTime(fz::monotonic_clock::now())
+	, m_lastTransferTime(m_lastCmdTime)
+	, m_loginTime(m_lastTransferTime)
 	, m_hash_algorithm(CHashThread::SHA1)
 {
-	GetSystemTime(&m_LastTransferTime);
-	GetSystemTime(&m_LastCmdTime);
-	GetSystemTime(&m_LoginTime);
-
 	for (int i = 0; i < 2; ++i) {
 		m_SlQuotas[i].bContinue = false;
 		m_SlQuotas[i].nBytesAllowedToTransfer = owner.GetInitialSpeedLimit(i);
@@ -52,8 +45,9 @@ CControlSocket::CControlSocket(CServerThread & owner)
 		m_SlQuotas[i].bBypassed = false;
 	}
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 3; ++i) {
 		m_facts[i] = true;
+	}
 	m_facts[fact_perm] = false;
 }
 
@@ -139,20 +133,19 @@ void CControlSocket::OnReceive(int nErrorCode)
 					m_nRecvBufferPos = 0;
 
 					//Signal that there is a new command waiting to be processed.
-					GetSystemTime(&m_LastCmdTime);
+					m_lastCmdTime = fz::monotonic_clock::now();
 				}
 			}
 			else
 				//The command may only be 2000 chars long. This ensures that a malicious user can't
 				//send extremely large commands to fill the memory of the server
-				if (m_nRecvBufferPos < 2000)
+				if (m_nRecvBufferPos < 2000) {
 					m_RecvBuffer[m_nRecvBufferPos++] = buffer[i];
+				}
 		}
 	}
-	else
-	{
-		if (!numread || GetLastError() != WSAEWOULDBLOCK)
-		{
+	else {
+		if (!numread || GetLastError() != WSAEWOULDBLOCK) {
 			//Control connection has been closed
 			Close();
 			SendStatus(_T("disconnected."), 0);
@@ -513,7 +506,7 @@ void CControlSocket::ParseCommand()
 			AntiHammerIncrease();
 
 			if (m_status.loggedon) {
-				GetSystemTime(&m_LoginTime);
+				m_loginTime = fz::monotonic_clock::now();
 				DecUserCount(m_status.username);
 				m_owner.DecIpCount(m_status.ip);
 				t_connop *op = new t_connop;
@@ -981,7 +974,7 @@ void CControlSocket::ParseCommand()
 
 				__int64 totalSize = GetLength64(physicalFile);
 				SendTransferinfoNotification(TRANSFERMODE_SEND, physicalFile, logicalFile, m_transferstatus.rest, totalSize);
-				GetSystemTime(&m_LastTransferTime);
+				m_lastTransferTime = fz::monotonic_clock::now();
 			}
 		}
 		break;
@@ -1055,7 +1048,7 @@ void CControlSocket::ParseCommand()
 					m_transferstatus.socket->PasvTransfer();
 				}
 				SendTransferinfoNotification(TRANSFERMODE_RECEIVE, physicalFile, logicalFile, m_transferstatus.rest);
-				GetSystemTime(&m_LastTransferTime);
+				m_lastTransferTime = fz::monotonic_clock::now();
 			}
 		}
 		break;
@@ -1944,10 +1937,10 @@ void CControlSocket::ProcessTransferMsg()
 	}
 	transfer_status_t const status = m_transferstatus.socket->GetStatus();
 
-	GetSystemTime(&m_LastCmdTime);
+	m_lastCmdTime = fz::monotonic_clock::now();
 	if (m_transferstatus.socket) {
 		if (m_transferstatus.socket->GetMode() == TRANSFERMODE_SEND || m_transferstatus.socket->GetMode() == TRANSFERMODE_RECEIVE) {
-			GetSystemTime(&m_LastTransferTime);
+			m_lastTransferTime = m_lastCmdTime;
 		}
 	}
 
@@ -2113,7 +2106,7 @@ int CControlSocket::GetUserCount(const CStdString &user)
 	return count;
 }
 
-void CControlSocket::CheckForTimeout()
+void CControlSocket::CheckForTimeout(fz::monotonic_clock const& now)
 {
 	if (m_antiHammeringWaitTime) {
 		m_antiHammeringWaitTime -= 1000;
@@ -2127,57 +2120,43 @@ void CControlSocket::CheckForTimeout()
 	}
 
 	if (m_transferstatus.socket) {
-		if (m_transferstatus.socket->CheckForTimeout()) {
+		if (m_transferstatus.socket->CheckForTimeout(now)) {
 			return;
 		}
 	}
-	_int64 timeout;
+	fz::duration timeout;
 	if (m_shutdown) {
-		timeout = 3;
+		timeout = fz::duration::from_seconds(3);
 	}
 	else {
-		timeout = m_owner.m_pOptions->GetOptionVal(OPTION_TIMEOUT);
+		timeout = fz::duration::from_seconds(m_owner.m_pOptions->GetOptionVal(OPTION_TIMEOUT));
 	}
 	if (!timeout) {
 		return;
 	}
-	SYSTEMTIME sCurrentTime;
-	GetSystemTime(&sCurrentTime);
-	FILETIME fCurrentTime;
-	if (!SystemTimeToFileTime(&sCurrentTime, &fCurrentTime)) {
-		return;
-	}
-	FILETIME fLastTime;
-	if (!SystemTimeToFileTime(&m_LastCmdTime, &fLastTime)) {
-		return;
-	}
-	_int64 elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
-	if (elapsed > (timeout*10000000)) {
+
+	if ((now - m_lastCmdTime) > timeout) {
 		ForceClose(1);
 		return;
 	}
-	if (m_status.loggedon) { //Transfer timeout
-		_int64 nNoTransferTimeout = m_owner.m_pOptions->GetOptionVal(OPTION_NOTRANSFERTIMEOUT);
-		if (!nNoTransferTimeout) {
+	if (m_status.loggedon) {
+		//Transfer timeout
+		fz::duration noTransferTimeout = fz::duration::from_seconds(m_owner.m_pOptions->GetOptionVal(OPTION_NOTRANSFERTIMEOUT));
+		if (!noTransferTimeout) {
 			return;
 		}
-		SystemTimeToFileTime(&m_LastTransferTime, &fLastTime);
-		elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
-		if (elapsed>(nNoTransferTimeout*10000000)) {
+		if ((now - m_lastTransferTime) > noTransferTimeout) {
 			ForceClose(2);
 			return;
 		}
 	}
-	else { //Login timeout
-		_int64 nLoginTimeout = m_owner.m_pOptions->GetOptionVal(OPTION_LOGINTIMEOUT);
-		if (!nLoginTimeout) {
+	else {
+		//Login timeout
+		fz::duration loginTimeout = fz::duration::from_seconds(m_owner.m_pOptions->GetOptionVal(OPTION_LOGINTIMEOUT));
+		if (!loginTimeout) {
 			return;
 		}
-		else if (!SystemTimeToFileTime(&m_LoginTime, &fLastTime)) {
-			return;
-		}
-		elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
-		if (elapsed>(nLoginTimeout*10000000)) {
+		if ((now - m_loginTime) > loginTimeout) {
 			ForceClose(3);
 			return;
 		}
@@ -2381,7 +2360,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password)
 		return FALSE;
 	}
 
-	GetSystemTime(&m_LastTransferTime);
+	m_lastTransferTime = fz::monotonic_clock::now();
 
 	t_connectiondata_changeuser *conndata = new t_connectiondata_changeuser;
 	t_connop *op = new t_connop;

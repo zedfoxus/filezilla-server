@@ -942,10 +942,10 @@ void CServer::ShowStatus(DWORD eventDateHigh, DWORD eventDateLow, LPCTSTR msg, i
 
 void CServer::OnTimer(UINT nIDEvent)
 {
-	if (nIDEvent == m_nBanTimerID)
-	{
-		if (m_pAutoBanManager)
+	if (nIDEvent == m_nBanTimerID) {
+		if (m_pAutoBanManager) {
 			m_pAutoBanManager->PurgeOutdated();
+		}
 		return;
 	}
 

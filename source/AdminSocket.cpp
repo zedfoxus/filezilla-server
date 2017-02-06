@@ -30,6 +30,7 @@
 #define BUFSIZE 4096
 
 CAdminSocket::CAdminSocket(CAdminInterface *pAdminInterface)
+	: m_lastRecvTime(fz::monotonic_clock::now())
 {
 	ASSERT(pAdminInterface);
 	m_pAdminInterface = pAdminInterface;
@@ -37,10 +38,6 @@ CAdminSocket::CAdminSocket(CAdminInterface *pAdminInterface)
 	m_pRecvBuffer = new unsigned char[BUFSIZE];
 	m_nRecvBufferLen = BUFSIZE;
 	m_nRecvBufferPos = 0;
-
-	SYSTEMTIME sTime;
-	GetSystemTime(&sTime);
-	VERIFY(SystemTimeToFileTime(&sTime, &m_LastRecvTime));
 }
 
 CAdminSocket::~CAdminSocket()
@@ -142,9 +139,7 @@ bool CAdminSocket::SendPendingData()
 			return WSAGetLastError() == WSAEWOULDBLOCK;
 		}
 
-		SYSTEMTIME sTime;
-		GetSystemTime(&sTime);
-		VERIFY(SystemTimeToFileTime(&sTime, &m_LastRecvTime));
+		m_lastRecvTime = fz::monotonic_clock::now();
 
 		if ((unsigned int)nSent < (data.dwLength - data.dwOffset)) {
 			data.dwOffset += nSent;
@@ -164,9 +159,7 @@ void CAdminSocket::OnReceive(int nErrorCode)
 	}
 	int numread = Receive(m_pRecvBuffer + m_nRecvBufferPos, m_nRecvBufferLen - m_nRecvBufferPos);
 	if (numread > 0) {
-		SYSTEMTIME sTime;
-		GetSystemTime(&sTime);
-		VERIFY(SystemTimeToFileTime(&sTime, &m_LastRecvTime));
+		m_lastRecvTime = fz::monotonic_clock::now();
 
 		m_nRecvBufferPos += numread;
 		if (m_nRecvBufferLen - m_nRecvBufferPos < (BUFSIZE/4)) {
@@ -329,21 +322,13 @@ BOOL CAdminSocket::SendCommand(LPCTSTR pszCommand, int nTextType)
 	return SendPendingData();
 }
 
-BOOL CAdminSocket::CheckForTimeout()
+bool CAdminSocket::CheckForTimeout()
 {
-	SYSTEMTIME sTime;
-	FILETIME fTime;
-	GetSystemTime(&sTime);
-	VERIFY(SystemTimeToFileTime(&sTime, &fTime));
-
-	_int64 LastRecvTime = ((_int64)m_LastRecvTime.dwHighDateTime << 32) + m_LastRecvTime.dwLowDateTime;
-	_int64 CurTime = ((_int64)fTime.dwHighDateTime << 32) + fTime.dwLowDateTime;
-
-	if ((CurTime - LastRecvTime) > 600000000) { // 60 seconds
-		return TRUE;
+	if ((fz::monotonic_clock::now() - m_lastRecvTime) > fz::duration::from_seconds(60)) {
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 BOOL CAdminSocket::FinishLogon()

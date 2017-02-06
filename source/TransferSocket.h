@@ -32,6 +32,8 @@ struct t_dirlisting;
 
 #include <zlib.h>
 
+#include <libfilezilla/time.hpp>
+
 enum class transfer_status_t
 {
 	success,
@@ -62,19 +64,20 @@ public:
 
 	int GetMode() const;
 	bool Started() const;
-	BOOL CheckForTimeout();
+	bool CheckForTimeout(fz::monotonic_clock const& now);
 	void PasvTransfer();
 	transfer_status_t GetStatus() const;
 	bool InitZLib(int level);
 	bool GetZlibStats(_int64 &bytesIn, _int64 &bytesOut) const;
 	__int64 GetCurrentFileOffset() const { return m_currentFileOffset; }
-	bool WasActiveSinceCheck() const { return m_wasActiveSinceCheck; }
 
 	bool WasOnConnectCalled() const { return m_on_connect_called; }
 
 	bool CreateListenSocket(PortLease&& port, int family);
 
 	static bool IsAllowedDataConnectionIP(CStdString controlIP, CStdString dataIP, int family, COptions& options);
+
+	fz::monotonic_clock lastActive() const { return m_LastActiveTime; }
 
 protected:
 	virtual void OnSend(int nErrorCode);
@@ -104,9 +107,8 @@ protected:
 	char *m_pBuffer;
 	char *m_pBuffer2; // Used by zlib transfers
 	unsigned int m_nBufferPos;
-	BOOL m_bAccepted;
-	SYSTEMTIME m_LastActiveTime;
-	bool m_wasActiveSinceCheck;
+	bool m_accepted{};
+	fz::monotonic_clock m_LastActiveTime;
 
 	CAsyncSslSocketLayer* m_pSslLayer;
 	bool m_use_tls{};

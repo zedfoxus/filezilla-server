@@ -2,15 +2,29 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
+
+    <!-- EDIT THE LINES BELOW -->
+
+    <libfilezilla_include>x:\xample\libfilezilla\lib</libfilezilla_include>
+    <libfilezilla_lib>x:\xample\libfilezilla\lib</libfilezilla_lib>
     <zlib_include>e:\xample\zlib</zlib_include>
     <zlib_lib_debug>e:\xample\zlib\contrib\vstudio\vc10\x86\ZlibStatDebug</zlib_lib_debug>
     <zlib_lib_release>e:\xample\zlib\contrib\vstudio\vc10\x86\ZlibStatReleaseWithoutAsm</zlib_lib_release>
     <openssl_include>e:\xample\openssl\inc32</openssl_include>
     <openssl_lib>e:\xample\openssl\out32dll</openssl_lib>
+
+    <!-- EDIT THE LINES ABOVE -->
+
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
   <ItemGroup>
+    <BuildMacro Include="libfilezilla_include">
+      <Value>$(libfilezilla_include)</Value>
+    </BuildMacro>
+    <BuildMacro Include="libfilezilla_lib">
+      <Value>$(libfilezilla_lib)</Value>
+    </BuildMacro>
     <BuildMacro Include="zlib_include">
       <Value>$(zlib_include)</Value>
     </BuildMacro>

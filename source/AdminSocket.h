@@ -28,13 +28,16 @@
 #endif // _MSC_VER > 1000
 
 #include "AsyncSocketEx.h"
+
+#include <libfilezilla/time.hpp>
+
 #include <memory>
 
 class CAdminInterface;
 class CAdminSocket final : public CAsyncSocketEx
 {
 public:
-	BOOL CheckForTimeout();
+	bool CheckForTimeout();
 	BOOL SendCommand(int nType, int nID, const void *pData, int nDataLength);
 	BOOL Init();
 	CAdminSocket(CAdminInterface *pAdminInterface);
@@ -74,8 +77,9 @@ protected:
 	BOOL m_bStillNeedAuth{TRUE};
 	unsigned char m_Nonce1[8];
 	unsigned char m_Nonce2[8];
-	FILETIME m_LastRecvTime = FILETIME();
 
+	fz::monotonic_clock m_lastRecvTime;
+	
 	bool m_inside_callback{};
 };
 

@@ -16,9 +16,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-// TransferSocket.cpp: Implementierungsdatei
-//
-
 #include "stdafx.h"
 #include "TransferSocket.h"
 #include "ControlSocket.h"
@@ -31,7 +28,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // CTransferSocket
 CTransferSocket::CTransferSocket(CControlSocket *pOwner)
-: m_pSslLayer()
+	: m_LastActiveTime(fz::monotonic_clock::now())
+	, m_pSslLayer()
 {
 	ASSERT(pOwner);
 	m_pOwner = pOwner;
@@ -40,10 +38,7 @@ CTransferSocket::CTransferSocket(CControlSocket *pOwner)
 	m_nBufferPos = NULL;
 	m_pBuffer = NULL;
 	m_pDirListing = NULL;
-	m_bAccepted = FALSE;
 
-	GetSystemTime(&m_LastActiveTime);
-	m_wasActiveSinceCheck = false;
 	m_nRest = 0;
 
 	m_hFile = INVALID_HANDLE_VALUE;
@@ -231,7 +226,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				}
 
 				m_pOwner->m_owner.IncSendCount(numsent);
-				m_wasActiveSinceCheck = true;
+				m_LastActiveTime = fz::monotonic_clock::now();
 				m_nBufferPos += numsent;
 
 				if (!m_zlibStream.avail_in && !m_pDirListing && m_zlibStream.avail_out &&
@@ -278,7 +273,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				}
 
 				m_pOwner->m_owner.IncSendCount(numsent);
-				m_wasActiveSinceCheck = true;
+				m_LastActiveTime = fz::monotonic_clock::now();
 				if (numsent < numsend) {
 					m_nBufferPos += numsent;
 				}
@@ -421,7 +416,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				}
 
 				m_pOwner->m_owner.IncSendCount(numsent);
-				m_wasActiveSinceCheck = true;
+				m_LastActiveTime = fz::monotonic_clock::now();
 				m_nBufferPos += numsent;
 
 				if (!m_zlibStream.avail_in && m_hFile == INVALID_HANDLE_VALUE && m_zlibStream.avail_out &&
@@ -510,7 +505,7 @@ void CTransferSocket::OnSend(int nErrorCode)
 				}
 
 				m_pOwner->m_owner.IncSendCount(numsent);
-				m_wasActiveSinceCheck = true;
+				m_LastActiveTime = fz::monotonic_clock::now();
 
 				//Check if there are other commands in the command queue.
 				MSG msg;
@@ -628,7 +623,7 @@ void CTransferSocket::OnAccept(int nErrorCode)
 	SOCKET socket = tmp.Detach();
 	Close();
 	Attach(socket);
-	m_bAccepted = TRUE;
+	m_accepted = true;
 
 	portLease_.SetConnected();
 
@@ -694,7 +689,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 			}
 		}
 
-		m_wasActiveSinceCheck = true;
+		m_LastActiveTime = fz::monotonic_clock::now();
 
 		int len = m_nBufSize;
 		long long nLimit = -1;
@@ -786,7 +781,7 @@ void CTransferSocket::OnReceive(int nErrorCode)
 
 void CTransferSocket::PasvTransfer()
 {
-	if (m_bAccepted) {
+	if (m_accepted) {
 		if (!m_bStarted) {
 			InitTransfer(FALSE);
 		}
@@ -856,7 +851,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		AsyncSelect(FD_WRITE | FD_CLOSE);
 	}
 
-	if (m_bAccepted) {
+	if (m_accepted) {
 		m_pOwner->SendTransferPreliminary();
 	}
 
@@ -930,51 +925,35 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		}
 	}
 
-	GetSystemTime(&m_LastActiveTime);
+	m_LastActiveTime = fz::monotonic_clock::now();
 	return TRUE;
 }
 
-BOOL CTransferSocket::CheckForTimeout()
+bool CTransferSocket::CheckForTimeout(fz::monotonic_clock const& now)
 {
 	if (!m_bReady) {
-		return FALSE;
+		return false;
 	}
 
 	// CheckForTimeout is called once per second. Misuse it to also trigger updating of the send buffer size.
 	UpdateSendBufferSize();
 
-	_int64 timeout = m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TIMEOUT);
-
-	SYSTEMTIME sCurrentTime;
-	GetSystemTime(&sCurrentTime);
-	FILETIME fCurrentTime;
-	if (!SystemTimeToFileTime(&sCurrentTime, &fCurrentTime)) {
-		return FALSE;
-	}
-	FILETIME fLastTime;
-	if (m_wasActiveSinceCheck) {
-		m_wasActiveSinceCheck = false;
-		GetSystemTime(&m_LastActiveTime);
-		return TRUE;
-	}
-
-	if (!SystemTimeToFileTime(&m_LastActiveTime, &fLastTime)) {
-		return FALSE;
-	}
-	_int64 elapsed = ((_int64)(fCurrentTime.dwHighDateTime - fLastTime.dwHighDateTime) << 32) + fCurrentTime.dwLowDateTime - fLastTime.dwLowDateTime;
-	if (timeout && elapsed > (timeout*10000000)) {
+	int64_t timeout = m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_TIMEOUT);
+	fz::duration elapsed = fz::monotonic_clock::now() - m_LastActiveTime;
+	
+	if (timeout && elapsed > fz::duration::from_seconds(timeout)) {
 		EndTransfer(transfer_status_t::timeout);
-		return TRUE;
+		return true;
 	}
-	else if (!m_bStarted && elapsed > (10 * 10000000)) {
+	else if (!m_bStarted && elapsed > fz::duration::from_seconds(10)) {
 		EndTransfer(transfer_status_t::noconn);
-		return TRUE;
+		return true;
 	}
 	else if (!timeout) {
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 bool CTransferSocket::Started() const

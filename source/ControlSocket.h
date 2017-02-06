@@ -22,6 +22,8 @@
 #include "hash_thread.h"
 #include "Permissions.h"
 
+#include <libfilezilla/time.hpp>
+
 class CAsyncSslSocketLayer;
 class CTransferSocket;
 
@@ -42,21 +44,15 @@ struct t_command
 
 class CControlSocket final : public CAsyncSocketEx
 {
-// Attribute
-public:
-
-// Operationen
 public:
 	CControlSocket(CServerThread & owner);
 	virtual ~CControlSocket();
 
-// Überschreibungen
-public:
 	CServerThread & m_owner;
 	CStdString m_RemoteIP;
 	void WaitGoOffline();
 	bool m_bWaitGoOffline{};
-	void CheckForTimeout();
+	void CheckForTimeout(fz::monotonic_clock const& now);
 	void ForceClose(int nReason);
 	CTransferSocket* GetTransferSocket();
 	void ProcessTransferMsg();
@@ -112,7 +108,7 @@ protected:
 
 	int m_nTelnetSkip{};
 	bool m_bQuitCommand{};
-	SYSTEMTIME m_LastCmdTime, m_LastTransferTime, m_LoginTime;
+	fz::monotonic_clock m_lastCmdTime, m_lastTransferTime, m_loginTime;
 	static std::map<CStdString, int> m_UserCount;
 	CStdString m_CurrentServerDir;
 	static std::recursive_mutex m_mutex;

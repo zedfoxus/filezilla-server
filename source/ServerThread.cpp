@@ -16,9 +16,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-// ServerThread.cpp: Implementierungsdatei
-//
-
 #include "stdafx.h"
 #include "iputils.h"
 #include "ServerThread.h"
@@ -392,6 +389,8 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 		 * Do both in the same loop to save performance.
 		 */
 
+		fz::monotonic_clock now = fz::monotonic_clock::now();
+
 		/*
 		 * Maximum memory required for file offsets:
 		 * 2 unused prefix bytes, will be filled by CServer,
@@ -407,14 +406,14 @@ void CServerThread::OnTimer(WPARAM wParam,LPARAM lParam)
 		for (std::map<int, CControlSocket *>::iterator iter = m_LocalUserIDs.begin(); iter != m_LocalUserIDs.end(); ++iter) {
 			CControlSocket* pSocket = iter->second;
 			CTransferSocket* pTransferSocket = pSocket->GetTransferSocket();
-			if (pTransferSocket && pTransferSocket->WasActiveSinceCheck()) {
+			if (pTransferSocket && (now - pTransferSocket->lastActive()) < fz::duration::from_milliseconds(1000)) {
 				memcpy(p, &iter->first, 4);
 				p += 4;
 				__int64 offset = pTransferSocket->GetCurrentFileOffset();
 				memcpy(p, &offset, 8);
 				p += 8;
 			}
-			iter->second->CheckForTimeout();
+			iter->second->CheckForTimeout(now);
 		}
 
 		if ((p - buffer) <= 2) {
