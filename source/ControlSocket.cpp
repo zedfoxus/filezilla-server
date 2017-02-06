@@ -1939,17 +1939,21 @@ void CControlSocket::ParseCommand()
 
 void CControlSocket::ProcessTransferMsg()
 {
-	if (!m_transferstatus.socket)
+	if (!m_transferstatus.socket) {
 		return;
+	}
 	transfer_status_t const status = m_transferstatus.socket->GetStatus();
 
 	GetSystemTime(&m_LastCmdTime);
-	if (m_transferstatus.socket)
-		if (m_transferstatus.socket->GetMode() == TRANSFERMODE_SEND || m_transferstatus.socket->GetMode() == TRANSFERMODE_RECEIVE)
+	if (m_transferstatus.socket) {
+		if (m_transferstatus.socket->GetMode() == TRANSFERMODE_SEND || m_transferstatus.socket->GetMode() == TRANSFERMODE_RECEIVE) {
 			GetSystemTime(&m_LastTransferTime);
+		}
+	}
 
-	if (status == transfer_status_t::noconn && m_transferstatus.pasv && m_transferstatus.usedResolvedIP)
+	if (status == transfer_status_t::noconn && m_transferstatus.pasv && m_transferstatus.usedResolvedIP) {
 		m_owner.ExternalIPFailed();
+	}
 
 	int mode = m_transferstatus.socket->GetMode();
 	_int64 zlibBytesIn = 0;
@@ -1994,7 +1998,7 @@ void CControlSocket::ProcessTransferMsg()
 		Send(_T("426 Connection closed; aborted transfer of \"") + resource + _T("\""));
 	}
 	else if (status == transfer_status_t::noconn) {
-		Send(_T("425 Can't open data connection fortransfer of \"") + resource + _T("\""));
+		Send(_T("425 Can't open data connection for transfer of \"") + resource + _T("\""));
 	}
 	else if (status == transfer_status_t::err_file_open) {
 		if (mode == TRANSFERMODE_RECEIVE) {
@@ -2018,21 +2022,26 @@ void CControlSocket::ProcessTransferMsg()
 		ForceClose(1);
 		return;
 	}
-	else if (status == transfer_status_t::ip_mismatch)
+	else if (status == transfer_status_t::ip_mismatch) {
 		Send(_T("425 Rejected data connection for transfer of \"") + resource + _T("\", IP addresses of control and data connection do not match"));
-	else if (status == transfer_status_t::zlib)
+	}
+	else if (status == transfer_status_t::zlib) {
 		Send(_T("450 zlib error"));
-	else if (status == transfer_status_t::tls_no_resume)
+	}
+	else if (status == transfer_status_t::tls_no_resume) {
 		Send(_T("450 TLS session of data connection has not resumed or the session does not match the control connection"));
-	else if (status == transfer_status_t::tls_unknown)
+	}
+	else if (status == transfer_status_t::tls_unknown) {
 		Send(_T("450 Unknown TLS error on data connection"));
+	}
 	if (m_bWaitGoOffline) {
 		ForceClose(0);
 	}
 	else if (m_bQuitCommand) {
 		Send(_T("221 Goodbye"));
-		if (CanQuit())
+		if (CanQuit()) {
 			ForceClose(5);
+		}
 	}
 }
 
