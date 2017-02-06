@@ -16,8 +16,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#if !defined(AFX_TRANSFERSOCKET_H__38ADA982_DD96_4607_B7D2_982011F162FE__INCLUDED_)
-#define AFX_TRANSFERSOCKET_H__38ADA982_DD96_4607_B7D2_982011F162FE__INCLUDED_
+#ifndef FILEZILLA_SERVER_TRANSFERSOCKET_HEADER
+#define FILEZILLA_SERVER_TRANSFERSOCKET_HEADER
 
 #include "pasv_port_randomizer.h"
 
@@ -56,7 +56,7 @@ class CTransferSocket final : public CAsyncSocketEx
 public:
 	CTransferSocket(CControlSocket *pOwner);
 	void Init(std::list<t_dirlisting> &dir, int nMode);
-	void Init(const CStdString& filename, int nMode, _int64 rest);
+	void Init(std::wstring const& filename, int nMode, _int64 rest);
 	inline bool InitCalled() { return m_bReady; }
 	bool UseSSL(bool use);
 	virtual ~CTransferSocket();
@@ -95,7 +95,7 @@ protected:
 	std::list<t_dirlisting> directory_listing_;
 	t_dirlisting *m_pDirListing;
 	bool m_bSentClose{};
-	CStdString m_Filename;
+	std::wstring m_Filename;
 	bool m_bReady{};
 	bool m_bStarted{};
 	BOOL InitTransfer(BOOL bCalledFromSend);
@@ -130,10 +130,4 @@ protected:
 	PortLease portLease_;
 };
 
-
-/////////////////////////////////////////////////////////////////////////////
-
-//{{AFX_INSERT_LOCATION}}
-// Microsoft Visual C++ fügt unmittelbar vor der vorhergehenden Zeile zusätzliche Deklarationen ein.
-
-#endif // AFX_TRANSFERSOCKET_H__38ADA982_DD96_4607_B7D2_982011F162FE__INCLUDED_
+#endif

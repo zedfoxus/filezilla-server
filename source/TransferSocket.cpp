@@ -82,11 +82,12 @@ void CTransferSocket::Init(std::list<t_dirlisting> &dir, int nMode)
 
 	if (m_hFile != INVALID_HANDLE_VALUE) {
 		CloseHandle(m_hFile);
+		m_hFile = INVALID_HANDLE_VALUE;
 	}
 	m_nBufferPos = 0;
 }
 
-void CTransferSocket::Init(const CStdString& filename, int nMode, _int64 rest)
+void CTransferSocket::Init(std::wstring const& filename, int nMode, _int64 rest)
 {
 	ASSERT(nMode == TRANSFERMODE_SEND || nMode == TRANSFERMODE_RECEIVE);
 	m_bReady = true;
@@ -857,11 +858,12 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 
 	m_bStarted = true;
 	if (m_nMode == TRANSFERMODE_SEND) {
-		ASSERT(m_Filename != _T(""));
+		ASSERT(!m_Filename.empty());
 		int shareMode = FILE_SHARE_READ;
-		if (m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_SHAREDWRITE))
+		if (m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_SHAREDWRITE)) {
 			shareMode |= FILE_SHARE_WRITE;
-		m_hFile = CreateFile(m_Filename, GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
+		}
+		m_hFile = CreateFile(m_Filename.c_str(), GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
 		if (m_hFile == INVALID_HANDLE_VALUE) {
 			EndTransfer(transfer_status_t::err_file_open);
 			return FALSE;
@@ -899,12 +901,12 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		}
 
 		if (m_hFile == INVALID_HANDLE_VALUE) {
-			ASSERT(m_Filename != _T(""));
+			ASSERT(!m_Filename.empty);
 			int shareMode = FILE_SHARE_READ;
 			if (m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_SHAREDWRITE)) {
 				shareMode |= FILE_SHARE_WRITE;
 			}
-			m_hFile = CreateFile(m_Filename, GENERIC_WRITE, shareMode, 0, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, 0);
+			m_hFile = CreateFile(m_Filename.c_str(), GENERIC_WRITE, shareMode, 0, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, 0);
 			if (m_hFile == INVALID_HANDLE_VALUE) {
 				EndTransfer(transfer_status_t::err_file_open);
 				return FALSE;
