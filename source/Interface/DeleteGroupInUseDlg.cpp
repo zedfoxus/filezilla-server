@@ -56,12 +56,12 @@ BOOL CDeleteGroupInUseDlg::OnInitDialog()
 	m_Desc.SetWindowText(str2);
 
 	m_NewGroup.AddString(_T("-- None --"));
-	for (unsigned int i = 0; i < m_GroupsList->size(); i++)
-	{
-		CString name = (*m_GroupsList)[i].group;
-		if (name == m_groupName)
+	for (auto const& group : *m_GroupsList) {
+		std::wstring name = group.group;
+		if (name == m_groupName) {
 			continue;
-		m_NewGroup.AddString(name);
+		}
+		m_NewGroup.AddString(name.c_str());
 	}
 	m_NewGroup.SetCurSel(0);
 

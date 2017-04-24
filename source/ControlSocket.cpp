@@ -240,16 +240,18 @@ void CControlSocket::SendStatus(LPCTSTR status, int type)
 
 BOOL CControlSocket::Send(LPCTSTR str, bool sendStatus, bool newline)
 {
-	if (!*str)
+	if (!*str) {
 		return false;
+	}
 
-	if (sendStatus)
+	if (sendStatus) {
 		SendStatus(str, 3);
+	}
 
 	char* buffer;
 	int len;
 	{
-		auto utf8 = ConvToNetwork(str);
+		auto utf8 = fz::to_utf8(str);
 		if (utf8.empty()) {
 			Close();
 			SendStatus(_T("Failed to convert reply to UTF-8"), 1);
@@ -2295,7 +2297,7 @@ BOOL CControlSocket::DoUserLogin(LPCTSTR password)
 		return FALSE;
 	}
 
-	CStdString peerIP;
+	std::wstring peerIP;
 	UINT port = 0;
 
 	BOOL bResult = GetPeerName(peerIP, port);
@@ -2491,7 +2493,7 @@ creation_fallback:
 
 bool CControlSocket::CheckIpForZlib()
 {
-	CStdString peerIP;
+	std::wstring peerIP;
 	UINT port = 0;
 	BOOL bResult = GetPeerName(peerIP, port);
 	if (!bResult)
@@ -2643,7 +2645,7 @@ CStdString CControlSocket::GetPassiveIP()
 	BOOL bValidSockAddr = GetSockName(localIP, localPort);
 
 	//Get peer ip
-	CStdString peerIP;
+	std::wstring peerIP;
 	UINT peerPort = 0;
 	BOOL bResult = GetPeerName(peerIP, peerPort);
 	if (bResult)
@@ -2875,7 +2877,7 @@ bool CControlSocket::CreatePassiveTransferSocket()
 {
 	m_transferstatus.socket = new CTransferSocket(this);
 
-	CStdString peerIP;
+	std::wstring peerIP;
 	UINT tmp = 0;
 	(void)GetPeerName(peerIP, tmp);
 
@@ -2927,7 +2929,7 @@ CStdString CControlSocket::PrepareSend(CStdString const& str, bool sendStatus)
 
 bool CControlSocket::VerifyIPFromPortCommand(CStdString & ip)
 {
-	CStdString controlIP;
+	std::wstring controlIP;
 	UINT tmp{};
 	if (!GetPeerName(controlIP, tmp)) {
 		Send(_T("421 Rejected command. Could not get peer name."));

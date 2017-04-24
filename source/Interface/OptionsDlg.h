@@ -36,9 +36,9 @@ class COptionsDlg : public CSAPrefsDialog
 {
 // Konstruktion
 public:
-	CString GetOption(int nOptionID);
+	std::wstring GetOption(int nOptionID);
 	__int64 GetOptionVal(int nOptionID);
-	void SetOption(int nOptionID, CString value);
+	void SetOption(int nOptionID, std::wstring const& value);
 	void SetOption(int nOptionID, __int64 value);
 	BOOL Show();
 	COptionsDlg(COptions *pInterfaceOptions, bool localConnection);
@@ -60,7 +60,7 @@ protected:
 	struct t_OptionsCache
 	{
 		int nType;
-		CString str;
+		std::wstring str;
 		_int64 value;
 	} m_OptionsCache[OPTIONS_NUM];
 

@@ -94,12 +94,12 @@ BOOL COptionsIpFilterPage::IsDataValid()
 
 void COptionsIpFilterPage::SaveData()
 {
-	m_pOptionsDlg->SetOption(OPTION_IPFILTER_ALLOWED, m_AllowedAddresses);
-	m_pOptionsDlg->SetOption(OPTION_IPFILTER_DISALLOWED, m_DisallowedAddresses);
+	m_pOptionsDlg->SetOption(OPTION_IPFILTER_ALLOWED, m_AllowedAddresses.GetString());
+	m_pOptionsDlg->SetOption(OPTION_IPFILTER_DISALLOWED, m_DisallowedAddresses.GetString());
 }
 
 void COptionsIpFilterPage::LoadData()
 {
-	m_AllowedAddresses = m_pOptionsDlg->GetOption(OPTION_IPFILTER_ALLOWED);
-	m_DisallowedAddresses = m_pOptionsDlg->GetOption(OPTION_IPFILTER_DISALLOWED);
+	m_AllowedAddresses = m_pOptionsDlg->GetOption(OPTION_IPFILTER_ALLOWED).c_str();
+	m_DisallowedAddresses = m_pOptionsDlg->GetOption(OPTION_IPFILTER_DISALLOWED).c_str();
 }

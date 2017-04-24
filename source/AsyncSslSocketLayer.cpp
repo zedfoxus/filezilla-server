@@ -1796,19 +1796,20 @@ void CAsyncSslSocketLayer::ClearErrors()
 }
 
 namespace {
-void add_dn(X509_NAME* dn, const char* name, const unsigned char* value, int type = V_ASN1_UTF8STRING)
+void add_dn(X509_NAME* dn, const char* name, std::string const& value, int type = V_ASN1_UTF8STRING)
 {
-	if (!name || !*name || !value || !*value)
+	if (!name || !*name || value.empty() || !value[0]) {
 		return;
+	}
 
 	pX509_NAME_add_entry_by_txt(dn, name,
-		type, value, -1, -1, 0);
+		type, reinterpret_cast<unsigned char const*>(value.c_str()), -1, -1, 0);
 }
 }
 
-bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, const unsigned char* country, const unsigned char* state,
-			const unsigned char* locality, const unsigned char* organization, const unsigned char* unit, const unsigned char* cname,
-			const unsigned char *email, CString& err)
+bool CAsyncSslSocketLayer::CreateSslCertificate(std::wstring const& filename, int bits, std::string const& country, std::string const& state,
+	std::string const& locality, std::string const& organization, std::string const& unit, std::string const& cname,
+	std::string const& email, std::wstring& err)
 {
 	// Certificate valid for a year
 	int days = 365;
@@ -1834,7 +1835,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 		return false;
 	}
 
-	rsa = pRSA_generate_key(bits, RSA_F4, 0/*callback*/, NULL);
+	rsa = pRSA_generate_key(bits, RSA_F4, 0, NULL);
 
 	if (!pEVP_PKEY_assign(pk, EVP_PKEY_RSA, (char *)(rsa))) {
 		err = _T("Failed to assign rsa key to key object");
@@ -1864,9 +1865,10 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	add_dn(name, "L", locality);
 	add_dn(name, "O", organization);
 	add_dn(name, "OU", unit);
-	if (email && *email)
+	if (!email.empty() && email[0]) {
 		pX509_NAME_add_entry_by_NID(name, NID_pkcs9_emailAddress,
-				MBSTRING_UTF8, const_cast<unsigned char*>(email), -1, -1, 0);
+			MBSTRING_UTF8, reinterpret_cast<unsigned char*>(const_cast<std::string::value_type *>(email.c_str())), -1, -1, 0);
+	}
 
 	/* Its self signed so set the issuer name to be the same as the
 	 * subject.
@@ -1881,7 +1883,7 @@ bool CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR filename, int bits, cons
 	// Write key and certificate to file
 	// We use a memory bio, since the OpenSSL functions accepting a filepointer
 	// do crash for no obvious reason.
-	FILE* file = _wfopen(filename, _T("w+"));
+	FILE* file = _wfopen(filename.c_str(), _T("w+"));
 	if (!file) {
 		err = _T("Failed to open output file");
 		return false;

@@ -73,9 +73,9 @@ BOOL CConnectDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
-	m_ServerAddress = m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS);
+	m_ServerAddress = m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS).c_str();
 	m_ServerPort.Format(_T("%d"), static_cast<int>(m_pOptions->GetOptionVal(IOPTION_LASTSERVERPORT)));
-	m_ServerPassword = m_pOptions->GetOption(IOPTION_LASTSERVERPASS);
+	m_ServerPassword = m_pOptions->GetOption(IOPTION_LASTSERVERPASS).c_str();
 	m_bAlways = m_pOptions->GetOptionVal(IOPTION_ALWAYS) != 0;
 	UpdateData(FALSE);
 
@@ -87,21 +87,19 @@ void CConnectDialog::OnOK()
 {
 	UpdateData();
 
-	if (m_ServerAddress == _T(""))
-	{
+	if (m_ServerAddress == _T("")) {
 		AfxMessageBox(_T("Please enter a server address."), MB_ICONEXCLAMATION);
 		return;
 	}
 
-	if (_ttoi(m_ServerPort)<1 || _ttoi(m_ServerPort)>65535)
-	{
+	if (_ttoi(m_ServerPort) < 1 || _ttoi(m_ServerPort) > 65535) {
 		AfxMessageBox(_T("Please enter a server port in the range from 1 to 65535."), MB_ICONEXCLAMATION);
 		return;
 	}
 
-	m_pOptions->SetOption(IOPTION_LASTSERVERADDRESS, m_ServerAddress);
+	m_pOptions->SetOption(IOPTION_LASTSERVERADDRESS, m_ServerAddress.GetString());
 	m_pOptions->SetOption(IOPTION_LASTSERVERPORT, _ttoi(m_ServerPort));
-	m_pOptions->SetOption(IOPTION_LASTSERVERPASS, m_ServerPassword);
+	m_pOptions->SetOption(IOPTION_LASTSERVERPASS, m_ServerPassword.GetString());
 	m_pOptions->SetOption(IOPTION_ALWAYS, m_bAlways);
 
 	CDialog::OnOK();

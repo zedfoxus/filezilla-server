@@ -4,7 +4,6 @@
 #include <string>
 
 CStdStringW ConvFromNetwork(const char* buffer);
-std::string ConvToNetwork(const CStdStringW& str);
 
 CStdStringA ConvToLocal(const CStdStringW& str);
 CStdStringW ConvFromLocal(const CStdStringA& str);

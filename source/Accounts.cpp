@@ -4,6 +4,8 @@
 
 #include <random>
 
+#include <libfilezilla/string.hpp>
+
 t_group::t_group()
 {
 	for (int i = 0; i < 2; ++i) {
@@ -68,14 +70,15 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 	// Parse IP filter rules.
 	int numDisallowedIPs = (int(*p) << 8) + p[1];
 	p += 2;
-	while (numDisallowedIPs--)
-	{
-		CStdString ip;
-		if (!ParseString(endMarker, p, ip))
+	while (--numDisallowedIPs) {
+		std::wstring ip;
+		if (!ParseString(endMarker, p, ip)) {
 			return 0;
+		}
 
-		if (IsValidAddressFilter(ip) || ip == _T("*"))
+		if (IsValidAddressFilter(ip) || ip == _T("*")) {
 			disallowedIPs.push_back(ip);
+		}
 	}
 
 	if ((endMarker - p) < 2)
@@ -83,14 +86,15 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 
 	int numAllowedIPs = (int(*p) << 8) + p[1];
 	p += 2;
-	while (numAllowedIPs--)
-	{
-		CStdString ip;
-		if (!ParseString(endMarker, p, ip))
+	while (--numAllowedIPs) {
+		std::wstring ip;
+		if (!ParseString(endMarker, p, ip)) {
 			return 0;
+		}
 
-		if (IsValidAddressFilter(ip) || ip == _T("*"))
+		if (IsValidAddressFilter(ip) || ip == _T("*")) {
 			allowedIPs.push_back(ip);
+		}
 	}
 
 	if ((endMarker - p) < 2)
@@ -101,43 +105,51 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 
 	BOOL bGotHome = FALSE;
 
-	for (int j = 0; j < dircount; j++)
-	{
+	for (int j = 0; j < dircount; ++j) {
 		t_directory dir;
 
-		CStdString str;
-		if (!ParseString(endMarker, p, str))
+		std::wstring str;
+		if (!ParseString(endMarker, p, str)) {
 			return 0;
+		}
 
-		str.TrimRight(_T("\\"));
-		if (str == _T(""))
+		while (!str.empty() && str.back() == '\\') {
+			str.pop_back();
+		}
+		if (str.empty()) {
 			return 0;
+		}
 
 		dir.dir = str;
 
 		// Get directory aliases.
-		if ((endMarker - p) < 2)
+		if ((endMarker - p) < 2) {
 			return NULL;
+		}
 
 		int aliascount = (int(*p) << 8) + p[1];
 		p += 2;
 
-		for (int i = 0; i < aliascount; i++)
-		{
-			CStdString alias;
-			if (!ParseString(endMarker, p, alias))
+		for (int i = 0; i < aliascount; ++i) {
+			std::wstring alias;
+			if (!ParseString(endMarker, p, alias)) {
 				return 0;
+			}
 
-			alias.TrimRight(_T("\\"));
+			while (!alias.empty() && alias.back() == '\\') {
+				alias.pop_back();
+			}
 
-			if (alias == _T(""))
+			if (alias == _T("")) {
 				return 0;
+			}
 
 			dir.aliases.push_back(alias);
 		}
 
-		if ((endMarker - p) < 2)
+		if ((endMarker - p) < 2) {
 			return NULL;
+		}
 
 		int rights = (int(*p) << 8) + p[1];
 		p += 2;
@@ -154,19 +166,22 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 		dir.bAutoCreate	= rights & 0x0200 ? 1:0;
 
 		// Avoid multiple home directories.
-		if (dir.bIsHome)
-			if (!bGotHome)
+		if (dir.bIsHome) {
+			if (!bGotHome) {
 				bGotHome = TRUE;
-			else
+			}
+			else {
 				dir.bIsHome = FALSE;
+			}
+		}
 
 		permissions.push_back(dir);
 	}
 
-	for (int i = 0; i < 2; i++)
-	{
-		if ((endMarker - p) < 5)
+	for (int i = 0; i < 2; ++i) {
+		if ((endMarker - p) < 5) {
 			return NULL;
+		}
 
 		nSpeedLimitType[i] = *p & 3;
 		nBypassServerSpeedLimit[i] = (*p++ >> 2) & 3;
@@ -174,41 +189,44 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 		nSpeedLimit[i] = int(*p++) << 8;
 		nSpeedLimit[i] |= *p++;
 
-		if (!nSpeedLimit[i])
+		if (!nSpeedLimit[i]) {
 			nSpeedLimit[i] = 10;
+		}
 
 		int num = (int(*p) << 8) + p[1];
 		p += 2;
-		while (num--)
-		{
+		while (--num) {
 			CSpeedLimit sl;
 			p = sl.ParseBuffer(p, length-(int)(p-pBuffer));
-			if (!p)
+			if (!p) {
 				return NULL;
+			}
 			SpeedLimits[i].push_back(sl);
 		}
 	}
 
-	if (!ParseString(endMarker, p, comment))
+	if (!ParseString(endMarker, p, comment)) {
 		return 0;
+	}
 
-	if (p >= endMarker)
+	if (p >= endMarker) {
 		return 0;
+	}
 
 	forceSsl = *p++;
 
 	return p;
 }
 
-int t_group::GetRequiredStringBufferLen(const CStdString& str) const
+int t_group::GetRequiredStringBufferLen(std::wstring const& str) const
 {
-	auto utf8 = ConvToNetwork(str);
+	auto utf8 = fz::to_utf8(str);
 	return utf8.size() + 2;
 }
 
-void t_group::FillString(unsigned char *& p, CStdString const& str) const
+void t_group::FillString(unsigned char *& p, std::wstring const& str) const
 {
-	auto utf8 = ConvToNetwork(str);
+	auto utf8 = fz::to_utf8(str);
 
 	size_t len = utf8.size();
 	*p++ = (len >> 8) & 0xffu;
@@ -393,7 +411,7 @@ bool t_group::IsEnabled() const
 	}
 }
 
-bool t_group::AccessAllowed(CStdString const& ip) const
+bool t_group::AccessAllowed(std::wstring const& ip) const
 {
 	bool disallowed = false;
 
@@ -482,10 +500,11 @@ void t_user::generateSalt()
 	}
 }
 
-bool t_group::ParseString(const unsigned char* endMarker, unsigned char *&p, CStdString &string)
+bool t_group::ParseString(const unsigned char* endMarker, unsigned char *&p, std::wstring &string)
 {
-	if ((endMarker - p) < 2)
+	if ((endMarker - p) < 2) {
 		return false;
+	}
 
 	int len = *p * 256 + p[1];
 	p += 2;
@@ -495,7 +514,7 @@ bool t_group::ParseString(const unsigned char* endMarker, unsigned char *&p, CSt
 	char* tmp = new char[len + 1];
 	tmp[len] = 0;
 	memcpy(tmp, p, len);
-	CStdStringW str = ConvFromNetwork((const char*)tmp);
+	std::wstring str = ConvFromNetwork((const char*)tmp);
 	delete [] tmp;
 	p += len;
 	string = str;

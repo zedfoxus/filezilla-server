@@ -30,6 +30,8 @@
 
 #include "AsyncSslSocketLayer.h"
 
+#include <libfilezilla/string.hpp>
+
 class CPermissionsHelperWindow final
 {
 public:
@@ -125,19 +127,22 @@ CPermissions::~CPermissions()
 {
 	simple_lock lock(m_mutex);
 	std::list<CPermissions *>::iterator instanceIter;
-	for (instanceIter=m_sInstanceList.begin(); instanceIter!=m_sInstanceList.end(); ++instanceIter)
-		if (*instanceIter==this)
+	for (instanceIter = m_sInstanceList.begin(); instanceIter != m_sInstanceList.end(); ++instanceIter) {
+		if (*instanceIter == this) {
 			break;
+		}
+	}
 	ASSERT(instanceIter != m_sInstanceList.end());
-	if (instanceIter != m_sInstanceList.end())
+	if (instanceIter != m_sInstanceList.end()) {
 		m_sInstanceList.erase(instanceIter);
+	}
 	delete m_pPermissionsHelperWindow;
 }
 
 void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char*, bool *)
 {
 	WIN32_FILE_ATTRIBUTE_DATA status{};
-	if (!pTime && GetStatus64(directory.dir, status)) {
+	if (!pTime && GetStatus64(directory.dir.c_str(), status)) {
 		size = GetLength64(status);
 		pTime = &status.ftLastWriteTime;
 	}
@@ -163,12 +168,15 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 			CStdStringA ext = name + nameLen - 4;
 			if (ext.ReverseFind('.') != -1) {
 				ext.MakeLower();
-				if (ext == ".exe")
+				if (ext == ".exe") {
 					isexe = TRUE;
-				else if (ext == ".bat")
+				}
+				else if (ext == ".bat") {
 					isexe = TRUE;
-				else if (ext == ".com")
+				}
+				else if (ext == ".com") {
 					isexe = TRUE;
+				}
 			}
 		}
 		result.back().buffer[result.back().len++] = isexe ? 'x' : '-';
@@ -192,10 +200,12 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 	VERIFY(SystemTimeToFileTime(&sLocalTime, &fTime));
 
 	FILETIME mtime;
-	if (pTime)
+	if (pTime) {
 		mtime = *pTime;
-	else
+	}
+	else {
 		mtime = fTime;
+	}
 
 	TIME_ZONE_INFORMATION tzInfo;
 	int tzRes = GetTimeZoneInformation(&tzInfo);
@@ -213,10 +223,12 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 	long long t2 = (static_cast<long long>(fTime.dwHighDateTime) << 32) + fTime.dwLowDateTime;
 	const char months[][4]={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 	result.back().len += sprintf(result.back().buffer + result.back().len, " %s %02d ", months[sFileTime.wMonth-1], sFileTime.wDay);
-	if (t1 > t2 || (t2-t1) > (1000000ll*60*60*24*350))
+	if (t1 > t2 || (t2 - t1) > (1000000ll * 60 * 60 * 24 * 350)) {
 		result.back().len += sprintf(result.back().buffer + result.back().len, " %d ", sFileTime.wYear);
-	else
+	}
+	else {
 		result.back().len += sprintf(result.back().buffer + result.back().len, "%02d:%02d ", sFileTime.wHour, sFileTime.wMinute);
+	}
 
 	memcpy(result.back().buffer + result.back().len, name, nameLen);
 	result.back().len += nameLen;
@@ -227,7 +239,7 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char*, bool *enabledFacts)
 {
 	WIN32_FILE_ATTRIBUTE_DATA status{};
-	if (!pTime && GetStatus64(directory.dir, status)) {
+	if (!pTime && GetStatus64(directory.dir.c_str(), status)) {
 		size = GetLength64(status);
 		pTime = &status.ftLastWriteTime;
 	}
@@ -356,103 +368,120 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 									  bool *enabledFacts /*=0*/)
 {
 	CStdString dir = CanonifyServerDir(currentDir, dirToDisplay);
-	if (dir == _T(""))
+	if (dir.empty()) {
 		return PERMISSION_INVALIDNAME;
+	}
 	logicalDir = dir;
 
 	// Get directory from directory name
 	t_directory directory;
 	BOOL bTruematch;
 	int res = GetRealDirectory(dir, user, directory, bTruematch);
-	CStdString sFileSpec = _T("*"); // Which files to list in the directory
+	std::wstring sFileSpec = L"*"; // Which files to list in the directory
 	if (res == PERMISSION_FILENOTDIR || res == PERMISSION_NOTFOUND) // Try listing using a direct wildcard filespec instead?
 	{
 		// Check dirToDisplay if we are allowed to go back a directory
 		dirToDisplay.Replace('\\', '/');
 		while (dirToDisplay.Replace(_T("//"), _T("/")));
-		if (dirToDisplay.Right(1) == _T("/"))
+		if (dirToDisplay.Right(1) == _T("/")) {
 			return res;
+		}
 		int pos = dirToDisplay.ReverseFind('/');
-		if (res != PERMISSION_FILENOTDIR && dirToDisplay.Mid(pos + 1).Find('*') == -1)
+		if (res != PERMISSION_FILENOTDIR && dirToDisplay.Mid(pos + 1).Find('*') == -1) {
 			return res;
+		}
 		dirToDisplay = dirToDisplay.Left(pos + 1);
 
-		if (dir == _T("/"))
+		if (dir == _T("/")) {
 			return res;
+		}
 
 		pos = dir.ReverseFind('/');
 		sFileSpec = dir.Mid(pos + 1);
-		if (pos)
+		if (pos) {
 			dir = dir.Left(pos);
-		else
+		}
+		else {
 			dir = _T("/");
+		}
 
-		if (sFileSpec.Find(_T("*")) == -1 && res != PERMISSION_FILENOTDIR)
+		if (sFileSpec.find('*') == std::wstring::npos && res != PERMISSION_FILENOTDIR) {
 			return res;
+		}
 
 		res = GetRealDirectory(dir, user, directory, bTruematch);
 	}
-	if (res)
+	if (res) {
 		return res;
+	}
 
 	// Check permissions
-	if (!directory.bDirList)
+	if (!directory.bDirList) {
 		return PERMISSION_DENIED;
+	}
 
 	TIME_ZONE_INFORMATION tzInfo;
 	int tzRes = GetTimeZoneInformation(&tzInfo);
 	_int64 offset = tzInfo.Bias+((tzRes==TIME_ZONE_ID_DAYLIGHT)?tzInfo.DaylightBias:tzInfo.StandardBias);
 	offset *= 60 * 10000000;
 
-	if (dirToDisplay != _T("") && dirToDisplay.Right(1) != _T("/"))
+	if (dirToDisplay != _T("") && dirToDisplay.Right(1) != _T("/")) {
 		dirToDisplay += _T("/");
+	}
 
-	auto dirToDisplayUTF8 = ConvToNetwork(dirToDisplay);
-	if (dirToDisplayUTF8.empty() && !dirToDisplay.empty())
+	auto dirToDisplayUTF8 = fz::to_utf8(dirToDisplay);
+	if (dirToDisplayUTF8.empty() && !dirToDisplay.empty()) {
 		return PERMISSION_DENIED;
+	}
 
 	for (auto const& virtualAliasName : user.virtualAliasNames) {
-		if (virtualAliasName.first.CompareNoCase(dir))
+		if (virtualAliasName.first.CompareNoCase(dir)) {
 			continue;
+		}
 
 		t_directory directory;
 		BOOL truematch = false;
-		if (GetRealDirectory(dir + _T("/") + virtualAliasName.second, user, directory, truematch))
+		if (GetRealDirectory(dir + _T("/") + virtualAliasName.second, user, directory, truematch)) {
 			continue;
-		if (!directory.bDirList)
+		}
+		if (!directory.bDirList) {
 			continue;
-		if (!truematch && !directory.bDirSubdirs)
+		}
+		if (!truematch && !directory.bDirSubdirs) {
 			continue;
-
-		if (sFileSpec != _T("*.*") && sFileSpec != _T("*")) {
-			if (!WildcardMatch(virtualAliasName.second, sFileSpec))
-				continue;
 		}
 
-		auto name = ConvToNetwork(virtualAliasName.second);
-		if (!name.empty())
+		if (sFileSpec != L"*.*" && sFileSpec != L"*") {
+			if (!WildcardMatch(virtualAliasName.second, sFileSpec)) {
+				continue;
+			}
+		}
+
+		auto name = fz::to_utf8(virtualAliasName.second);
+		if (!name.empty()) {
 			addFunc(result, true, name.c_str(), directory, 0, 0, dirToDisplayUTF8.c_str(), enabledFacts);
+		}
 	}
 
 	physicalDir = directory.dir;
-	if (sFileSpec != _T("*") && sFileSpec != _T("*.*"))
+	if (sFileSpec != L"*" && sFileSpec != L"*.*") {
 		physicalDir += sFileSpec;
+	}
 
 	WIN32_FIND_DATA FindFileData;
 	WIN32_FIND_DATA NextFindFileData;
 	HANDLE hFind;
-	hFind = FindFirstFile(directory.dir + _T("\\") + sFileSpec, &NextFindFileData);
-	while (hFind != INVALID_HANDLE_VALUE)
-	{
+	hFind = FindFirstFile((directory.dir + L"\\" + sFileSpec).c_str(), &NextFindFileData);
+	while (hFind != INVALID_HANDLE_VALUE) {
 		FindFileData = NextFindFileData;
-		if (!FindNextFile(hFind, &NextFindFileData))
-		{
+		if (!FindNextFile(hFind, &NextFindFileData)) {
 			FindClose(hFind);
 			hFind = INVALID_HANDLE_VALUE;
 		}
 
-		if (!_tcscmp(FindFileData.cFileName, _T(".")) || !_tcscmp(FindFileData.cFileName, _T("..")))
+		if (!_tcscmp(FindFileData.cFileName, _T(".")) || !_tcscmp(FindFileData.cFileName, _T(".."))) {
 			continue;
+		}
 
 		CStdString const fn = FindFileData.cFileName;
 
@@ -461,20 +490,23 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 			// don't display the subdir.
 			BOOL truematch;
 			t_directory subDir;
-			if (GetRealDirectory(dir + _T("/") + fn, user, subDir, truematch))
+			if (GetRealDirectory(dir + _T("/") + fn, user, subDir, truematch)) {
 				continue;
+			}
 
 			if (subDir.bDirList) {
-				auto utf8 = ConvToNetwork(fn);
-				if (utf8.empty() && !fn.empty())
+				auto utf8 = fz::to_utf8(fn);
+				if (utf8.empty() && !fn.empty()) {
 					continue;
+				}
 				addFunc(result, true, utf8.c_str(), subDir, 0, &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
 			}
 		}
 		else {
-			auto utf8 = ConvToNetwork(fn);
-			if (utf8.empty() && !fn.empty())
+			auto utf8 = fz::to_utf8(fn);
+			if (utf8.empty() && !fn.empty()) {
 				continue;
+			}
 			addFunc(result, false, utf8.c_str(), directory, FindFileData.nFileSizeLow + ((_int64)FindFileData.nFileSizeHigh<<32), &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
 		}
 	}
@@ -614,23 +646,26 @@ int CPermissions::CheckFilePermissions(CUser const& user, CStdString filename, C
 	if (op&FOP_DELETE && user.GetAliasTarget(logicalFile + _T("/")) != _T(""))
 		res |= PERMISSION_DENIED;
 
-	physicalFile = directory.dir + "\\" + filename;
+	physicalFile = directory.dir + L"\\" + static_cast<std::wstring>(filename);
 	DWORD nAttributes = GetFileAttributes(physicalFile);
-	if (nAttributes == 0xFFFFFFFF)
-	{
-		if (!(op&(FOP_WRITE|FOP_APPEND|FOP_CREATENEW)))
+	if (nAttributes == 0xFFFFFFFF) {
+		if (!(op&(FOP_WRITE | FOP_APPEND | FOP_CREATENEW))) {
 			res |= PERMISSION_NOTFOUND;
+		}
 	}
-	else
-	{
-		if (nAttributes & FILE_ATTRIBUTE_DIRECTORY)
+	else {
+		if (nAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 			res |= PERMISSION_DIRNOTFILE;
-		if (!directory.bFileAppend && op & FOP_APPEND)
+		}
+		if (!directory.bFileAppend && op & FOP_APPEND) {
 			res |= PERMISSION_DENIED;
-		if (!directory.bFileDelete && op & FOP_WRITE)
+		}
+		if (!directory.bFileDelete && op & FOP_WRITE) {
 			res |= PERMISSION_DENIED;
-		if (op & FOP_CREATENEW)
+		}
+		if (op & FOP_CREATENEW) {
 			res |= PERMISSION_DOESALREADYEXIST;
+		}
 	}
 
 	//If res is 0 we finally have a valid path+filename!
@@ -848,7 +883,7 @@ bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswo
 
 	if (!pass)
 		return false;
-	auto tmp = ConvToNetwork(pass);
+	auto tmp = fz::to_utf8(pass);
 	if (tmp.empty() && *pass) {
 		// Network broke. Meh...
 		return false;
@@ -873,7 +908,7 @@ bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswo
 	
 	// It's a salted SHA-512 hash
 
-	auto saltedPassword = ConvToNetwork(pass + user.salt);
+	auto saltedPassword = fz::to_utf8(pass + user.salt);
 	if (saltedPassword.empty()) {
 		return false;
 	}
@@ -899,7 +934,7 @@ void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, LPCTSTR value)
 {
 	ASSERT(pXML);
 	TiXmlElement* pOption = new TiXmlElement("Option");
-	pOption->SetAttribute("Name", ConvToNetwork(name).c_str());
+	pOption->SetAttribute("Name", fz::to_utf8(name).c_str());
 	XML::SetText(pOption, value);
 	pXML->LinkEndChild(pOption);
 }
@@ -922,7 +957,7 @@ void CPermissions::SavePermissions(TiXmlElement *pXML, const t_group &user)
 		TiXmlElement* pPermission = new TiXmlElement("Permission");
 		pPermissions->LinkEndChild(pPermission);
 
-		pPermission->SetAttribute("Dir", ConvToNetwork(user.permissions[i].dir).c_str());
+		pPermission->SetAttribute("Dir", fz::to_utf8(user.permissions[i].dir).c_str());
 		if (!user.permissions[i].aliases.empty()) {
 			TiXmlElement* pAliases = new TiXmlElement("Aliases");
 			pPermission->LinkEndChild(pAliases);
@@ -1121,8 +1156,9 @@ bool CPermissions::SaveSettings()
 	// Write the new account data into xml file
 
 	TiXmlElement *pXML = COptions::GetXML();
-	if (!pXML)
+	if (!pXML) {
 		return false;
+	}
 
 	TiXmlElement* pGroups;
 	while ((pGroups = pXML->FirstChildElement("Groups")))
@@ -1135,13 +1171,13 @@ bool CPermissions::SaveSettings()
 		TiXmlElement* pGroup = new TiXmlElement("Group");
 		pGroups->LinkEndChild(pGroup);
 
-		pGroup->SetAttribute("Name", ConvToNetwork(groupiter->group).c_str());
+		pGroup->SetAttribute("Name", fz::to_utf8(groupiter->group).c_str());
 
 		SetKey(pGroup, _T("Bypass server userlimit"), groupiter->nBypassUserLimit);
 		SetKey(pGroup, _T("User Limit"), groupiter->nUserLimit);
 		SetKey(pGroup, _T("IP Limit"), groupiter->nIpLimit);
 		SetKey(pGroup, _T("Enabled"), groupiter->nEnabled);
-		SetKey(pGroup, _T("Comments"), groupiter->comment);
+		SetKey(pGroup, _T("Comments"), groupiter->comment.c_str());
 		SetKey(pGroup, _T("ForceSsl"), groupiter->forceSsl);
 
 		SaveIpFilter(pGroup, *groupiter);
@@ -1161,24 +1197,25 @@ bool CPermissions::SaveSettings()
 		TiXmlElement* pUser = new TiXmlElement("User");
 		pUsers->LinkEndChild(pUser);
 
-		pUser->SetAttribute("Name", ConvToNetwork(user.user).c_str());
+		pUser->SetAttribute("Name", fz::to_utf8(user.user).c_str());
 
-		SetKey(pUser, _T("Pass"), user.password);
-		SetKey(pUser, _T("Salt"), user.salt);
-		SetKey(pUser, _T("Group"), user.group);
+		SetKey(pUser, _T("Pass"), user.password.c_str());
+		SetKey(pUser, _T("Salt"), user.salt.c_str());
+		SetKey(pUser, _T("Group"), user.group.c_str());
 		SetKey(pUser, _T("Bypass server userlimit"), user.nBypassUserLimit);
 		SetKey(pUser, _T("User Limit"), user.nUserLimit);
 		SetKey(pUser, _T("IP Limit"), user.nIpLimit);
 		SetKey(pUser, _T("Enabled"), user.nEnabled);
-		SetKey(pUser, _T("Comments"), user.comment);
+		SetKey(pUser, _T("Comments"), user.comment.c_str());
 		SetKey(pUser, _T("ForceSsl"), user.forceSsl);
 
 		SaveIpFilter(pUser, user);
 		SavePermissions(pUser, user);
 		SaveSpeedLimits(pUser, user);
 	}
-	if (!COptions::FreeXML(pXML, true))
+	if (!COptions::FreeXML(pXML, true)) {
 		return false;
+	}
 
 	return true;
 }
@@ -1213,10 +1250,13 @@ void CPermissions::ReadPermissions(TiXmlElement *pXML, t_group &user, BOOL &bGot
 		{
 			t_directory dir;
 			dir.dir = ConvFromNetwork(pPermission->Attribute("Dir"));
-			dir.dir.Replace('/', '\\');
-			dir.dir.TrimRight('\\');
-			if (dir.dir == _T(""))
+			fz::replace_substrings(dir.dir, L"/", L"\\");
+			while (!dir.dir.empty() && dir.dir.back() == '\\') {
+				dir.dir.pop_back();
+			}
+			if (dir.dir.empty()) {
 				continue;
+			}
 
 			for (TiXmlElement* pAliases = pPermission->FirstChildElement("Aliases"); pAliases; pAliases = pAliases->NextSiblingElement("Aliases")) {
 				for (TiXmlElement* pAlias = pAliases->FirstChildElement("Alias"); pAlias; pAlias = pAlias->NextSiblingElement("Alias"))	{
@@ -1324,11 +1364,11 @@ void CPermissions::ReadSpeedLimits(TiXmlElement *pXML, t_group &group)
 
 		for (int i = 0; i < 2; i++)
 		{
-			str = pSpeedLimits->Attribute(ConvToNetwork(prefixes[i] + _T("Type")).c_str());
+			str = pSpeedLimits->Attribute(fz::to_utf8(prefixes[i] + _T("Type")).c_str());
 			n = _ttoi(str);
 			if (n >= 0 && n < 4)
 				group.nSpeedLimitType[i] = n;
-			str = pSpeedLimits->Attribute(ConvToNetwork(prefixes[i] + _T("Limit")).c_str());
+			str = pSpeedLimits->Attribute(fz::to_utf8(prefixes[i] + _T("Limit")).c_str());
 			n = _ttoi(str);
 			if (n < 0)
 				group.nSpeedLimit[i] = 0;
@@ -1337,7 +1377,7 @@ void CPermissions::ReadSpeedLimits(TiXmlElement *pXML, t_group &group)
 			else
 				group.nSpeedLimit[i] = n;
 
-			str = pSpeedLimits->Attribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")).c_str());
+			str = pSpeedLimits->Attribute(fz::to_utf8(_T("Server") + prefixes[i] + _T("LimitBypass")).c_str());
 			n = _ttoi(str);
 			if (n >= 0 && n < 4)
 				group.nBypassServerSpeedLimit[i] = n;
@@ -1368,9 +1408,9 @@ void CPermissions::SaveSpeedLimits(TiXmlElement *pXML, const t_group &group)
 	const char* names[] = { "Download", "Upload" };
 
 	for (int i = 0; i < 2; ++i) {
-		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Type")).c_str(), group.nSpeedLimitType[i]);
-		pSpeedLimits->SetAttribute(ConvToNetwork(prefixes[i] + _T("Limit")).c_str(), group.nSpeedLimit[i]);
-		pSpeedLimits->SetAttribute(ConvToNetwork(_T("Server") + prefixes[i] + _T("LimitBypass")).c_str(), group.nBypassServerSpeedLimit[i]);
+		pSpeedLimits->SetAttribute(fz::to_utf8(prefixes[i] + _T("Type")).c_str(), group.nSpeedLimitType[i]);
+		pSpeedLimits->SetAttribute(fz::to_utf8(prefixes[i] + _T("Limit")).c_str(), group.nSpeedLimit[i]);
+		pSpeedLimits->SetAttribute(fz::to_utf8(_T("Server") + prefixes[i] + _T("LimitBypass")).c_str(), group.nBypassServerSpeedLimit[i]);
 
 		TiXmlElement* pSpeedLimit = new TiXmlElement(names[i]);
 		pSpeedLimits->LinkEndChild(pSpeedLimit);
@@ -1605,15 +1645,17 @@ int CPermissions::GetFact(CUser const& user, CStdString const& currentDir, CStdS
 		else
 			dir2 = _T("/");
 
-		CStdString fn = dir.Mid(pos + 1);
+		std::wstring fn = dir.Mid(pos + 1);
 		int res = GetRealDirectory(dir2, user, directory, bTruematch);
-		if (res)
+		if (res) {
 			return res | PERMISSION_FILENOTDIR;
+		}
 
-		if (!directory.bFileRead)
+		if (!directory.bFileRead) {
 			return PERMISSION_DENIED;
+		}
 
-		file = directory.dir + _T("\\") + fn;
+		file = directory.dir + L"\\" + fn;
 
 		if (enabledFacts[0])
 			fact = _T("type=file;");
@@ -1692,18 +1734,20 @@ void CUser::PrepareAliasMap()
 				continue;
 			}
 
-			int pos = alias.ReverseFind('/');
-			CStdString dir = alias.Left(pos);
-			if (dir == _T(""))
-				dir = _T("/");
-			virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.Mid(pos + 1)));
-			virtualAliases[alias + _T("/")] = permission.dir;
-			DoReplacements(virtualAliases[alias + _T("/")]);
+			size_t pos = alias.rfind('/');
+			std::wstring dir = alias.substr(0, pos);
+			if (dir.empty()) {
+				dir = L"/";
+			}
+			virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.substr(pos + 1)));
+			virtualAliases[alias + L"/"] = permission.dir;
+			DoReplacements(virtualAliases[alias + L"/"]);
 		}
 	}
 
-	if (!pOwner)
+	if (!pOwner) {
 		return;
+	}
 
 	for (auto const& permission : pOwner->permissions) {
 		for (auto alias : permission.aliases) {
@@ -1713,13 +1757,14 @@ void CUser::PrepareAliasMap()
 				continue;
 			}
 
-			int pos = alias.ReverseFind('/');
-			CStdString dir = alias.Left(pos);
-			if (dir == _T(""))
-				dir = _T("/");
-			virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.Mid(pos + 1)));
-			virtualAliases[alias + _T("/")] = permission.dir;
-			DoReplacements(virtualAliases[alias + _T("/")]);
+			int pos = alias.rfind('/');
+			std::wstring dir = alias.substr(0, pos);
+			if (dir.empty()) {
+				dir = L"/";
+			}
+			virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.substr(pos + 1)));
+			virtualAliases[alias + L"/"] = permission.dir;
+			DoReplacements(virtualAliases[alias + L"/"]);
 		}
 	}
 }
@@ -1728,8 +1773,9 @@ CStdString CUser::GetAliasTarget(CStdString const& virtualPath) const
 {
 	// Find the target for the alias with the specified path and name
 	for (auto const& alias : virtualAliases) {
-		if (!alias.first.CompareNoCase(virtualPath))
+		if (!alias.first.CompareNoCase(virtualPath)) {
 			return alias.second;
+		}
 	}
 
 	return CStdString();
@@ -1836,7 +1882,7 @@ void CPermissions::ReadSettings()
 		if (!user.password.empty() && user.salt.empty() && user.password.size() != MD5_HEX_FORM_LENGTH) {
 			user.generateSalt();
 
-			auto saltedPassword = ConvToNetwork(user.password + user.salt);
+			auto saltedPassword = fz::to_utf8(user.password + user.salt);
 			if (saltedPassword.empty()) {
 				// We skip this user
 				continue;
@@ -1918,21 +1964,21 @@ void CPermissions::ReadSettings()
 }
 
 // Replace :u and :g (if a group it exists)
-void CUser::DoReplacements(CStdString& path) const
+void CUser::DoReplacements(std::wstring& path) const
 {
-	path.Replace(_T(":u"), user);
-	path.Replace(_T(":U"), user);
-	if (group != _T(""))
-	{
-		path.Replace(_T(":g"), group);
-		path.Replace(_T(":G"), group);
+	fz::replace_substrings(path, L":u", user);
+	fz::replace_substrings(path, L":U", user);
+	if (!group.empty()) {
+		fz::replace_substrings(path, L":g", group);
+		fz::replace_substrings(path, L":G", group);
 	}
 }
 
 bool CPermissions::WildcardMatch(CStdString string, CStdString pattern) const
 {
-	if (pattern == _T("*") || pattern == _T("*.*"))
+	if (pattern == _T("*") || pattern == _T("*.*")) {
 		return true;
+	}
 
 	// Do a really primitive wildcard check, does even ignore ?
 	string.MakeLower();

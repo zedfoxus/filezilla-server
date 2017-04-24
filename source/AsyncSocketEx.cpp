@@ -66,6 +66,8 @@ to tim.kosse@filezilla-project.org
 
 #include "AsyncSocketExLayer.h"
 
+#include <libfilezilla/string.hpp>
+
 thread_local CAsyncSocketEx::t_AsyncSocketExThreadData* CAsyncSocketEx::thread_local_data = 0;
 
 #ifndef _AFX
@@ -81,6 +83,21 @@ thread_local CAsyncSocketEx::t_AsyncSocketExThreadData* CAsyncSocketEx::thread_l
 //Helper Window class
 #define WM_SOCKETEX_NOTIFY (WM_USER+3)
 #define MAX_SOCKETS (0xBFFF-WM_SOCKETEX_NOTIFY+1)
+
+namespace {
+CStdString Inet6AddrToString(in6_addr& addr)
+{
+	wchar_t buf[512];
+
+	_sntprintf(buf, 512, L"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+		addr.s6_bytes[0], addr.s6_bytes[1], addr.s6_bytes[2], addr.s6_bytes[3],
+		addr.s6_bytes[4], addr.s6_bytes[5], addr.s6_bytes[6], addr.s6_bytes[7],
+		addr.s6_bytes[8], addr.s6_bytes[9], addr.s6_bytes[10], addr.s6_bytes[11],
+		addr.s6_bytes[12], addr.s6_bytes[13], addr.s6_bytes[14], addr.s6_bytes[15]);
+
+	return buf;
+}
+}
 
 class CAsyncSocketExHelperWindow
 {
@@ -748,14 +765,7 @@ bool CAsyncSocketEx::Create(UINT nSocketPort, int nSocketType, long lEvent, LPCT
 
 			m_nSocketPort = nSocketPort;
 
-			delete [] m_lpszSocketAddress;
-			if (lpszSocketAddress && *lpszSocketAddress) {
-				m_lpszSocketAddress = new TCHAR[_tcslen(lpszSocketAddress) + 1];
-				_tcscpy(m_lpszSocketAddress, lpszSocketAddress);
-			}
-			else {
-				m_lpszSocketAddress = 0;
-			}
+			m_socketAddress = lpszSocketAddress;
 
 			return true;
 		}
@@ -819,27 +829,18 @@ void CAsyncSocketEx::OnClose(int)
 {
 }
 
-BOOL CAsyncSocketEx::Bind(UINT nSocketPort, LPCTSTR lpszSocketAddress)
+BOOL CAsyncSocketEx::Bind(UINT nSocketPort, std::wstring const& socketAddress)
 {
-	delete [] m_lpszSocketAddress;
-	if (lpszSocketAddress && *lpszSocketAddress) {
-		m_lpszSocketAddress = new TCHAR[_tcslen(lpszSocketAddress) + 1];
-		_tcscpy(m_lpszSocketAddress, lpszSocketAddress);
-	}
-	else {
-		m_lpszSocketAddress = 0;
-	}
+	m_socketAddress = socketAddress;
 	m_nSocketPort = nSocketPort;
 
 	if (m_SocketData.nFamily == AF_UNSPEC) {
 		return TRUE;
 	}
 
-	USES_CONVERSION;
+	auto const ascii = fz::to_string(socketAddress);
 	
-	LPSTR lpszAscii = (lpszSocketAddress && *lpszSocketAddress) ? T2A((LPTSTR)lpszSocketAddress) : 0;
-	
-	if ((m_SocketData.nFamily == AF_INET6 || m_SocketData.nFamily == AF_INET) && lpszAscii) {
+	if ((m_SocketData.nFamily == AF_INET6 || m_SocketData.nFamily == AF_INET) && !ascii.empty()) {
 		addrinfo hints{}, *res0{}, *res{};
 		int error{};
 		char port[10];
@@ -849,7 +850,7 @@ BOOL CAsyncSocketEx::Bind(UINT nSocketPort, LPCTSTR lpszSocketAddress)
 		hints.ai_socktype = SOCK_STREAM;
 		_snprintf(port, 9, "%lu", nSocketPort);
 		port[9] = 0;
-		error = getaddrinfo(lpszAscii, port, &hints, &res0);
+		error = getaddrinfo(ascii.c_str(), port, &hints, &res0);
 		if (error) {
 			return FALSE;
 		}
@@ -864,7 +865,7 @@ BOOL CAsyncSocketEx::Bind(UINT nSocketPort, LPCTSTR lpszSocketAddress)
 		freeaddrinfo(res0);
 		return ret;
 	}
-	else if (!lpszAscii && m_SocketData.nFamily == AF_INET6) {
+	else if (ascii.empty() && m_SocketData.nFamily == AF_INET6) {
 		SOCKADDR_IN6 sockAddr6{};
 		sockAddr6.sin6_family = AF_INET6 ;
 		sockAddr6.sin6_addr = in6addr_any ;
@@ -872,7 +873,7 @@ BOOL CAsyncSocketEx::Bind(UINT nSocketPort, LPCTSTR lpszSocketAddress)
 
 		return Bind((SOCKADDR*)&sockAddr6, sizeof(sockAddr6));
 	}
-	else if (!lpszAscii && m_SocketData.nFamily == AF_INET) {
+	else if (ascii.empty() && m_SocketData.nFamily == AF_INET) {
 		SOCKADDR_IN sockAddr{};
 		sockAddr.sin_family = AF_INET ;
 		sockAddr.sin_addr.s_addr = INADDR_ANY ;
@@ -938,8 +939,7 @@ void CAsyncSocketEx::Close()
 		m_SocketData.nextAddr = 0;
 	}
 	m_SocketData.nFamily = AF_UNSPEC;
-	delete [] m_lpszSocketAddress;
-	m_lpszSocketAddress = 0;
+	m_socketAddress.clear();
 	m_nSocketPort = 0;
 	RemoveAllLayers();
 	delete [] m_pAsyncGetHostByNameBuffer;
@@ -1013,37 +1013,39 @@ int CAsyncSocketEx::Send(const void* lpBuf, int nBufLen, int nFlags /*=0*/)
 		return send(m_SocketData.hSocket, (LPSTR)lpBuf, nBufLen, nFlags);
 }
 
-BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
+bool CAsyncSocketEx::Connect(std::wstring const& hostAddress, UINT nHostPort)
 {
+	ASSERT(!hostAddress.empty());
+
 	if (m_pFirstLayer) {
-		BOOL res = m_pFirstLayer->Connect(lpszHostAddress, nHostPort);
+		BOOL res = m_pFirstLayer->Connect(hostAddress.c_str(), nHostPort);
 #ifndef NOSOCKETSTATES
-		if (res || GetLastError()==WSAEWOULDBLOCK)
+		if (res || GetLastError() == WSAEWOULDBLOCK) {
 			SetState(connecting);
+		}
 #endif //NOSOCKETSTATES
 		return res;
 	}
 	else if (m_SocketData.nFamily == AF_INET) {
-		USES_CONVERSION;
 
-		ASSERT(lpszHostAddress != NULL);
-
-		LPSTR lpszAscii = T2A((LPTSTR)lpszHostAddress);
+		std::string ascii = fz::to_string(hostAddress);
 
 		SOCKADDR_IN sockAddr{};
 		sockAddr.sin_family = AF_INET;
-		sockAddr.sin_addr.s_addr = inet_addr(lpszAscii);
+		sockAddr.sin_addr.s_addr = inet_addr(ascii.c_str());
 
 		if (sockAddr.sin_addr.s_addr == INADDR_NONE) {
-			if (m_pAsyncGetHostByNameBuffer)
+			if (m_pAsyncGetHostByNameBuffer) {
 				delete [] m_pAsyncGetHostByNameBuffer;
+			}
 			m_pAsyncGetHostByNameBuffer=new char[MAXGETHOSTSTRUCT];
 
 			m_nAsyncGetHostByNamePort=nHostPort;
 
-			m_hAsyncGetHostByNameHandle=WSAAsyncGetHostByName(GetHelperWindowHandle(), WM_USER+1, lpszAscii, m_pAsyncGetHostByNameBuffer, MAXGETHOSTSTRUCT);
-			if (!m_hAsyncGetHostByNameHandle)
+			m_hAsyncGetHostByNameHandle = WSAAsyncGetHostByName(GetHelperWindowHandle(), WM_USER+1, ascii.c_str(), m_pAsyncGetHostByNameBuffer, MAXGETHOSTSTRUCT);
+			if (!m_hAsyncGetHostByNameHandle) {
 				return FALSE;
+			}
 
 			WSASetLastError(WSAEWOULDBLOCK);
 #ifndef NOSOCKETSTATES
@@ -1057,10 +1059,6 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 		return CAsyncSocketEx::Connect((SOCKADDR*)&sockAddr, sizeof(sockAddr));
 	}
 	else {
-		USES_CONVERSION;
-
-		ASSERT( lpszHostAddress != NULL );
-
 		if (m_SocketData.addrInfo) {
 			freeaddrinfo(m_SocketData.addrInfo);
 			m_SocketData.addrInfo = 0;
@@ -1076,17 +1074,19 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 		hints.ai_socktype = SOCK_STREAM;
 		_snprintf(port, 9, "%lu", nHostPort);
 		port[9] = 0;
-		error = getaddrinfo(T2CA(lpszHostAddress), port, &hints, &m_SocketData.addrInfo);
-		if (error)
+		error = getaddrinfo(fz::to_string(hostAddress).c_str(), port, &hints, &m_SocketData.addrInfo);
+		if (error) {
 			return FALSE;
+		}
 
 		for (m_SocketData.nextAddr = m_SocketData.addrInfo; m_SocketData.nextAddr; m_SocketData.nextAddr = m_SocketData.nextAddr->ai_next) {
 			bool newSocket = false;
 			if (m_SocketData.nFamily == AF_UNSPEC) {
 				newSocket = true;
 				SOCKET hSocket = socket(m_SocketData.nextAddr->ai_family, m_SocketData.nextAddr->ai_socktype, m_SocketData.nextAddr->ai_protocol);
-				if (hSocket == INVALID_SOCKET)
+				if (hSocket == INVALID_SOCKET) {
 					continue;
+				}
 
 				AttachHandle(hSocket, m_SocketData.nextAddr->ai_family);
 				if (!AsyncSelect(m_lEvent)) 	{
@@ -1113,7 +1113,7 @@ BOOL CAsyncSocketEx::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
 
 			if (newSocket) {
 				m_SocketData.nFamily = m_SocketData.nextAddr->ai_family;
-				if (!Bind(m_nSocketPort, m_lpszSocketAddress)) {
+				if (!Bind(m_nSocketPort, m_socketAddress)) {
 					m_SocketData.nFamily = AF_UNSPEC;
 					closesocket(m_SocketData.hSocket);
 					DetachHandle();
@@ -1164,7 +1164,7 @@ BOOL CAsyncSocketEx::Connect(const SOCKADDR* lpSockAddr, int nSockAddrLen)
 	return res;
 }
 
-BOOL CAsyncSocketEx::GetPeerName(CStdString& rPeerAddress, UINT& rPeerPort)
+bool CAsyncSocketEx::GetPeerName(std::wstring& rPeerAddress, UINT& rPeerPort)
 {
 	sockaddr_storage sockAddr{ 0 };
 	BOOL bResult = GetPeerName(sockAddr);
@@ -1178,11 +1178,11 @@ BOOL CAsyncSocketEx::GetPeerName(CStdString& rPeerAddress, UINT& rPeerPort)
 		else if (m_SocketData.nFamily == AF_INET) {
 			sockaddr_in &in = reinterpret_cast<sockaddr_in&>(sockAddr);
 			rPeerPort = ntohs(in.sin_port);
-			rPeerAddress = inet_ntoa(in.sin_addr);
+			rPeerAddress = fz::to_wstring(inet_ntoa(in.sin_addr));
 		}
 		else {
 			WSASetLastError(WSAEPFNOSUPPORT);
-			return FALSE;
+			return false;
 		}
 	}
 
@@ -1492,7 +1492,7 @@ bool CAsyncSocketEx::TryNextProtocol()
 			}
 		}
 
-		if (!Bind(m_nSocketPort, m_lpszSocketAddress)) {
+		if (!Bind(m_nSocketPort, m_socketAddress)) {
 			closesocket(m_SocketData.hSocket);
 			DetachHandle();
 			continue;
@@ -1550,19 +1550,4 @@ bool CAsyncSocketEx::SetNodelay(bool nodelay)
 {
 	BOOL value = nodelay ? TRUE : FALSE;
 	return SetSockOpt(TCP_NODELAY, &value, sizeof(value), IPPROTO_TCP) == TRUE;
-}
-
-
-
-CStdString Inet6AddrToString(in6_addr& addr)
-{
-	TCHAR buf[512];
-
-	_sntprintf(buf, 512, _T("%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x"),
-		addr.s6_bytes[0], addr.s6_bytes[1], addr.s6_bytes[2], addr.s6_bytes[3],
-		addr.s6_bytes[4], addr.s6_bytes[5], addr.s6_bytes[6], addr.s6_bytes[7],
-		addr.s6_bytes[8], addr.s6_bytes[9], addr.s6_bytes[10], addr.s6_bytes[11],
-		addr.s6_bytes[12], addr.s6_bytes[13], addr.s6_bytes[14], addr.s6_bytes[15]);
-
-	return buf;
 }

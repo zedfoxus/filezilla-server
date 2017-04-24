@@ -26,6 +26,8 @@
 #include "..\OptionTypes.h"
 #include "Options.h"
 
+#include <libfilezilla/string.hpp>
+
 #if defined(_DEBUG) 
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -165,13 +167,13 @@ void COptionsDlg::SetOption(int nOptionID, __int64 value)
 	m_OptionsCache[nOptionID-1].value = value;
 }
 
-void COptionsDlg::SetOption(int nOptionID, CString value)
+void COptionsDlg::SetOption(int nOptionID, std::wstring const& value)
 {
 	m_OptionsCache[nOptionID-1].nType = 0;
 	m_OptionsCache[nOptionID-1].str = value;
 }
 
-CString COptionsDlg::GetOption(int nOptionID)
+std::wstring COptionsDlg::GetOption(int nOptionID)
 {
 	ASSERT(nOptionID>0 && nOptionID<=OPTIONS_NUM);
 	ASSERT(!m_Options[nOptionID-1].nType);
@@ -325,9 +327,10 @@ bool COptionsDlg::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 	for (i = 0; i < OPTIONS_NUM; ++i) {
 		++len;
 		if (!m_Options[i].nType) {
-			int strlen = ConvToNetwork(GetOption(i + 1)).size();
-			if (strlen > 0xFFFFFF)
+			size_t strlen = fz::to_utf8(GetOption(i + 1)).size();
+			if (strlen > 0xFFFFFF) {
 				return false;
+			}
 			len += strlen;
 			len += 3;
 		}
@@ -354,7 +357,7 @@ bool COptionsDlg::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 		switch (m_Options[i].nType) {
 		case 0:
 			{
-				auto utf8 = ConvToNetwork(GetOption(i + 1));
+				auto utf8 = fz::to_utf8(GetOption(i + 1));
 				int slen = utf8.size();
 				*p++ = ((slen / 256) / 256) & 0xffu;
 				*p++ = (slen / 256) & 0xffu;

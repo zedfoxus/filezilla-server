@@ -25,6 +25,8 @@
 #include "OptionLimits.h"
 #include "xml_utils.h"
 
+#include <libfilezilla/string.hpp>
+
 std::list<COptions *> COptions::m_InstanceList;
 std::recursive_mutex COptions::m_mutex;
 COptions::t_OptionsCache COptions::m_sOptionsCache[OPTIONS_NUM];
@@ -304,12 +306,13 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 		break;
 	}
 
-	if (!pItem)
+	if (!pItem) {
 		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
+	}
 	pItem->Clear();
-	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID-1].name).c_str());
+	pItem->SetAttribute("name", fz::to_utf8(m_Options[nOptionID-1].name).c_str());
 	pItem->SetAttribute("type", "numeric");
-	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr).c_str()));
+	pItem->LinkEndChild(new TiXmlText(fz::to_utf8(valuestr).c_str()));
 
 	XML::Save(document, xmlFileName);
 }
@@ -549,14 +552,14 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 	if (!pItem)
 		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
 	pItem->Clear();
-	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID - 1].name).c_str());
+	pItem->SetAttribute("name", fz::to_utf8(m_Options[nOptionID - 1].name).c_str());
 	pItem->SetAttribute("type", "string");
-	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value).c_str()));
+	pItem->LinkEndChild(new TiXmlText(fz::to_utf8(value).c_str()));
 
 	XML::Save(document, xmlFileName);
 }
 
-CStdString COptions::GetOption(int nOptionID)
+std::wstring COptions::GetOption(int nOptionID)
 {
 	ASSERT(nOptionID>0 && nOptionID<=OPTIONS_NUM);
 	ASSERT(!m_Options[nOptionID-1].nType);
@@ -848,18 +851,20 @@ bool COptions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 		len += 1;
 		if (!m_Options[i].nType) {
 			len += 3;
-			auto utf8 = ConvToNetwork(GetOption(i + 1));
+			auto utf8 = fz::to_utf8(GetOption(i + 1));
 
 			if ((i + 1) != OPTION_ADMINPASS) {
 				len += utf8.size();
 			}
 			else {
-				if (GetOption(i+1).GetLength() < 6 && utf8.size() > 0)
+				if (GetOption(i + 1).size() < 6 && utf8.size() > 0) {
 					len++;
+				}
 			}
 		}
-		else
+		else {
 			len += 8;
+		}
 	}
 
 	len += 4;
@@ -894,7 +899,7 @@ bool COptions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 					}
 				}
 
-				auto utf8 = ConvToNetwork(str);
+				auto utf8 = fz::to_utf8(str);
 
 				int len = utf8.size();
 				*p++ = (len / 256) / 256;
@@ -1017,7 +1022,7 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 static void SetText(TiXmlElement* pElement, const CStdString& text)
 {
 	pElement->Clear();
-	pElement->LinkEndChild(new TiXmlText(ConvToNetwork(text).c_str()));
+	pElement->LinkEndChild(new TiXmlText(fz::to_utf8(text).c_str()));
 }
 
 BOOL COptions::SaveSpeedLimits(TiXmlElement* pSettings)
@@ -1214,12 +1219,12 @@ void COptions::SaveOptions()
 			valuestr.Format( _T("%I64d"), m_OptionsCache[i].value);
 
 		TiXmlElement* pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
-		pItem->SetAttribute("name", ConvToNetwork(m_Options[i].name).c_str());
+		pItem->SetAttribute("name", fz::to_utf8(m_Options[i].name).c_str());
 		if (!m_OptionsCache[i].nType)
 			pItem->SetAttribute("type", "string");
 		else
 			pItem->SetAttribute("type", "numeric");
-		pItem->LinkEndChild(new TiXmlText(ConvToNetwork(valuestr).c_str()));
+		pItem->LinkEndChild(new TiXmlText(fz::to_utf8(valuestr).c_str()));
 	}
 
 	SaveSpeedLimits(pSettings);

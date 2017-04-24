@@ -23,6 +23,8 @@
 #include "entersomething.h"
 #include "UsersDlg.h"
 
+#include <libfilezilla/string.hpp>
+
 #include <set>
 
 #if defined(_DEBUG) 
@@ -143,16 +145,17 @@ CString CUsersDlgSharedFolders::Validate()
 	UpdateData(TRUE);
 
 	t_user* pUser = m_pOwner->GetCurrentUser();
-	if (!pUser)
+	if (!pUser) {
 		return _T("");
+	}
 
-	if (pUser->group == _T("") && pUser->permissions.empty()) {
+	if (pUser->group.empty() && pUser->permissions.empty()) {
 		m_cDirs.SetFocus();
 		return _T("You need to share at least one directory and set it as home directory.");
 	}
 
-	CString home;
-	for( auto & perm : pUser->permissions ) {
+	std::wstring home;
+	for (auto & perm : pUser->permissions ) {
 		if (perm.dir == _T("") || perm.dir == _T("/") || perm.dir == _T("\\")) {
 			m_cDirs.SetFocus();
 			return _T("At least one shared directory is not a valid local path.");
@@ -164,15 +167,15 @@ CString CUsersDlgSharedFolders::Validate()
 		}
 	}
 
-	if (home.IsEmpty() && pUser->group == _T("")) {
+	if (home.empty() && pUser->group.empty()) {
 		m_cDirs.SetFocus();
 		return _T("You need to set a home directory");
 	}
 
-	std::list<CString> prefixes;
-	for( auto & perm : pUser->permissions ) {
-		if (!perm.aliases.empty() || perm.bIsHome ) {
-			prefixes.push_back(perm.dir + _T("\\"));
+	std::list<std::wstring> prefixes;
+	for (auto const& perm : pUser->permissions) {
+		if (!perm.aliases.empty() || perm.bIsHome) {
+			prefixes.push_back(perm.dir + L"\\");
 		}
 	}
 	for (auto const& perm : pUser->permissions) {
@@ -180,22 +183,22 @@ CString CUsersDlgSharedFolders::Validate()
 			continue;
 		}
 
-		CString dir = perm.dir + _T("\\");
+		std::wstring dir = perm.dir + L"\\";
 		bool out_of_home = true;
 		for (auto const& prefix : prefixes) {
-			if (!dir.Left(prefix.GetLength()).CompareNoCase(prefix)) {
+			if (!fz::stricmp(dir.substr(0, prefix.size()), prefix)) {
 				out_of_home = false;
 				break;
 			}
 		}
 
-		if (out_of_home && pUser->group == _T("")) {
+		if (out_of_home && pUser->group.empty()) {
 			m_cDirs.SetFocus();
-			return _T("You have shared multiple unrelated directories. You need to assign aliases to link them together.\nDouble-click the alias column next to the unlinked directory.\n\nUnlinked directory: " + perm.dir);
+			return (L"You have shared multiple unrelated directories. You need to assign aliases to link them together.\nDouble-click the alias column next to the unlinked directory.\n\nUnlinked directory: " + perm.dir).c_str();
 		}
 	}
 
-	return _T("");
+	return L"";
 }
 
 void CUsersDlgSharedFolders::OnContextMenu(CWnd* pWnd, CPoint point)
@@ -578,8 +581,7 @@ BOOL CUsersDlgSharedFolders::PreTranslateMessage(MSG* pMsg)
 
 BOOL CUsersDlgSharedFolders::DisplayUser(t_user *pUser)
 {
-	if (!pUser)
-	{
+	if (!pUser) {
 		m_cDirs.DeleteAllItems();
 		m_bFilesRead = m_bFilesWrite = m_bFilesDelete = m_bFilesAppend = FALSE;
 		m_bDirsCreate = m_bDirsList = m_bDirsDelete = m_bDirsSubdirs = FALSE;
@@ -590,9 +592,8 @@ BOOL CUsersDlgSharedFolders::DisplayUser(t_user *pUser)
 
 	//Fill the dirs list
 	m_cDirs.DeleteAllItems();
-	for (unsigned int j=0; j<pUser->permissions.size(); j++)
-	{
-		int nItem = m_cDirs.InsertItem(j, pUser->permissions[j].dir);
+	for (unsigned int j = 0; j < pUser->permissions.size(); ++j) {
+		int nItem = m_cDirs.InsertItem(j, pUser->permissions[j].dir.c_str());
 		LVITEM item;
 		memset(&item,0,sizeof(item));
 		item.mask = LVIF_IMAGE | LVIF_PARAM;
@@ -602,12 +603,14 @@ BOOL CUsersDlgSharedFolders::DisplayUser(t_user *pUser)
 		item.iImage = pUser->permissions[j].bIsHome?1:0;
 		m_cDirs.SetItem(&item);
 
-		CString aliases;
+		std::wstring aliases;
 		for (auto const& alias : pUser->permissions[j].aliases) {
-			aliases += alias + "|";
+			aliases += alias + L"|";
 		}
-		aliases.TrimRight('|');
-		m_cDirs.SetItemText(nItem, 1, aliases);
+		while (!aliases.empty() && aliases.back() == '|') {
+			aliases.pop_back();
+		}
+		m_cDirs.SetItemText(nItem, 1, aliases.c_str());
 	}
 
 	return TRUE;
@@ -667,7 +670,7 @@ void CUsersDlgSharedFolders::OnDirmenuEditAliases()
 		aliases.TrimLeft(_T("|"));
 		aliases.TrimRight(_T("|"));
 
-		std::vector<CString> aliasList;
+		std::vector<std::wstring> aliasList;
 		aliases += _T("|");
 		int pos;
 
@@ -683,7 +686,7 @@ void CUsersDlgSharedFolders::OnDirmenuEditAliases()
 
 			if (alias != _T("") && seen.insert(alias).second) {
 
-				aliasList.push_back(alias);
+				aliasList.push_back(alias.GetString());
 
 				if (alias.GetLength() < 2 || alias[0] != '/') {
 					valid = false;
@@ -695,7 +698,8 @@ void CUsersDlgSharedFolders::OnDirmenuEditAliases()
 
 		aliases.Empty();
 		for (auto const& alias : aliasList) {
-			aliases += alias + _T("|");
+			aliases += alias.c_str();
+			aliases += L"|";
 		}
 		aliases.TrimRight(_T("|"));
 

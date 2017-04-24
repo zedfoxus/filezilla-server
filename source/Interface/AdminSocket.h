@@ -34,7 +34,7 @@ class CMainFrame;
 class CAdminSocket : public CAsyncSocketEx
 {
 public:
-	CString m_Password;
+	std::wstring m_Password;
 	BOOL IsConnected();
 	BOOL SendCommand(int nType);
 	BOOL SendCommand(int nType, void *pData, int nDataLength);

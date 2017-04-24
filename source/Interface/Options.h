@@ -36,15 +36,15 @@ class COptions final
 	friend COptionsDlg;
 
 public:
-	CString GetOption(int nOptionID);
+	std::wstring GetOption(int nOptionID);
 	__int64 GetOptionVal(int nOptionID);
-	void SetOption(int nOptionID, CString const& value);
+	void SetOption(int nOptionID, std::wstring const& value);
 	void SetOption(int nOptionID, __int64 value);
 
 protected:
-	CString GetFileName(bool for_saving);
+	std::wstring GetFileName(bool for_saving);
 
-	void SaveOption(int nOptionID, CString const& value);
+	void SaveOption(int nOptionID, std::wstring const& value);
 
 	static bool IsNumeric(LPCTSTR str);
 
@@ -53,7 +53,7 @@ protected:
 		BOOL bCached{};
 		CTime createtime;
 		int nType{};
-		CString str;
+		std::wstring str;
 		_int64 value{};
 	} m_OptionsCache[IOPTIONS_NUM];
 	void Init();

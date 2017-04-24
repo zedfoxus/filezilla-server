@@ -37,6 +37,8 @@
 #include "ServerThread.h"
 #include "version.h"
 
+#include <libfilezilla/string.hpp>
+
 #include <iterator>
 
 #ifndef MB_SERVICE_NOTIFICATION
@@ -250,7 +252,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 
 				m_UsersList[pConnOp->userid] = data;
 
-				auto utf8 = ConvToNetwork(pData->ip);
+				auto utf8 = fz::to_utf8(pData->ip);
 				len = 2 + 4 + 2 + utf8.size() + 4;
 				buffer = new unsigned char[len];
 				buffer[2 + 4] = (utf8.size() / 256) & 0xff;
@@ -266,7 +268,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				t_connectiondata_changeuser* pData = (t_connectiondata_changeuser*)pConnOp->data;
 				m_UsersList[pConnOp->userid].user = pData->user;
 
-				auto utf8 = ConvToNetwork(pData->user);
+				auto utf8 = fz::to_utf8(pData->user);
 				len = 2 + 4 + 2 + utf8.size();
 				buffer = new unsigned char[len];
 				buffer[2 + 4] = (utf8.size() / 256) & 0xff;
@@ -297,8 +299,8 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				data.totalSize = pData->totalSize;
 
 				if (data.transferMode) {
-					auto physicalFile = ConvToNetwork(pData->physicalFile);
-					auto logicalFile = ConvToNetwork(pData->logicalFile);
+					auto physicalFile = fz::to_utf8(pData->physicalFile);
+					auto logicalFile = fz::to_utf8(pData->logicalFile);
 					len = 2 + 4 + 1 + 2 + physicalFile.size() + 2 + logicalFile.size();
 					if (data.currentOffset != 0)
 						len += 8;
@@ -501,12 +503,12 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			std::map<int, t_connectiondata>::iterator iter;
 			for (iter = m_UsersList.begin(); iter != m_UsersList.end(); ++iter) {
 				const t_connectiondata& data = iter->second;
-				auto ip = ConvToNetwork(data.ip);
-				auto user = ConvToNetwork(data.user);
+				auto ip = fz::to_utf8(data.ip);
+				auto user = fz::to_utf8(data.user);
 				len += 4 + ip.size() + 2 + 4 + user.size() + 2 + 1;
 				if (data.transferMode) {
-					auto physicalFile = ConvToNetwork(data.physicalFile);
-					auto logicalFile = ConvToNetwork(data.logicalFile);
+					auto physicalFile = fz::to_utf8(data.physicalFile);
+					auto logicalFile = fz::to_utf8(data.logicalFile);
 					len += 2 + physicalFile.size() + 2 + logicalFile.size();
 
 					if (data.currentOffset != 0) {
@@ -525,8 +527,8 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 			unsigned char *p = buffer + 4;
 			for (iter = m_UsersList.begin(); iter != m_UsersList.end(); ++iter) {
 				const t_connectiondata& data = iter->second;
-				auto ip = ConvToNetwork(data.ip);
-				auto user = ConvToNetwork(data.user);
+				auto ip = fz::to_utf8(data.ip);
+				auto user = fz::to_utf8(data.user);
 
 				memcpy(p, &data.userid, 4);
 				p += 4;
@@ -554,13 +556,13 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 					}
 					p++;
 
-					auto physicalFile = ConvToNetwork(data.physicalFile);
+					auto physicalFile = fz::to_utf8(data.physicalFile);
 					*p++ = (physicalFile.size() / 256) & 0xff;
 					*p++ = physicalFile.size() % 256;
 					memcpy(p, physicalFile.c_str(), physicalFile.size());
 					p += physicalFile.size();
 
-					auto logicalFile = ConvToNetwork(data.logicalFile);
+					auto logicalFile = fz::to_utf8(data.logicalFile);
 					*p++ = (logicalFile.size() / 256) & 0xff;
 					*p++ = logicalFile.size() % 256;
 					memcpy(p, logicalFile.c_str(), logicalFile.size());
@@ -656,7 +658,7 @@ BOOL CServer::ProcessCommand(CAdminSocket *pAdminSocket, int nID, unsigned char 
 				int const nAdminListenPort = (int)m_pOptions->GetOptionVal(OPTION_ADMINPORT);
 				CStdString const adminIpBindings = m_pOptions->GetOption(OPTION_ADMINIPBINDINGS);
 
-				CStdString peerIP;
+				std::wstring peerIP;
 				UINT port = 0;
 				bool bLocal = false;
 				if (!pAdminSocket->GetPeerName(peerIP, port)) {
@@ -862,7 +864,7 @@ void CServer::ShowStatus(LPCTSTR msg, int nType, CAdminSocket* pAdminSocket)
 	if (!msg)
 		return;
 
-	auto utf8 = ConvToNetwork(msg);
+	auto utf8 = fz::to_utf8(msg);
 	if (utf8.empty())
 		return;
 
@@ -882,7 +884,7 @@ void CServer::ShowStatus(LPCTSTR msg, int nType, CAdminSocket* pAdminSocket)
 
 void CServer::ShowStatus(DWORD eventDateHigh, DWORD eventDateLow, LPCTSTR msg, int nType)
 {
-	auto utf8 = ConvToNetwork(msg);
+	auto utf8 = fz::to_utf8(msg);
 	if (utf8.empty())
 		return;
 

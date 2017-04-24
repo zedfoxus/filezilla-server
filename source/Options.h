@@ -36,7 +36,7 @@ class COptions final
 
 public:
 	bool GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength);
-	CStdString GetOption(int nOptionID);
+	std::wstring GetOption(int nOptionID);
 	_int64 GetOptionVal(int nOptionID);
 
 	COptions();

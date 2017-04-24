@@ -91,14 +91,15 @@ void CListenSocket::SendStatus(CStdString status, int type)
 
 bool CListenSocket::AccessAllowed(CAsyncSocketEx &socket) const
 {
-	CStdString peerIP;
+	std::wstring peerIP;
 	UINT port = 0;
 	BOOL bResult = socket.GetPeerName(peerIP, port);
-	if (!bResult)
+	if (!bResult) {
 		return true;
+	}
 
 	if (m_server.m_pAutoBanManager) {
-		if (m_server.m_pAutoBanManager->IsBanned((peerIP.Find(':') == -1) ? peerIP : GetIPV6ShortForm(peerIP))) {
+		if (m_server.m_pAutoBanManager->IsBanned((peerIP.find(':') == std::wstring::npos) ? peerIP : GetIPV6ShortForm(peerIP))) {
 			return false;
 		}
 	}
@@ -106,35 +107,36 @@ bool CListenSocket::AccessAllowed(CAsyncSocketEx &socket) const
 	bool disallowed = false;
 
 	// Get the list of IP filter rules.
-	CStdString ips = m_server.m_pOptions->GetOption(OPTION_IPFILTER_DISALLOWED);
-	ips += _T(" ");
+	std::wstring ips = m_server.m_pOptions->GetOption(OPTION_IPFILTER_DISALLOWED);
+	ips += L" ";
 
-	int pos = ips.Find(' ');
-	while (pos != -1)
-	{
-		CStdString blockedIP = ips.Left(pos);
-		ips = ips.Mid(pos + 1);
-		pos = ips.Find(' ');
+	size_t pos = ips.find(' ');
+	while (pos != std::wstring::npos) {
+		std::wstring blockedIP = ips.substr(0, pos);
+		ips = ips.substr(pos + 1);
+		pos = ips.find(' ');
 
-		if ((disallowed = MatchesFilter(blockedIP, peerIP)))
+		if ((disallowed = MatchesFilter(blockedIP, peerIP))) {
 			break;
+		}
 	}
 
-	if (!disallowed)
+	if (!disallowed) {
 		return true;
+	}
 
 	ips = m_server.m_pOptions->GetOption(OPTION_IPFILTER_ALLOWED);
-	ips += _T(" ");
+	ips += L" ";
 
-	pos = ips.Find(' ');
-	while (pos != -1)
-	{
-		CStdString blockedIP = ips.Left(pos);
-		ips = ips.Mid(pos + 1);
-		pos = ips.Find(' ');
+	pos = ips.find(' ');
+	while (pos != std::wstring::npos) {
+		std::wstring blockedIP = ips.substr(0, pos);
+		ips = ips.substr(pos + 1);
+		pos = ips.find(' ');
 
-		if (MatchesFilter(blockedIP, peerIP))
+		if (MatchesFilter(blockedIP, peerIP)) {
 			return true;
+		}
 	}
 
 	return false;

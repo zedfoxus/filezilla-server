@@ -829,7 +829,7 @@ bool CTransferSocket::IsAllowedDataConnectionIP(CStdString controlIP, CStdString
 BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 {
 	//Check if the IP of the remote machine is valid
-	CStdString OwnerIP, TransferIP;
+	std::wstring OwnerIP, TransferIP;
 	UINT port = 0;
 	if (!m_pOwner->GetPeerName(OwnerIP, port)) {
 		EndTransfer(transfer_status_t::ip_mismatch);
@@ -901,7 +901,7 @@ BOOL CTransferSocket::InitTransfer(BOOL bCalledFromSend)
 		}
 
 		if (m_hFile == INVALID_HANDLE_VALUE) {
-			ASSERT(!m_Filename.empty);
+			ASSERT(!m_Filename.empty());
 			int shareMode = FILE_SHARE_READ;
 			if (m_pOwner->m_owner.m_pOptions->GetOptionVal(OPTION_SHAREDWRITE)) {
 				shareMode |= FILE_SHARE_WRITE;

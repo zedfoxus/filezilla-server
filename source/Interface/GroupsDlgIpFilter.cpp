@@ -121,10 +121,10 @@ BOOL CGroupsDlgIpFilter::DisplayGroup(t_group *pGroup)
 	}
 
 	for (auto const& disallowedIP : pGroup->disallowedIPs) {
-		m_DisallowedAddresses += disallowedIP + "\r\n";
+		m_DisallowedAddresses += (disallowedIP + L"\r\n").c_str();
 	}
 	for (auto const& allowedIP : pGroup->allowedIPs) {
-		m_AllowedAddresses += allowedIP + "\r\n";
+		m_AllowedAddresses += (allowedIP + L"\r\n").c_str();
 	}
 
 	UpdateData(FALSE);
@@ -134,8 +134,9 @@ BOOL CGroupsDlgIpFilter::DisplayGroup(t_group *pGroup)
 
 BOOL CGroupsDlgIpFilter::SaveGroup(t_group *pGroup)
 {
-	if (!pGroup)
+	if (!pGroup) {
 		return FALSE;
+	}
 
 	UpdateData(TRUE);
 

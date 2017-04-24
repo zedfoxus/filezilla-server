@@ -67,7 +67,7 @@ BOOL CAdminSocket::Init()
 
 	COptions options;
 	CStdString pass = options.GetOption(OPTION_ADMINPASS);
-	CStdString peerAddress;
+	std::wstring peerAddress;
 	UINT port = 0;
 	if (GetPeerName(peerAddress, port) && IsLocalhost(peerAddress) && pass == _T("")) {
 		BOOL res = Send(buffer, p-buffer) == p - buffer;
@@ -254,14 +254,14 @@ int CAdminSocket::ParseRecvBuffer()
 				MD5 md5;
 				md5.update(m_Nonce1, 8);
 				COptions options;
-				CStdString pass = options.GetOption(OPTION_ADMINPASS);
-				if (pass.GetLength() < 6) {
+				std::wstring pass = options.GetOption(OPTION_ADMINPASS);
+				if (pass.size() < 6) {
 					SendCommand(_T("Protocol error: Server misconfigured, admin password not set correctly"), 1);
 					Close();
 					m_pAdminInterface->Remove(this);
 					return -1;
 				}
-				auto utf8 = ConvToNetwork(pass);
+				auto utf8 = fz::to_utf8(pass);
 				if (utf8.empty() && !pass.empty()) {
 					SendCommand(_T("Failed to convert password to UTF-8"), 1);
 					Close();
@@ -304,7 +304,7 @@ BOOL CAdminSocket::SendCommand(LPCTSTR pszCommand, int nTextType)
 {
 	std::string utf8;
 	if (pszCommand) {
-		utf8 = ConvToNetwork(pszCommand);
+		utf8 = fz::to_utf8(pszCommand);
 	}
 
 	DWORD nDataLength = utf8.size() + 1;

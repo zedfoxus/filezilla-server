@@ -150,9 +150,9 @@ public:
 	bool IsUsingSSL();
 	int InitSSLConnection(bool clientMode, CAsyncSslSocketLayer* primarySocket = 0, bool require_session_reuse = false);
 
-	static bool CreateSslCertificate(LPCTSTR filename, int bits, const unsigned char* country, const unsigned char* state,
-			const unsigned char* locality, const unsigned char* organization, const unsigned char* unit, const unsigned char* cname,
-			const unsigned char *email, CString& err);
+	static bool CreateSslCertificate(std::wstring const& filename, int bits, std::string const& country, std::string const& state,
+		std::string const& locality, std::string const& organization, std::string const& unit, std::string const& cname,
+		std::string const& email, std::wstring& err);
 
 	int SetCertKeyFile(CString const& cert, CString const& key, CString const& pass, CString* error = 0, bool checkExpired = false);
 

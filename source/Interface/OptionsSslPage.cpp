@@ -212,10 +212,10 @@ BOOL COptionsSslPage::IsDataValid()
 void COptionsSslPage::SaveData()
 {
 	m_pOptionsDlg->SetOption(OPTION_ENABLETLS, m_enabled ? 1 : 0);
-	m_pOptionsDlg->SetOption(OPTION_TLSKEYFILE, m_key);
-	m_pOptionsDlg->SetOption(OPTION_TLSKEYPASS, m_pass);
-	m_pOptionsDlg->SetOption(OPTION_TLSCERTFILE, m_certificate);
-	m_pOptionsDlg->SetOption(OPTION_TLSPORTS, m_sslports);
+	m_pOptionsDlg->SetOption(OPTION_TLSKEYFILE, m_key.GetString());
+	m_pOptionsDlg->SetOption(OPTION_TLSKEYPASS, m_pass.GetString());
+	m_pOptionsDlg->SetOption(OPTION_TLSCERTFILE, m_certificate.GetString());
+	m_pOptionsDlg->SetOption(OPTION_TLSPORTS, m_sslports.GetString());
 	m_pOptionsDlg->SetOption(OPTION_ALLOWEXPLICITTLS, m_allowExplicit ? 1 : 0);
 	m_pOptionsDlg->SetOption(OPTION_TLSFORCEEXPLICIT, m_forceExplicit ? 1 : 0);
 	m_pOptionsDlg->SetOption(OPTION_FORCEPROTP, m_forceProtP ? 1 : 0);
@@ -225,10 +225,10 @@ void COptionsSslPage::SaveData()
 void COptionsSslPage::LoadData()
 {
 	m_enabled = m_pOptionsDlg->GetOptionVal(OPTION_ENABLETLS) != 0;
-	m_key = m_pOptionsDlg->GetOption(OPTION_TLSKEYFILE);
-	m_pass = m_pOptionsDlg->GetOption(OPTION_TLSKEYPASS);
-	m_certificate = m_pOptionsDlg->GetOption(OPTION_TLSCERTFILE);
-	m_sslports = m_pOptionsDlg->GetOption(OPTION_TLSPORTS);
+	m_key = m_pOptionsDlg->GetOption(OPTION_TLSKEYFILE).c_str();
+	m_pass = m_pOptionsDlg->GetOption(OPTION_TLSKEYPASS).c_str();
+	m_certificate = m_pOptionsDlg->GetOption(OPTION_TLSCERTFILE).c_str();
+	m_sslports = m_pOptionsDlg->GetOption(OPTION_TLSPORTS).c_str();
 	m_allowExplicit = m_pOptionsDlg->GetOptionVal(OPTION_ALLOWEXPLICITTLS) != 0;
 	m_forceExplicit = m_pOptionsDlg->GetOptionVal(OPTION_TLSFORCEEXPLICIT) != 0;
 	m_forceProtP = m_pOptionsDlg->GetOptionVal(OPTION_FORCEPROTP) != 0;

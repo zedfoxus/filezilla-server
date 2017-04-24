@@ -1201,13 +1201,13 @@ void CMainFrame::OnAdminInterfaceConnected()
 
 	CString title;
 	title.LoadString(IDR_MAINFRAME);
-	CString ip;
+	std::wstring ip;
 	UINT port;
-	if (m_pAdminSocket->GetPeerName(ip, port))
-	{
-		if (ip.Find(':') != -1)
+	if (m_pAdminSocket->GetPeerName(ip, port)) {
+		if (ip.find(':') != std::wstring::npos) {
 			ip = GetIPV6ShortForm(ip);
-		SetWindowText(title + _T(" (") + ip + _T(")"));
+		}
+		SetWindowText((static_cast<std::wstring>(title) + L" (" + ip + L")").c_str());
 	}
 }
 
@@ -1296,21 +1296,22 @@ void CMainFrame::OnUpdateDisplaySortByIP(CCmdUI* pCmdUI)
 
 void CMainFrame::DoConnect()
 {
-	CStdString address = m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS);
+	std::wstring address = m_pOptions->GetOption(IOPTION_LASTSERVERADDRESS);
 	unsigned int port = static_cast<unsigned int>(m_pOptions->GetOptionVal(IOPTION_LASTSERVERPORT));
 
 	int family;
-	if (!GetIPV6LongForm(address).IsEmpty()) {
-		if (address.Left(1) != '[') {
-			address = _T("[") + address + _T("]");
+	if (!GetIPV6LongForm(address).empty()) {
+		if (address[0] != '[') {
+			address = L"[" + address + L"]";
 		}
 		family = AF_INET6;
 	}
-	else
+	else {
 		family = AF_INET;
+	}
 
 	CString msg;
-	msg.Format(_T("Connecting to server %s:%u..."), address, port);
+	msg.Format(L"Connecting to server %s:%u...", address.c_str(), port);
 	ShowStatus(msg, 0);
 
 	m_pAdminSocket = new CAdminSocket(this);

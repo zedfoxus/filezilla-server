@@ -25,6 +25,8 @@
 #include "xml_utils.h"
 #include "tinyxml/tinyxml.h"
 
+#include <libfilezilla/string.hpp>
+
 bool CSpeedLimit::IsItActive(const SYSTEMTIME &time) const
 {
 	if (m_DateCheck)
@@ -217,10 +219,8 @@ void CSpeedLimit::Save(TiXmlElement* pElement) const
 {
 	pElement->SetAttribute("Speed", m_Speed);
 
-	CStdString str;
-	str.Format(_T("%d"), m_Day);
 	TiXmlElement* pDays = pElement->LinkEndChild(new TiXmlElement("Days"))->ToElement();
-	XML::SetText(pDays, str);
+	XML::SetText(pDays, fz::to_wstring(m_Day));
 
 	if (m_DateCheck) {
 		TiXmlElement* pDate = pElement->LinkEndChild(new TiXmlElement("Date"))->ToElement();

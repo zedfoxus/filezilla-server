@@ -134,7 +134,7 @@ public:
 	static int GetLastError();
 
 	//Gets the address of the peer socket to which the socket is connected.
-	BOOL GetPeerName(CStdString& rPeerAddress, UINT& rPeerPort);
+	bool GetPeerName(std::wstring& rPeerAddress, UINT& rPeerPort);
 
 	//Gets the local name for a socket.
 	BOOL GetSockName(CStdString& rSocketAddress, UINT& rSocketPort);
@@ -161,14 +161,14 @@ public:
 	BOOL AsyncSelect( long lEvent = FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE );
 
 	//Associates a local address with the socket.
-	BOOL Bind(UINT nSocketPort, LPCTSTR lpszSocketAddress);
+	BOOL Bind(UINT nSocketPort, std::wstring const& socketAddress);
 	BOOL Bind(const SOCKADDR* lpSockAddr, int nSockAddrLen);
 
 	//Closes the socket.
 	virtual void Close();
 
 	//Establishes a connection to a peer socket.
-	virtual BOOL Connect(LPCTSTR lpszHostAddress, UINT nHostPort);
+	virtual bool Connect(std::wstring const& hostAddress, UINT nHostPort);
 	virtual BOOL Connect(const SOCKADDR* lpSockAddr, int nSockAddrLen);
 
 	//Controls the mode of the socket.
@@ -298,7 +298,7 @@ protected:
 
 	// Used by Bind with AF_UNSPEC sockets
 	UINT m_nSocketPort{};
-	LPTSTR m_lpszSocketAddress{};
+	std::wstring m_socketAddress;
 
 	friend CAsyncSocketExHelperWindow;
 
@@ -314,7 +314,5 @@ private:
 #define LAYERCALLBACK_LAYERSPECIFIC 1
 
 #define _sntprintf _snwprintf
-
-CStdString Inet6AddrToString(in6_addr& addr);
 
 #endif // !defined(AFX_ASYNCSOCKETEX_H__AA9E4531_63B1_442F_9A71_09B2FEEDF34E__INCLUDED_)

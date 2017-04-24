@@ -9,7 +9,7 @@ namespace XML
 {
 
 CStdString ReadText(TiXmlElement* pElement);
-void SetText(TiXmlElement* pElement, const CStdString& text);
+void SetText(TiXmlElement* pElement, std::wstring const& text);
 
 bool Load(TiXmlDocument & document, CStdString const& file);
 bool Save(TiXmlNode & element, CStdString const& file);

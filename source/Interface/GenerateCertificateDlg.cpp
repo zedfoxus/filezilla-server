@@ -20,7 +20,9 @@
 #include "filezilla server.h"
 #include "GenerateCertificateDlg.h"
 #include "../AsyncSslSocketLayer.h"
-#include ".\generatecertificatedlg.h"
+#include "generatecertificatedlg.h"
+
+#include <libfilezilla/string.hpp>
 
 IMPLEMENT_DYNAMIC(CGenerateCertificateDlg, CDialog)
 CGenerateCertificateDlg::CGenerateCertificateDlg(CWnd* pParent /*=NULL*/)
@@ -65,14 +67,12 @@ END_MESSAGE_MAP()
 void CGenerateCertificateDlg::OnOK()
 {
 	UpdateData(TRUE);
-	if (m_country.GetLength() != 2)
-	{
+	if (!m_country.IsEmpty() && m_country.GetLength() != 2) {
 		AfxMessageBox(_T("Please enter the 2 digit country code"));
 		return;
 	}
 
-	if (m_file == _T(""))
-	{
+	if (m_file == _T("")) {
 		AfxMessageBox(_T("Please enter a filename"));
 		return;
 	}
@@ -80,31 +80,34 @@ void CGenerateCertificateDlg::OnOK()
 	m_country.MakeUpper();
 
 	int bits = 1280;
-	if (m_keysize == 1)
+	if (m_keysize == 1) {
 		bits = 2048;
-	else if (m_keysize == 2)
+	}
+	else if (m_keysize == 2) {
 		bits = 4096;
+	}
 
-	CString error;
+	std::wstring error;
 	if (CAsyncSslSocketLayer::CreateSslCertificate(LPCTSTR(m_file), bits,
-		reinterpret_cast<const unsigned char*>(ConvToNetwork(m_country).c_str()),
-		reinterpret_cast<const unsigned char*>(ConvToNetwork(m_state).c_str()),
-		reinterpret_cast<const unsigned char*>(ConvToNetwork(m_city).c_str()),
-		reinterpret_cast<const unsigned char*>(ConvToNetwork(m_organization).c_str()),
-		reinterpret_cast<const unsigned char*>(ConvToNetwork(m_unit).c_str()),
-		reinterpret_cast<const unsigned char*>(ConvToNetwork(m_cname).c_str()),
-		reinterpret_cast<const unsigned char*>(ConvToNetwork(m_email).c_str()),
+		fz::to_utf8(m_country.GetString()),
+		fz::to_utf8(m_state.GetString()),
+		fz::to_utf8(m_city.GetString()),
+		fz::to_utf8(m_organization.GetString()),
+		fz::to_utf8(m_unit.GetString()),
+		fz::to_utf8(m_cname.GetString()),
+		fz::to_utf8(m_email.GetString()),
 		error))
 	{
 		AfxMessageBox(_T("Certificate generated successfully."));
 		EndDialog(IDOK);
 	}
-	else
-	{
-		if (error != _T(""))
-			AfxMessageBox(_T("Certificate could not be generated.\nReason: ") + error);
-		else
+	else {
+		if (!error.empty()) {
+			AfxMessageBox((L"Certificate could not be generated.\nReason: " + error).c_str());
+		}
+		else {
 			AfxMessageBox(_T("Certificate could not be generated."));
+		}
 	}
 }
 
@@ -112,8 +115,7 @@ void CGenerateCertificateDlg::OnBrowse()
 {
 	UpdateData();
 	CFileDialog dlg(FALSE, 0, _T("certificate.crt"));
-	if (dlg.DoModal() == IDOK)
-	{
+	if (dlg.DoModal() == IDOK) {
 		m_file = dlg.GetPathName();
 		UpdateData(FALSE);
 	}

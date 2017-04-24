@@ -20,6 +20,8 @@
 #include "FileLogger.h"
 #include "Options.h"
 
+#include <libfilezilla/string.hpp>
+
 //////////////////////////////////////////////////////////////////////
 // Konstruktion/Destruktion
 //////////////////////////////////////////////////////////////////////
@@ -36,24 +38,26 @@ CFileLogger::CFileLogger(COptions *pOptions)
 
 CFileLogger::~CFileLogger()
 {
-	if (m_hLogFile != INVALID_HANDLE_VALUE)
+	if (m_hLogFile != INVALID_HANDLE_VALUE) {
 		CloseHandle(m_hLogFile);
+	}
 
 	delete [] m_pFileName;
 }
 
 BOOL CFileLogger::Log(LPCTSTR msg)
 {
-	if (m_hLogFile==INVALID_HANDLE_VALUE)
+	if (m_hLogFile == INVALID_HANDLE_VALUE) {
 		return TRUE;
+	}
 
-	auto utf8 = ConvToNetwork(msg);
-	if (utf8.empty())
+	auto utf8 = fz::to_utf8(msg);
+	if (utf8.empty()) {
 		return FALSE;
+	}
 
 	DWORD numwritten;
-	if (!WriteFile(m_hLogFile, utf8.c_str(), utf8.size(), &numwritten, 0) || !WriteFile(m_hLogFile, "\r\n", 2, &numwritten, 0))
-	{
+	if (!WriteFile(m_hLogFile, utf8.c_str(), utf8.size(), &numwritten, 0) || !WriteFile(m_hLogFile, "\r\n", 2, &numwritten, 0)) {
 		CloseHandle(m_hLogFile);
 		m_hLogFile = INVALID_HANDLE_VALUE;
 		return FALSE;

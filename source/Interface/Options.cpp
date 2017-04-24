@@ -26,11 +26,7 @@
 #include "../tinyxml/tinyxml.h"
 #include "../xml_utils.h"
 
-#if defined(_DEBUG) 
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
+#include <libfilezilla/string.hpp>
 
 BOOL COptions::m_bInitialized = FALSE;
 
@@ -81,13 +77,10 @@ void COptions::SetOption(int nOptionID, __int64 value)
 	m_OptionsCache[nOptionID - 1].nType = 1;
 	m_OptionsCache[nOptionID - 1].value = value;
 
-	CString valuestr;
-	valuestr.Format(_T("%I64d"), value);
-
-	SaveOption(nOptionID, valuestr);
+	SaveOption(nOptionID, fz::to_wstring(value));
 }
 
-void COptions::SetOption(int nOptionID, CString const& value)
+void COptions::SetOption(int nOptionID, std::wstring const& value)
 {
 	Init();
 
@@ -98,47 +91,52 @@ void COptions::SetOption(int nOptionID, CString const& value)
 	SaveOption(nOptionID, value);
 }
 
-void COptions::SaveOption(int nOptionID, CString const& value)
+void COptions::SaveOption(int nOptionID, std::wstring const& value)
 {
-	CString const file = GetFileName(true);
+	std::wstring const file = GetFileName(true);
 
 	TiXmlDocument document;
-	XML::Load(document, file);
+	XML::Load(document, file.c_str());
 
 	TiXmlElement* pSettings = GetSettings(document);
-	if (!pSettings)
+	if (!pSettings) {
 		return;
+	}
 
 	TiXmlElement* pItem;
 	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
-		if (!pName)
+		if (!pName) {
 			continue;
+		}
 		CString name(pName);
-		if (name != m_Options[nOptionID - 1].name)
+		if (name != m_Options[nOptionID - 1].name) {
 			continue;
+		}
 
 		break;
 	}
 
-	if (!pItem)
+	if (!pItem) {
 		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
+	}
 	pItem->Clear();
-	pItem->SetAttribute("name", ConvToNetwork(m_Options[nOptionID - 1].name).c_str());
+	pItem->SetAttribute("name", fz::to_utf8(m_Options[nOptionID - 1].name).c_str());
 	pItem->SetAttribute("type", m_OptionsCache[nOptionID - 1].nType ? "numeric" : "string");
-	pItem->LinkEndChild(new TiXmlText(ConvToNetwork(value).c_str()));
+	pItem->LinkEndChild(new TiXmlText(fz::to_utf8(value).c_str()));
 
-	XML::Save(document, file);
+	XML::Save(document, file.c_str());
 }
 
-CString COptions::GetOption(int nOptionID)
+std::wstring COptions::GetOption(int nOptionID)
 {
 	ASSERT(nOptionID > 0 && nOptionID <= IOPTIONS_NUM);
 	ASSERT(!m_Options[nOptionID - 1].nType);
 	Init();
 
-	if (m_OptionsCache[nOptionID - 1].bCached)
+	if (m_OptionsCache[nOptionID - 1].bCached) {
 		return m_OptionsCache[nOptionID - 1].str;
+	}
 
 	//Verification
 	switch (nOptionID)
@@ -147,7 +145,7 @@ CString COptions::GetOption(int nOptionID)
 		m_OptionsCache[nOptionID - 1].str = _T("localhost");
 		break;
 	default:
-		m_OptionsCache[nOptionID - 1].str = "";
+		m_OptionsCache[nOptionID - 1].str.clear();
 		break;
 	}
 	m_OptionsCache[nOptionID - 1].bCached = TRUE;
@@ -161,8 +159,9 @@ __int64 COptions::GetOptionVal(int nOptionID)
 	ASSERT(m_Options[nOptionID - 1].nType == 1);
 	Init();
 
-	if (m_OptionsCache[nOptionID - 1].bCached)
+	if (m_OptionsCache[nOptionID - 1].bCached) {
 		return m_OptionsCache[nOptionID - 1].value;
+	}
 
 	switch (nOptionID) {
 	case IOPTION_LASTSERVERPORT:
@@ -179,23 +178,23 @@ __int64 COptions::GetOptionVal(int nOptionID)
 	return m_OptionsCache[nOptionID - 1].value;
 }
 
-CString COptions::GetFileName(bool for_saving)
+std::wstring COptions::GetFileName(bool for_saving)
 {
-	CString ret;
+	std::wstring ret;
 
 	PWSTR str = 0;
 	if (SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, 0, &str) == S_OK && str && *str) {
-		CString path = str;
-		path += _T("\\FileZilla Server\\");
+		std::wstring path = str;
+		path += L"\\FileZilla Server\\";
 
 		if (for_saving) {
-			CreateDirectory(path, 0);
+			CreateDirectory(path.c_str(), 0);
 		}
-		path += _T("FileZilla Server Interface.xml");
+		path += L"FileZilla Server Interface.xml";
 		
 		if (!for_saving) {
 			CFileStatus status;
-			if (CFile::GetStatus(path, status)) {
+			if (CFile::GetStatus(path.c_str(), status)) {
 				ret = path;
 			}
 		}
@@ -206,14 +205,15 @@ CString COptions::GetFileName(bool for_saving)
 		CoTaskMemFree(str);
 	}
 
-	if (ret.IsEmpty() && !for_saving) {
+	if (ret.empty() && !for_saving) {
 		TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 		GetModuleFileName(0, buffer, MAX_PATH);
 		LPTSTR pos = _tcsrchr(buffer, '\\');
-		if (pos)
+		if (pos) {
 			*++pos = 0;
+		}
 		ret = buffer;
-		ret += _T("FileZilla Server Interface.xml");
+		ret += L"FileZilla Server Interface.xml";
 	}
 
 	return ret;
@@ -221,40 +221,47 @@ CString COptions::GetFileName(bool for_saving)
 
 void COptions::Init()
 {
-	if (m_bInitialized)
+	if (m_bInitialized) {
 		return;
+	}
 	m_bInitialized = TRUE;
 		
-	for (int i = 0; i < IOPTIONS_NUM; i++)
+	for (int i = 0; i < IOPTIONS_NUM; ++i) {
 		m_OptionsCache[i].bCached = FALSE;
+	}
 
 	TiXmlDocument document;
-	if (!XML::Load(document, GetFileName(false))) {
+	if (!XML::Load(document, GetFileName(false).c_str())) {
 		return;
 	}
 
 	TiXmlElement* pSettings = GetSettings(document);
-	if (!pSettings)
+	if (!pSettings) {
 		return;
+	}
 
 	TiXmlElement* pItem;
 	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
-		if (!pName)
+		if (!pName) {
 			continue;
+		}
 		CString name(pName);
 		const char* pType = pItem->Attribute("type");
-		if (!pType)
+		if (!pType) {
 			continue;
+		}
 		CString type(pType);
 		TiXmlNode* textNode = pItem->FirstChild();
-		if (!textNode || !textNode->ToText())
+		if (!textNode || !textNode->ToText()) {
 			continue;
+		}
 		CString value = ConvFromNetwork(textNode->Value());
 
 		for (int i = 0; i < IOPTIONS_NUM; ++i) {
-			if (name != m_Options[i].name)
+			if (name != m_Options[i].name) {
 				continue;
+			}
 
 			if (m_OptionsCache[i].bCached) {
 				::AfxTrace( _T("Item '%s' is already in cache, ignoring item\n"), name);
@@ -270,11 +277,12 @@ void COptions::Init()
 				m_OptionsCache[i].nType = 1;
 				_int64 value64=_ttoi64(value);
 
-				switch (i+1)
+				switch (i + 1)
 				{
 				case IOPTION_LASTSERVERPORT:
-					if (value64 < 1 || value64 > 65535)
+					if (value64 < 1 || value64 > 65535) {
 						value64 = 14147;
+					}
 					break;
 				default:
 					break;

@@ -27,6 +27,8 @@
 #include "UsersDlgSpeedLimit.h"
 #include "../AsyncSslSocketLayer.h"
 
+#include <libfilezilla/string.hpp>
+
 #if defined(_DEBUG) 
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -106,8 +108,9 @@ BOOL CUsersDlgGeneral::OnInitDialog()
 	UpdateData(FALSE);
 
 	m_cGroup.AddString(_T("<none>"));
-	for (CUsersDlg::t_GroupsList::iterator iter = m_pOwner->m_GroupsList.begin(); iter != m_pOwner->m_GroupsList.end(); ++iter)
-		m_cGroup.AddString(iter->group);
+	for (CUsersDlg::t_GroupsList::iterator iter = m_pOwner->m_GroupsList.begin(); iter != m_pOwner->m_GroupsList.end(); ++iter) {
+		m_cGroup.AddString(iter->group.c_str());
+	}
 
 	SetCtrlState();
 
@@ -205,7 +208,9 @@ void CUsersDlgGeneral::OnSelchangeGroup()
 	}
 	else
 	{
-		m_cGroup.GetLBText(m_cGroup.GetCurSel(), m_pUser->group);
+		CString g;
+		m_cGroup.GetLBText(m_cGroup.GetCurSel(), g);
+		m_pUser->group = g;
 		m_cMaxUsersBypass.SetButtonStyle(BS_AUTO3STATE);
 		m_cEnabled.SetButtonStyle(BS_AUTO3STATE);
 
@@ -232,11 +237,11 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 		return TRUE;
 	}
 
-	m_Pass = pUser->password;
+	m_Pass = pUser->password.c_str();
 	m_cPass.SetModify(FALSE);
 	m_bNeedpass = pUser->password != _T("");
 
-	if (pUser->group == _T("") || m_cGroup.SelectString(-1, pUser->group) == CB_ERR) {
+	if (pUser->group == _T("") || m_cGroup.SelectString(-1, pUser->group.c_str()) == CB_ERR) {
 		m_cMaxUsersBypass.SetButtonStyle(BS_AUTOCHECKBOX);
 		m_cEnabled.SetButtonStyle(BS_AUTOCHECKBOX);
 		m_cGroup.SetCurSel(0);
@@ -254,7 +259,7 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 	m_MaxConnCount = str;
 	str.Format(_T("%d"), pUser->nIpLimit);
 	m_IpLimit = str;
-	m_Comments = pUser->comment;
+	m_Comments = pUser->comment.c_str();
 	m_nForceSsl = pUser->forceSsl;
 
 	UpdateData(FALSE);
@@ -270,11 +275,11 @@ BOOL CUsersDlgGeneral::SaveUser(t_user & user)
 	else if (m_cPass.GetModify() && m_Pass != _T("")) {
 		user.generateSalt();
 		
-		auto saltedPassword = ConvToNetwork(m_Pass + user.salt);
+		auto saltedPassword = fz::to_utf8(m_Pass.GetString() + user.salt);
 
 		CAsyncSslSocketLayer ssl(0);
 		user.password = ConvFromNetwork(ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size()).c_str());
-		if (user.password.IsEmpty()) {
+		if (user.password.empty()) {
 			// Something went very wrong, disable user.
 			user.nEnabled = false;
 		}
@@ -283,10 +288,14 @@ BOOL CUsersDlgGeneral::SaveUser(t_user & user)
 	user.nBypassUserLimit = m_nMaxUsersBypass;
 	user.nUserLimit = _ttoi(m_MaxConnCount);
 	user.nIpLimit = _ttoi(m_IpLimit);
-	if (m_cGroup.GetCurSel()<=0)
-		user.group = _T("");
-	else
-		m_cGroup.GetLBText(m_cGroup.GetCurSel(), user.group);
+	if (m_cGroup.GetCurSel() <= 0) {
+		user.group.clear();
+	}
+	else {
+		CString g;
+		m_cGroup.GetLBText(m_cGroup.GetCurSel(), g);
+		user.group = g;
+	}
 
 	user.comment = m_Comments;
 

@@ -144,7 +144,7 @@ BOOL COptionsGeneralPage::IsDataValid()
 
 void COptionsGeneralPage::LoadData()
 {
-	m_Port = m_pOptionsDlg->GetOption(OPTION_SERVERPORT);
+	m_Port = m_pOptionsDlg->GetOption(OPTION_SERVERPORT).c_str();
 	m_Threadnum.Format(_T("%d"), static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_THREADNUM)));
 	m_MaxUsers.Format(_T("%d"), static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_MAXUSERS)));
 	m_Timeout.Format(_T("%d"), static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_TIMEOUT)));
@@ -154,7 +154,7 @@ void COptionsGeneralPage::LoadData()
 
 void COptionsGeneralPage::SaveData()
 {
-	m_pOptionsDlg->SetOption(OPTION_SERVERPORT, m_Port);
+	m_pOptionsDlg->SetOption(OPTION_SERVERPORT, m_Port.GetString());
 	m_pOptionsDlg->SetOption(OPTION_THREADNUM, _ttoi(m_Threadnum));
 	m_pOptionsDlg->SetOption(OPTION_MAXUSERS, _ttoi(m_MaxUsers));
 	m_pOptionsDlg->SetOption(OPTION_TIMEOUT, _ttoi(m_Timeout));

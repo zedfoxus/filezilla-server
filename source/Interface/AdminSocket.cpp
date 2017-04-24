@@ -24,6 +24,8 @@
 #include "../platform.h"
 #include "../misc\md5.h"
 
+#include <libfilezilla/string.hpp>
+
 #define BUFSIZE 4096
 
 CAdminSocket::CAdminSocket(CMainFrame *pMainFrame)
@@ -241,8 +243,8 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				if (noncelen1) {
 					md5.update(p + 2, noncelen1);
 				}
-				auto utf8 = ConvToNetwork(m_Password);
-				if (utf8.empty() && !m_Password.IsEmpty()) {
+				auto utf8 = fz::to_utf8(m_Password);
+				if (utf8.empty() && !m_Password.empty()) {
 					m_pMainFrame->ShowStatus(_T("Can't convert password to UTF-8"), 1);
 					Close();
 					return FALSE;
@@ -400,7 +402,7 @@ void CAdminSocket::DoClose()
 
 bool CAdminSocket::IsLocal()
 {
-	CString ip;
+	std::wstring ip;
 	UINT port;
 	if (!GetPeerName(ip, port)) {
 		return false;

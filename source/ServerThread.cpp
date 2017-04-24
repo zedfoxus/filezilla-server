@@ -188,7 +188,7 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 		return;
 	}
 
-	CStdString ip;
+	std::wstring ip;
 	UINT port = 0;
 	if (socket->GetPeerName(ip, port)) {
 		if (socket->GetFamily() == AF_INET6)

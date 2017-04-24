@@ -554,7 +554,7 @@ BOOL CGroupsDlgSharedFolders::DisplayGroup(const t_group *pGroup)
 	m_cDirs.DeleteAllItems();
 	for (unsigned int j = 0; j < pGroup->permissions.size(); j++)
 	{
-		int nItem = m_cDirs.InsertItem(j, pGroup->permissions[j].dir);
+		int nItem = m_cDirs.InsertItem(j, pGroup->permissions[j].dir.c_str());
 		LVITEM item;
 		memset(&item, 0, sizeof(item));
 		item.mask=LVIF_IMAGE|LVIF_PARAM;
@@ -566,7 +566,7 @@ BOOL CGroupsDlgSharedFolders::DisplayGroup(const t_group *pGroup)
 
 		CString aliases;
 		for (auto const& alias : pGroup->permissions[j].aliases) {
-			aliases += alias;
+			aliases += alias.c_str();
 			aliases += _T("|");
 		}
 		aliases.TrimRight('|');
@@ -635,7 +635,7 @@ void CGroupsDlgSharedFolders::OnDirmenuEditAliases()
 		aliases.TrimLeft(_T("|"));
 		aliases.TrimRight(_T("|"));
 
-		std::vector<CString> aliasList;
+		std::vector<std::wstring> aliasList;
 		aliases += _T("|");
 		int pos;
 
@@ -651,7 +651,7 @@ void CGroupsDlgSharedFolders::OnDirmenuEditAliases()
 
 			if (alias != _T("") && seen.insert(alias).second ) {
 
-				aliasList.push_back(alias);
+				aliasList.push_back(alias.GetString());
 
 				if( alias.GetLength() < 2 || alias[0] != '/' ) {
 					valid = false;
@@ -663,7 +663,8 @@ void CGroupsDlgSharedFolders::OnDirmenuEditAliases()
 
 		aliases.Empty();
 		for (auto const& alias : aliasList) {
-			aliases += alias + _T("|");
+			aliases += alias.c_str();
+			aliases += _T("|");
 		}
 		aliases.TrimRight(_T("|"));
 

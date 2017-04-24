@@ -22,42 +22,53 @@
 #include <memory>
 #include <iphlpapi.h>
 
-bool IsLocalhost(const CStdString& ip)
+#include <libfilezilla/format.hpp>
+#include <libfilezilla/string.hpp>
+
+bool IsLocalhost(std::wstring const& ip)
 {
-	if (ip.Left(4) == _T("127."))
+	if (ip.substr(0, 4) == L"127.") {
 		return true;
-	if (GetIPV6ShortForm(ip) == _T("::1"))
+	}
+	if (GetIPV6ShortForm(ip) == L"::1") {
 		return true;
+	}
 
 	return false;
 }
 
-bool IsValidAddressFilter(CStdString& filter)
+bool IsValidAddressFilter(std::wstring& filter)
 {
-	CStdString left;
-	int const pos = filter.Find(_T("/"));
+	std::wstring left;
+	auto const pos = filter.find('/');
 	int prefixLength = 0;
-	if (!pos)
+	if (!pos) {
 		return false;
-	else if (pos != -1) {
-		left = filter.Left(pos);
-		prefixLength = _ttoi(filter.Mid(pos + 1));
-		if (prefixLength < 0 || prefixLength > 128)
-			return false;
 	}
-	else
+	else if (pos != std::wstring::npos) {
+		left = filter.substr(0, pos);
+		prefixLength = fz::to_integral<int>(filter.substr(pos + 1), -1);
+		if (prefixLength < 0 || prefixLength > 128) {
+			return false;
+		}
+	}
+	else {
 		left = filter;
+	}
 
-	if (!IsIpAddress(left, true))
+	if (!IsIpAddress(left, true)) {
 		return false;
+	}
 
-	if (left.Find(':') != -1)
+	if (left.find(':') != std::wstring::npos) {
 		left = GetIPV6ShortForm(left);
-	if (pos != -1)
-		filter.Format(_T("%s/%d"), (LPCTSTR)left, prefixLength);
-	else
+	}
+	if (pos != -1) {
+		filter = fz::sprintf(L"%s/%d", left, prefixLength);
+	}
+	else {
 		filter = left;
-
+	}
 
 	return true;
 }
@@ -108,32 +119,36 @@ static unsigned long const prefixMasksV4[] = {
 	0xffffffffu
 };
 
-bool MatchesFilter(CStdString const& filter, CStdString ip)
+bool MatchesFilter(std::wstring const& filter, std::wstring ip)
 {
 	// A single asterix matches all IPs.
-	if (filter == _T("*"))
+	if (filter == L"*") {
 		return true;
+	}
 
 	// Check for IP range syntax.
-	int pos = filter.Find('/');
-	if (pos != -1) {
+	size_t pos = filter.find('/');
+	if (pos != std::wstring::npos) {
 		// CIDR filter
-		int prefixLength = _ttoi(filter.Mid(pos+1));
+		int prefixLength = fz::to_integral<int>(filter.substr(pos + 1));
 
-		if (ip.Find(':') != -1) {
+		if (ip.find(':') != std::wstring::npos) {
 			// IPv6 address
-			CStdString left = GetIPV6LongForm(filter.Left(pos));
-			if (left.Find(':') == -1)
+			std::wstring left = GetIPV6LongForm(filter.substr(0, pos));
+			if (left.find(':') == std::wstring::npos) {
 				return false;
+			}
 			ip = GetIPV6LongForm(ip);
-			LPCTSTR i = ip;
-			LPCTSTR f = left;
+			wchar_t const* i = ip.c_str();
+			wchar_t const* f = left.c_str();
 			while (prefixLength >= 4) {
-				if (*i != *f)
+				if (*i != *f) {
 					return false;
+				}
 
-				if (!*i)
+				if (!*i) {
 					return true;
+				}
 
 				if (*i == ':') {
 					++i;
@@ -144,32 +159,39 @@ bool MatchesFilter(CStdString const& filter, CStdString ip)
 
 				prefixLength -= 4;
 			}
-			if (!prefixLength)
+			if (!prefixLength) {
 				return true;
+			}
 
 			int mask;
-			if (prefixLength == 1)
+			if (prefixLength == 1) {
 				mask = 0x8;
-			else if (prefixLength == 2)
+			}
+			else if (prefixLength == 2) {
 				mask = 0xc;
-			else
+			}
+			else {
 				mask = 0xe;
+			}
 
 			return (DigitHexToDecNum(*i) & mask) == (DigitHexToDecNum(*f) & mask);
 		}
 		else {
-			if (prefixLength < 0)
+			if (prefixLength < 0) {
 				prefixLength = 0;
-			else if (prefixLength > 32)
+			}
+			else if (prefixLength > 32) {
 				prefixLength = 32;
+			}
 
 			// IPv4 address
-			CStdString left = filter.Left(pos);
-			if (left.Find(':') != -1)
+			std::wstring left = filter.substr(0, pos);
+			if (left.find(':') != std::wstring::npos) {
 				return false;
+			}
 
-			unsigned long i = ntohl(inet_addr(ConvToLocal(ip)));
-			unsigned long f = ntohl(inet_addr(ConvToLocal(left)));
+			unsigned long i = ntohl(inet_addr(fz::to_string(ip).c_str()));
+			unsigned long f = ntohl(inet_addr(fz::to_string(left).c_str()));
 
 			i &= prefixMasksV4[prefixLength];
 			f &= prefixMasksV4[prefixLength];
@@ -178,14 +200,16 @@ bool MatchesFilter(CStdString const& filter, CStdString ip)
 	}
 	else {
 		// Literal filter
-		if (filter.Find(':') != -1)
+		if (filter.find(':') != std::wstring::npos) {
 			return filter == GetIPV6ShortForm(ip);
-		else
+		}
+		else {
 			return filter == ip;
+		}
 	}
 }
 
-bool ParseIPFilter(CStdString in, std::vector<CStdString>* output /*=0*/)
+bool ParseIPFilter(CStdString in, std::vector<std::wstring>* output)
 {
 	bool valid = true;
 
@@ -199,15 +223,15 @@ bool ParseIPFilter(CStdString in, std::vector<CStdString>* output /*=0*/)
 
 	int pos;
 	while ((pos = in.Find(_T(" "))) != -1) {
-		CStdString ip = in.Left(pos);
-		if (ip == _T("")) {
+		std::wstring ip = in.Left(pos);
+		if (ip.empty()) {
 			break;
 		}
 		in = in.Mid(pos + 1);
 
 		if (ip == _T("*") || IsValidAddressFilter(ip)) {
 			if (output) {
-				output->push_back(ip);
+				output->push_back(static_cast<std::wstring>(ip));
 			}
 		}
 		else {
@@ -218,17 +242,17 @@ bool ParseIPFilter(CStdString in, std::vector<CStdString>* output /*=0*/)
 	return valid;
 }
 
-CStdString GetIPV6LongForm(CStdString short_address)
+std::wstring GetIPV6LongForm(std::wstring short_address)
 {
-	if (short_address[0] == '[')
-	{
-		if (short_address[short_address.GetLength() - 1] != ']')
-			return _T("");
-		short_address = short_address.Mid(1, short_address.GetLength() - 2);
+	if (short_address[0] == '[') {
+		if (short_address.back() != ']') {
+			return std::wstring();
+		}
+		short_address = short_address.substr(1, short_address.size() - 2);
 	}
-	short_address.MakeLower();
+	short_address = fz::str_tolower_ascii(short_address);
 
-	TCHAR buffer[40] = { '0', '0', '0', '0', ':',
+	wchar_t buffer[40] = { '0', '0', '0', '0', ':',
 						 '0', '0', '0', '0', ':',
 						 '0', '0', '0', '0', ':',
 						 '0', '0', '0', '0', ':',
@@ -237,89 +261,85 @@ CStdString GetIPV6LongForm(CStdString short_address)
 						 '0', '0', '0', '0', ':',
 						 '0', '0', '0', '0', 0
 					   };
-	TCHAR* out = buffer;
+	wchar_t* out = buffer;
 
-	const unsigned int len = short_address.GetLength();
-	if (len > 39)
-		return _T("");
+	size_t const len  = short_address.size();
+	if (len > 39) {
+		return std::wstring();
+	}
 
 	// First part, before possible ::
 	unsigned int i = 0;
 	unsigned int grouplength = 0;
-	for (i = 0; i < len + 1; i++)
-	{
-		const TCHAR& c = short_address[i];
-		if (c == ':' || !c)
-		{
-			if (!grouplength)
-			{
+	for (i = 0; i < len + 1; ++i) {
+		wchar_t const& c = short_address[i];
+		if (c == ':' || !c) {
+			if (!grouplength) {
 				// Empty group length, not valid
-				if (!c || short_address[i + 1] != ':')
-					return _T("");
-				i++;
+				if (!c || short_address[i + 1] != ':') {
+					return std::wstring();
+				}
+				++i;
 				break;
 			}
 
 			out += 4 - grouplength;
-			for (unsigned int j = grouplength; j > 0; j--)
+			for (unsigned int j = grouplength; j > 0; --j) {
 				*out++ = short_address[i - j];
+			}
 			// End of string...
-			if (!c)
-			{
-				if (!*out)
+			if (!c) {
+				if (!*out) {
 					// ...on time
 					return buffer;
-				else
+				}
+				else {
 					// ...premature
-					return _T("");
+					return std::wstring();
+				}
 			}
-			else if (!*out)
-			{
+			else if (!*out) {
 				// Too long
-				return _T("");
+				return std::wstring();
 			}
 
-			out++;
+			++out;
 
 			grouplength = 0;
-			if (short_address[i + 1] == ':')
-			{
-				i++;
+			if (short_address[i + 1] == ':') {
+				++i;
 				break;
 			}
 			continue;
 		}
 		else if ((c < '0' || c > '9') &&
-				 (c < 'a' || c > 'f'))
+			(c < 'a' || c > 'f'))
 		{
 			// Invalid character
-			return _T("");
+			return std::wstring();
 		}
 		// Too long group
-		if (++grouplength > 4)
-			return _T("");
+		if (++grouplength > 4) {
+			return std::wstring();
+		}
 	}
 
 	// Second half after ::
 
-	TCHAR* end_first = out;
+	wchar_t* end_first = out;
 	out = &buffer[38];
 	unsigned int stop = i;
-	for (i = len - 1; i > stop; i--)
-	{
-		if (out < end_first)
-		{
+	for (i = len - 1; i > stop; --i) {
+		if (out < end_first) {
 			// Too long
-			return _T("");
+			return std::wstring();
 		}
 
-		const TCHAR& c = short_address[i];
-		if (c == ':')
-		{
-			if (!grouplength)
-			{
+		wchar_t const& c = short_address[i];
+		if (c == ':') {
+			if (!grouplength) {
 				// Empty group length, not valid
-				return _T("");
+				return std::wstring();
 			}
 
 			out -= 5 - grouplength;
@@ -334,42 +354,44 @@ CStdString GetIPV6LongForm(CStdString short_address)
 			return _T("");
 		}
 		// Too long group
-		if (++grouplength > 4)
-			return _T("");
+		if (++grouplength > 4) {
+			return std::wstring();
+		}
 		*out-- = c;
 	}
 	if (!grouplength && stop + 1 < len) {
 		// Empty group length, not valid
-		return _T("");
+		return std::wstring();
 	}
 	out -= 5 - grouplength;
 	out += 2;
 
 	int diff = out - end_first;
-	if (diff < 0 || diff % 5)
-		return _T("");
+	if (diff < 0 || diff % 5) {
+		return std::wstring();
+	}
 
 	return buffer;
 }
 
 bool IsRoutableAddress(const CStdString& address)
 {
-	if (address.Find(_T(":")) != -1)
-	{
-		CStdString long_address = GetIPV6LongForm(address);
-		if (long_address.IsEmpty())
+	if (address.Find(_T(":")) != -1) {
+		std::wstring long_address = GetIPV6LongForm(address.GetString());
+		if (long_address.empty()) {
 			return false;
-		if (long_address[0] == '0')
-		{
+		}
+		if (long_address[0] == '0') {
 			// ::/128
-			if (long_address == _T("0000:0000:0000:0000:0000:0000:0000:0000"))
+			if (long_address == _T("0000:0000:0000:0000:0000:0000:0000:0000")) {
 				return false;
+			}
 			// ::1/128
-			if (long_address == _T("0000:0000:0000:0000:0000:0000:0000:0001"))
+			if (long_address == _T("0000:0000:0000:0000:0000:0000:0000:0001")) {
 				return false;
+			}
 
-			if (long_address.Left(30) == _T("0000:0000:0000:0000:0000:ffff:"))
-			{
+			if (long_address.substr(0, 30) == _T("0000:0000:0000:0000:0000:ffff:")) {
 				// IPv4 mapped
 				CStdString ipv4;
 				ipv4.Format(_T("%d.%d.%d.%d"),
@@ -382,24 +404,24 @@ bool IsRoutableAddress(const CStdString& address)
 
 			return true;
 		}
-		if (long_address[0] == 'f')
-		{
-			if (long_address[1] == 'e')
-			{
+		if (long_address[0] == 'f') {
+			if (long_address[1] == 'e') {
 				// fe80::/10 (link local)
 				const TCHAR& c = long_address[2];
 				int v;
-				if (c >= 'a')
+				if (c >= 'a') {
 					v = c - 'a' + 10;
-				else
+				}
+				else {
 					v = c - '0';
-				if ((v & 0xc) == 0x8)
+				}
+				if ((v & 0xc) == 0x8) {
 					return false;
+				}
 
 				return true;
 			}
-			else if (long_address[1] == 'c' || long_address[1] == 'd')
-			{
+			else if (long_address[1] == 'c' || long_address[1] == 'd') {
 				// fc00::/7 (site local)
 				return false;
 			}
@@ -407,8 +429,7 @@ bool IsRoutableAddress(const CStdString& address)
 
 		return true;
 	}
-	else
-	{
+	else {
 		// Assumes address is already a valid IP address
 		if (address.Left(3) == _T("127") ||
 			address.Left(3) == _T("10.") ||
@@ -416,8 +437,7 @@ bool IsRoutableAddress(const CStdString& address)
 			address.Left(7) == _T("169.254"))
 			return false;
 
-		if (address.Left(3) == _T("172"))
-		{
+		if (address.Left(3) == _T("172")) {
 			CStdString middle = address.Mid(4);
 			int pos = address.Find(_T("."));
 			if (pos == -1)
@@ -432,55 +452,63 @@ bool IsRoutableAddress(const CStdString& address)
 	}
 }
 
-bool IsIpAddress(const CStdString& address, bool allowNull)
+bool IsIpAddress(std::wstring const& address, bool allowNull)
 {
-	if (GetIPV6LongForm(address) != _T(""))
+	if (!GetIPV6LongForm(address).empty()) {
 		return true;
+	}
 
 	int segment = 0;
 	int dotcount = 0;
-	for (int i = 0; i < address.GetLength(); ++i) {
-		const TCHAR& c = address[i];
+	for (size_t i = 0; i < address.size(); ++i) {
+		wchar_t const& c = address[i];
 		if (c == '.') {
-			if (address[i + 1] == '.')
+			if (address[i + 1] == '.') {
 				// Disallow multiple dots in a row
 				return false;
+			}
 
-			if (segment > 255)
+			if (segment > 255) {
 				return false;
-			if (!dotcount && !segment && !allowNull)
+			}
+			if (!dotcount && !segment && !allowNull) {
 				return false;
+			}
 			dotcount++;
 			segment = 0;
 		}
-		else if (c < '0' || c > '9')
+		else if (c < '0' || c > '9') {
 			return false;
+		}
 
 		segment = segment * 10 + c - '0';
 	}
-	if (dotcount != 3)
+	if (dotcount != 3) {
 		return false;
+	}
 
-	if (segment > 255)
+	if (segment > 255) {
 		return false;
+	}
 
 	return true;
 }
 
-CStdString GetIPV6ShortForm(const CStdString& ip)
+std::wstring GetIPV6ShortForm(std::wstring const& ip)
 {
 	// This could be optimized a lot.
 
 	// First get the long form in a well-known format
-	CStdString l = GetIPV6LongForm(ip);
-	if (l.IsEmpty())
-		return CStdString();
+	std::wstring l = GetIPV6LongForm(ip);
+	if (l.empty()) {
+		return std::wstring();
+	}
 
-	LPCTSTR p = l;
+	wchar_t const* p = l.c_str();
 
-	TCHAR outbuf[42];
+	wchar_t outbuf[42];
 	*outbuf = ':';
-	TCHAR* out = outbuf + 1;
+	wchar_t* out = outbuf + 1;
 
 	bool segmentStart = true;
 	bool readLeadingZero = false;
@@ -489,17 +517,18 @@ CStdString GetIPV6ShortForm(const CStdString& ip)
 		switch (*p)
 		{
 		case ':':
-			if (readLeadingZero)
+			if (readLeadingZero) {
 				*(out++) = '0';
+			}
 			*out++ = ':';
 			readLeadingZero = false;
 			segmentStart = true;
 			break;
 		case '0':
-			if (segmentStart)
+			if (segmentStart) {
 				readLeadingZero = true;
-			else
-			{
+			}
+			else {
 				*out++ = '0';
 				readLeadingZero = false;
 			}
@@ -517,25 +546,25 @@ CStdString GetIPV6ShortForm(const CStdString& ip)
 	*out = 0;
 
 	// Replace longest run of consecutive zeroes
-	CStdString shortIp(outbuf);
+	std::wstring shortIp(outbuf);
 
-	CStdString s = _T(":0:0:0:0:0:0:0:0:");
-	while (s.GetLength() > 2)
-	{
-		int pos = shortIp.Find(s);
-		if (pos != -1)
-		{
-			shortIp = shortIp.Left( pos + 1 ) + shortIp.Mid(pos + s.GetLength() -1);
+	std::wstring s = L":0:0:0:0:0:0:0:0:";
+	while (s.size() > 2) {
+		size_t pos = shortIp.find(s);
+		if (pos != std::wstring::npos) {
+			shortIp = shortIp.substr(0, pos + 1) + shortIp.substr(pos + s.size() - 1);
 			break;
 		}
 
-		s = s.Mid(2);
+		s = s.substr(2);
 	}
-	shortIp.Replace(_T(":::"), _T("::"));
-	if (shortIp[0] == ':' && shortIp[1] != ':')
-		shortIp = shortIp.Mid(1);
-	if (shortIp.GetLength() >= 2 && shortIp[shortIp.GetLength()-1] == ':' && shortIp[shortIp.GetLength()-2] != ':')
-		shortIp = shortIp.Left(shortIp.GetLength()-1);
+	fz::replace_substrings(shortIp, L":::", L"::");
+	if (shortIp[0] == ':' && shortIp[1] != ':') {
+		shortIp = shortIp.substr(1);
+	}
+	if (shortIp.size() >= 2 && shortIp[shortIp.size() - 1] == ':' && shortIp[shortIp.size() - 2] != ':') {
+		shortIp = shortIp.substr(0, shortIp.size() - 1);
+	}
 
 	return shortIp;
 }

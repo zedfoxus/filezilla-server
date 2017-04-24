@@ -122,10 +122,10 @@ BOOL CUsersDlgIpFilter::DisplayUser(t_user *pUser)
 	}
 
 	for (auto const& disallowedIP : pUser->disallowedIPs) {
-		m_DisallowedAddresses += disallowedIP + "\r\n";
+		m_DisallowedAddresses += (disallowedIP + L"\r\n").c_str();
 	}
 	for (auto const& allowedIP : pUser->allowedIPs) {
-		m_AllowedAddresses += allowedIP + "\r\n";
+		m_AllowedAddresses += (allowedIP + L"\r\n").c_str();
 	}
 
 	UpdateData(FALSE);

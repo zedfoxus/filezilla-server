@@ -30,6 +30,8 @@
 #include "GroupsDlgIpFilter.h"
 #include "DeleteGroupInUseDlg.h"
 
+#include <libfilezilla/string.hpp>
+
 #if defined(_DEBUG)
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -97,14 +99,12 @@ BOOL CGroupsDlg::OnInitDialog()
 	m_oldgroup = LB_ERR;
 	m_cGrouplist.ResetContent();
 	UpdateData(FALSE);
-	for (unsigned int i = 0; i < m_GroupsList.size(); i++)
-	{
-		int index = m_cGrouplist.AddString(m_GroupsList[i].group);
+	for (unsigned int i = 0; i < m_GroupsList.size(); ++i) {
+		int index = m_cGrouplist.AddString(m_GroupsList[i].group.c_str());
 		m_cGrouplist.SetItemData(index, i);
 	}
 
-	if (m_GroupsList.size())
-	{
+	if (m_GroupsList.size()) {
 		m_cGrouplist.SetCurSel(0);
 		OnSelchangeGrouplist();
 	}
@@ -118,32 +118,28 @@ BOOL CGroupsDlg::OnInitDialog()
 BOOL CGroupsDlg::Validate()
 {
 	CString res = m_pGeneralPage->Validate();
-	if (res != _T(""))
-	{
+	if (!res.IsEmpty()) {
 		ShowPage(m_pGeneralPage);
 		m_cGrouplist.SetCurSel(m_oldgroup);
 		MessageBox(res);
 		return FALSE;
 	}
 	res = m_pSpeedLimitPage->Validate();
-	if (res != _T(""))
-	{
+	if (!res.IsEmpty()) {
 		ShowPage(m_pSpeedLimitPage);
 		m_cGrouplist.SetCurSel(m_oldgroup);
 		MessageBox(res);
 		return FALSE;
 	}
 	res = m_pSharedFoldersPage->Validate();
-	if (res != _T(""))
-	{
+	if (!res.IsEmpty()) {
 		ShowPage(m_pSharedFoldersPage);
 		m_cGrouplist.SetCurSel(m_oldgroup);
 		MessageBox(res);
 		return FALSE;
 	}
 	res = m_pIpFilterPage->Validate();
-	if (res != _T(""))
-	{
+	if (!res.IsEmpty()) {
 		ShowPage(m_pIpFilterPage);
 		m_cGrouplist.SetCurSel(m_oldgroup);
 		MessageBox(res);
@@ -228,21 +224,19 @@ void CGroupsDlg::OnContextMenu(CWnd* pWnd, CPoint point)
 
 void CGroupsDlg::OnGroupAdd()
 {
-	if (!Validate())
+	if (!Validate()) {
 		return;
+	}
 
 	CEnterSomething dlg(IDS_ADDGROUPDIALOG);
-	if (dlg.DoModal()==IDOK)
-	{
+	if (dlg.DoModal() == IDOK) {
 		CString newname=dlg.m_String;
 		newname.MakeLower();
-		for (int i=0; i<m_cGrouplist.GetCount(); i++)
-		{
+		for (int i = 0; i < m_cGrouplist.GetCount(); ++i) {
 			CString str;
 			m_cGrouplist.GetText(i, str);
 			str.MakeLower();
-			if (str==newname)
-			{
+			if (str == newname) {
 				AfxMessageBox(IDS_ERRORMSG_GROUPALREADYEXISTS);
 				return;
 			}
@@ -255,11 +249,12 @@ void CGroupsDlg::OnGroupAdd()
 		group.nIpLimit = 0;
 		group.nUserLimit = 0;
 		group.forceSsl = 0;
-		int nItem = m_cGrouplist.AddString(group.group);
-		if (nItem <= m_oldgroup)
-			m_oldgroup++;
+		int nItem = m_cGrouplist.AddString(group.group.c_str());
+		if (nItem <= m_oldgroup) {
+			++m_oldgroup;
+		}
 		m_GroupsList.push_back(group);
-		m_cGrouplist.SetItemData(nItem, m_GroupsList.size()-1);
+		m_cGrouplist.SetItemData(nItem, m_GroupsList.size() - 1);
 		m_cGrouplist.SetCurSel(nItem);
 		OnSelchangeGrouplist();
 	}
@@ -267,27 +262,25 @@ void CGroupsDlg::OnGroupAdd()
 
 void CGroupsDlg::OnGroupCopy()
 {
-	if (!Validate())
+	if (!Validate()) {
 		return;
+	}
 
 	int pos = m_cGrouplist.GetCurSel();
-	if (pos==LB_ERR)
+	if (pos == LB_ERR) {
 		return;
+	}
 	int index = m_cGrouplist.GetItemData(pos);
 
 	CEnterSomething dlg(IDS_COPYGROUPDIALOG);
-	if (dlg.DoModal()==IDOK)
-	{
-		int i;
+	if (dlg.DoModal() == IDOK) {
 		CString newname = dlg.m_String;
 		newname.MakeLower();
-		for (i=0;i<m_cGrouplist.GetCount();i++)
-		{
+		for (int i = 0; i < m_cGrouplist.GetCount(); ++i) {
 			CString str;
-			m_cGrouplist.GetText(i,str);
+			m_cGrouplist.GetText(i, str);
 			str.MakeLower();
-			if (str==newname)
-			{
+			if (str == newname) {
 				AfxMessageBox(IDS_ERRORMSG_GROUPALREADYEXISTS);
 				return;
 			}
@@ -296,11 +289,12 @@ void CGroupsDlg::OnGroupCopy()
 		t_group group = m_GroupsList[index];
 		group.group = dlg.m_String;
 
-		int nItem = m_cGrouplist.AddString(group.group);
-		if (nItem <= m_oldgroup)
-			m_oldgroup++;
+		int nItem = m_cGrouplist.AddString(group.group.c_str());
+		if (nItem <= m_oldgroup) {
+			++m_oldgroup;
+		}
 		m_GroupsList.push_back(group);
-		m_cGrouplist.SetItemData(nItem, m_GroupsList.size()-1);
+		m_cGrouplist.SetItemData(nItem, m_GroupsList.size() - 1);
 		m_cGrouplist.SetCurSel(nItem);
 
 		OnSelchangeGrouplist();
@@ -311,42 +305,41 @@ void CGroupsDlg::OnGroupCopy()
 void CGroupsDlg::OnGroupRemove()
 {
 	int pos = m_cGrouplist.GetCurSel();
-	if (pos == LB_ERR)
+	if (pos == LB_ERR) {
 		return;
+	}
 	int index = m_cGrouplist.GetItemData(pos);
 	m_oldgroup = LB_ERR;
 
 	unsigned int i = 0;
 	CString oldName;
 	m_cGrouplist.GetText(pos, oldName);
-	for (i = 0; i < m_UsersList.size(); i++)
-	{
-		if (!m_UsersList[i].group.CompareNoCase(oldName))
-		{
+	for (i = 0; i < m_UsersList.size(); ++i) {
+		if (!fz::stricmp(m_UsersList[i].group, static_cast<std::wstring>(oldName))) {
 			CDeleteGroupInUseDlg dlg;
 			dlg.m_groupName = oldName;
 			dlg.m_GroupsList = &m_GroupsList;
-			if (dlg.DoModal() != IDOK)
+			if (dlg.DoModal() != IDOK) {
 				return;
+			}
 
-			if (!dlg.m_action)
-			{
-				for (unsigned int k = 0; k < m_UsersList.size(); k++)
-				{
+			if (!dlg.m_action) {
+				for (size_t k = 0; k < m_UsersList.size(); ++k) {
 					t_user& user = m_UsersList[k];
-					if (user.group.CompareNoCase(oldName))
+					if (fz::stricmp(user.group, static_cast<std::wstring>(oldName))) {
 						continue;
+					}
 					user.group = dlg.m_groupName;
 				}
 			}
-			else
-			{
+			else {
 				// Delete affected users
 				t_UsersList newList;
-				for (unsigned int k = 0; k < m_UsersList.size(); k++)
-				{
-					if (m_UsersList[k].group.CompareNoCase(oldName))
+				for (unsigned int k = 0; k < m_UsersList.size(); ++k) {
+					t_user const& user = m_UsersList[k];
+					if (fz::stricmp(user.group, static_cast<std::wstring>(oldName))) {
 						newList.push_back(m_UsersList[k]);
+					}
 				}
 				m_UsersList = newList;
 			}
@@ -409,10 +402,10 @@ void CGroupsDlg::OnGroupRename()
 		m_oldgroup = pos;
 		m_GroupsList[index].group = dlg.m_String;
 
-		for (unsigned int i = 0; i < m_UsersList.size(); i++)
-		{
-			if (!m_UsersList[i].group.CompareNoCase(oldName))
+		for (size_t i = 0; i < m_UsersList.size(); ++i) {
+			if (!fz::stricmp(m_UsersList[i].group, static_cast<std::wstring>(oldName))) {
 				m_UsersList[i].group = dlg.m_String;
+			}
 		}
 
 		OnSelchangeGrouplist();

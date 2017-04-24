@@ -21,7 +21,7 @@ void CAdminListenSocket::OnAccept(int nErrorCode)
 
 	if (Accept(*pSocket)) {
 		//Validate IP address
-		CStdString ip;
+		std::wstring ip;
 		UINT port = 0;
 
 		bool allowed = false;

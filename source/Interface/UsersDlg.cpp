@@ -101,7 +101,7 @@ BOOL CUsersDlg::OnInitDialog()
 	m_cUserlist.ResetContent();
 
 	for (unsigned int i = 0;i < m_UsersList.size(); ++i) {
-		int index=m_cUserlist.AddString(m_UsersList[i].user);
+		int index=m_cUserlist.AddString(m_UsersList[i].user.c_str());
 		m_cUserlist.SetItemData(index, i);
 	}
 
@@ -224,7 +224,7 @@ void CUsersDlg::OnUsermenuAdd()
 
 	CNewUserDlg dlg;
 	for (t_GroupsList::iterator iter = m_GroupsList.begin(); iter != m_GroupsList.end(); ++iter) {
-		dlg.m_GroupList.push_back(iter->group);
+		dlg.m_GroupList.push_back(iter->group.c_str());
 	}
 	if (dlg.DoModal() == IDOK) {
 		CString newname = dlg.m_Name;
@@ -259,7 +259,7 @@ void CUsersDlg::OnUsermenuAdd()
 		user.nIpLimit = 0;
 		user.nUserLimit = 0;
 		user.password = _T("");
-		int nItem = m_cUserlist.AddString(user.user);
+		int nItem = m_cUserlist.AddString(user.user.c_str());
 		if (nItem <= m_olduser)
 			++m_olduser;
 		m_UsersList.push_back(user);
@@ -299,7 +299,7 @@ void CUsersDlg::OnUsermenuCopy()
 		t_user user = m_UsersList[index];
 		user.user = dlg.m_String;
 
-		int nItem = m_cUserlist.AddString(user.user);
+		int nItem = m_cUserlist.AddString(user.user.c_str());
 		if (nItem <= m_olduser)
 			++m_olduser;
 		m_UsersList.push_back(user);

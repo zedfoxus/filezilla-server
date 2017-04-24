@@ -67,7 +67,7 @@ END_MESSAGE_MAP()
 
 void COptionsGeneralWelcomemessagePage::LoadData()
 {
-	m_WelcomeMessage = m_pOptionsDlg->GetOption(OPTION_WELCOMEMESSAGE);
+	m_WelcomeMessage = m_pOptionsDlg->GetOption(OPTION_WELCOMEMESSAGE).c_str();
 	m_hideWelcomeMessage = m_pOptionsDlg->GetOptionVal(OPTION_WELCOMEMESSAGE_HIDE) != 0;
 }
 
@@ -100,6 +100,6 @@ void COptionsGeneralWelcomemessagePage::SaveData()
 		msg += *iter + _T("\r\n");
 	msg.TrimRight(_T("\r\n"));
 
-	m_pOptionsDlg->SetOption(OPTION_WELCOMEMESSAGE, msg);
+	m_pOptionsDlg->SetOption(OPTION_WELCOMEMESSAGE, msg.GetString());
 	m_pOptionsDlg->SetOption(OPTION_WELCOMEMESSAGE_HIDE, m_hideWelcomeMessage);
 }

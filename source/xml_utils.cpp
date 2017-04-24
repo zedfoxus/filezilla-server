@@ -3,22 +3,25 @@
 #include "conversion.h"
 #include "tinyxml/tinyxml.h"
 
+#include <libfilezilla/string.hpp>
+
 namespace XML
 {
 
 CStdString ReadText(TiXmlElement* pElement)
 {
 	TiXmlNode* textNode = pElement->FirstChild();
-	if (!textNode || !textNode->ToText())
+	if (!textNode || !textNode->ToText()) {
 		return _T("");
+	}
 
 	return ConvFromNetwork(textNode->Value());
 }
 
-void SetText(TiXmlElement* pElement, const CStdString& text)
+void SetText(TiXmlElement* pElement, std::wstring const& text)
 {
 	pElement->Clear();
-	pElement->LinkEndChild(new TiXmlText(ConvToNetwork(text).c_str()));
+	pElement->LinkEndChild(new TiXmlText(fz::to_utf8(text).c_str()));
 }
 
 

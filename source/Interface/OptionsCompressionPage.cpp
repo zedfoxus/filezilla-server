@@ -87,7 +87,7 @@ void COptionsCompressionPage::SaveData()
 	m_pOptionsDlg->SetOption(OPTION_MODEZ_LEVELMIN, _ttoi(m_LevelMin));
 	m_pOptionsDlg->SetOption(OPTION_MODEZ_LEVELMAX, _ttoi(m_LevelMax));
 	m_pOptionsDlg->SetOption(OPTION_MODEZ_ALLOWLOCAL, !m_DisallowLocal);
-	m_pOptionsDlg->SetOption(OPTION_MODEZ_DISALLOWED_IPS, m_disallowedIPs);
+	m_pOptionsDlg->SetOption(OPTION_MODEZ_DISALLOWED_IPS, m_disallowedIPs.GetString());
 }
 
 void COptionsCompressionPage::LoadData()
@@ -96,5 +96,5 @@ void COptionsCompressionPage::LoadData()
 	m_LevelMax.Format(_T("%d"), static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_MODEZ_LEVELMAX)));
 	m_UseModeZ = m_pOptionsDlg->GetOptionVal(OPTION_MODEZ_USE) != 0;
 	m_DisallowLocal = !m_pOptionsDlg->GetOptionVal(OPTION_MODEZ_ALLOWLOCAL);
-	m_disallowedIPs =  m_pOptionsDlg->GetOption(OPTION_MODEZ_DISALLOWED_IPS);
+	m_disallowedIPs = m_pOptionsDlg->GetOption(OPTION_MODEZ_DISALLOWED_IPS).c_str();
 }

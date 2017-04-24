@@ -46,10 +46,10 @@ BOOL COptionsGeneralIpbindingsPage::IsDataValid()
 }
 void COptionsGeneralIpbindingsPage::SaveData()
 {
-	m_pOptionsDlg->SetOption(OPTION_IPBINDINGS, m_bindings);
+	m_pOptionsDlg->SetOption(OPTION_IPBINDINGS, m_bindings.GetString());
 }
 
 void COptionsGeneralIpbindingsPage::LoadData()
 {
-	m_bindings = m_pOptionsDlg->GetOption(OPTION_IPBINDINGS);
+	m_bindings = m_pOptionsDlg->GetOption(OPTION_IPBINDINGS).c_str();
 }

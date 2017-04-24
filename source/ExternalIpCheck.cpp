@@ -22,6 +22,8 @@
 #include "Options.h"
 #include "version.h"
 
+#include <libfilezilla/string.hpp>
+
 //////////////////////////////////////////////////////////////////////
 // Konstruktion/Destruktion
 //////////////////////////////////////////////////////////////////////
@@ -173,8 +175,9 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 
 void CExternalIpCheck::OnConnect(int nErrorCode)
 {
-	if (!m_bActive)
+	if (!m_bActive) {
 		return;
+	}
 
 	if (nErrorCode) {
 		m_bActive = FALSE;
@@ -184,17 +187,15 @@ void CExternalIpCheck::OnConnect(int nErrorCode)
 	}
 
 	CStdString host = GetHost();
-	CStdStringA query = "GET " + m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIPSERVER) + " HTTP/1.1\r\n";
-	query += "User-Agent: FileZillaServer/" + GetVersionString(false) + "\r\n";
-	query += "Host: " + host + "\r\n";
+	std::string query = "GET " + fz::to_utf8(m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIPSERVER)) + " HTTP/1.1\r\n";
+	query += "User-Agent: FileZillaServer/" + fz::to_utf8(GetVersionString(false)) + "\r\n";
+	query += "Host: " + fz::to_utf8(host) + "\r\n";
 	query += "Connection: close\r\n\r\n";
 
-	const char *buffer = query;
-	int len = strlen(buffer);
-	if (Send(buffer, len) != len) {
+	if (Send(query.c_str(), query.size()) != query.size()) {
 		m_bActive = FALSE;
 		Close();
-		m_nRetryCount++;
+		++m_nRetryCount;
 	}
 
 	OnReceive(0);

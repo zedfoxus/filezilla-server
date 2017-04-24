@@ -161,7 +161,7 @@ BOOL CGroupsDlgGeneral::DisplayGroup(const t_group *pGroup)
 	m_MaxConnCount = str;
 	str.Format(_T("%d"), pGroup->nIpLimit);
 	m_IpLimit = str;
-	m_Comments = pGroup->comment;
+	m_Comments = pGroup->comment.c_str();
 	m_nForceSsl = pGroup->forceSsl;
 
 	UpdateData(FALSE);

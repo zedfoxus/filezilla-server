@@ -160,8 +160,8 @@ BOOL COptionsPasvPage::IsDataValid()
 void COptionsPasvPage::LoadData()
 {
 	m_nIPType = (int)m_pOptionsDlg->GetOptionVal(OPTION_CUSTOMPASVIPTYPE);
-	m_IP = m_pOptionsDlg->GetOption(OPTION_CUSTOMPASVIP);
-	m_URL = m_pOptionsDlg->GetOption(OPTION_CUSTOMPASVIPSERVER);
+	m_IP = m_pOptionsDlg->GetOption(OPTION_CUSTOMPASVIP).c_str();
+	m_URL = m_pOptionsDlg->GetOption(OPTION_CUSTOMPASVIPSERVER).c_str();
 	m_bUseCustomPort = m_pOptionsDlg->GetOptionVal(OPTION_USECUSTOMPASVPORT) != 0;
 	m_PortMin.Format(_T("%d"), static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_CUSTOMPASVMINPORT)));
 	m_PortMax.Format(_T("%d"), static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_CUSTOMPASVMAXPORT)));
@@ -171,8 +171,8 @@ void COptionsPasvPage::LoadData()
 void COptionsPasvPage::SaveData()
 {
 	m_pOptionsDlg->SetOption(OPTION_CUSTOMPASVIPTYPE, m_nIPType);
-	m_pOptionsDlg->SetOption(OPTION_CUSTOMPASVIP, m_IP);
-	m_pOptionsDlg->SetOption(OPTION_CUSTOMPASVIPSERVER, m_URL);
+	m_pOptionsDlg->SetOption(OPTION_CUSTOMPASVIP, m_IP.GetString());
+	m_pOptionsDlg->SetOption(OPTION_CUSTOMPASVIPSERVER, m_URL.GetString());
 	m_pOptionsDlg->SetOption(OPTION_USECUSTOMPASVPORT, m_bUseCustomPort);
 	m_pOptionsDlg->SetOption(OPTION_CUSTOMPASVMINPORT, _ttoi(m_PortMin));
 	m_pOptionsDlg->SetOption(OPTION_CUSTOMPASVMAXPORT, _ttoi(m_PortMax));

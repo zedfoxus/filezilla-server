@@ -77,6 +77,14 @@
 #define USERCONTROL_CONNOP_TRANSFERINFO 3
 #define USERCONTROL_CONNOP_TRANSFEROFFSETS 4
 
+inline bool operator==(std::wstring const& lhs, CString const& rhs) {
+	return lhs == rhs.GetString();
+}
+
+inline bool operator==(CString const& lhs, std::wstring const& rhs) {
+	return lhs.GetString() == rhs;
+}
+
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ fügt unmittelbar vor der vorhergehenden Zeile zusätzliche Deklarationen ein.
 

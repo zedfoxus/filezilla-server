@@ -213,18 +213,18 @@ BOOL COptionsAdminInterfacePage::IsDataValid()
 void COptionsAdminInterfacePage::SaveData()
 {
 	m_pOptionsDlg->SetOption(OPTION_ADMINPORT, _ttoi(m_Port));
-	m_pOptionsDlg->SetOption(OPTION_ADMINIPBINDINGS, m_IpBindingsResult);
-	m_pOptionsDlg->SetOption(OPTION_ADMINIPADDRESSES, m_IpAddresses);
+	m_pOptionsDlg->SetOption(OPTION_ADMINIPBINDINGS, m_IpBindingsResult.GetString());
+	m_pOptionsDlg->SetOption(OPTION_ADMINIPADDRESSES, m_IpAddresses.GetString());
 	if (m_bChangePass)
-		m_pOptionsDlg->SetOption(OPTION_ADMINPASS, m_NewPass);
+		m_pOptionsDlg->SetOption(OPTION_ADMINPASS, m_NewPass.GetString());
 	else
-		m_pOptionsDlg->SetOption(OPTION_ADMINPASS, _T("*"));
+		m_pOptionsDlg->SetOption(OPTION_ADMINPASS, L"*");
 }
 
 void COptionsAdminInterfacePage::LoadData()
 {
 	m_Port.Format(_T("%d"), static_cast<int>(m_pOptionsDlg->GetOptionVal(OPTION_ADMINPORT)));
-	m_IpBindings = m_pOptionsDlg->GetOption(OPTION_ADMINIPBINDINGS);
-	m_IpAddresses = m_pOptionsDlg->GetOption(OPTION_ADMINIPADDRESSES);
-	m_NewPass = m_pOptionsDlg->GetOption(OPTION_ADMINPASS);
+	m_IpBindings = m_pOptionsDlg->GetOption(OPTION_ADMINIPBINDINGS).c_str();
+	m_IpAddresses = m_pOptionsDlg->GetOption(OPTION_ADMINIPADDRESSES).c_str();
+	m_NewPass = m_pOptionsDlg->GetOption(OPTION_ADMINPASS).c_str();
 }

@@ -60,7 +60,7 @@ public:
 	CStdString homedir;
 
 	// Replace :u and :g (if a group it exists)
-	void DoReplacements(CStdString& path) const;
+	void DoReplacements(std::wstring& path) const;
 
 	/*
 	 * t_alias is used in the alias maps.
