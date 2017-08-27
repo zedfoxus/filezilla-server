@@ -11,13 +11,7 @@ typedef unsigned int uint32;
 
 CHashThread::CHashThread()
 {
-	m_filename = 0;
-	m_quit = false;
-	m_id = 0;
-	m_active_id = 0;
 	m_result = OK;
-	m_hash = 0;
-	m_server_thread = 0;
 	m_algorithm = SHA512;
 
 	m_hThread = CreateThread(0, 0, &CHashThread::ThreadFunc, this, 0, 0);
@@ -26,10 +20,9 @@ CHashThread::CHashThread()
 CHashThread::~CHashThread()
 {
 	{
-		simple_lock lock(m_mutex);
+		fz::scoped_lock lock(mutex_);
 		m_quit = true;
 		m_server_thread = 0;
-		delete [] m_filename;
 		delete [] m_hash;
 	}
 
@@ -87,25 +80,25 @@ void FreeState(void* data, CHashThread::_algorithm alg)
 }
 }
 
-void CHashThread::DoHash()
+void CHashThread::DoHash(fz::scoped_lock & l)
 {
-	if (!m_filename)
+	if (filename_.empty()) {
 		return;
+	}
 
-	LPCTSTR file = m_filename;
-	m_filename = 0;
+	std::wstring file = filename_;
 
-	m_mutex.unlock();
+	l.unlock();
 
 	int shareMode = FILE_SHARE_READ;
-	HANDLE hFile = CreateFile(file, GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
-	delete [] file;
+	HANDLE hFile = CreateFile(file.c_str(), GENERIC_READ, shareMode, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
 
 	if (hFile == INVALID_HANDLE_VALUE) {
-		m_mutex.lock();
+		l.lock();
 		m_result = FAILURE_OPEN;
-		if (m_server_thread)
+		if (m_server_thread) {
 			m_server_thread->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_HASHRESULT, m_active_id);
+		}
 		return;
 	}
 
@@ -130,8 +123,7 @@ void CHashThread::DoHash()
 	unsigned char buffer[262144];
 	DWORD read = 0;
 	BOOL res = 0;
-	while ((res = ReadFile(hFile, buffer, 262144, &read, 0) != 0) && read > 0)
-	{
+	while ((res = ReadFile(hFile, buffer, 262144, &read, 0) != 0) && read > 0) {
 		switch (alg)
 		{
 		case MD5:
@@ -145,22 +137,23 @@ void CHashThread::DoHash()
 			break;
 		}
 
-		m_mutex.lock();
+		l.lock();
 		if (!m_server_thread) {
 			CloseHandle(hFile);
 			FreeState(data, alg);
 			return;
 		}
-		m_mutex.unlock();
+		l.unlock();
 	}
 
 	CloseHandle(hFile);
 
-	m_mutex.lock();
+	l.lock();
 	if (!res) {
 		m_result = FAILURE_READ;
-		if (m_server_thread)
+		if (m_server_thread) {
 			m_server_thread->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_HASHRESULT, m_active_id);
+		}
 		FreeState(data, alg);
 		return;
 	}
@@ -187,58 +180,58 @@ void CHashThread::DoHash()
 		break;
 	}
 	m_result = m_hash ? OK : FAILURE_READ;
-	if (m_server_thread)
+	if (m_server_thread) {
 		m_server_thread->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_HASHRESULT, m_active_id);
+	}
 
 	FreeState(data, alg);
 }
 
 void CHashThread::Loop()
 {
-	m_mutex.lock();
+	fz::scoped_lock lock(mutex_);
 	while (!m_quit) {
-		DoHash();
-		m_mutex.unlock();
-		Sleep(100);
-		m_mutex.lock();
+		cond_.wait(lock);
+		DoHash(lock);
 	}
-	m_mutex.unlock();
 }
 
-enum CHashThread::_result CHashThread::Hash(LPCTSTR file, enum _algorithm algorithm, int& id, CServerThread* server_thread)
+enum CHashThread::_result CHashThread::Hash(std::wstring const& filename, enum _algorithm algorithm, int& id, CServerThread* server_thread)
 {
-	simple_lock lock(m_mutex);
+	fz::scoped_lock lock(mutex_);
 	if (m_active_id) {
 		return BUSY;
 	}
 
 	++m_id;
-	if (m_id > 1000000)
+	if (m_id > 1000000) {
 		m_id = 1;
+	}
 	id = m_id;
 	m_active_id = id;
 
 	delete [] m_hash;
 	m_hash = 0;
 
-	delete [] m_filename;
-	m_filename = new TCHAR[_tcslen(file) + 1];
-	_tcscpy(m_filename, file);
+	filename_ = filename;
 
 	m_server_thread = server_thread;
 	m_algorithm = algorithm;
 
 	m_result = PENDING;
 
+	cond_.signal(lock);
+
 	return PENDING;
 }
 
 enum CHashThread::_result CHashThread::GetResult(int id, CHashThread::_algorithm& alg, CStdString& hash, CStdString& file)
 {
-	if (id <= 0)
+	if (id <= 0) {
 		return FAILURE_MASK;
+	}
 
-	simple_lock lock(m_mutex);
+	fz::scoped_lock lock(mutex_);
 
 	if (id != m_active_id) {
 		return BUSY;
@@ -249,10 +242,8 @@ enum CHashThread::_result CHashThread::GetResult(int id, CHashThread::_algorithm
 	}
 
 	alg = m_algorithm;
-	file = m_filename;
-
-	delete [] m_filename;
-	m_filename = 0;
+	file = filename_;
+	filename_.clear();
 
 	m_active_id = 0;
 
@@ -268,7 +259,8 @@ enum CHashThread::_result CHashThread::GetResult(int id, CHashThread::_algorithm
 
 void CHashThread::Stop(CServerThread* server_thread)
 {
-	simple_lock lock(m_mutex);
-	if (m_server_thread == server_thread)
+	fz::scoped_lock lock(mutex_);
+	if (m_server_thread == server_thread) {
 		m_server_thread = 0;
+	}
 }

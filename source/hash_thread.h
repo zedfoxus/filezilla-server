@@ -1,5 +1,7 @@
-#ifndef __HASHTHREAD_H__
-#define __HASHTHREAD_H__
+#ifndef FILEZILLA_SERVER_HASHTRHEAD_HEADER
+#define FILEZILLA_SERVER_HASHTRHEAD_HEADER
+
+#include <libfilezilla/mutex.hpp>
 
 class CServerThread;
 class CHashThread final
@@ -25,29 +27,30 @@ public:
 	CHashThread();
 	~CHashThread();
 
-	enum _result Hash(LPCTSTR file, enum _algorithm algorithm, int& id, CServerThread* server_thread);
+	enum _result Hash(std::wstring const& filename, enum _algorithm algorithm, int& id, CServerThread* server_thread);
 
 	enum _result GetResult(int id, CHashThread::_algorithm& alg, CStdString& hash, CStdString& file);
 
 	void Stop(CServerThread* server_thread);
 
 private:
-	void DoHash();
+	void DoHash(fz::scoped_lock & lock);
 	void Loop();
 
 	static DWORD WINAPI ThreadFunc(LPVOID pThis);
 
-	LPTSTR m_filename;
-	CServerThread* m_server_thread;
+	std::wstring filename_;
+	CServerThread* m_server_thread{};
 
-	std::recursive_mutex m_mutex;
+	fz::mutex mutex_;
+	fz::condition cond_;
 
-	bool m_quit;
+	bool m_quit{};
 
-	int m_id;
-	int m_active_id;
+	int m_id{};
+	int m_active_id{};
 	enum _result m_result;
-	char* m_hash;
+	char* m_hash{};
 	enum _algorithm m_algorithm;
 
 	HANDLE m_hThread;
