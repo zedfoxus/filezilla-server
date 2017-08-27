@@ -174,10 +174,10 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 		break;
 	case OPTION_THREADNUM:
 		if (value < 1) {
-			value = 2;
+			value = 4;
 		}
 		else if (value > 50) {
-			value = 2;
+			value = 4;
 		}
 		break;
 	case OPTION_TIMEOUT:
@@ -630,7 +630,7 @@ _int64 COptions::GetOptionVal(int nOptionID)
 				m_sOptionsCache[nOptionID-1].value = 0;
 				break;
 			case OPTION_THREADNUM:
-				m_sOptionsCache[nOptionID-1].value = 2;
+				m_sOptionsCache[nOptionID-1].value = 4;
 				break;
 			case OPTION_TIMEOUT:
 			case OPTION_NOTRANSFERTIMEOUT:
