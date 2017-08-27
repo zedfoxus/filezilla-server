@@ -34,7 +34,7 @@ protected:
 	bool CreateListenSocket();
 	bool CreateListenSocket(CStdString ports, bool ssl);
 	BOOL CreateAdminListenSocket();
-	int DoCreateAdminListenSocket(UINT port, LPCTSTR addr, int family);
+	int DoCreateAdminListenSocket(UINT port, std::wstring const& addr, int family);
 	void OnTimer(UINT nIDEvent);
 	bool ToggleActive(int nServerState);
 	unsigned int GetNextThreadNotificationID();

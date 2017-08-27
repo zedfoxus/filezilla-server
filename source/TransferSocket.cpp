@@ -1082,7 +1082,7 @@ void CTransferSocket::CloseFile()
 bool CTransferSocket::CreateListenSocket(PortLease&& port, int family)
 {
 	portLease_ = std::move(port);
-	return Create(portLease_.GetPort(), SOCK_STREAM, FD_ACCEPT, 0, family);
+	return Create(portLease_.GetPort(), SOCK_STREAM, FD_ACCEPT, std::wstring(), family);
 }
 
 void CTransferSocket::UpdateSendBufferSize()

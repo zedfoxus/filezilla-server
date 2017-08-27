@@ -955,7 +955,7 @@ void CServer::OnTimer(UINT nIDEvent)
 	m_pFileLogger->CheckLogFile();
 }
 
-int CServer::DoCreateAdminListenSocket(UINT port, LPCTSTR addr, int family)
+int CServer::DoCreateAdminListenSocket(UINT port, std::wstring const& addr, int family)
 {
 	auto pAdminListenSocket = make_unique<CAdminListenSocket>(*m_pAdminInterface);
 	if (!pAdminListenSocket->Create(port, SOCK_STREAM, FD_ACCEPT, addr, family)) {
@@ -980,15 +980,16 @@ int CServer::DoCreateAdminListenSocket(UINT port, LPCTSTR addr, int family)
 
 BOOL CServer::CreateAdminListenSocket()
 {
-	if (!m_pOptions)
+	if (!m_pOptions) {
 		return FALSE;
+	}
 
 	m_AdminListenSocketList.clear();
 
 	CStdString ipBindings = m_pOptions->GetOption(OPTION_ADMINIPBINDINGS);
 	int nAdminPort = (int)m_pOptions->GetOptionVal(OPTION_ADMINPORT);
 
-	if (!DoCreateAdminListenSocket(nAdminPort, (ipBindings != _T("*")) ? _T("127.0.0.1") : NULL, AF_INET)) {
+	if (!DoCreateAdminListenSocket(nAdminPort, (ipBindings != L"*") ? L"127.0.0.1" : std::wstring(), AF_INET)) {
 		int p = DoCreateAdminListenSocket(0, _T("127.0.0.1"), AF_INET);
 		if (!p) {
 			CStdString str;
@@ -1003,7 +1004,7 @@ BOOL CServer::CreateAdminListenSocket()
 	}
 
 	if (!m_pOptions->GetOptionVal(OPTION_DISABLE_IPV6)) {
-		if (!DoCreateAdminListenSocket(nAdminPort, (ipBindings != _T("*")) ? _T("::1") : NULL, AF_INET6)) {
+		if (!DoCreateAdminListenSocket(nAdminPort, (ipBindings != L"*") ? L"::1" : std::wstring(), AF_INET6)) {
 			int p = DoCreateAdminListenSocket(0, _T("::1"), AF_INET6);
 			if (!p) {
 				CStdString str;
