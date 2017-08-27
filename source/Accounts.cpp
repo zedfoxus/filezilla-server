@@ -70,7 +70,7 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 	// Parse IP filter rules.
 	int numDisallowedIPs = (int(*p) << 8) + p[1];
 	p += 2;
-	while (--numDisallowedIPs) {
+	while (numDisallowedIPs--) {
 		std::wstring ip;
 		if (!ParseString(endMarker, p, ip)) {
 			return 0;
@@ -86,7 +86,7 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 
 	int numAllowedIPs = (int(*p) << 8) + p[1];
 	p += 2;
-	while (--numAllowedIPs) {
+	while (numAllowedIPs--) {
 		std::wstring ip;
 		if (!ParseString(endMarker, p, ip)) {
 			return 0;
@@ -195,7 +195,7 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 
 		int num = (int(*p) << 8) + p[1];
 		p += 2;
-		while (--num) {
+		while (num--) {
 			CSpeedLimit sl;
 			p = sl.ParseBuffer(p, length-(int)(p-pBuffer));
 			if (!p) {
