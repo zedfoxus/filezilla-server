@@ -42,7 +42,7 @@ private:
 	std::wstring filename_;
 	CServerThread* m_server_thread{};
 
-	fz::mutex mutex_;
+	fz::mutex mutex_{false};
 	fz::condition cond_;
 
 	bool m_quit{};
