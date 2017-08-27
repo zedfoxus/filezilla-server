@@ -165,14 +165,20 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 	switch (nOptionID)
 	{
 	case OPTION_MAXUSERS:
-		if (value < 0)
+		if (value < 0) {
 			value = 0;
+		}
+		else if (value < 15) {
+			value = 15;
+		}
 		break;
 	case OPTION_THREADNUM:
-		if (value < 1)
+		if (value < 1) {
 			value = 2;
-		else if (value > 50)
+		}
+		else if (value > 50) {
 			value = 2;
+		}
 		break;
 	case OPTION_TIMEOUT:
 		if (value < 0)

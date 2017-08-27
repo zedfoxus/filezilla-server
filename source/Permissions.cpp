@@ -1822,10 +1822,18 @@ void CPermissions::ReadSettings()
 			else if (name == _T("ForceSsl"))
 				group.forceSsl = _ttoi(value);
 		}
-		if (group.nUserLimit < 0 || group.nUserLimit > 999999999)
+		if (group.nUserLimit < 0 || group.nUserLimit > 999999999) {
 			group.nUserLimit = 0;
-		if (group.nIpLimit < 0 || group.nIpLimit > 999999999)
+		}
+		else if (group.nUserLimit > 0 && group.nUserLimit < 15) {
+			group.nUserLimit = 15;
+		}
+		if (group.nIpLimit < 0 || group.nIpLimit > 999999999) {
 			group.nIpLimit = 0;
+		}
+		else if (group.nIpLimit > 0 && group.nIpLimit < 15) {
+			group.nIpLimit = 15;
+		}
 
 		ReadIpFilter(pGroup, group);
 
@@ -1904,8 +1912,15 @@ void CPermissions::ReadSettings()
 
 		if (user.nUserLimit < 0 || user.nUserLimit > 999999999)
 			user.nUserLimit = 0;
-		if (user.nIpLimit < 0 || user.nIpLimit > 999999999)
+		else if (user.nUserLimit > 0 && user.nUserLimit < 15) {
+			user.nUserLimit = 15;
+		}
+		if (user.nIpLimit < 0 || user.nIpLimit > 999999999) {
 			user.nIpLimit = 0;
+		}
+		else if (user.nIpLimit > 0 && user.nIpLimit < 15) {
+			user.nIpLimit = 15;
+		}
 
 		if (user.group != _T("")) {
 			for (auto const& group : m_sGroupsList) {

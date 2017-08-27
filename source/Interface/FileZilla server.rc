@@ -429,7 +429,7 @@ BEGIN
     LTEXT           "List of ports between 1 and 65535. These ports are used both for plain FTP and explicit FTP over TLS. (Default port: 21)",IDC_STATIC,177,12,151,25
     LTEXT           "&Max. number of users:",IDC_STATIC,6,38,73,8
     EDITTEXT        IDC_MAXUSERS,82,35,41,14,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "(0 for unlimited users)",IDC_STATIC,131,38,70,8
+    LTEXT           "0 for unlimited users, must otherwise be at least 15",IDC_STATIC,131,38,174,8
     GROUPBOX        "Performance settings",IDC_STATIC,0,60,332,49
     LTEXT           "&Number of threads:",IDC_STATIC,7,75,64,8
     EDITTEXT        IDC_THREADNUM,82,73,41,14,ES_AUTOHSCROLL | ES_NUMBER
@@ -1192,6 +1192,11 @@ IDR_RT_MANIFEST1        RT_MANIFEST             "res\\manifest.xml"
 //
 
 IDD_CONNECT_DIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_OPTIONS_GENERAL AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

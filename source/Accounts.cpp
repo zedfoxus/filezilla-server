@@ -58,8 +58,14 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 		return NULL;
 
 	memcpy(&nIpLimit, p, 4);
+	if (nIpLimit > 0 && nIpLimit < 15) {
+		nIpLimit = 15;
+	}
 	p += 4;
 	memcpy(&nUserLimit, p, 4);
+	if (nUserLimit > 0 && nUserLimit < 15) {
+		nUserLimit = 15;
+	}
 	p += 4;
 
 	int options = *p++;
