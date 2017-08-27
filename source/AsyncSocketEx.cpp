@@ -728,7 +728,7 @@ CAsyncSocketEx::~CAsyncSocketEx()
 	FreeAsyncSocketExInstance();
 }
 
-bool CAsyncSocketEx::Create(UINT nSocketPort, int nSocketType, long lEvent, LPCTSTR lpszSocketAddress, int nFamily, bool reusable)
+bool CAsyncSocketEx::Create(UINT nSocketPort, int nSocketType, long lEvent, std::wstring const& socketAddress, int nFamily, bool reusable)
 {
 	ASSERT(GetSocketHandle() == INVALID_SOCKET);
 
@@ -748,7 +748,7 @@ bool CAsyncSocketEx::Create(UINT nSocketPort, int nSocketType, long lEvent, LPCT
 	m_SocketData.nFamily = nFamily;
 
 	if (m_pFirstLayer) {
-		res = m_pFirstLayer->Create(nSocketPort, nSocketType, lEvent, lpszSocketAddress, nFamily, reusable);
+		res = m_pFirstLayer->Create(nSocketPort, nSocketType, lEvent, socketAddress, nFamily, reusable);
 #ifndef NOSOCKETSTATES
 		if (res) {
 			SetState(unconnected);
@@ -765,7 +765,7 @@ bool CAsyncSocketEx::Create(UINT nSocketPort, int nSocketType, long lEvent, LPCT
 
 			m_nSocketPort = nSocketPort;
 
-			m_socketAddress = lpszSocketAddress;
+			m_socketAddress = socketAddress;
 
 			return true;
 		}
@@ -795,7 +795,7 @@ bool CAsyncSocketEx::Create(UINT nSocketPort, int nSocketType, long lEvent, LPCT
 				SetSockOpt(SO_REUSEADDR, reinterpret_cast<const void*>(&value), sizeof(value));
 			}
 
-			if (!Bind(nSocketPort, lpszSocketAddress)) {
+			if (!Bind(nSocketPort, socketAddress)) {
 				Close();
 				return false;
 			}

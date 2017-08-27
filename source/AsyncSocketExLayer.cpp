@@ -71,21 +71,14 @@ to tim.kosse@filezilla-project.org
 //////////////////////////////////////////////////////////////////////
 // Konstruktion/Destruktion
 //////////////////////////////////////////////////////////////////////
-CAsyncSocketExLayer::~CAsyncSocketExLayer()
-{
-	delete [] m_lpszSocketAddress;
-}
-
 CAsyncSocketExLayer *CAsyncSocketExLayer::AddLayer(CAsyncSocketExLayer *pLayer, CAsyncSocketEx *pOwnerSocket)
 {
 	ASSERT(pLayer);
 	ASSERT(pOwnerSocket);
-	if (m_pNextLayer)
-	{
+	if (m_pNextLayer) {
 		return m_pNextLayer->AddLayer(pLayer, pOwnerSocket);
 	}
-	else
-	{
+	else {
 		ASSERT(m_pOwnerSocket==pOwnerSocket);
 		pLayer->Init(this, m_pOwnerSocket);
 		m_pNextLayer=pLayer;
@@ -207,41 +200,38 @@ void CAsyncSocketExLayer::CloseNext()
 		m_pNextLayer->Close();
 }
 
-BOOL CAsyncSocketExLayer::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
+BOOL CAsyncSocketExLayer::Connect(std::wstring const& hostAddress, UINT nHostPort)
 {
-	return ConnectNext(lpszHostAddress, nHostPort);
+	return ConnectNext(hostAddress, nHostPort);
 }
 
-BOOL CAsyncSocketExLayer::Connect( const SOCKADDR* lpSockAddr, int nSockAddrLen )
+BOOL CAsyncSocketExLayer::Connect(const SOCKADDR* lpSockAddr, int nSockAddrLen)
 {
 	return ConnectNext(lpSockAddr, nSockAddrLen);
 }
 
-int CAsyncSocketExLayer::SendNext(const void *lpBuf, int nBufLen, int nFlags /*=0*/)
+int CAsyncSocketExLayer::SendNext(const void *lpBuf, int nBufLen, int nFlags)
 {
-	if (m_nCriticalError)
-	{
+	if (m_nCriticalError) {
 		WSASetLastError(m_nCriticalError);
 		return SOCKET_ERROR;
 	}
-	else if (GetLayerState()==notsock)
-	{
+	else if (GetLayerState() == notsock) {
 		WSASetLastError(WSAENOTSOCK);
 		return SOCKET_ERROR;
 	}
-	else if (GetLayerState()==unconnected || GetLayerState()==connecting || GetLayerState()==listening)
-	{
+	else if (GetLayerState() == unconnected || GetLayerState() == connecting || GetLayerState() == listening) {
 		WSASetLastError(WSAENOTCONN);
 		return SOCKET_ERROR;
 	}
 
-	if (!m_pNextLayer)
-	{
+	if (!m_pNextLayer) {
 		ASSERT(m_pOwnerSocket);
 		return send(m_pOwnerSocket->GetSocketHandle(), (LPSTR)lpBuf, nBufLen, nFlags);
 	}
-	else
+	else {
 		return m_pNextLayer->Send(lpBuf, nBufLen, nFlags);
+	}
 }
 
 int CAsyncSocketExLayer::ReceiveNext(void *lpBuf, int nBufLen, int nFlags /*=0*/)
@@ -271,29 +261,35 @@ int CAsyncSocketExLayer::ReceiveNext(void *lpBuf, int nBufLen, int nFlags /*=0*/
 		return m_pNextLayer->Receive(lpBuf, nBufLen, nFlags);
 }
 
-BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
+BOOL CAsyncSocketExLayer::ConnectNext(std::wstring const& hostAddress, UINT nHostPort)
 {
 	ASSERT(GetLayerState() == unconnected);
 	ASSERT(m_pOwnerSocket);
 	BOOL res{};
-	if (m_pNextLayer)
-		res = m_pNextLayer->Connect(lpszHostAddress, nHostPort);
+	if (m_pNextLayer) {
+		res = m_pNextLayer->Connect(hostAddress, nHostPort);
+	}
 	else if (m_nFamily == AF_INET) {
 		USES_CONVERSION;
 
-		ASSERT(lpszHostAddress != NULL);
+		ASSERT(!hostAddress.empty());
 
 		SOCKADDR_IN sockAddr{};
 
-		LPSTR lpszAscii = T2A((LPTSTR)lpszHostAddress);
+		LPSTR lpszAscii = T2A(hostAddress.c_str());
+		if (!lpszAscii) {
+			WSASetLastError(WSAEINVAL);
+			return false;
+		}
 		sockAddr.sin_family = AF_INET;
 		sockAddr.sin_addr.s_addr = inet_addr(lpszAscii);
 
 		if (sockAddr.sin_addr.s_addr == INADDR_NONE) {
 			LPHOSTENT lphost;
 			lphost = gethostbyname(lpszAscii);
-			if (lphost != NULL)
+			if (lphost != NULL) {
 				sockAddr.sin_addr.s_addr = ((LPIN_ADDR)lphost->h_addr)->s_addr;
+			}
 			else {
 				WSASetLastError(WSAEINVAL);
 				res = FALSE;
@@ -307,7 +303,7 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 	else if (m_nFamily == AF_INET6 || m_nFamily == AF_UNSPEC) {
 		USES_CONVERSION;
 
-		ASSERT(lpszHostAddress != NULL);
+		ASSERT(!hostAddress.empty());
 
 		addrinfo hints{}, *res0{}, *res1{};
 		SOCKET hSocket;
@@ -322,15 +318,18 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 		hints.ai_socktype = SOCK_STREAM;
 		_snprintf(port, 9, "%lu", nHostPort);
 		port[9] = 0;
-		error = getaddrinfo(T2CA(lpszHostAddress), port, &hints, &res0);
-		if (error)
+		error = getaddrinfo(T2CA(hostAddress.c_str()), port, &hints, &res0);
+		if (error) {
 			return FALSE;
+		}
 
 		for (res1 = res0; res1; res1 = res1->ai_next) {
-			if (m_nFamily == AF_UNSPEC)
+			if (m_nFamily == AF_UNSPEC) {
 				hSocket = socket(res1->ai_family, res1->ai_socktype, res1->ai_protocol);
-			else
+			}
+			else {
 				hSocket = m_pOwnerSocket->GetSocketHandle();
+			}
 
 			if (INVALID_SOCKET == hSocket) {
 				res = FALSE;
@@ -351,13 +350,14 @@ BOOL CAsyncSocketExLayer::ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort)
 						continue;
 					}
 				}
-				if (m_pOwnerSocket->m_pendingCallbacks.size())
+				if (m_pOwnerSocket->m_pendingCallbacks.size()) {
 					PostMessage(m_pOwnerSocket->GetHelperWindowHandle(), WM_USER + 2, (WPARAM)m_pOwnerSocket->m_SocketData.nSocketIndex, 0);
+				}
 			}
 
 			if (m_nFamily == AF_UNSPEC) {
 				m_pOwnerSocket->m_SocketData.nFamily = m_nFamily = res1->ai_family;
-				if (!m_pOwnerSocket->Bind(m_nSocketPort, m_lpszSocketAddress)) {
+				if (!m_pOwnerSocket->Bind(m_nSocketPort, m_socketAddress)) {
 					m_pOwnerSocket->m_SocketData.nFamily = m_nFamily = AF_UNSPEC;
 					Close();
 					continue;
@@ -542,12 +542,12 @@ void CAsyncSocketExLayer::CallEvent(int nEvent, int nErrorCode)
 
 //Creates a socket
 bool CAsyncSocketExLayer::Create(UINT nSocketPort, int nSocketType,
-			long lEvent, LPCTSTR lpszSocketAddress, int nFamily /*=AF_INET*/, bool reusable /*=false*/)
+			long lEvent, std::wstring const& socketAddress, int nFamily, bool reusable)
 {
-	return CreateNext(nSocketPort, nSocketType, lEvent, lpszSocketAddress, nFamily, reusable);
+	return CreateNext(nSocketPort, nSocketType, lEvent, socketAddress, nFamily, reusable);
 }
 
-bool CAsyncSocketExLayer::CreateNext(UINT nSocketPort, int nSocketType, long lEvent, LPCTSTR lpszSocketAddress, int nFamily /*=AF_INET*/, bool reusable /*=false*/)
+bool CAsyncSocketExLayer::CreateNext(UINT nSocketPort, int nSocketType, long lEvent, std::wstring const& socketAddress, int nFamily, bool reusable)
 {
 	ASSERT(GetLayerState()==notsock);
 	bool res = false;
@@ -555,18 +555,11 @@ bool CAsyncSocketExLayer::CreateNext(UINT nSocketPort, int nSocketType, long lEv
 	m_nFamily = nFamily;
 
 	if (m_pNextLayer) {
-		res = m_pNextLayer->Create(nSocketPort, nSocketType, lEvent, lpszSocketAddress, nFamily);
+		res = m_pNextLayer->Create(nSocketPort, nSocketType, lEvent, socketAddress, nFamily);
 	}
 	else if (m_nFamily == AF_UNSPEC) {
 		m_lEvent = lEvent;
-		delete [] m_lpszSocketAddress;
-		if (lpszSocketAddress && *lpszSocketAddress) {
-			m_lpszSocketAddress = new TCHAR[_tcslen(lpszSocketAddress) + 1];
-			_tcscpy(m_lpszSocketAddress, lpszSocketAddress);
-		}
-		else {
-			m_lpszSocketAddress = 0;
-		}
+		m_socketAddress = socketAddress;
 		m_nSocketPort = nSocketPort;
 		res = true;
 	}
@@ -593,7 +586,7 @@ bool CAsyncSocketExLayer::CreateNext(UINT nSocketPort, int nSocketType, long lEv
 			m_pOwnerSocket->SetSockOpt(SO_REUSEADDR, reinterpret_cast<const void*>(&value), sizeof(value));
 		}
 
-		if (!m_pOwnerSocket->Bind(nSocketPort, lpszSocketAddress)) {
+		if (!m_pOwnerSocket->Bind(nSocketPort, socketAddress)) {
 			m_pOwnerSocket->Close();
 			return false;
 		}
@@ -607,8 +600,9 @@ bool CAsyncSocketExLayer::CreateNext(UINT nSocketPort, int nSocketType, long lEv
 
 int CAsyncSocketExLayer::DoLayerCallback(int nType, int nParam1, int nParam2, char* str /*=0*/)
 {
-	if (!m_pOwnerSocket)
+	if (!m_pOwnerSocket) {
 		return 0;
+	}
 
 	int nError = WSAGetLastError();
 
@@ -635,15 +629,16 @@ BOOL CAsyncSocketExLayer::ListenNext( int nConnectionBacklog)
 {
 	ASSERT(GetLayerState()==unconnected);
 	BOOL res;
-	if (m_pNextLayer)
-		res=m_pNextLayer->Listen(nConnectionBacklog);
-	else
-		res=listen(m_pOwnerSocket->GetSocketHandle(), nConnectionBacklog);
-	if (res!=SOCKET_ERROR)
-	{
+	if (m_pNextLayer) {
+		res = m_pNextLayer->Listen(nConnectionBacklog);
+	}
+	else {
+		res = listen(m_pOwnerSocket->GetSocketHandle(), nConnectionBacklog);
+	}
+	if (res != SOCKET_ERROR) {
 		SetLayerState(listening);
 	}
-	return res!=SOCKET_ERROR;
+	return res != SOCKET_ERROR;
 }
 
 BOOL CAsyncSocketExLayer::Accept( CAsyncSocketEx& rConnectedSocket, SOCKADDR* lpSockAddr /*=NULL*/, int* lpSockAddrLen /*=NULL*/ )
@@ -744,8 +739,7 @@ bool CAsyncSocketExLayer::TryNextProtocol()
 
 		m_pOwnerSocket->m_SocketData.nFamily = m_nextAddr->ai_family;
 		m_nFamily = m_nextAddr->ai_family;
-		if (!m_pOwnerSocket->Bind(m_nSocketPort, m_lpszSocketAddress))
-		{
+		if (!m_pOwnerSocket->Bind(m_nSocketPort, m_socketAddress)) {
 			closesocket(m_pOwnerSocket->m_SocketData.hSocket);
 			m_pOwnerSocket->DetachHandle();
 			continue;

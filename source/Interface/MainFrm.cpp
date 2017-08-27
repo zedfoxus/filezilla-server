@@ -1315,7 +1315,7 @@ void CMainFrame::DoConnect()
 	ShowStatus(msg, 0);
 
 	m_pAdminSocket = new CAdminSocket(this);
-	m_pAdminSocket->Create(0, SOCK_STREAM, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE, 0, family);
+	m_pAdminSocket->Create(0, SOCK_STREAM, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE, std::wstring(), family);
 
 	m_pAdminSocket->m_Password = m_pOptions->GetOption(IOPTION_LASTSERVERPASS);
 	if (!m_pAdminSocket->Connect(address, (UINT)port) && WSAGetLastError() != WSAEWOULDBLOCK) {

@@ -169,16 +169,16 @@ public:
 	std::string SHA512(unsigned char const* buf, size_t len);
 
 private:
-	virtual void Close();
-	virtual BOOL Connect(LPCTSTR lpszHostAddress, UINT nHostPort );
-	virtual BOOL Connect(const SOCKADDR* lpSockAddr, int nSockAddrLen );
-	virtual void OnConnect(int nErrorCode);
-	virtual void OnReceive(int nErrorCode);
-	virtual void OnSend(int nErrorCode);
-	virtual void OnClose(int nErrorCode);
-	virtual int Receive(void* lpBuf, int nBufLen, int nFlags = 0);
-	virtual int Send(const void* lpBuf, int nBufLen, int nFlags = 0);
-	virtual BOOL ShutDown();
+	virtual void Close() override;
+	virtual BOOL Connect(std::wstring const& hostAddress, UINT nHostPort) override;
+	virtual BOOL Connect(const SOCKADDR* lpSockAddr, int nSockAddrLen) override;
+	virtual void OnConnect(int nErrorCode) override;
+	virtual void OnReceive(int nErrorCode) override;
+	virtual void OnSend(int nErrorCode) override;
+	virtual void OnClose(int nErrorCode) override;
+	virtual int Receive(void* lpBuf, int nBufLen, int nFlags = 0) override;
+	virtual int Send(const void* lpBuf, int nBufLen, int nFlags = 0) override;
+	virtual BOOL ShutDown() override;
 	BOOL DoShutDown();
 
 	bool CreateContext();

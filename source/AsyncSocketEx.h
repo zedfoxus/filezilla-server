@@ -117,7 +117,7 @@ public:
 	//Creates a socket.
 	bool Create(UINT nSocketPort = 0, int nSocketType = SOCK_STREAM,
 				long lEvent = FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT |	FD_CONNECT | FD_CLOSE,
-				LPCTSTR lpszSocketAddress = NULL, int nFamily = AF_INET, bool reusable = false);
+				std::wstring const& socketAddress = std::wstring(), int nFamily = AF_INET, bool reusable = false);
 
 	//Attributes
 	//---------

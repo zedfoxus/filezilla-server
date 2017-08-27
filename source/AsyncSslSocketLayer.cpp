@@ -944,12 +944,14 @@ BOOL CAsyncSslSocketLayer::Connect(const SOCKADDR *lpSockAddr, int nSockAddrLen)
 	return res;
 }
 
-BOOL CAsyncSslSocketLayer::Connect(LPCTSTR lpszHostAddress, UINT nHostPort)
+BOOL CAsyncSslSocketLayer::Connect(std::wstring const& hostAddress, UINT nHostPort)
 {
-	BOOL res = ConnectNext(lpszHostAddress, nHostPort);
-	if (!res)
-		if (GetLastError()!=WSAEWOULDBLOCK)
+	BOOL res = ConnectNext(hostAddress, nHostPort);
+	if (!res) {
+		if (GetLastError() != WSAEWOULDBLOCK) {
 			ResetSslSession();
+		}
+	}
 	return res;
 }
 

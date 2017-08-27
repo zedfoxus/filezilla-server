@@ -76,7 +76,7 @@ class CAsyncSocketExLayer
 protected:
 	//Protected constructor so that CAsyncSocketExLayer can't be instantiated
 	CAsyncSocketExLayer() {};
-	virtual ~CAsyncSocketExLayer();
+	virtual ~CAsyncSocketExLayer() = default;
 
 	//Notification event handlers
 	virtual void OnAccept(int nErrorCode);
@@ -88,12 +88,12 @@ protected:
 	//Operations
 	virtual BOOL Accept( CAsyncSocketEx& rConnectedSocket, SOCKADDR* lpSockAddr = NULL, int* lpSockAddrLen = NULL );
 	virtual void Close();
-	virtual BOOL Connect(LPCTSTR lpszHostAddress, UINT nHostPort);
-	virtual BOOL Connect( const SOCKADDR* lpSockAddr, int nSockAddrLen );
+	virtual BOOL Connect(std::wstring const& hostAddress, UINT nHostPort);
+	virtual BOOL Connect(const SOCKADDR* lpSockAddr, int nSockAddrLen);
 	virtual bool Create(UINT nSocketPort = 0, int nSocketType = SOCK_STREAM,
 				long lEvent = FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT |
 							FD_CONNECT | FD_CLOSE,
-				LPCTSTR lpszSocketAddress = NULL, int nFamily = AF_INET,
+				std::wstring const& socketAddress = std::wstring(), int nFamily = AF_INET,
 				bool reusable = false);
 	virtual BOOL Listen( int nConnectionBacklog);
 	virtual int Receive(void* lpBuf, int nBufLen, int nFlags = 0);
@@ -104,10 +104,10 @@ protected:
 	BOOL ShutDownNext();
 	BOOL AcceptNext( CAsyncSocketEx& rConnectedSocket, SOCKADDR* lpSockAddr = NULL, int* lpSockAddrLen = NULL );
 	void CloseNext();
-	BOOL ConnectNext(LPCTSTR lpszHostAddress, UINT nHostPort);
-	BOOL ConnectNext( const SOCKADDR* lpSockAddr, int nSockAddrLen );
-	bool CreateNext(UINT nSocketPort, int nSocketType, long lEvent, LPCTSTR lpszSocketAddress, int nFamily = AF_INET, bool reusable = false);
-	BOOL ListenNext( int nConnectionBacklog);
+	BOOL ConnectNext(std::wstring const& hostAddress, UINT nHostPort);
+	BOOL ConnectNext(const SOCKADDR* lpSockAddr, int nSockAddrLen);
+	bool CreateNext(UINT nSocketPort, int nSocketType, long lEvent, std::wstring const& socketAddress, int nFamily = AF_INET, bool reusable = false);
+	BOOL ListenNext(int nConnectionBacklog);
 	int ReceiveNext(void *lpBuf, int nBufLen, int nFlags = 0);
 	int SendNext(const void *lpBuf, int nBufLen, int nFlags = 0);
 
@@ -135,7 +135,7 @@ private:
 
 	int m_nFamily{AF_UNSPEC};
 	int m_lEvent{};
-	LPTSTR m_lpszSocketAddress{};
+	std::wstring m_socketAddress;
 	UINT m_nSocketPort{};
 
 	addrinfo *m_addrInfo{}, *m_nextAddr{};
