@@ -1506,15 +1506,17 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 	 * - remove double slashes
 	 */
 
-	if (newDir == _T(""))
+	if (newDir == _T("")) {
 		return currentDir;
+	}
 
 	// Make segment separators pretty
 	newDir.Replace(_T("\\"), _T("/"));
 	while (newDir.Replace(_T("//"), _T("/")));
 
-	if (newDir == _T("/"))
+	if (newDir == _T("/")) {
 		return newDir;
+	}
 
 	// This list will hold the individual path segments
 	std::list<CStdString> piecelist;
@@ -1524,18 +1526,17 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 	 * On relative paths, use currentDir as base, else use
 	 * only dir.
 	 */
-	if (newDir.Left(1) != _T("/"))
-	{
+	if (newDir.Left(1) != _T("/")) {
 		// New relative path, split currentDir and add it to the piece list.
 		currentDir.TrimLeft(_T("/"));
 		int pos;
-		while((pos = currentDir.Find(_T("/"))) != -1)
-		{
+		while((pos = currentDir.Find(_T("/"))) != -1) {
 			piecelist.push_back(currentDir.Left(pos));
 			currentDir = currentDir.Mid(pos + 1);
 		}
-		if (currentDir != _T(""))
+		if (currentDir != _T("")) {
 			piecelist.push_back(currentDir);
+		}
 	}
 
 	/*
@@ -1546,44 +1547,46 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 
 	int pos;
 	newDir.TrimLeft(_T("/"));
-	if (newDir.Right(1) != _T("/"))
+	if (newDir.Right(1) != _T("/")) {
 		newDir += _T("/");
-	while ((pos = newDir.Find(_T("/"))) != -1)
-	{
+	}
+	while ((pos = newDir.Find(_T("/"))) != -1) {
 		CStdString piece = newDir.Left(pos);
 		newDir = newDir.Mid(pos + 1);
 
-		if (piece == _T(""))
+		if (piece == _T("")) {
 			continue;
+		}
 
 		bool allDots = true;
 		int dotCount = 0;
 		for (int i = 0; i < piece.GetLength(); i++)
-			if (piece[i] != '.')
-			{
+			if (piece[i] != '.') {
 				allDots = false;
 				break;
 			}
-			else
+			else {
 				dotCount++;
+			}
 
-		if (allDots)
-		{
-			while (--dotCount)
-			{
-				if (!piecelist.empty())
+		if (allDots) {
+			while (--dotCount) {
+				if (!piecelist.empty()) {
 					piecelist.pop_back();
+				}
 			}
 		}
-		else
+		else {
 			piecelist.push_back(piece);
+		}
 	}
 
 	// Reassemble the directory
 	CStdString result;
 
-	if (piecelist.empty())
+	if (piecelist.empty()) {
 		return _T("/");
+	}
 
 	// List of reserved filenames which may not be used on a Windows system
 	static LPCTSTR reservedNames[] = {	_T("CON"),	_T("PRN"),	_T("AUX"),	_T("CLOCK$"), _T("NUL"),
@@ -1593,28 +1596,26 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 										_T("LPT6"), _T("LPT7"), _T("LPT8"), _T("LPT9"),
 										_T("") };
 
-	for (std::list<CStdString>::iterator iter = piecelist.begin(); iter != piecelist.end(); iter++)
-	{
+	for (auto const& it : piecelist) {
 		// Check for reserved filenames
-		CStdString piece = *iter;
+		CStdString piece = it;
 		piece.MakeUpper();
-		for (LPCTSTR *reserved = reservedNames; **reserved; reserved++)
-		{
-			if (piece == *reserved)
+		for (LPCTSTR *reserved = reservedNames; **reserved; ++reserved) {
+			if (piece == *reserved) {
 				return _T("");
+			}
 		}
 		int pos = piece.Find(_T("."));
-		if (pos >= 3)
-		{
+		if (pos >= 3) {
 			piece = piece.Left(pos);
-			for (LPCTSTR *reserved = reservedNames; **reserved; reserved++)
-			{
-				if (piece == *reserved)
+			for (LPCTSTR *reserved = reservedNames; **reserved; ++reserved) {
+				if (piece == *reserved) {
 					return _T("");
+				}
 			}
 		}
 
-		result += _T("/") + *iter;
+		result += _T("/") + it;
 	}
 
 	// Now dir is the canonified absolute server path.
