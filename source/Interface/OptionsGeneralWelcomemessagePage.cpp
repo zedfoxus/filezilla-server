@@ -25,11 +25,7 @@
 #include "OptionsPage.h"
 #include "OptionsGeneralWelcomemessagePage.h"
 
-#if defined(_DEBUG) 
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
+#include <libfilezilla/string.hpp>
 
 /////////////////////////////////////////////////////////////////////////////
 // Dialogfeld COptionsGeneralWelcomemessagePage
@@ -73,33 +69,15 @@ void COptionsGeneralWelcomemessagePage::LoadData()
 
 void COptionsGeneralWelcomemessagePage::SaveData()
 {
-	CString msg = m_WelcomeMessage;
-	std::list<CString> msgLines;
-	int oldpos = 0;
-	msg.Replace(_T("\r\n"), _T("\n"));
-	int pos = msg.Find(_T("\n"));
-	CString line;
-	while (pos != -1)
-	{
-		if (pos)
-		{
-			line = msg.Mid(oldpos, pos - oldpos);
-			line = line.Left(CONST_WELCOMEMESSAGE_LINESIZE);
-			line.TrimRight(_T(" "));
-			if (msgLines.size() || line != _T(""))
-				msgLines.push_back(line);
-		}
-		oldpos = pos + 1;
-		pos = msg.Find(_T("\n"), oldpos);
-	}
-	line = msg.Mid(oldpos);
-	if (line != _T(""))
-		msgLines.push_back(line);
-	msg = _T("");
-	for (std::list<CString>::iterator iter = msgLines.begin(); iter != msgLines.end(); ++iter)
-		msg += *iter + _T("\r\n");
-	msg.TrimRight(_T("\r\n"));
+	std::wstring msg;
 
-	m_pOptionsDlg->SetOption(OPTION_WELCOMEMESSAGE, msg.GetString());
+	auto lines = fz::strtok(fz::replaced_substrings(m_WelcomeMessage.GetString(), L"\r\n", L"\n"), '\n');
+	for (auto const& line : lines) {
+		auto trimmedLine = fz::trimmed(line.substr(0, CONST_WELCOMEMESSAGE_LINESIZE));
+		msg += line + _T("\r\n");
+	}
+	msg = fz::trimmed(msg);
+
+	m_pOptionsDlg->SetOption(OPTION_WELCOMEMESSAGE, msg);
 	m_pOptionsDlg->SetOption(OPTION_WELCOMEMESSAGE_HIDE, m_hideWelcomeMessage);
 }
