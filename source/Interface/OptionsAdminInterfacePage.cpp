@@ -111,11 +111,11 @@ BOOL COptionsAdminInterfacePage::IsDataValid()
 	if (!UpdateData(TRUE))
 		return FALSE;
 
-	if (_ttoi(m_Port) < 1 || _ttoi(m_Port) > 65535)
+	if (_ttoi(m_Port) < 1025 || _ttoi(m_Port) > 65535)
 	{
 		m_pOptionsDlg->ShowPage(this);
 		GetDlgItem(IDC_OPTIONS_ADMININTERFACE_PORT)->SetFocus();
-		AfxMessageBox(_T("The port for the admin interface has to be in the range from 1 to 65535."));
+		AfxMessageBox(_T("The port for the admin interface has to be in the range from 1025 to 65535."));
 		return FALSE;
 	}
 
