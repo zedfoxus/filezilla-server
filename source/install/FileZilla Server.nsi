@@ -14,6 +14,7 @@ SetCompressor /SOLID LZMA
 ;Include Modern UI and functions
 
   !include "MUI.nsh"
+  !include "LogicLib.nsh"
   !include "WinVer.nsh"
   !include "x64.nsh"
 
@@ -61,7 +62,7 @@ LangString StartOptionsTitle ${LANG_ENGLISH} ": Server startup settings"
   !insertmacro MUI_PAGE_LICENSE "..\..\license.txt"
   !insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_DIRECTORY
-  Page custom StartOptions
+  Page custom StartOptions StartOptionsLeave
   Page custom InterfaceOptions
   !insertmacro MUI_PAGE_INSTFILES
 
@@ -443,6 +444,17 @@ Function StartOptions
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "StartupOptions.ini"
 
  DoneServerStartOptions:
+
+FunctionEnd
+
+Function StartOptionsLeave
+
+  !insertmacro MUI_INSTALLOPTIONS_READ $R0 "StartupOptions.ini" "Field 4" "State"
+  ${If} $R0 < 1025
+  ${OrIf} $R0 > 65535
+    MessageBox MB_ICONEXCLAMATION "The administration port must be between 1025 and 65535"
+    Abort
+  ${EndIf}
 
 FunctionEnd
 
