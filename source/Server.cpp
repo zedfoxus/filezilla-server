@@ -337,8 +337,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 						p += 8;
 					}
 				}
-				else
-				{
+				else {
 					len = 2 + 4 + 1;
 					buffer = new unsigned char[len];
 					buffer[2 + 4] = 0;
@@ -355,8 +354,7 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				unsigned char* p = buffer + 2;
 				int* userid;
 				__int64* offset;
-				while ((p - buffer + 12) <= len)
-				{
+				while ((p - buffer + 12) <= len) {
 					userid = (int*)p;
 					offset = (__int64*)(p + 4);
 					t_connectiondata& data = m_UsersList[*userid];
@@ -373,8 +371,9 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 		}
 		buffer[0] = USERCONTROL_CONNOP;
 		buffer[1] = pConnOp->op;
-		if (pConnOp->op != USERCONTROL_CONNOP_TRANSFEROFFSETS)
+		if (pConnOp->op != USERCONTROL_CONNOP_TRANSFEROFFSETS) {
 			memcpy(buffer + 2, &pConnOp->userid, 4);
+		}
 
 		m_pAdminInterface->SendCommand(2, 3, buffer, len);
 		delete [] buffer;
@@ -386,15 +385,17 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				HANDLE handle = pThread->m_hThread;
 				pThread->PostThreadMessage(WM_QUIT, 0, 0);
 				int res = WaitForSingleObject(handle, INFINITE);
-				if (res == WAIT_FAILED)
+				if (res == WAIT_FAILED) {
 					res = GetLastError();
+				}
 				m_ThreadArray.erase(iter);
 				FreeThreadNotificationID(pThread);
 				if (!m_ThreadArray.size() && !m_ClosedThreads.size()) {
 					m_nServerState &= ~(STATE_ONLINE | STATE_MASK_GOOFFLINE);
 					SendState();
-					if (!m_bQuit)
+					if (!m_bQuit) {
 						ShowStatus(_T("Server offline."), 1);
+					}
 					else {
 						hMainWnd = 0;
 						DestroyWindow(m_hWnd);
@@ -409,15 +410,17 @@ LRESULT CServer::OnServerMessage(CServerThread* pThread, WPARAM wParam, LPARAM l
 				HANDLE handle = pThread->m_hThread;
 				pThread->PostThreadMessage(WM_QUIT, 0, 0);
 				int res = WaitForSingleObject(handle, INFINITE);
-				if (res == WAIT_FAILED)
+				if (res == WAIT_FAILED) {
 					res = GetLastError();
+				}
 				m_ClosedThreads.erase(iter);
 				FreeThreadNotificationID(pThread);
 				if (!m_ThreadArray.size() && !m_ClosedThreads.size()) {
 					m_nServerState &= ~(STATE_ONLINE | STATE_MASK_GOOFFLINE);
 					SendState();
-					if (!m_bQuit)
+					if (!m_bQuit) {
 						ShowStatus(_T("Server offline."), 1);
+					}
 					else {
 						hMainWnd = 0;
 						DestroyWindow(m_hWnd);

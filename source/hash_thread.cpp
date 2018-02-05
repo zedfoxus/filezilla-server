@@ -14,28 +14,24 @@ CHashThread::CHashThread()
 	m_result = OK;
 	m_algorithm = SHA512;
 
-	m_hThread = CreateThread(0, 0, &CHashThread::ThreadFunc, this, 0, 0);
+	run();
 }
 
 CHashThread::~CHashThread()
 {
 	{
 		fz::scoped_lock lock(mutex_);
-		m_quit = true;
+
+		// Cleanup
 		m_server_thread = 0;
-		delete [] m_hash;
+		delete[] m_hash;
+
+		// And signal quit
+		m_quit = true;
+		cond_.signal(lock);
 	}
 
-	WaitForSingleObject(m_hThread, INFINITE);
-
-	CloseHandle(m_hThread);
-}
-
-DWORD CHashThread::ThreadFunc(LPVOID pThis)
-{
-	((CHashThread*)pThis)->Loop();
-
-	return 0;
+	join();
 }
 
 namespace {
@@ -187,11 +183,14 @@ void CHashThread::DoHash(fz::scoped_lock & l)
 	FreeState(data, alg);
 }
 
-void CHashThread::Loop()
+void CHashThread::entry()
 {
-	fz::scoped_lock lock(mutex_);
-	while (!m_quit) {
+	while (true) {
+		fz::scoped_lock lock(mutex_);
 		cond_.wait(lock);
+		if (m_quit) {
+			break;
+		}
 		DoHash(lock);
 	}
 }
@@ -204,7 +203,7 @@ enum CHashThread::_result CHashThread::Hash(std::wstring const& filename, enum _
 	}
 
 	++m_id;
-	if (m_id > 1000000) {
+	if (m_id > 1000000000) {
 		m_id = 1;
 	}
 	id = m_id;

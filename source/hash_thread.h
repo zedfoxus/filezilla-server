@@ -1,10 +1,11 @@
 #ifndef FILEZILLA_SERVER_HASHTRHEAD_HEADER
 #define FILEZILLA_SERVER_HASHTRHEAD_HEADER
 
+#include <libfilezilla/thread.hpp>
 #include <libfilezilla/mutex.hpp>
 
 class CServerThread;
-class CHashThread final
+class CHashThread final : protected fz::thread
 {
 public:
 	enum _result
@@ -25,7 +26,7 @@ public:
 	};
 
 	CHashThread();
-	~CHashThread();
+	virtual ~CHashThread();
 
 	enum _result Hash(std::wstring const& filename, enum _algorithm algorithm, int& id, CServerThread* server_thread);
 
@@ -34,10 +35,9 @@ public:
 	void Stop(CServerThread* server_thread);
 
 private:
-	void DoHash(fz::scoped_lock & lock);
-	void Loop();
+	virtual void entry();
 
-	static DWORD WINAPI ThreadFunc(LPVOID pThis);
+	void DoHash(fz::scoped_lock & lock);
 
 	std::wstring filename_;
 	CServerThread* m_server_thread{};
