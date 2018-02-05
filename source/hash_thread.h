@@ -52,8 +52,6 @@ private:
 	enum _result m_result;
 	std::wstring hash_;
 	enum _algorithm m_algorithm;
-
-	HANDLE m_hThread;
 };
 
 #endif
