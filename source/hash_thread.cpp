@@ -9,6 +9,10 @@ typedef unsigned int uint32;
 #include "hash_algorithms/sshsh512.c"
 #include "hash_algorithms/sshsha.c"
 
+#include <libfilezilla/encode.hpp>
+
+#include <array>
+
 CHashThread::CHashThread()
 {
 	m_result = OK;
@@ -24,7 +28,6 @@ CHashThread::~CHashThread()
 
 		// Cleanup
 		m_server_thread = 0;
-		delete[] m_hash;
 
 		// And signal quit
 		m_quit = true;
@@ -35,30 +38,6 @@ CHashThread::~CHashThread()
 }
 
 namespace {
-char* toHex(unsigned char* buffer, unsigned int len)
-{
-	char* hex = new char[len * 2 + 1];
-	hex[len * 2] = 0;
-
-	for (unsigned int i = 0; i < len; i++)
-	{
-		unsigned char const l = buffer[i] >> 4;
-		unsigned char const r = buffer[i] & 0x0F;
-
-		if (l > 9)
-			hex[i * 2] = 'a' + l - 10;
-		else
-			hex[i * 2] = '0' + l;
-
-		if (r > 9)
-			hex[i * 2 + 1] = 'a' + r - 10;
-		else
-			hex[i * 2 + 1] = '0' + r;
-	}
-
-	return hex;
-}
-
 void FreeState(void* data, CHashThread::_algorithm alg)
 {
 	switch (alg)
@@ -157,25 +136,29 @@ void CHashThread::DoHash(fz::scoped_lock & l)
 	switch (alg)
 	{
 	case MD5:
-		((::MD5*)data)->finalize();
-		m_hash = ((::MD5*)data)->hex_digest();
+		{
+			((::MD5*)data)->finalize();
+			auto digest = ((::MD5*)data)->hex_digest();
+			hash_ = fz::to_wstring(digest);
+			delete[] digest;
+		}
 		break;
 	case SHA512:
 		{
-			unsigned char digest[64];
-			SHA512_Final((SHA512_State*)data, digest);
-			m_hash = toHex(digest, 64);
+			std::array<unsigned char, 64> digest;
+			SHA512_Final((SHA512_State*)data, digest.data());
+			hash_ = fz::hex_encode<std::wstring>(digest);
 		}
 		break;
 	case SHA1:
 		{
-			unsigned char digest[20];
-			SHA_Final((SHA_State*)data, digest);
-			m_hash = toHex(digest, 20);
+			std::array<unsigned char, 20> digest;
+			SHA_Final((SHA_State*)data, digest.data());
+			hash_ = fz::hex_encode<std::wstring>(digest);
 		}
 		break;
 	}
-	m_result = m_hash ? OK : FAILURE_READ;
+	m_result = hash_.empty() ? FAILURE_READ : OK;
 	if (m_server_thread) {
 		m_server_thread->PostThreadMessage(WM_FILEZILLA_THREADMSG, FTM_HASHRESULT, m_active_id);
 	}
@@ -209,8 +192,7 @@ enum CHashThread::_result CHashThread::Hash(std::wstring const& filename, enum _
 	id = m_id;
 	m_active_id = id;
 
-	delete [] m_hash;
-	m_hash = 0;
+	hash_.clear();
 
 	filename_ = filename;
 
@@ -224,7 +206,7 @@ enum CHashThread::_result CHashThread::Hash(std::wstring const& filename, enum _
 	return PENDING;
 }
 
-enum CHashThread::_result CHashThread::GetResult(int id, CHashThread::_algorithm& alg, CStdString& hash, CStdString& file)
+enum CHashThread::_result CHashThread::GetResult(int id, CHashThread::_algorithm& alg, std::wstring & hash, std::wstring & file)
 {
 	if (id <= 0) {
 		return FAILURE_MASK;
@@ -247,9 +229,7 @@ enum CHashThread::_result CHashThread::GetResult(int id, CHashThread::_algorithm
 	m_active_id = 0;
 
 	if (m_result == OK) {
-		hash = m_hash;
-		delete [] m_hash;
-		m_hash = 0;
+		hash = std::move(hash_);
 		return OK;
 	}
 

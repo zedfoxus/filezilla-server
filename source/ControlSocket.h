@@ -72,7 +72,7 @@ public:
 
 	void Continue();
 
-	void ProcessHashResult(int hash_id, int res, CHashThread::_algorithm alg, const CStdString& hash, const CStdString& file);
+	void ProcessHashResult(int hash_id, int res, CHashThread::_algorithm alg, std::wstring const& hash, std::wstring const& file);
 
 	void SendTransferPreliminary();
 

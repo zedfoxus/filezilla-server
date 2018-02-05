@@ -2799,35 +2799,40 @@ void CControlSocket::ParseHashOpts(CStdString args)
 		Send(_T("501 Unknown algorithm"));
 }
 
-void CControlSocket::ProcessHashResult(int hash_id, int res, CHashThread::_algorithm alg, const CStdString& hash, const CStdString& file)
+void CControlSocket::ProcessHashResult(int hash_id, int res, CHashThread::_algorithm alg, std::wstring const& hash, std::wstring const& file)
 {
-	if (hash_id != m_hash_id)
+	if (hash_id != m_hash_id) {
 		return;
+	}
 
 	m_hash_id = 0;
 
-	if (res == CHashThread::BUSY)
+	if (res == CHashThread::BUSY) {
 		Send(_T("450 Another hash operation is already in progress."));
-	else if (res == CHashThread::FAILURE_OPEN)
+	}
+	else if (res == CHashThread::FAILURE_OPEN) {
 		Send(_T("550 Failed to open file"));
-	else if (res == CHashThread::FAILURE_READ)
+	}
+	else if (res == CHashThread::FAILURE_READ) {
 		Send(_T("550 Could not read from file"));
-	else
-	{
-		CStdString algname;
+	}
+	else {
+		std::wstring algname;
 		switch (alg)
 		{
 		case CHashThread::SHA1:
-			algname = "SHA-1";
+			algname = L"SHA-1";
 			break;
 		case CHashThread::SHA512:
-			algname = "SHA-512";
+			algname = L"SHA-512";
 			break;
 		case CHashThread::MD5:
-			algname = "MD5";
+			algname = L"MD5";
 			break;
 		}
-		Send(_T("213 ") + algname + _T(" ") + hash + _T(" ") + file);
+
+		std::wstring result = _T("213 ") + algname + _T(" ") + hash + _T(" ") + file;
+		Send(result.c_str());
 	}
 }
 

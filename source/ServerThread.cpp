@@ -365,8 +365,8 @@ int CServerThread::OnThreadMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 			ProcessControlMessage((t_controlmessage *)lParam);
 		else if (wParam == FTM_HASHRESULT) {
 			CHashThread::_algorithm alg;
-			CStdString hash;
-			CStdString file;
+			std::wstring hash;
+			std::wstring file;
 			int hash_res = GetHashThread().GetResult(lParam, alg, hash, file);
 			simple_lock lock(m_mutex);
 

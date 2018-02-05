@@ -30,7 +30,7 @@ public:
 
 	enum _result Hash(std::wstring const& filename, enum _algorithm algorithm, int& id, CServerThread* server_thread);
 
-	enum _result GetResult(int id, CHashThread::_algorithm& alg, CStdString& hash, CStdString& file);
+	enum _result GetResult(int id, CHashThread::_algorithm& alg, std::wstring& hash, std::wstring & file);
 
 	void Stop(CServerThread* server_thread);
 
@@ -50,7 +50,7 @@ private:
 	int m_id{};
 	int m_active_id{};
 	enum _result m_result;
-	char* m_hash{};
+	std::wstring hash_;
 	enum _algorithm m_algorithm;
 
 	HANDLE m_hThread;
