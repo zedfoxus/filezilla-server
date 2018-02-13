@@ -394,7 +394,9 @@ enum class commands {
 	STRU,
 	CLNT,
 	MFMT,
-	HASH
+	HASH,
+
+	HTTP
 };
 
 t_command const invalid_command = {commands::invalid, false, false};
@@ -447,7 +449,11 @@ std::map<CStdString, t_command> const command_map = {
 	{_T("STRU"), {commands::STRU, true, false}},
 	{_T("CLNT"), {commands::CLNT, true, true}},
 	{_T("MFMT"), {commands::MFMT, true, false}},
-	{_T("HASH"), {commands::HASH, true, false}}
+	{_T("HASH"), {commands::HASH, true, false}},
+	{_T("GET"),  {commands::HTTP, false, true}},
+	{_T("HEAD"), {commands::HTTP, false, true}},
+	{_T("POST"), {commands::HTTP, false, true}},
+	{_T("PUT"),  {commands::HTTP, false, true}}
 };
 
 t_command const& CControlSocket::MapCommand(CStdString const& command, CStdString const& args)
@@ -552,16 +558,16 @@ void CControlSocket::ParseCommand()
 		break;
 	case commands::QUIT:
 		m_bQuitCommand = true;
-		if (!m_transferstatus.socket || !m_transferstatus.socket->InitCalled())
-		{
+		if (!m_transferstatus.socket || !m_transferstatus.socket->InitCalled()) {
 			Send(_T("221 Goodbye"));
-			if (m_pSslLayer)
-			{
-				if (ShutDown() || WSAGetLastError() != WSAEWOULDBLOCK)
+			if (m_pSslLayer) {
+				if (ShutDown() || WSAGetLastError() != WSAEWOULDBLOCK) {
 					ForceClose(5);
+				}
 			}
-			else if (CanQuit())
+			else if (CanQuit()) {
 				ForceClose(5);
+			}
 		}
 		break;
 	case commands::CWD:
@@ -1922,6 +1928,18 @@ void CControlSocket::ParseCommand()
 			}
 		}
 		break;
+	case commands::HTTP:
+		m_bQuitCommand = true;
+		Send(_T("501 this is not an HTTP server, closing connection."));
+		if (m_pSslLayer) {
+			if (ShutDown() || WSAGetLastError() != WSAEWOULDBLOCK) {
+				ForceClose(5);
+			}
+			else if (CanQuit()) {
+				ForceClose(5);
+			}
+		}
+		break;
 	default:
 		Send(_T("502 Command not implemented."));
 	}
@@ -2632,8 +2650,9 @@ bool CControlSocket::InitImplicitSsl()
 
 bool CControlSocket::CanQuit()
 {
-	if (m_pSslLayer)
+	if (m_pSslLayer) {
 		return false;
+	}
 	return true;
 }
 
