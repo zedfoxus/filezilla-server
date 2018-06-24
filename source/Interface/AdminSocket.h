@@ -1,6 +1,6 @@
 // FileZilla Server - a Windows ftp server
 
-// Copyright (C) 2002-2016 - Tim Kosse <tim.kosse@filezilla-project.org>
+// Copyright (C) 2002-2018 - Tim Kosse <tim.kosse@filezilla-project.org>
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -16,29 +16,23 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-// AdminSocket.h: Schnittstelle für die Klasse CAdminSocket.
-//
-//////////////////////////////////////////////////////////////////////
-
-#if !defined(AFX_ADMINSOCKET_H__4FDF0C68_9EA7_440B_A4ED_2DC358E4A054__INCLUDED_)
-#define AFX_ADMINSOCKET_H__4FDF0C68_9EA7_440B_A4ED_2DC358E4A054__INCLUDED_
-
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
+#ifndef FILEZILLA_SERVER_INTERFACE_ADMINSOCKET_HEADER
+#define FILEZILLA_SERVER_INTERFACE_ADMINSOCKET_HEADER
 
 #include "../AsyncSocketEx.h"
 #include <memory>
+
+#include <libfilezilla/buffer.hpp>
 
 class CMainFrame;
 class CAdminSocket : public CAsyncSocketEx
 {
 public:
 	std::wstring m_Password;
-	BOOL IsConnected();
-	BOOL SendCommand(int nType);
-	BOOL SendCommand(int nType, void *pData, int nDataLength);
-	BOOL ParseRecvBuffer();
+	bool IsConnected();
+	bool SendCommand(int nType);
+	bool SendCommand(int nType, void *pData, int nDataLength);
+	bool ParseRecvBuffer();
 	virtual void Close();
 	CAdminSocket(CMainFrame *pMainFrame);
 	virtual ~CAdminSocket();
@@ -49,26 +43,7 @@ public:
 protected:
 	bool SendPendingData();
 
-struct t_data
-	{
-		t_data()
-			: pData()
-			, dwOffset()
-			, dwLength()
-		{}
-
-		explicit t_data( DWORD len )
-			: pData(new unsigned char[len])
-			, dwOffset()
-			, dwLength(len)
-		{
-		}
-
-		std::shared_ptr<unsigned char> pData;
-		DWORD dwOffset;
-		DWORD const dwLength;
-	};
-	std::list<t_data> m_SendBuffer;
+	fz::buffer sendBuffer_;
 
 	bool m_bClosed{};
 	virtual void OnReceive(int nErrorCode);

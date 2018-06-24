@@ -102,8 +102,9 @@ void CAdminSocket::OnSend(int nErrorCode)
 		Close();
 		return;
 	}
-	if (!m_nConnectionState)
+	if (!m_nConnectionState) {
 		return;
+	}
 
 	if (!SendPendingData()) {
 		Close();
@@ -115,14 +116,15 @@ void CAdminSocket::Close()
 	if (m_nConnectionState) {
 		m_pMainFrame->ShowStatus(_T("Connection to server closed."), 1);
 	}
+	sendBuffer_.clear();
 	m_nConnectionState = 0;
 	if (!m_bClosed) {
-		m_bClosed = TRUE;
+		m_bClosed = true;
 		m_pMainFrame->PostMessage(WM_APP + 1, 0, 0);
 	}
 }
 
-BOOL CAdminSocket::ParseRecvBuffer()
+bool CAdminSocket::ParseRecvBuffer()
 {
 	DWORD len;
 	switch (m_nConnectionState)
@@ -130,17 +132,17 @@ BOOL CAdminSocket::ParseRecvBuffer()
 	case 1:
 		{
 			if (m_nRecvBufferPos < 3) {
-				return FALSE;
+				return false;
 			}
 			if (m_pRecvBuffer[0] != 'F' || m_pRecvBuffer[1] != 'Z' || m_pRecvBuffer[2] != 'S') {
 				std::wstring str;
 				str = fz::sprintf(L"Protocol error: Unknown protocol identifier (0x%d 0x%d 0x%d). Most likely connected to the wrong port.", m_pRecvBuffer[0], m_pRecvBuffer[1], m_pRecvBuffer[2]);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
-				return FALSE;
+				return false;
 			}
 			if (m_nRecvBufferPos < 5) {
-				return FALSE;
+				return false;
 			}
 			len = m_pRecvBuffer[3] * 256 + m_pRecvBuffer[4];
 			if (len != 4) {
@@ -148,10 +150,10 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				str = fz::sprintf(L"Protocol error: Invalid server version length (%lu).", len);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
-				return FALSE;
+				return false;
 			}
 			if (m_nRecvBufferPos < 9) {
-				return FALSE;
+				return false;
 			}
 
 			int version = (int)GET32(m_pRecvBuffer + 5);
@@ -170,7 +172,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			}
 
 			if (m_nRecvBufferPos < 11) {
-				return FALSE;
+				return false;
 			}
 			len = m_pRecvBuffer[9] * 256 + m_pRecvBuffer[10];
 			if (len != 4) {
@@ -178,10 +180,10 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				str = fz::sprintf(L"Protocol error: Invalid protocol version length (%u).", len);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
-				return FALSE;
+				return false;
 			}
 			if (m_nRecvBufferPos < 15) {
-				return FALSE;
+				return false;
 			}
 			version = (int)GET32(m_pRecvBuffer + 11);
 			if (version != PROTOCOL_VERSION) {
@@ -197,7 +199,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 						   (PROTOCOL_VERSION >>  0) & 0xFF);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
-				return FALSE;
+				return false;
 			}
 
 			memmove(m_pRecvBuffer, m_pRecvBuffer + 15, m_nRecvBufferPos - 15);
@@ -207,14 +209,14 @@ BOOL CAdminSocket::ParseRecvBuffer()
 		break;
 	case 2:
 		if (m_nRecvBufferPos < 5) {
-			return FALSE;
+			return false;
 		}
 		if ((m_pRecvBuffer[0]&0x03) > 2) {
 			std::wstring str;
 			str = fz::sprintf(L"Protocol error: Unknown command type (%d), closing connection.", m_pRecvBuffer[0] & 0x03);
 			m_pMainFrame->ShowStatus(str, 1);
 			Close();
-			return FALSE;
+			return false;
 		}
 		len = (int)GET32(m_pRecvBuffer + 1);
 		if (len + 5 <= m_nRecvBufferPos) {
@@ -222,7 +224,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				if (len < 4) {
 					m_pMainFrame->ShowStatus(_T("Invalid auth data"), 1);
 					Close();
-					return FALSE;
+					return false;
 				}
 				unsigned char *p = m_pRecvBuffer + 5;
 
@@ -230,14 +232,14 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				if ((noncelen1+2) > (len-2)) {
 					m_pMainFrame->ShowStatus(_T("Invalid auth data"), 1);
 					Close();
-					return FALSE;
+					return false;
 				}
 
 				unsigned int noncelen2 = p[2 + noncelen1] * 256 + p[2 + noncelen1 + 1];
 				if ((noncelen1+noncelen2+4) > len) {
 					m_pMainFrame->ShowStatus(_T("Invalid auth data"), 1);
 					Close();
-					return FALSE;
+					return false;
 				}
 
 				MD5 md5;
@@ -248,7 +250,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				if (utf8.empty() && !m_Password.empty()) {
 					m_pMainFrame->ShowStatus(_T("Can't convert password to UTF-8"), 1);
 					Close();
-					return FALSE;
+					return false;
 				}
 				md5.update((const unsigned char *)utf8.c_str(), utf8.size());
 				if (noncelen2) {
@@ -263,7 +265,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				SendCommand(0, digest, 16);
 				delete [] digest;
 				m_nConnectionState = 3;
-				return TRUE;
+				return true;
 			}
 			else if ((m_pRecvBuffer[0] & 0x03) == 1 && (m_pRecvBuffer[0] & 0x7C) >> 2 == 0) {
 				m_nConnectionState=3;
@@ -274,7 +276,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				str = fz::sprintf(L"Protocol error: Unknown command ID (%d), closing connection.", (m_pRecvBuffer[0]&0x7C) >> 2);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
-				return FALSE;
+				return false;
 			}
 			memmove(m_pRecvBuffer, m_pRecvBuffer + len + 5, m_nRecvBufferPos - len - 5);
 			m_nRecvBufferPos -= len + 5;
@@ -282,7 +284,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 		break;
 	case 3:
 		if (m_nRecvBufferPos < 5) {
-			return FALSE;
+			return false;
 		}
 		int nType = *m_pRecvBuffer & 0x03;
 		int nID = (*m_pRecvBuffer & 0x7C) >> 2;
@@ -290,7 +292,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			std::wstring str = fz::sprintf(L"Protocol error: Unknown command type (%d), closing connection.", nType);
 			m_pMainFrame->ShowStatus(str, 1);
 			Close();
-			return FALSE;
+			return false;
 		}
 		else {
 			len = (unsigned int)GET32(m_pRecvBuffer + 1);
@@ -298,10 +300,10 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				std::wstring str = fz::sprintf(L"Protocol error: Invalid data length (%lu) for command (%d:%d)", len, nType, nID);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
-				return FALSE;
+				return false;
 			}
 			if (m_nRecvBufferPos < len + 5) {
-				return FALSE;
+				return false;
 			}
 			else {
 				if (nType == 1) {
@@ -321,16 +323,16 @@ BOOL CAdminSocket::ParseRecvBuffer()
 		}
 		break;
 	}
-	return TRUE;
+	return true;
 }
 
-BOOL CAdminSocket::SendCommand(int nType)
+bool CAdminSocket::SendCommand(int nType)
 {
-	t_data data(5);
-	*data.pData = nType << 2;
+	unsigned char * buffer = sendBuffer_.get(5);
+	*buffer = static_cast<unsigned char>(nType << 2);
 	DWORD dwDataLength = 0;
-	memcpy(&*data.pData + 1, &dwDataLength, 4);
-	m_SendBuffer.push_back(data);
+	memcpy(buffer + 1, &dwDataLength, 4);
+	sendBuffer_.add(5);
 
 	bool res = SendPendingData();
 	if (!res) {
@@ -340,18 +342,17 @@ BOOL CAdminSocket::SendCommand(int nType)
 	return res;
 }
 
-BOOL CAdminSocket::SendCommand(int nType, void *pData, int nDataLength)
+bool CAdminSocket::SendCommand(int nType, void *pData, int nDataLength)
 {
 	ASSERT((pData && nDataLength) || (!pData && !nDataLength));
 
-	t_data data(nDataLength + 5);
-	*data.pData = nType << 2;
-	memcpy(&*data.pData + 1, &nDataLength, 4);
+	unsigned char * buffer = sendBuffer_.get(nDataLength + 5);
+	*buffer = nType << 2;
+	memcpy(buffer + 1, &nDataLength, 4);
 	if (pData) {
-		memcpy(&*data.pData + 5, pData, nDataLength);
+		memcpy(buffer + 5, pData, nDataLength);
 	}
-
-	m_SendBuffer.push_back(data);
+	sendBuffer_.add(nDataLength + 5);
 
 	bool res = SendPendingData();
 	if (!res) {
@@ -363,9 +364,8 @@ BOOL CAdminSocket::SendCommand(int nType, void *pData, int nDataLength)
 
 bool CAdminSocket::SendPendingData()
 {
-	for (auto it = m_SendBuffer.begin(); it != m_SendBuffer.end(); it = m_SendBuffer.erase(it)) {
-		auto& data = *it;
-		int nSent = Send(&*data.pData + data.dwOffset, data.dwLength - data.dwOffset);
+	while (!sendBuffer_.empty()) {
+		int nSent = Send(sendBuffer_.get(), sendBuffer_.size());
 		if (!nSent) {
 			return false;
 		}
@@ -373,16 +373,13 @@ bool CAdminSocket::SendPendingData()
 			return WSAGetLastError() == WSAEWOULDBLOCK;
 		}
 
-		if ((unsigned int)nSent < (data.dwLength - data.dwOffset)) {
-			data.dwOffset += nSent;
-			break;
-		}
+		sendBuffer_.consume(nSent);
 	}
 
 	return true;
 }
 
-BOOL CAdminSocket::IsConnected()
+bool CAdminSocket::IsConnected()
 {
 	return m_nConnectionState == 3;
 }

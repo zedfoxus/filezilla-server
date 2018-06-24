@@ -16,16 +16,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-// AdminInterface.h: Schnittstelle für die Klasse CAdminInterface.
-//
-//////////////////////////////////////////////////////////////////////
-
 #if !defined(AFX_ADMININTERFACE_H__1C8681AA_4200_417C_B638_D5E39AD896E1__INCLUDED_)
 #define AFX_ADMININTERFACE_H__1C8681AA_4200_417C_B638_D5E39AD896E1__INCLUDED_
-
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
 
 class CAdminSocket;
 class CServer;
@@ -47,4 +39,4 @@ protected:
 	std::list<CAdminSocket *> m_AdminSocketList;
 };
 
-#endif // !defined(AFX_ADMININTERFACE_H__1C8681AA_4200_417C_B638_D5E39AD896E1__INCLUDED_)
+#endif
