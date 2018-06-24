@@ -72,18 +72,17 @@ BOOL COptionsIpFilterPage::OnInitDialog()
 
 BOOL COptionsIpFilterPage::IsDataValid()
 {
-	if (!UpdateData(TRUE))
+	if (!UpdateData(TRUE)) {
 		return FALSE;
+	}
 
-	if (!ParseIPFilter(m_DisallowedAddresses))
-	{
+	if (!ParseIPFilter(std::wstring(m_DisallowedAddresses))) {
 		GetDlgItem(IDC_OPTIONS_IPFILTER_DISALLOWED)->SetFocus();
 		AfxMessageBox(_T("Invalid IP address/range/mask"));
 		return false;
 	}
 
-	if (!ParseIPFilter(m_AllowedAddresses))
-	{
+	if (!ParseIPFilter(std::wstring(m_AllowedAddresses))) {
 		GetDlgItem(IDC_OPTIONS_IPFILTER_ALLOWED)->SetFocus();
 		AfxMessageBox(_T("Invalid IP address/range/mask"));
 		return false;

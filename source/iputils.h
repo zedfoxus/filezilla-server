@@ -19,10 +19,6 @@
 #ifndef FZS_IPUTILS_HEADER
 #define FZS_IPUTILS_HEADER
 
-#ifdef _AFX
-#define CStdString CString
-#endif
-
 bool IsLocalhost(std::wstring const& ip);
 bool IsValidAddressFilter(std::wstring& filter);
 bool MatchesFilter(std::wstring const& filter, std::wstring ip);
@@ -31,9 +27,10 @@ bool IsIpAddress(std::wstring const& address, bool allowNull = false);
 // Also verifies that it is a correct IPv6 address
 std::wstring GetIPV6LongForm(std::wstring short_address);
 std::wstring GetIPV6ShortForm(std::wstring const& ip);
-bool IsRoutableAddress(const CStdString& address);
+bool IsRoutableAddress(std::string const& address);
+bool IsRoutableAddress(std::wstring const& address);
 
-bool ParseIPFilter(CStdString in, std::vector<std::wstring>* output = 0);
+bool ParseIPFilter(std::wstring const& in, std::vector<std::wstring>* output = 0);
 
 // Checks if FZS is running behind an IPv4 NAT
 // Simple heuristic: Returns true if at least one adapter has an

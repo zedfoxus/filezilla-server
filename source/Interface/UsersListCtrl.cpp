@@ -25,6 +25,8 @@
 #include "mainfrm.h"
 #include "OutputFormat.h"
 
+#include <libfilezilla/format.hpp>
+
 #if defined(_DEBUG) 
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -41,30 +43,30 @@ static char THIS_FILE[] = __FILE__;
 
 #define SPEED_MEAN_SECONDS 10
 
-class CConnectionData
+class CConnectionData final
 {
 public:
 	CConnectionData()
 	{
-		for (int i = 1; i < NUMCOLUMNS; i++)
+		for (int i = 1; i < NUMCOLUMNS; ++i) {
 			itemImages[i] = -1;
+		}
 		itemImages[0] = 5;
 
 		ResetSpeed();
 	}
 
-	~CConnectionData() { }
 	int userid;
 	unsigned int port;
 	unsigned char transferMode;
-	CString physicalFile;
-	CString logicalFile;
+	std::wstring physicalFile;
+	std::wstring logicalFile;
 	__int64 totalSize;
 	__int64 currentOffset;
 	unsigned int speed;
 
 	int listIndex;
-	CString columnText[NUMCOLUMNS];
+	std::wstring columnText[NUMCOLUMNS];
 	int itemImages[NUMCOLUMNS];
 
 	inline void AddBytes(int bytes)
@@ -77,15 +79,17 @@ public:
 	{
 		speed = 0;
 		int max = speedDidWrap ? SPEED_MEAN_SECONDS : (current_speed - speed_mean + 1);
-		for (int i = 0; i < max; i++)
+		for (int i = 0; i < max; ++i) {
 			speed += speed_mean[i];
+		}
 		speed /= max;
 	}
 
 	inline void NextSpeed()
 	{
-		if (!*current_speed)
+		if (!*current_speed) {
 			UpdateSpeed();
+		}
 
 		if ((++current_speed - speed_mean) >= SPEED_MEAN_SECONDS)
 		{
@@ -121,8 +125,9 @@ CUsersListCtrl::CUsersListCtrl(CMainFrame *pOwner)
 
 CUsersListCtrl::~CUsersListCtrl()
 {
-	for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); ++iter)
+	for (std::vector<CConnectionData*>::iterator iter = m_connectionDataArray.begin(); iter != m_connectionDataArray.end(); ++iter) {
 		delete *iter;
+	}
 }
 
 
@@ -144,8 +149,9 @@ END_MESSAGE_MAP()
 
 int CUsersListCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-	if (CListCtrl::OnCreate(lpCreateStruct) == -1)
+	if (CListCtrl::OnCreate(lpCreateStruct) == -1) {
 		return -1;
+	}
 
 	m_ImageList.Create(IDB_TRANSFERINFO, 16, 6, RGB(255, 0, 255));
 	SetImageList(&m_ImageList, LVSIL_SMALL);
@@ -182,14 +188,15 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 {
 	int op = pData[1];
 
-	if (op < 0 || op > 4)
+	if (op < 0 || op > 4) {
 		return FALSE;
+	}
 
-	if (dwDataLength < 6)
+	if (dwDataLength < 6) {
 		return FALSE;
+	}
 
-	if (op == USERCONTROL_CONNOP_ADD)
-	{
+	if (op == USERCONTROL_CONNOP_ADD) {
 		int userid;
 		memcpy(&userid, pData + 2, 4);
 		CConnectionData* pConnectionData = new CConnectionData;
@@ -200,16 +207,14 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 
 		unsigned int pos = 6;
 
-		if (dwDataLength < 8)
-		{
+		if (dwDataLength < 8) {
 			delete pConnectionData;
 			return FALSE;
 		}
 
 		unsigned int len = pData[pos] * 256 + pData[pos+1];
 		pos += 2;
-		if (pos+len > dwDataLength)
-		{
+		if (pos+len > dwDataLength) {
 			delete pConnectionData;
 			return FALSE;
 		}
@@ -221,19 +226,18 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 		pConnectionData->columnText[COLUMN_IP] = ConvFromNetwork(ip);
 		delete [] ip;
 
-		if ((pos+4) > dwDataLength)
-		{
+		if ((pos+4) > dwDataLength) {
 			delete pConnectionData;
 			return FALSE;
 		}
 		memcpy(&pConnectionData->port, pData + pos, 4);
 
-		pConnectionData->columnText[COLUMN_ID].Format(_T("%06d"), userid);
+		pConnectionData->columnText[COLUMN_ID] = fz::sprintf(L"%06d", userid);
 		m_connectionDataMap[userid] = pConnectionData;
 		pConnectionData->listIndex = m_connectionDataArray.size();
 		m_connectionDataArray.push_back(pConnectionData);
 
-		pConnectionData->columnText[COLUMN_USER] = _T("(not logged in)");
+		pConnectionData->columnText[COLUMN_USER] = L"not logged in)";
 		SetItemCount(GetItemCount() + 1);
 		SetSortColumn(m_sortColumn, m_sortDir);
 
@@ -317,8 +321,7 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 
 		pConnectionData->transferMode = pData[6];
 
-		if (!pConnectionData->transferMode)
-		{
+		if (!pConnectionData->transferMode) {
 			pConnectionData->physicalFile = _T("");
 			pConnectionData->logicalFile = _T("");
 			pConnectionData->currentOffset = 0;
@@ -328,16 +331,17 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 			pConnectionData->columnText[COLUMN_TRANSFERPROGRESS] =  _T("");
 			pConnectionData->columnText[COLUMN_TRANSFERSPEED] =  _T("");
 		}
-		else
-		{
+		else {
 			unsigned int pos = 7;
-			if ((pos + 2) > dwDataLength)
+			if ((pos + 2) > dwDataLength) {
 				return FALSE;
+			}
 
 			unsigned int len = pData[pos] * 256 + pData[pos+1];
 			pos += 2;
-			if ((pos + len + 2) > dwDataLength)
+			if ((pos + len + 2) > dwDataLength) {
 				return FALSE;
+			}
 
 			char* physicalFile = new char[len + 1];
 			memcpy(physicalFile, pData + pos, len);
@@ -417,21 +421,24 @@ bool CUsersListCtrl::ProcessConnOp(unsigned char *pData, DWORD dwDataLength)
 			pConnectionData->currentOffset = *currentOffset;
 
 			CString str;
-			if (pConnectionData->totalSize != -1)
-			{
+			if (pConnectionData->totalSize != -1) {
 				double percent = (double)pConnectionData->currentOffset / pConnectionData->totalSize * 100;
 				str.Format(_T("%s bytes (%1.1f%%)"), makeUserFriendlyString(pConnectionData->currentOffset).GetString(), percent);
 			}
-			else
+			else {
 				str.Format(_T("%s bytes"), makeUserFriendlyString(pConnectionData->currentOffset).GetString());
+			}
 			pConnectionData->columnText[COLUMN_TRANSFERPROGRESS] =  str;
 
-			if (pConnectionData->speed > 1024 * 1024)
+			if (pConnectionData->speed > 1024 * 1024) {
 				str.Format(_T("%1.1f MB/s"), (double)pConnectionData->speed / 1024 / 1024);
-			else if (pConnectionData->speed > 1024)
+			}
+			else if (pConnectionData->speed > 1024) {
 				str.Format(_T("%1.1f KB/s"), (double)pConnectionData->speed / 1024);
-			else
+			}
+			else {
 				str.Format(_T("%1.1f bytes/s"), (double)pConnectionData->speed);
+			}
 			pConnectionData->columnText[COLUMN_TRANSFERSPEED] =  str;
 
 			p += 12;
@@ -633,7 +640,7 @@ BOOL CUsersListCtrl::ParseUserControlCommand(unsigned char *pData, DWORD dwDataL
 					pConnectionData->totalSize = -1;
 				}
 
-				pConnectionData->columnText[COLUMN_ID].Format(_T("%06d"), pConnectionData->userid);
+				pConnectionData->columnText[COLUMN_ID] = fz::sprintf(L"%06d", pConnectionData->userid);
 				m_connectionDataMap[pConnectionData->userid] = pConnectionData;
 				pConnectionData->listIndex = m_connectionDataArray.size();
 				m_connectionDataArray.push_back(pConnectionData);
@@ -810,14 +817,17 @@ int CUsersListCtrl::CmpUser(const CUsersListCtrl *pList, unsigned int index, con
 {
 	const CConnectionData* data = pList->m_connectionDataArray[index];
 
-	int res = data->columnText[COLUMN_USER].CompareNoCase(refData->columnText[COLUMN_USER]);
-	if (res)
+	int res = fz::stricmp(data->columnText[COLUMN_USER], refData->columnText[COLUMN_USER]);
+	if (res) {
 		return res;
+	}
 
-	if (data->userid > refData->userid)
+	if (data->userid > refData->userid) {
 		return 1;
-	else if (data->userid < refData->userid)
+	}
+	else if (data->userid < refData->userid) {
 		return -1;
+	}
 
 	return 0;
 }
@@ -826,14 +836,17 @@ int CUsersListCtrl::CmpIP(const CUsersListCtrl *pList, unsigned int index, const
 {
 	const CConnectionData* data = pList->m_connectionDataArray[index];
 
-	int res = data->columnText[COLUMN_IP].CompareNoCase(refData->columnText[COLUMN_IP]);
-	if (res)
+	int res = fz::stricmp(data->columnText[COLUMN_IP], refData->columnText[COLUMN_IP]);
+	if (res) {
 		return res;
+	}
 
-	if (data->userid > refData->userid)
+	if (data->userid > refData->userid) {
 		return 1;
-	else if (data->userid < refData->userid)
+	}
+	else if (data->userid < refData->userid) {
 		return -1;
+	}
 
 	return 0;
 }
@@ -843,24 +856,25 @@ void CUsersListCtrl::OnGetdispinfo(NMHDR* pNMHDR, LRESULT* pResult)
 	LV_DISPINFO* pDispInfo = (LV_DISPINFO*)pNMHDR;
 	LV_ITEM* pItem= &(pDispInfo)->item;
 
-	if (static_cast<int>(m_connectionDataArray.size()) <= pItem->iItem)
+	if (static_cast<int>(m_connectionDataArray.size()) <= pItem->iItem) {
 		return;
+	}
 
-	if (pItem->mask & LVIF_TEXT)
-	{
-		if (_tcslen(m_connectionDataArray[pItem->iItem]->columnText[pItem->iSubItem]) >= static_cast<size_t>(pItem->cchTextMax))
-		{
-			_tcsncpy(pItem->pszText, m_connectionDataArray[pItem->iItem]->columnText[pItem->iSubItem], pItem->cchTextMax - 4);
+	if (pItem->mask & LVIF_TEXT) {
+		if (m_connectionDataArray[pItem->iItem]->columnText[pItem->iSubItem].size() >= static_cast<size_t>(pItem->cchTextMax)) {
+			_tcsncpy(pItem->pszText, m_connectionDataArray[pItem->iItem]->columnText[pItem->iSubItem].c_str(), pItem->cchTextMax - 4);
 			pItem->pszText[pItem->cchTextMax - 4] = '.';
 			pItem->pszText[pItem->cchTextMax - 3] = '.';
 			pItem->pszText[pItem->cchTextMax - 2] = '.';
 			pItem->pszText[pItem->cchTextMax - 1] = 0;
 		}
-		else
-			lstrcpy(pItem->pszText, m_connectionDataArray[pItem->iItem]->columnText[pItem->iSubItem]);
+		else {
+			lstrcpy(pItem->pszText, m_connectionDataArray[pItem->iItem]->columnText[pItem->iSubItem].c_str());
+		}
 	}
-	if (pItem->mask & LVIF_IMAGE)
+	if (pItem->mask & LVIF_IMAGE) {
 		pItem->iImage = m_connectionDataArray[pItem->iItem]->itemImages[pItem->iSubItem];
+	}
 }
 
 void CUsersListCtrl::OnColumnclick(NMHDR* pNMHDR, LRESULT* pResult)

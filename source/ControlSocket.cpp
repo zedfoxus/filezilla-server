@@ -669,7 +669,7 @@ void CControlSocket::ParseCommand()
 			}
 
 			ip = decIP.Left(decIP.GetLength() - 1);
-			int res = inet_addr(ConvToLocal(ip));
+			int res = inet_addr(ConvToLocal(ip).c_str());
 
 			if (res == INADDR_NONE || port < 1 || port > 65535) {
 				Send(_T("501 Syntax error"));
@@ -1419,7 +1419,7 @@ void CControlSocket::ParseCommand()
 			}
 			CStdString ip = args.Left(pos);
 			if (protocol == 1) {
-				if (inet_addr(ConvToLocal(ip)) == INADDR_NONE) {
+				if (inet_addr(ConvToLocal(ip).c_str()) == INADDR_NONE) {
 					Send(_T("501 Syntax error, not a valid IPv4 address"));
 					break;
 				}

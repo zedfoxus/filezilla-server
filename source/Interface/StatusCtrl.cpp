@@ -114,40 +114,35 @@ DWORD __stdcall CStatusCtrl::RichEditStreamInCallback(DWORD_PTR dwCookie, LPBYTE
 	char* output = (char*)pbBuff;
 
 	CStatusCtrl *pThis = (CStatusCtrl *)dwCookie;
-	if (pThis->m_headerPos != -1)
-	{
+	if (pThis->m_headerPos != -1) {
 		int len = pThis->m_RTFHeader.GetLength() - pThis->m_headerPos;
-		if (len > cb)
-		{
+		if (len > cb) {
 			pThis->m_headerPos = cb;
 			len = cb;
 		}
-		else
+		else {
 			pThis->m_headerPos = -1;
+		}
 
 		memcpy(output, (const char*)pThis->m_RTFHeader, len);
 		*pcb = len;
 	}
-	else
-	{
+	else {
 		*pcb = 0;
-		if (pThis->m_statusBuffer.empty())
+		if (pThis->m_statusBuffer.empty()) {
 			return 0;
+		}
 		t_buffer &buffer = pThis->m_statusBuffer.front();
-		if (buffer.status != _T(""))
-		{
-			if (buffer.pos == -1)
-			{
-				if (pThis->m_bEmpty)
-				{
+		if (!buffer.status.empty()) {
+			if (buffer.pos == -1) {
+				if (pThis->m_bEmpty) {
 					pThis->m_bEmpty = false;
 					memcpy(output, "\\cf", 3);
 					output += 3;
 					cb -= 3;
 					*pcb += 3;
 				}
-				else
-				{
+				else {
 					memcpy(output, "\\par \\cf", 8);
 					output += 8;
 					cb -= 8;
@@ -171,10 +166,9 @@ DWORD __stdcall CStatusCtrl::RichEditStreamInCallback(DWORD_PTR dwCookie, LPBYTE
 				}
 				buffer.pos = 0;
 			}
-			LPCTSTR status = buffer.status;
+			LPCTSTR status = buffer.status.c_str();
 			LPCTSTR p = status + buffer.pos;
-			while (*p && cb > 9)
-			{
+			while (*p && cb > 9) {
 				switch (*p)
 				{
 				case '\\':
@@ -223,32 +217,28 @@ DWORD __stdcall CStatusCtrl::RichEditStreamInCallback(DWORD_PTR dwCookie, LPBYTE
 						(*pcb)++;
 					}
 				}
-				p++;
+				++p;
 
 			}
-			if (!*p)
-			{
+			if (!*p) {
 				pThis->m_statusBuffer.pop_front();
-				if (pThis->m_statusBuffer.empty())
-				{
+				if (pThis->m_statusBuffer.empty()) {
 					memcpy(output, "} ", 2);
 					output += 2;
 					*pcb += 2;
 				}
-				else
-				{
+				else {
 					*(output++) = ' ';
 					(*pcb)++;
 				}
 			}
-			else
+			else {
 				buffer.pos = p - status;
+			}
 		}
-		else
-		{
+		else {
 			pThis->m_statusBuffer.pop_front();
-			if (pThis->m_statusBuffer.empty())
-			{
+			if (pThis->m_statusBuffer.empty()) {
 				memcpy(output, "} ", 2);
 				output += 2;
 				*pcb += 2;
@@ -342,7 +332,7 @@ int CStatusCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
-void CStatusCtrl::ShowStatus(LPCTSTR status, int nType)
+void CStatusCtrl::ShowStatus(std::wstring const& status, int nType)
 {
 	t_buffer buffer;
 	buffer.status = status;

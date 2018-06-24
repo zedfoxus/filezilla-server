@@ -209,25 +209,29 @@ bool MatchesFilter(std::wstring const& filter, std::wstring ip)
 	}
 }
 
-bool ParseIPFilter(CStdString in, std::vector<std::wstring>* output)
+bool ParseIPFilter(std::wstring const& in, std::vector<std::wstring>* output)
 {
 	bool valid = true;
 
-	in.Replace(_T("\n"), _T(" "));
-	in.Replace(_T("\r"), _T(" "));
-	in.Replace(_T("\t"), _T(" "));
-	while (in.Replace(_T("  "), _T(" ")));
-	in.TrimLeft(_T(" "));
-	in.TrimRight(_T(" "));
-	in += _T(" ");
+	size_t oldpos = 0;
+	size_t pos;
+	while ((pos = in.find_first_of(L" \r\n\t", oldpos)) != std::wstring::npos) {
+		if (pos != oldpos) {
+			std::wstring ip = in.substr(oldpos, pos - oldpos);
 
-	int pos;
-	while ((pos = in.Find(_T(" "))) != -1) {
-		std::wstring ip = in.Left(pos);
-		if (ip.empty()) {
-			break;
+			if (ip == _T("*") || IsValidAddressFilter(ip)) {
+				if (output) {
+					output->push_back(static_cast<std::wstring>(ip));
+				}
+			}
+			else {
+				valid = false;
+			}
 		}
-		in = in.Mid(pos + 1);
+		oldpos = pos + 1;
+	}
+	if (oldpos < in.size()) {
+		std::wstring ip = in.substr(oldpos);
 
 		if (ip == _T("*") || IsValidAddressFilter(ip)) {
 			if (output) {
@@ -374,10 +378,15 @@ std::wstring GetIPV6LongForm(std::wstring short_address)
 	return buffer;
 }
 
-bool IsRoutableAddress(const CStdString& address)
+bool IsRoutableAddress(std::string const& address)
 {
-	if (address.Find(_T(":")) != -1) {
-		std::wstring long_address = GetIPV6LongForm(address.GetString());
+	return IsRoutableAddress(fz::to_wstring_from_utf8(address));
+}
+
+bool IsRoutableAddress(std::wstring const& address)
+{
+	if (address.find(':') != std::wstring::npos) {
+		std::wstring long_address = GetIPV6LongForm(address);
 		if (long_address.empty()) {
 			return false;
 		}
@@ -393,8 +402,7 @@ bool IsRoutableAddress(const CStdString& address)
 
 			if (long_address.substr(0, 30) == _T("0000:0000:0000:0000:0000:ffff:")) {
 				// IPv4 mapped
-				CStdString ipv4;
-				ipv4.Format(_T("%d.%d.%d.%d"),
+				std::wstring ipv4 = fz::sprintf(L"%d.%d.%d.%d",
 						DigitHexToDecNum(long_address[30]) * 16 + DigitHexToDecNum(long_address[31]),
 						DigitHexToDecNum(long_address[32]) * 16 + DigitHexToDecNum(long_address[33]),
 						DigitHexToDecNum(long_address[35]) * 16 + DigitHexToDecNum(long_address[36]),
@@ -431,21 +439,23 @@ bool IsRoutableAddress(const CStdString& address)
 	}
 	else {
 		// Assumes address is already a valid IP address
-		if (address.Left(3) == _T("127") ||
-			address.Left(3) == _T("10.") ||
-			address.Left(7) == _T("192.168") ||
-			address.Left(7) == _T("169.254"))
+		if (fz::starts_with(address, std::wstring(L"127")) ||
+			fz::starts_with(address, std::wstring(L"10.")) ||
+			fz::starts_with(address, std::wstring(L"192.168")) ||
+			fz::starts_with(address, std::wstring(L"169.254")))
+		{
 			return false;
+		}
 
-		if (address.Left(3) == _T("172")) {
-			CStdString middle = address.Mid(4);
-			int pos = address.Find(_T("."));
-			if (pos == -1)
+		if (fz::starts_with(address, std::wstring(L"172."))) {
+			size_t pos = address.find('.', 4);
+			if (pos = std::wstring::npos || pos <= 4) {
 				return false;
-			int part = _ttoi(middle.Left(pos));
-
-			if (part >= 16 && part <= 31)
+			}
+			int part = fz::to_integral<int>(address.substr(4, pos - 4));
+			if (part >= 16 && part <= 31) {
 				return false;
+			}
 		}
 
 		return true;
@@ -596,8 +606,8 @@ bool IsBehindIPv4Nat()
 				if (ip->Address.lpSockaddr && ip->Address.lpSockaddr->sa_family == AF_INET) {
 					has_ipv4 = true;
 
-					CStdString ipStr = inet_ntoa(reinterpret_cast<SOCKADDR_IN*>(ip->Address.lpSockaddr)->sin_addr);
-					if (!ipStr.IsEmpty()) {
+					std::string ipStr = inet_ntoa(reinterpret_cast<SOCKADDR_IN*>(ip->Address.lpSockaddr)->sin_addr);
+					if (!ipStr.empty()) {
 						has_public_ipv4 = has_public_ipv4 || IsRoutableAddress(ipStr);
 					}
 				}

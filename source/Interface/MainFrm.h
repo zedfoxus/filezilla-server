@@ -71,8 +71,8 @@ public:
 // Implementierung
 public:
 	void CloseAdminSocket(bool shouldReconnect = true);
-	void ShowStatusRaw(const char *status, int nType);
-	void ShowStatus(const CString& status, int nType);
+	void ShowStatus(std::string const& status, int nType);
+	void ShowStatus(std::wstring const& status, int nType);
 	bool m_bQuit{};
 	void SetIcon();
 	BOOL SendCommand(int nType);

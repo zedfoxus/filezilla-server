@@ -87,8 +87,9 @@ bool CServer::Create()
 	RegisterClassEx(&wndclass);
 
 	m_hWnd = CreateWindow(_T("FileZilla Server Helper Window"), _T("FileZilla Server Helper Window"), 0, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(0));
-	if (!m_hWnd)
+	if (!m_hWnd) {
 		return false;
+	}
 	SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG)this);
 
 	hMainWnd = m_hWnd;
@@ -109,7 +110,7 @@ bool CServer::Create()
 		}
 	}
 
-	m_pFileLogger->Log(GetProductVersionString() + _T(" started"));
+	m_pFileLogger->Log((GetProductVersionString() + _T(" started")).c_str());
 	m_pFileLogger->Log(_T("Initializing Server."));
 
 	m_nTimerID = SetTimer(m_hWnd, 1234, 10000, NULL);

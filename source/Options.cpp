@@ -280,8 +280,9 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 		m_OptionsCache[nOptionID-1] = m_sOptionsCache[nOptionID - 1];
 	}
 
-	if (!save)
+	if (!save) {
 		return;
+	}
 
 	CStdString valuestr;
 	valuestr.Format( _T("%I64d"), value);
@@ -289,25 +290,30 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 
 	TiXmlDocument document;
-	if (!XML::Load(document, xmlFileName))
+	if (!XML::Load(document, xmlFileName)) {
 		return;
+	}
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot)
+	if (!pRoot) {
 		return;
+	}
 
 	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
-	if (!pSettings)
+	if (!pSettings) {
 		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+	}
 
 	TiXmlElement* pItem;
 	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
-		if (!pName)
+		if (!pName) {
 			continue;
-		CStdString name(pName);
-		if (name != m_Options[nOptionID-1].name)
+		}
+		std::string_view name(pName);
+		if (name != m_Options[nOptionID - 1].name) {
 			continue;
+		}
 
 		break;
 	}
@@ -323,9 +329,8 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 	XML::Save(document, xmlFileName);
 }
 
-void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
+void COptions::SetOption(int nOptionID, std::wstring str, bool save)
 {
-	CStdString str = value;
 	Init();
 
 	switch (nOptionID)
@@ -335,185 +340,191 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 		{
 			std::set<int> portSet;
 
-			str.TrimLeft(_T(" ,"));
-
-			int pos = str.FindOneOf(_T(" ,"));
-			while (pos != -1)
-			{
-				int port = _ttoi(str.Left(pos));
-				if (port >= 1 && port <= 65535)
-					portSet.insert(port);
-				str = str.Mid(pos + 1);
-				str.TrimLeft(_T(" ,"));
-				pos = str.FindOneOf(_T(" ,"));
+			size_t oldpos = 0;
+			size_t pos = str.find_first_of(L" ,");
+			while (pos != std::wstring::npos) {
+				if (pos != oldpos) {
+					int port = fz::to_integral<int>(str.substr(oldpos, pos));
+					if (port >= 1 && port <= 65535) {
+						portSet.insert(port);
+					}
+				}
+				oldpos = pos + 1;
+				pos = str.find_first_of(L" ,", oldpos);
 			}
-			if (str != _T(""))
-			{
-				int port = _ttoi(str);
-				if (port >= 1 && port <= 65535)
+			if (oldpos < str.size()) {
+				int port = fz::to_integral<int>(str.substr(oldpos));
+				if (port >= 1 && port <= 65535) {
 					portSet.insert(port);
+				}
 			}
 
-			str = _T("");
+			str.clear();
 			for (int port : portSet) {
 				CStdString tmp;
 				tmp.Format(_T("%d "), port);
 				str += tmp;
 			}
-			str.TrimRight(' ');
+			if (!str.empty()) {
+				str.pop_back();
+			}
 		}
 		break;
 	case OPTION_WELCOMEMESSAGE:
 		{
-			std::vector<CStdString> msgLines;
-			int oldpos = 0;
-			str.Replace(_T("\r\n"), _T("\n"));
-			int pos = str.Find(_T("\n"));
-			CStdString line;
-			while (pos != -1) {
-				if (pos)
-				{
-					line = str.Mid(oldpos, pos - oldpos);
-					line = line.Left(CONST_WELCOMEMESSAGE_LINESIZE);
-					line.TrimRight(_T(" "));
-					if (msgLines.size() || line != _T(""))
+			std::vector<std::wstring> msgLines;
+			size_t oldpos = 0;
+			fz::replace_substrings(str, L"\r\n", L"\n");
+			size_t pos = str.find('\n');
+			while (pos != std::wstring::npos) {
+				if (pos != oldpos) {
+					std::wstring line = str.substr(oldpos, std::min(pos - oldpos, size_t(CONST_WELCOMEMESSAGE_LINESIZE)));
+					fz::rtrim(line);
+					if (msgLines.size() || !line.empty()) {
 						msgLines.push_back(line);
+					}
 				}
 				oldpos = pos + 1;
-				pos = str.Find(_T("\n"), oldpos);
+				pos = str.find('\n', oldpos);
 			}
-			line = str.Mid(oldpos);
-			if (line != _T("")) {
-				line = line.Left(CONST_WELCOMEMESSAGE_LINESIZE);
-				msgLines.push_back(line);
+			if (oldpos < str.size()) {
+				msgLines.push_back(str.substr(0, CONST_WELCOMEMESSAGE_LINESIZE));
 			}
-			str = _T("");
-			for (unsigned int i = 0; i < msgLines.size(); i++)
-				str += msgLines[i] + _T("\r\n");
-			str.TrimRight(_T("\r\n"));
-			if (str == _T("")) {
-				str = _T("%v");
-				str += _T("\r\nwritten by Tim Kosse (tim.kosse@filezilla-project.org)");
-				str += _T("\r\nPlease visit https://filezilla-project.org/");
+
+			str.clear();
+			for (unsigned int i = 0; i < msgLines.size(); ++i) {
+				str += msgLines[i] + L"\r\n";
 			}
-			str.Replace(_T("tim.kosse@gmx.de"), _T("tim.kosse@filezilla-project.org"));
-			str.Replace(_T("http://sourceforge.net/projects/filezilla/"), _T("https://filezilla-project.org/"));
+			if (str.size() > 2) {
+				str.resize(str.size() - 2);
+			}
+			if (str.empty()) {
+				str = L"%v";
+				str += L"\r\nwritten by Tim Kosse (tim.kosse@filezilla-project.org)";
+				str += L"\r\nPlease visit https://filezilla-project.org/";
+			}
+			fz::replace_substrings(str, L"tim.kosse@gmx.de", L"tim.kosse@filezilla-project.org");
+			fz::replace_substrings(str, L"http://sourceforge.net/projects/filezilla/", L"https://filezilla-project.org/");
 		}
 		break;
 	case OPTION_ADMINIPBINDINGS:
 		{
-			CStdString sub;
-			std::list<CStdString> ipBindList;
-			for (unsigned int i = 0; i<_tcslen(value); i++)
-			{
-				TCHAR cur = value[i];
-				if ((cur < '0' || cur > '9') && cur != '.' && cur != ':')
-				{
-					if (sub == _T("") && cur == '*')
-					{
-						ipBindList.clear();
-						ipBindList.push_back(_T("*"));
+			std::wstring ips;
+
+			std::wstring sub;
+			for (size_t i = 0; i < str.size(); ++i) {
+				wchar_t cur = str[i];
+				if ((cur < '0' || cur > '9') && cur != '.' && cur != ':') {
+					if (sub.empty() && cur == '*') {
+						ips = L"*";
 						break;
 					}
 
-					if (sub != _T(""))
-					{
-						if (IsIpAddress(sub))
-							ipBindList.push_back(sub);
-						sub = _T("");
+					if (!sub.empty()) {
+						if (IsIpAddress(sub) && !IsLocalhost(sub)) {
+							ips += sub + L" ";
+						}
+						sub.clear();
 					}
 				}
-				else
+				else {
 					sub += cur;
+				}
 			}
-			if (sub != _T(""))
-			{
-				if (IsIpAddress(sub))
-					ipBindList.push_back(sub);
+			if (!sub.empty() && IsIpAddress(sub) && !IsLocalhost(sub)) {
+				ips += sub + L" ";
 			}
-			str = _T("");
-			for (std::list<CStdString>::iterator iter = ipBindList.begin(); iter!=ipBindList.end(); iter++)
-				if (!IsLocalhost(*iter))
-					str += *iter + _T(" ");
-
-			str.TrimRight(_T(" "));
+			
+			fz::rtrim(ips);
+			str = ips;
 		}
 		break;
 	case OPTION_ADMINPASS:
-		if (str != _T("") && str.GetLength() < 6)
+		if (!str.empty() && str.size() < 6) {
 			return;
+		}
 		break;
 	case OPTION_MODEZ_DISALLOWED_IPS:
 	case OPTION_IPFILTER_ALLOWED:
 	case OPTION_IPFILTER_DISALLOWED:
 	case OPTION_ADMINIPADDRESSES:
 		{
-			str.Replace('\r', ' ');
-			str.Replace('\n', ' ');
-			str.Replace('\r', ' ');
-			while (str.Replace(_T("  "), _T(" ")));
-			str += _T(" ");
+			std::wstring ips;
 
-			CStdString ips;
-
-			int pos = str.Find(' ');
-			while (pos != -1)
-			{
-				CStdString sub = str.Left(pos);
-				str = str.Mid(pos + 1);
-				str.TrimLeft(' ');
-
-				if (sub == _T("*"))
-					ips += _T(" ") + sub;
-				else
-				{
-					if (IsValidAddressFilter(sub))
-						ips += " " + sub;
-					pos = str.Find(' ');
+			size_t oldpos = 0;
+			size_t pos = str.find_first_of(L" \r\n\t");
+			while (pos != std::wstring::npos) {
+				if (pos != oldpos) {
+					std::wstring sub = str.substr(oldpos, pos - oldpos);
+					if (sub == L"*") {
+						ips = sub;
+						break;
+					}
+					else {
+						if (IsValidAddressFilter(sub)) {
+							ips += sub + L" ";
+						}
+					}
+				}
+				oldpos = pos + 1;
+				pos = str.find_first_of(L" \r\n\t", oldpos);
+			}
+			if (oldpos < str.size() && ips != L"*") {
+				std::wstring sub = str.substr(oldpos);
+				if (sub == L"*") {
+					ips = sub;
+				}
+				else {
+					if (IsValidAddressFilter(sub)) {
+						ips += sub + L" ";
+					}
 				}
 			}
-			ips.TrimLeft(' ');
+			fz::rtrim(ips);
 
 			str = ips;
 		}
 		break;
 	case OPTION_IPBINDINGS:
 		{
-			std::list<CStdString> ipBindList;
+			std::wstring ips;
 
-			str += _T(" ");
-			while (!str.empty()) {
-				int pos  = str.Find(' ');
-				if (pos < 0) {
-					break;
-				}
-				CStdString sub = str.Left(pos);
-				str = str.Mid(pos + 1);
+			std::wstring sub;
+			for (size_t i = 0; i < str.size(); ++i) {
+				wchar_t cur = str[i];
+				if ((cur < '0' || cur > '9') && cur != '.' && cur != ':') {
+					if (sub.empty() && cur == '*') {
+						ips = L"*";
+						break;
+					}
 
-				if (sub == _T("*")) {
-					ipBindList.clear();
-					ipBindList.push_back(_T("*"));
-					break;
+					if (!sub.empty()) {
+						if (IsIpAddress(sub, true)) {
+							ips += sub + L" ";
+						}
+						sub.clear();
+					}
 				}
-				else if (IsIpAddress(sub, true)) {
-					ipBindList.push_back(sub);
+				else {
+					sub += cur;
 				}
 			}
-
-			if (ipBindList.empty())
-				ipBindList.push_back(_T("*"));
-
-			str.clear();
-			for (auto const& ip : ipBindList) {
-				str += ip + _T(" ");
+			if (!sub.empty() && IsIpAddress(sub, true)) {
+				ips += sub + L" ";
 			}
 
-			str.TrimRight(_T(" "));
+			if (ips.empty()) {
+				ips = L"*";
+			}
+
+			fz::rtrim(ips);
+			str = ips;
 		}
 		break;
 	case OPTION_CUSTOMPASVIPSERVER:
-		if (str.Find(_T("filezilla.sourceforge.net")) != -1)
-			str = _T("http://ip.filezilla-project.org/ip.php");
+		if (str.find(_T("filezilla.sourceforge.net")) != std::wstring::npos) {
+			str = L"http://ip.filezilla-project.org/ip.php";
+		}
 		break;
 	}
 
@@ -525,8 +536,9 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 		m_OptionsCache[nOptionID-1]=m_sOptionsCache[nOptionID-1];
 	}
 
-	if (!save)
+	if (!save) {
 		return;
+	}
 
 	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 	
@@ -536,43 +548,49 @@ void COptions::SetOption(int nOptionID, LPCTSTR value, bool save /*=true*/)
 	}
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot)
+	if (!pRoot) {
 		return;
+	}
 
 	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
-	if (!pSettings)
+	if (!pSettings) {
 		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+	}
 
 	TiXmlElement* pItem;
 	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
-		if (!pName)
+		if (!pName) {
 			continue;
-		CStdString name(pName);
-		if (name != m_Options[nOptionID-1].name)
+		}
+		std::string name(pName);
+		if (name != m_Options[nOptionID - 1].name) {
 			continue;
+		}
 
 		break;
 	}
 
-	if (!pItem)
+	if (!pItem) {
 		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
+	}
 	pItem->Clear();
 	pItem->SetAttribute("name", fz::to_utf8(m_Options[nOptionID - 1].name).c_str());
 	pItem->SetAttribute("type", "string");
-	pItem->LinkEndChild(new TiXmlText(fz::to_utf8(value).c_str()));
+	pItem->LinkEndChild(new TiXmlText(fz::to_utf8(str).c_str()));
 
 	XML::Save(document, xmlFileName);
 }
 
 std::wstring COptions::GetOption(int nOptionID)
 {
-	ASSERT(nOptionID>0 && nOptionID<=OPTIONS_NUM);
+	ASSERT(nOptionID > 0 && nOptionID <= OPTIONS_NUM);
 	ASSERT(!m_Options[nOptionID-1].nType);
 	Init();
 
-	if (m_OptionsCache[nOptionID-1].bCached)
-		return m_OptionsCache[nOptionID-1].str;
+	if (m_OptionsCache[nOptionID - 1].bCached) {
+		return m_OptionsCache[nOptionID - 1].str;
+	}
 
 	simple_lock lock(m_mutex);
 
@@ -736,47 +754,57 @@ void COptions::Init()
 	}
 
 	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
-	if (!pSettings)
+	if (!pSettings) {
 		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+	}
 
 	TiXmlElement* pItem;
 	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
-		if (!pName)
+		if (!pName) {
 			continue;
-		CStdString name(pName);
+		}
+		std::string name(pName);
 
 		const char* pType = pItem->Attribute("type");
-		if (!pType)
+		if (!pType) {
 			continue;
+		}
 		CStdString type(pType);
 
 		TiXmlNode* textNode = pItem->FirstChild();
 		CStdString value;
-		if (textNode && textNode->ToText())
+		if (textNode && textNode->ToText()) {
 			value = ConvFromNetwork(textNode->Value());
-		else if (type == _T("numeric"))
+		}
+		else if (type == _T("numeric")) {
 			continue;
+		}
 
 		for (int i = 0; i < OPTIONS_NUM; ++i) {
-			if (!_tcscmp(name, m_Options[i].name)) {
-				if (m_sOptionsCache[i].bCached)
-					break;
-
-				if (type == _T("numeric")) {
-					if (m_Options[i].nType != 1)
-						break;
-					_int64 value64 = _ttoi64(value);
-					if (IsNumeric(value))
-						SetOption(i + 1, value64, false);
-				}
-				else {
-					if (m_Options[i].nType != 0)
-						break;
-					SetOption(i + 1, value, false);
-				}
+			if (name != m_Options[i].name) {
+				continue;
+			}
+			if (m_sOptionsCache[i].bCached) {
 				break;
 			}
+
+			if (type == _T("numeric")) {
+				if (m_Options[i].nType != 1) {
+					break;
+				}
+				_int64 value64 = _ttoi64(value);
+				if (IsNumeric(value)) {
+					SetOption(i + 1, value64, false);
+				}
+			}
+			else {
+				if (m_Options[i].nType != 0) {
+					break;
+				}
+				SetOption(i + 1, value, false);
+			}
+			break;
 		}
 	}
 	ReadSpeedLimits(pSettings);
@@ -940,45 +968,51 @@ bool COptions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 	return TRUE;
 }
 
-BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOOL bFromLocal /*=FALSE*/)
+BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOOL bFromLocal)
 {
 	unsigned char *p = pData;
 	int num = *p * 256 + p[1];
 	p+=2;
-	if (num!=OPTIONS_NUM)
+	if (num != OPTIONS_NUM) {
 		return FALSE;
+	}
 
 	int i;
 	for (i = 0; i < num; ++i) {
-		if ((DWORD)(p-pData)>=dwDataLength)
+		if ((DWORD)(p - pData) >= dwDataLength) {
 			return FALSE;
+		}
 		int nType = *p++;
-		if (!nType)
-		{
-			if ((DWORD)(p-pData+3) >= dwDataLength)
+		if (!nType) {
+			if ((DWORD)(p - pData + 3) >= dwDataLength) {
 				return 2;
+			}
 			int len = *p * 256 * 256 + p[1] * 256 + p[2];
 			p += 3;
-			if ((DWORD)(p - pData + len) > dwDataLength)
+			if ((DWORD)(p - pData + len) > dwDataLength) {
 				return FALSE;
+			}
 			char *pBuffer = new char[len + 1];
 			memcpy(pBuffer, p, len);
-			pBuffer[len]=0;
-			if (!m_Options[i].bOnlyLocal || bFromLocal) //Do not change admin interface settings from remote connections
-				SetOption(i+1, ConvFromNetwork(pBuffer), false);
+			pBuffer[len] = 0;
+			if (!m_Options[i].bOnlyLocal || bFromLocal) { //Do not change admin interface settings from remote connections
+				SetOption(i + 1, ConvFromNetwork(pBuffer), false);
+			}
 			delete [] pBuffer;
-			p+=len;
+			p += len;
 		}
-		else if (nType == 1)
-		{
-			if ((DWORD)(p-pData+8)>dwDataLength)
+		else if (nType == 1) {
+			if ((DWORD)(p - pData + 8) > dwDataLength) {
 				return FALSE;
-			if (!m_Options[i].bOnlyLocal || bFromLocal) //Do not change admin interface settings from remote connections
-				SetOption(i+1, GET64(p), false);
-			p+=8;
+			}
+			if (!m_Options[i].bOnlyLocal || bFromLocal) { //Do not change admin interface settings from remote connections				
+				SetOption(i + 1, GET64(p), false);
+			}
+			p += 8;
 		}
-		else
+		else {
 			return FALSE;
+		}
 	}
 
 	SPEEDLIMITSLIST dl;
@@ -1157,38 +1191,42 @@ void COptions::ReloadConfig()
 	TiXmlElement* pItem;
 	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
 		const char* pName = pItem->Attribute("name");
-		if (!pName)
+		if (!pName) {
 			continue;
-		CStdString name(pName);
+		}
+		std::string name(pName);
 		const char* pType = pItem->Attribute("type");
-		if (!pType)
+		if (!pType) {
 			continue;
+		}
 		CStdString type(pType);
 		TiXmlNode* textNode = pItem->FirstChild();
-		if (!textNode || !textNode->ToText())
+		if (!textNode || !textNode->ToText()) {
 			continue;
+		}
 		CStdString value = ConvFromNetwork(textNode->Value());
 
 
-		for (int i = 0;i < OPTIONS_NUM; ++i) {
-			if (!_tcscmp(name, m_Options[i].name)) {
-				if (m_sOptionsCache[i].bCached)
-					break;
-
-				if (type == _T("numeric")) {
-					if (m_Options[i].nType != 1)
-						break;
-					_int64 value64 = _ttoi64(value);
-					if (IsNumeric(value))
-						SetOption(i + 1, value64, false);
-				}
-				else {
-					if (m_Options[i].nType != 0)
-						break;
-					SetOption(i  +1, value, false);
-				}
+		for (int i = 0; i < OPTIONS_NUM; ++i) {
+			if (name != m_Options[i].name) {
+				continue;
+			}
+			if (m_sOptionsCache[i].bCached) {
 				break;
 			}
+			if (type == _T("numeric")) {
+				if (m_Options[i].nType != 1)
+					break;
+				_int64 value64 = _ttoi64(value);
+				if (IsNumeric(value))
+					SetOption(i + 1, value64, false);
+			}
+			else {
+				if (m_Options[i].nType != 0)
+					break;
+				SetOption(i  +1, value, false);
+			}
+			break;
 		}
 	}
 	ReadSpeedLimits(pSettings);
@@ -1206,12 +1244,14 @@ void COptions::SaveOptions()
 	}
 
 	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot)
+	if (!pRoot) {
 		return;
+	}
 
 	TiXmlElement* pSettings;
-	while ((pSettings = pRoot->FirstChildElement("Settings")))
+	while ((pSettings = pRoot->FirstChildElement("Settings"))) {
 		pRoot->RemoveChild(pSettings);
+	}
 	pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
 
 	for (unsigned int i = 0; i < OPTIONS_NUM; ++i) {

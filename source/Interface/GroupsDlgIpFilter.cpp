@@ -79,12 +79,12 @@ CString CGroupsDlgIpFilter::Validate()
 {
 	UpdateData(TRUE);
 
-	if (!ParseIPFilter(m_DisallowedAddresses)) {
+	if (!ParseIPFilter(std::wstring(m_DisallowedAddresses))) {
 		GetDlgItem(IDC_GROUPS_IPFILTER_DISALLOWED)->SetFocus();
 		return _T("Invalid IP address/range/mask");
 	}
 
-	if (!ParseIPFilter(m_AllowedAddresses)) {
+	if (!ParseIPFilter(std::wstring(m_AllowedAddresses))) {
 		GetDlgItem(IDC_GROUPS_IPFILTER_ALLOWED)->SetFocus();
 		return _T("Invalid IP address/range/mask");
 	}
@@ -94,13 +94,11 @@ CString CGroupsDlgIpFilter::Validate()
 
 void CGroupsDlgIpFilter::SetCtrlState()
 {
-	if (!m_pOwner->GetCurrentGroup())
-	{
+	if (!m_pOwner->GetCurrentGroup()) {
 		GetDlgItem(IDC_GROUPS_IPFILTER_ALLOWED)->EnableWindow(FALSE);
 		GetDlgItem(IDC_GROUPS_IPFILTER_DISALLOWED)->EnableWindow(FALSE);
 	}
-	else
-	{
+	else {
 		GetDlgItem(IDC_GROUPS_IPFILTER_ALLOWED)->EnableWindow(TRUE);
 		GetDlgItem(IDC_GROUPS_IPFILTER_DISALLOWED)->EnableWindow(TRUE);
 	}
@@ -113,8 +111,7 @@ BOOL CGroupsDlgIpFilter::DisplayGroup(t_group *pGroup)
 	m_DisallowedAddresses = _T("");
 	m_AllowedAddresses = _T("");
 
-	if (!pGroup)
-	{
+	if (!pGroup) {
 		UpdateData(FALSE);
 
 		return TRUE;
@@ -143,8 +140,8 @@ BOOL CGroupsDlgIpFilter::SaveGroup(t_group *pGroup)
 	pGroup->disallowedIPs.clear();
 	pGroup->allowedIPs.clear();
 
-	ParseIPFilter(m_DisallowedAddresses, &pGroup->disallowedIPs);
-	ParseIPFilter(m_AllowedAddresses, &pGroup->allowedIPs);
+	ParseIPFilter(std::wstring(m_DisallowedAddresses), &pGroup->disallowedIPs);
+	ParseIPFilter(std::wstring(m_AllowedAddresses), &pGroup->allowedIPs);
 
 	return TRUE;
 }

@@ -79,14 +79,12 @@ CString CUsersDlgIpFilter::Validate()
 {
 	UpdateData(TRUE);
 
-	if (!ParseIPFilter(m_DisallowedAddresses))
-	{
+	if (!ParseIPFilter(std::wstring(m_DisallowedAddresses))) {
 		GetDlgItem(IDC_USERS_IPFILTER_DISALLOWED)->SetFocus();
 		return _T("Invalid IP address/range/mask");
 	}
 
-	if (!ParseIPFilter(m_AllowedAddresses))
-	{
+	if (!ParseIPFilter(std::wstring(m_AllowedAddresses))) {
 		GetDlgItem(IDC_USERS_IPFILTER_ALLOWED)->SetFocus();
 		return _T("Invalid IP address/range/mask");
 	}
@@ -140,8 +138,8 @@ BOOL CUsersDlgIpFilter::SaveUser(t_user & user)
 	user.disallowedIPs.clear();
 	user.allowedIPs.clear();
 
-	ParseIPFilter(m_DisallowedAddresses, &user.disallowedIPs);
-	ParseIPFilter(m_AllowedAddresses, &user.allowedIPs);
+	ParseIPFilter(std::wstring(m_DisallowedAddresses), &user.disallowedIPs);
+	ParseIPFilter(std::wstring(m_AllowedAddresses), &user.allowedIPs);
 
 	return TRUE;
 }

@@ -17,33 +17,35 @@ t_group::t_group()
 
 bool t_group::BypassUserLimit() const
 {
-	if (!nBypassUserLimit)
+	if (!nBypassUserLimit) {
 		return false;
-	if (nBypassUserLimit == 2 && pOwner)
+	}
+	if (nBypassUserLimit == 2 && pOwner) {
 		return pOwner->BypassUserLimit();
+	}
 	return true;
 }
 
 int t_group::GetIpLimit() const
 {
-	if (nIpLimit)
+	if (nIpLimit) {
 		return nIpLimit;
-	if (pOwner)
+	}
+	if (pOwner) {
 		return pOwner->GetIpLimit();
+	}
 	return 0;
 }
 
 int t_group::GetUserLimit() const
 {
-	if (nUserLimit)
+	if (nUserLimit) {
 		return nUserLimit;
-	if (pOwner)
+	}
+	if (pOwner) {
 		return pOwner->GetUserLimit();
+	}
 	return 0;
-}
-
-t_user::t_user()
-{
 }
 
 unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
@@ -51,11 +53,13 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 	unsigned char *p = pBuffer;
 	unsigned char *endMarker = pBuffer + length;
 
-	if (!ParseString(endMarker, p, group))
-		return 0;
+	if (!ParseString(endMarker, p, group)) {
+		return nullptr;
+	}
 
-	if ((endMarker - p) < 11)
-		return NULL;
+	if ((endMarker - p) < 11) {
+		return nullptr;
+	}
 
 	memcpy(&nIpLimit, p, 4);
 	if (nIpLimit > 0 && nIpLimit < 15) {
@@ -79,58 +83,60 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 	while (numDisallowedIPs--) {
 		std::wstring ip;
 		if (!ParseString(endMarker, p, ip)) {
-			return 0;
+			return nullptr;
 		}
 
-		if (IsValidAddressFilter(ip) || ip == _T("*")) {
+		if (IsValidAddressFilter(ip) || ip == L"*") {
 			disallowedIPs.push_back(ip);
 		}
 	}
 
-	if ((endMarker - p) < 2)
-		return NULL;
+	if ((endMarker - p) < 2) {
+		return nullptr;
+	}
 
 	int numAllowedIPs = (int(*p) << 8) + p[1];
 	p += 2;
 	while (numAllowedIPs--) {
 		std::wstring ip;
 		if (!ParseString(endMarker, p, ip)) {
-			return 0;
+			return nullptr;
 		}
 
-		if (IsValidAddressFilter(ip) || ip == _T("*")) {
+		if (IsValidAddressFilter(ip) || ip == L"*") {
 			allowedIPs.push_back(ip);
 		}
 	}
 
-	if ((endMarker - p) < 2)
-		return NULL;
+	if ((endMarker - p) < 2) {
+		return nullptr;
+	}
 
 	int dircount = (int(*p) << 8) + p[1];
 	p += 2;
 
-	BOOL bGotHome = FALSE;
+	bool bGotHome = false;
 
 	for (int j = 0; j < dircount; ++j) {
 		t_directory dir;
 
 		std::wstring str;
 		if (!ParseString(endMarker, p, str)) {
-			return 0;
+			return nullptr;
 		}
 
 		while (!str.empty() && str.back() == '\\') {
 			str.pop_back();
 		}
 		if (str.empty()) {
-			return 0;
+			return nullptr;
 		}
 
 		dir.dir = str;
 
 		// Get directory aliases.
 		if ((endMarker - p) < 2) {
-			return NULL;
+			return nullptr;
 		}
 
 		int aliascount = (int(*p) << 8) + p[1];
@@ -139,22 +145,22 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 		for (int i = 0; i < aliascount; ++i) {
 			std::wstring alias;
 			if (!ParseString(endMarker, p, alias)) {
-				return 0;
+				return nullptr;
 			}
 
 			while (!alias.empty() && alias.back() == '\\') {
 				alias.pop_back();
 			}
 
-			if (alias == _T("")) {
-				return 0;
+			if (alias.empty()) {
+				return nullptr;
 			}
 
 			dir.aliases.push_back(alias);
 		}
 
 		if ((endMarker - p) < 2) {
-			return NULL;
+			return nullptr;
 		}
 
 		int rights = (int(*p) << 8) + p[1];
@@ -174,10 +180,10 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 		// Avoid multiple home directories.
 		if (dir.bIsHome) {
 			if (!bGotHome) {
-				bGotHome = TRUE;
+				bGotHome = true;
 			}
 			else {
-				dir.bIsHome = FALSE;
+				dir.bIsHome = false;
 			}
 		}
 
@@ -186,7 +192,7 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 
 	for (int i = 0; i < 2; ++i) {
 		if ((endMarker - p) < 5) {
-			return NULL;
+			return nullptr;
 		}
 
 		nSpeedLimitType[i] = *p & 3;
@@ -205,18 +211,18 @@ unsigned char * t_group::ParseBuffer(unsigned char *pBuffer, int length)
 			CSpeedLimit sl;
 			p = sl.ParseBuffer(p, length-(int)(p-pBuffer));
 			if (!p) {
-				return NULL;
+				return nullptr;
 			}
 			SpeedLimits[i].push_back(sl);
 		}
 	}
 
 	if (!ParseString(endMarker, p, comment)) {
-		return 0;
+		return nullptr;
 	}
 
 	if (p >= endMarker) {
-		return 0;
+		return nullptr;
 	}
 
 	forceSsl = *p++;
@@ -228,6 +234,21 @@ int t_group::GetRequiredStringBufferLen(std::wstring const& str) const
 {
 	auto utf8 = fz::to_utf8(str);
 	return utf8.size() + 2;
+}
+
+int t_group::GetRequiredStringBufferLen(std::string const& str) const
+{
+	return str.size() + 2;
+}
+
+void t_group::FillString(unsigned char *& p, std::string const& str) const
+{
+	size_t len = str.size();
+	*p++ = (len >> 8) & 0xffu;
+	*p++ = len & 0xffu;
+
+	memcpy(p, str.c_str(), len);
+	p += len;
 }
 
 void t_group::FillString(unsigned char *& p, std::wstring const& str) const
@@ -304,7 +325,7 @@ unsigned char * t_group::FillBuffer(unsigned char *p) const
 		for (auto const& limit : SpeedLimits[i]){
 			p = limit.FillBuffer(p);
 			if (!p) {
-				return 0;
+				return nullptr;
 			}
 		}
 	}
@@ -362,10 +383,12 @@ int t_group::GetCurrentSpeedLimit(sltype type) const
 	switch (nSpeedLimitType[type])
 	{
 	case 0:
-		if (pOwner)
+		if (pOwner) {
 			return pOwner->GetCurrentSpeedLimit(type);
-		else
+		}
+		else {
 			return 0;
+		}
 	case 1:
 		return 0;
 	case 2:
@@ -380,24 +403,30 @@ int t_group::GetCurrentSpeedLimit(sltype type) const
 				}
 			}
 		}
-		if (pOwner)
+		if (pOwner) {
 			return pOwner->GetCurrentSpeedLimit(type);
-		else
+		}
+		else {
 			return 0;
+		}
 	}
 	return 0;
 }
 
 bool t_group::BypassServerSpeedLimit(sltype type) const
 {
-	if (nBypassServerSpeedLimit[type] == 1)
+	if (nBypassServerSpeedLimit[type] == 1) {
 		return true;
-	else if (!nBypassServerSpeedLimit[type])
+	}
+	else if (!nBypassServerSpeedLimit[type]) {
 		return false;
-	else if (pOwner)
+	}
+	else if (pOwner) {
 		return pOwner->BypassServerSpeedLimit(type);
-	else
+	}
+	else {
 		return false;
+	}
 }
 
 bool t_group::IsEnabled() const
@@ -410,8 +439,9 @@ bool t_group::IsEnabled() const
 	case 1:
 		return true;
 	case 2:
-		if (!pOwner)
+		if (!pOwner) {
 			return false;
+		}
 
 		return pOwner->IsEnabled();
 	}
@@ -427,13 +457,14 @@ bool t_group::AccessAllowed(std::wstring const& ip) const
 		}
 	}
 
-	if (!disallowed)
-	{
-		if (!pOwner)
+	if (!disallowed) {
+		if (!pOwner) {
 			return true;
+		}
 
-		if (pOwner->AccessAllowed(ip))
+		if (pOwner->AccessAllowed(ip)) {
 			return true;
+		}
 	}
 
 	for (auto const& allowedIP : allowedIPs) {
@@ -442,8 +473,9 @@ bool t_group::AccessAllowed(std::wstring const& ip) const
 		}
 	}
 
-	if (pOwner && !disallowed)
+	if (pOwner && !disallowed) {
 		return pOwner->AccessAllowed(ip);
+	}
 
 	return false;
 }
@@ -454,17 +486,21 @@ unsigned char * t_user::ParseBuffer(unsigned char *pBuffer, int length)
 	unsigned char *endMarker = pBuffer + length;
 
 	p = t_group::ParseBuffer(p, length);
-	if (!p)
-		return NULL;
+	if (!p) {
+		return nullptr;
+	}
 
-	if (!ParseString(endMarker, p, user))
-		return 0;
+	if (!ParseString(endMarker, p, user)) {
+		return nullptr;
+	}
 
-	if (!ParseString(endMarker, p, password))
-		return 0;
+	if (!ParseString(endMarker, p, password)) {
+		return nullptr;
+	}
 
-	if (!ParseString(endMarker, p, salt))
-		return 0;
+	if (!ParseString(endMarker, p, salt)) {
+		return nullptr;
+	}
 
 	return p;
 }
@@ -473,7 +509,7 @@ unsigned char * t_user::FillBuffer(unsigned char *p) const
 {
 	p = t_group::FillBuffer(p);
 	if (!p) {
-		return NULL;
+		return nullptr;
 	}
 
 	FillString(p, user);
@@ -499,11 +535,30 @@ void t_user::generateSalt()
 	std::random_device rd;
 	std::uniform_int_distribution<int> dist(0, sizeof(validChars) - 2);
 	
-	salt = _T("");
+	salt.clear();
 
 	for (size_t i = 0; i < 64; ++i) {
 		salt += validChars[dist(rd)];
 	}
+}
+
+bool t_group::ParseString(const unsigned char* endMarker, unsigned char *&p, std::string &string)
+{
+	if ((endMarker - p) < 2) {
+		return false;
+	}
+
+	int len = *p * 256 + p[1];
+	p += 2;
+
+	if ((endMarker - p) < len) {
+		return false;
+	}
+
+	string.assign(p, p + len);
+	p += len;
+
+	return true;
 }
 
 bool t_group::ParseString(const unsigned char* endMarker, unsigned char *&p, std::wstring &string)
@@ -515,15 +570,11 @@ bool t_group::ParseString(const unsigned char* endMarker, unsigned char *&p, std
 	int len = *p * 256 + p[1];
 	p += 2;
 
-	if ((endMarker - p) < len)
+	if ((endMarker - p) < len) {
 		return false;
-	char* tmp = new char[len + 1];
-	tmp[len] = 0;
-	memcpy(tmp, p, len);
-	std::wstring str = ConvFromNetwork((const char*)tmp);
-	delete [] tmp;
+	}
+	string = ConvFromNetwork(std::string_view(reinterpret_cast<char const*>(p), static_cast<size_t>(len)));
 	p += len;
-	string = str;
 
 	return true;
 }
@@ -538,8 +589,9 @@ bool t_group::ForceSsl() const
 	case 1:
 		return true;
 	case 2:
-		if (!pOwner)
+		if (!pOwner) {
 			return false;
+		}
 
 		return pOwner->ForceSsl();
 	}

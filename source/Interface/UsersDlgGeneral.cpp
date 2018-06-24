@@ -270,12 +270,13 @@ BOOL CUsersDlgGeneral::DisplayUser(t_user *pUser)
 BOOL CUsersDlgGeneral::SaveUser(t_user & user)
 {
 	user.nEnabled = m_nEnabled;
-	if (!m_bNeedpass)
+	if (!m_bNeedpass) {
 		user.password = _T("");
+	}
 	else if (m_cPass.GetModify() && m_Pass != _T("")) {
 		user.generateSalt();
 		
-		auto saltedPassword = fz::to_utf8(m_Pass.GetString() + user.salt);
+		auto saltedPassword = fz::to_utf8(m_Pass.GetString()) + user.salt;
 
 		CAsyncSslSocketLayer ssl(0);
 		user.password = ConvFromNetwork(ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size()).c_str());

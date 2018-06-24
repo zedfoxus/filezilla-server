@@ -207,7 +207,7 @@ BOOL CAboutDlg::OnInitDialog()
 				   0xFF0000, 0xFF);
 	m_mail.SetURL("mailto:tim.kosse@filezilla-project.org");
 
-	m_cVersion.SetWindowText(GetProductVersionString());
+	m_cVersion.SetWindowText(GetProductVersionString().c_str());
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX-Eigenschaftenseiten sollten FALSE zurückgeben
 }

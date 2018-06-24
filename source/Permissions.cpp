@@ -874,15 +874,17 @@ CUser CPermissions::GetUser(CStdString const& username) const
 
 bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswordCheck /*=FALSE*/)
 {
-	if (user.user.empty())
+	if (user.user.empty()) {
 		return false;
+	}
 
 	if (user.password.empty() || noPasswordCheck) {
 		return true;
 	}
 
-	if (!pass)
+	if (!pass) {
 		return false;
+	}
 	auto tmp = fz::to_utf8(pass);
 	if (tmp.empty() && *pass) {
 		// Network broke. Meh...
@@ -908,7 +910,7 @@ bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswo
 	
 	// It's a salted SHA-512 hash
 
-	auto saltedPassword = fz::to_utf8(pass + user.salt);
+	auto saltedPassword = fz::to_utf8(pass) + user.salt;
 	if (saltedPassword.empty()) {
 		return false;
 	}
@@ -930,7 +932,12 @@ void CPermissions::UpdateInstances()
 	}
 }
 
-void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, LPCTSTR value)
+void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, std::string const& value)
+{
+	SetKey(pXML, name, fz::to_wstring_from_utf8(value));
+}
+
+void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, std::wstring const& value)
 {
 	ASSERT(pXML);
 	TiXmlElement* pOption = new TiXmlElement("Option");
@@ -1850,8 +1857,9 @@ void CPermissions::ReadSettings()
 	}
 
 	TiXmlElement* pUsers = pXML->FirstChildElement("Users");
-	if (!pUsers)
+	if (!pUsers) {
 		pUsers = pXML->LinkEndChild(new TiXmlElement("Users"))->ToElement();
+	}
 
 	for (TiXmlElement* pUser = pUsers->FirstChildElement("User"); pUser; pUser = pUser->NextSiblingElement("User")) {
 		CUser user;
@@ -1869,29 +1877,36 @@ void CPermissions::ReadSettings()
 				user.password = value;
 			}
 			else if (name == _T("Salt")) {
-				user.salt = value;
+				user.salt = fz::to_utf8(value);
 			}
-			else if (name == _T("Bypass server userlimit"))
+			else if (name == _T("Bypass server userlimit")) {
 				user.nBypassUserLimit = _ttoi(value);
-			else if (name == _T("User Limit"))
+			}
+			else if (name == _T("User Limit")) {
 				user.nUserLimit = _ttoi(value);
-			else if (name == _T("IP Limit"))
+			}
+			else if (name == _T("IP Limit")) {
 				user.nIpLimit = _ttoi(value);
-			else if (name == _T("Group"))
+			}
+			else if (name == _T("Group")) {
 				user.group = value;
-			else if (name == _T("Enabled"))
+			}
+			else if (name == _T("Enabled")) {
 				user.nEnabled = _ttoi(value);
-			else if (name == _T("Comments"))
+			}
+			else if (name == _T("Comments")) {
 				user.comment = value;
-			else if (name == _T("ForceSsl"))
+			}
+			else if (name == _T("ForceSsl")) {
 				user.forceSsl = _ttoi(value);
+			}
 		}
 
 		// If provided password is not a salted SHA512 hash and neither an old MD5 hash, convert it into a salted SHA512 hash
 		if (!user.password.empty() && user.salt.empty() && user.password.size() != MD5_HEX_FORM_LENGTH) {
 			user.generateSalt();
 
-			auto saltedPassword = fz::to_utf8(user.password + user.salt);
+			auto saltedPassword = fz::to_utf8(user.password) + user.salt;
 			if (saltedPassword.empty()) {
 				// We skip this user
 				continue;

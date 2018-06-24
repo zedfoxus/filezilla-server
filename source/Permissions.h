@@ -170,7 +170,8 @@ protected:
 	void ReadIpFilter(TiXmlElement *pXML, t_group &group);
 	void SaveIpFilter(TiXmlElement *pXML, const t_group &group);
 
-	void SetKey(TiXmlElement *pXML, LPCTSTR name, LPCTSTR value);
+	void SetKey(TiXmlElement *pXML, LPCTSTR name, std::string const& value);
+	void SetKey(TiXmlElement *pXML, LPCTSTR name, std::wstring const& value);
 	void SetKey(TiXmlElement *pXML, LPCTSTR name, int value);
 
 	int GetRealDirectory(CStdString directory, const CUser &user, t_directory &ret, BOOL &truematch);

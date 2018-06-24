@@ -105,7 +105,7 @@ void CStatusView::OnSize(UINT nType, int cx, int cy)
 }//OnSize
 
 
-void CStatusView::ShowStatus(LPCTSTR status, int type)
+void CStatusView::ShowStatus(std::wstring const& status, int type)
 {
 	m_pStatusCtrl->ShowStatus(status, type);
 }

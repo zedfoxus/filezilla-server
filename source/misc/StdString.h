@@ -754,7 +754,7 @@ inline const Type& SSMAX(const Type& arg1, const Type& arg2)
 		#endif
 		#define SS_USE_FACET(loc, fac) std::use_facet<fac >(loc)
 
-	#elif defined(_MSC_VER )
+	#elif defined(_MSC_VER ) && _MSC_VER < 1910
 
 		#define SS_USE_FACET(loc, fac) std::_USE(loc, fac)
 
@@ -2007,7 +2007,7 @@ inline int sscpy(CT1* pDst, const std::basic_string<CT2>& sSrc)
 	};
 #else
 	template<typename CT>
-	struct SSToUpper : public std::binary_function<CT, std::locale, CT>
+	struct SSToUpper : public std::function<CT(CT, std::locale)>
 	{
 		inline CT operator()(const CT& t, const std::locale& loc) const
 		{
@@ -2015,7 +2015,7 @@ inline int sscpy(CT1* pDst, const std::basic_string<CT2>& sSrc)
 		}
 	};
 	template<typename CT>
-	struct SSToLower : public std::binary_function<CT, std::locale, CT>
+	struct SSToLower : public std::function<CT(CT, std::locale)>
 	{
 		inline CT operator()(const CT& t, const std::locale& loc) const
 		{
@@ -2033,7 +2033,7 @@ inline int sscpy(CT1* pDst, const std::basic_string<CT2>& sSrc)
 //	inline bool operator() (CT t) { return !std::isspace(t, loc); }
 //};
 template<typename CT>
-struct NotSpace : public std::unary_function<CT, bool>
+struct NotSpace : public std::function<bool(CT)>
 {
 	// DINKUMWARE BUG:
 	// Note -- using std::isspace in a COM DLL gives us access violations
@@ -2433,7 +2433,7 @@ public:
 #ifdef SS_NO_LOCALE
 					   SSToUpper<CT>());
 #else
-					   std::bind2nd(SSToUpper<CT>(), loc));
+					   std::bind(SSToUpper<CT>(), std::placeholders::_1, loc));
 #endif
 
 		// ...but if it were, this would probably work better.  Also, this way
@@ -2461,7 +2461,7 @@ public:
 #ifdef SS_NO_LOCALE
 					   SSToLower<CT>());
 #else
-					   std::bind2nd(SSToLower<CT>(), loc));
+					   std::bind(SSToLower<CT>(), std::placeholders::_1, loc));
 #endif
 
 		// ...but if it were, this would probably work better.  Also, this way
@@ -3296,7 +3296,7 @@ public:
 	}
 
 #ifndef SS_ANSI
-	void FormatMessage(PCMYSTR szFormat, ...) throw(std::exception)
+	void FormatMessage(PCMYSTR szFormat, ...)
 	{
 		va_list argList;
 		va_start(argList, szFormat);
@@ -3313,7 +3313,7 @@ public:
 		va_end(argList);
 	}
 
-	void FormatMessage(UINT nFormatId, ...) throw(std::exception)
+	void FormatMessage(UINT nFormatId, ...)
 	{
 		MYTYPE sFormat;
 		VERIFY(sFormat.LoadString(nFormatId));
@@ -4292,28 +4292,28 @@ inline CStdStringW WUFormatW(PCWSTR szwFormat, ...)
 #endif
 
 struct StdStringLessNoCaseW
-	: std::binary_function<CStdStringW, CStdStringW, bool>
+	: std::function<bool(CStdStringW, CStdStringW)>
 {
 	inline
 	bool operator()(const CStdStringW& sLeft, const CStdStringW& sRight) const
 	{ return ssicmp(sLeft.c_str(), sRight.c_str()) < 0; }
 };
 struct StdStringEqualsNoCaseW
-	: std::binary_function<CStdStringW, CStdStringW, bool>
+	: std::function<bool(CStdStringW, CStdStringW)>
 {
 	inline
 	bool operator()(const CStdStringW& sLeft, const CStdStringW& sRight) const
 	{ return ssicmp(sLeft.c_str(), sRight.c_str()) == 0; }
 };
 struct StdStringLessNoCaseA
-	: std::binary_function<CStdStringA, CStdStringA, bool>
+	: std::function<bool(CStdStringA, CStdStringA)>
 {
 	inline
 	bool operator()(const CStdStringA& sLeft, const CStdStringA& sRight) const
 	{ return ssicmp(sLeft.c_str(), sRight.c_str()) < 0; }
 };
 struct StdStringEqualsNoCaseA
-	: std::binary_function<CStdStringA, CStdStringA, bool>
+	: std::function<bool(CStdStringA, CStdStringA)>
 {
 	inline
 	bool operator()(const CStdStringA& sLeft, const CStdStringA& sRight) const

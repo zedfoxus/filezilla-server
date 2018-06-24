@@ -174,15 +174,16 @@ BOOL COptionsAdminInterfacePage::IsDataValid()
 		sub = _T("");
 	}
 	bindIPs = _T("");
-	for (std::list<CString>::iterator iter = ipBindList.begin(); iter!=ipBindList.end(); ++iter)
-		if (*iter != _T("127.0.0.1"))
+	for (std::list<CString>::iterator iter = ipBindList.begin(); iter != ipBindList.end(); ++iter) {
+		if (*iter != _T("127.0.0.1")) {
 			bindIPs += *iter + _T(" ");
+		}
+	}
 
 	bindIPs.TrimRight(_T(" "));
 	m_IpBindingsResult = bindIPs;
 
-	if (!ParseIPFilter(m_IpAddresses))
-	{
+	if (!ParseIPFilter(std::wstring(m_IpAddresses))) {
 		GetDlgItem(IDC_OPTIONS_ADMININTERFACE_IPADDRESSES)->SetFocus();
 		AfxMessageBox(_T("Invalid IP address/range/mask"));
 		return FALSE;

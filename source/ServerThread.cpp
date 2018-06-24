@@ -247,7 +247,7 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 
 	UINT localPort = 0;
 	CStdString localHost;
-	if( socket->GetSockName(localHost, localPort) ) {
+	if (socket->GetSockName(localHost, localPort) ) {
 		CStdString msg;
 		msg.Format(_T("Connected on port %u, sending welcome message..."), localPort);
 		socket->SendStatus(msg, 0);
@@ -257,16 +257,18 @@ void CServerThread::AddNewSocket(SOCKET sockethandle, bool ssl)
 	}
 
 	CStdString msg;
-	if (m_pOptions->GetOptionVal(OPTION_ENABLE_HASH))
+	if (m_pOptions->GetOptionVal(OPTION_ENABLE_HASH)) {
 		msg = _T("EXPERIMENTAL BUILD\nNOT FOR PRODUCTION USE\n\nImplementing draft-bryan-ftp-hash-06");
-	else
+	}
+	else {
 		msg = m_pOptions->GetOption(OPTION_WELCOMEMESSAGE);
+	}
 	if (m_RawWelcomeMessage != msg) {
 		m_RawWelcomeMessage = msg;
 		m_ParsedWelcomeMessage.clear();
 
 		msg.Replace(_T("%%"), _T("\001"));
-		msg.Replace(_T("%v"), GetProductVersionString());
+		msg.Replace(_T("%v"), GetProductVersionString().c_str());
 		msg.Replace(_T("\001"), _T("%"));
 
 		ASSERT(msg != _T(""));

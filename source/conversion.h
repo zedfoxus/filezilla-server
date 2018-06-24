@@ -1,11 +1,10 @@
-#ifndef __CONVERSION_H__
-#define __CONVERSION_H__
+#ifndef FILEZILLA_SERVER_SERVICE_CONVERSION_HEADER
+#define FILEZILLA_SERVER_SERVICE_CONVERSION_HEADER
 
-#include <string>
+#include <string_view>
 
-CStdStringW ConvFromNetwork(const char* buffer);
+std::wstring ConvFromNetwork(std::string_view const& str);
+std::string ConvToLocal(std::wstring_view const& str);
+std::wstring ConvFromLocal(std::string_view const& str);
 
-CStdStringA ConvToLocal(const CStdStringW& str);
-CStdStringW ConvFromLocal(const CStdStringA& str);
-
-#endif //__CONVERSION_H__
+#endif

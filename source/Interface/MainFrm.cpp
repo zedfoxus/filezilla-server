@@ -41,11 +41,7 @@
 #include "../defs.h"
 #include "OutputFormat.h"
 
-#if defined(_DEBUG) 
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
+#include <libfilezilla/format.hpp>
 
 /////////////////////////////////////////////////////////////////////////////
 // CMainFrame
@@ -712,15 +708,15 @@ void CMainFrame::OnMenuEditGroups()
 	ShowStatus(_T("Retrieving account settings, please wait..."), 0);
 }
 
-void CMainFrame::ShowStatus(const CString& status, int nType)
+void CMainFrame::ShowStatus(std::wstring const& status, int nType)
 {
 	CStatusView *view = GetStatusPane();
 	view->ShowStatus(status, nType);
 }
 
-void CMainFrame::ShowStatusRaw(const char *status, int nType)
+void CMainFrame::ShowStatus(std::string const& status, int nType)
 {
-	CString msg(ConvFromNetwork(status));
+	std::wstring msg(ConvFromNetwork(status));
 	ShowStatus(msg, nType);
 }
 
@@ -739,9 +735,9 @@ void CMainFrame::ParseReply(int nReplyID, unsigned char *pData, int nDataLength)
 	case 1:
 		{
 			char *pBuffer = new char[nDataLength];
-			memcpy(pBuffer, pData+1, nDataLength-1);
-			pBuffer[nDataLength-1] = 0;
-			ShowStatusRaw(pBuffer, *pData);
+			memcpy(pBuffer, pData + 1, nDataLength - 1);
+			pBuffer[nDataLength - 1] = 0;
+			ShowStatus(pBuffer, *pData);
 			delete [] pBuffer;
 		}
 		break;
@@ -855,8 +851,7 @@ void CMainFrame::ParseReply(int nReplyID, unsigned char *pData, int nDataLength)
 		break;
 	default:
 		{
-			CString str;
-			str.Format(_T("Protocol error: Unexpected reply id (%d)."), nReplyID);
+			std::wstring str = fz::sprintf(L"Protocol error: Unexpected reply id (%d).", nReplyID);
 			ShowStatus(str, 1);
 			break;
 		}
@@ -870,9 +865,9 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 	case 1:
 		{
 			char *pBuffer = new char[nDataLength];
-			memcpy(pBuffer, pData+1, nDataLength-1);
-			pBuffer[nDataLength-1] = 0;
-			ShowStatusRaw(pBuffer, *pData);
+			memcpy(pBuffer, pData + 1, nDataLength - 1);
+			pBuffer[nDataLength - 1] = 0;
+			ShowStatus(pBuffer, *pData);
 			delete [] pBuffer;
 		}
 		break;
@@ -882,33 +877,30 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 		break;
 	case 3:
 		{
-			if (nDataLength<2)
-			{
+			if (nDataLength < 2) {
 				ShowStatus(_T("Protocol error: Unexpected data length"), 1);
 				return;
 			}
-			else if (!GetUsersPane()->m_pListCtrl->ParseUserControlCommand(pData, nDataLength))
+			else if (!GetUsersPane()->m_pListCtrl->ParseUserControlCommand(pData, nDataLength)) {
 				ShowStatus(_T("Protocol error: Invalid data"), 1);
+			}
 		}
 		break;
 	case 4:
 		{
-			if (nDataLength < 10)
-			{
+			if (nDataLength < 10) {
 				ShowStatus(_T("Protocol error: Unexpected data length"), 1);
 				return;
 			}
 
-			CString msg;
+			std::wstring msg;
 
 			char *buffer = new char[nDataLength - 9 + 1];
 			unsigned char *p = pData + 9;
 			char *q = buffer;
 			int pos = 0;
-			while ((pos + 9) < nDataLength)
-			{
-				if (*p == '-')
-				{
+			while ((pos + 9) < nDataLength) {
+				if (*p == '-') {
 					*q = 0;
 					msg = ConvFromNetwork(buffer);
 					q = buffer;
@@ -933,8 +925,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 							200						// size of buffer
 						);
 
-					if (res)
-					{
+					if (res) {
 						msg += datetime;
 						msg += ' ';
 					}
@@ -948,29 +939,30 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 							200						// size of buffer
 						);
 
-					if (res)
-					{
+					if (res) {
 						msg += datetime;
 						msg += ' ';
 					}
 
-					if ((nDataLength - pos - 9) > 0)
-					{
+					if ((nDataLength - pos - 9) > 0) {
 						memcpy(q, p, nDataLength - pos - 9);
 						q += nDataLength - pos - 9;
 					}
 					break;
 				}
-				else
+				else {
 					*(q++) = *(p++);
+				}
 
 				pos++;
 			}
 			*q = 0;
-			if (q != buffer)
+			if (q != buffer) {
 				msg += ConvFromNetwork(buffer);
-			if (msg != _T(""))
+			}
+			if (!msg.empty()) {
 				ShowStatus(msg, *pData);
+			}
 			delete [] buffer;
 		}
 		break;
@@ -1003,8 +995,7 @@ void CMainFrame::ParseStatus(int nStatusID, unsigned char *pData, int nDataLengt
 		break;
 	default:
 		{
-			CString str;
-			str.Format(_T("Protocol error: Unexpected status id (%d)."), nStatusID);
+			std::wstring str = fz::sprintf(L"Protocol error: Unexpected status id (%d).", nStatusID);
 			ShowStatus(str, 1);
 		}
 		break;
@@ -1310,9 +1301,8 @@ void CMainFrame::DoConnect()
 		family = AF_INET;
 	}
 
-	CString msg;
-	msg.Format(L"Connecting to server %s:%u...", address.c_str(), port);
-	ShowStatus(msg, 0);
+	std::wstring str = fz::sprintf(L"Connecting to server %s:%u...", address.c_str(), port);
+	ShowStatus(str, 0);
 
 	m_pAdminSocket = new CAdminSocket(this);
 	m_pAdminSocket->Create(0, SOCK_STREAM, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE, std::wstring(), family);

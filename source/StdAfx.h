@@ -24,7 +24,7 @@
 #if !defined(AFX_STDAFX_H__0D7D6CEC_E1AA_4287_BB10_A97FA4D444B6__INCLUDED_)
 #define AFX_STDAFX_H__0D7D6CEC_E1AA_4287_BB10_A97FA4D444B6__INCLUDED_
 
-#define WIN32_LEAN_AND_MEAN		// Selten verwendete Teile der Windows-Header nicht einbinden
+#define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
 #include <windows.h>
@@ -34,8 +34,6 @@
 #include "shlobj.h"
 
 #include "config.h"
-
-#include "misc\stdstring.h"
 
 #include "MFC64bitFix.h"
 #include <list>
@@ -47,10 +45,11 @@
 
 #include "conversion.h"
 
+#include "misc/StdString.h"
 #include "AsyncSocketEx.h"
 
-#define FILEZILLA_SERVER_MESSAGE _T("FileZilla Server Message")
-#define FILEZILLA_THREAD_MESSAGE _T("FileZilla Thread Message")
+#define FILEZILLA_SERVER_MESSAGE L"FileZilla Server Message"
+#define FILEZILLA_THREAD_MESSAGE L"FileZilla Thread Message"
 
 const UINT WM_FILEZILLA_RELOADCONFIG = WM_APP;
 const UINT WM_FILEZILLA_SERVERMSG = (WM_APP + 1);
@@ -104,7 +103,7 @@ struct t_connectiondata
 	int userid;
 
 	// Set only by USERCONTROL_CONNOP_CHANGEUSER messages
-	CStdString user;
+	std::wstring user;
 
 	// Set only by USERCONTROL_CONNOP_ADD messages
 	TCHAR ip[40];
@@ -113,10 +112,10 @@ struct t_connectiondata
 
 	// Set only by USERCONTROL_CONNOP_TRANSFERINFO messages
 	unsigned char transferMode;
-	CStdString physicalFile;
-	CStdString logicalFile;
-	__int64 currentOffset;
-	__int64 totalSize;
+	std::wstring physicalFile;
+	std::wstring logicalFile;
+	int64_t currentOffset;
+	int64_t totalSize;
 };
 
 struct t_connectiondata_add
@@ -131,14 +130,14 @@ struct t_connectiondata_add
 
 struct t_connectiondata_changeuser
 {
-	CStdString user;
+	std::wstring user;
 };
 
 struct t_connectiondata_transferinfo
 {
 	unsigned char transferMode;
-	CStdString physicalFile;
-	CStdString logicalFile;
+	std::wstring physicalFile;
+	std::wstring logicalFile;
 	__int64 startOffset;
 	__int64 totalSize;
 };
@@ -168,4 +167,4 @@ std::unique_ptr<T> make_unique(Args&&... args)
 	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-#endif // !defined(AFX_STDAFX_H__0D7D6CEC_E1AA_4287_BB10_A97FA4D444B6__INCLUDED_)
+#endif

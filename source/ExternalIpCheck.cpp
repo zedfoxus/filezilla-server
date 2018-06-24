@@ -42,21 +42,23 @@ CExternalIpCheck::CExternalIpCheck(CServerThread *pOwner)
 	m_nFailedConnections = 0;
 	m_nElapsedSeconds = 0;
 
-	if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE))
+	if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE)) {
 		return;
+	}
 
-	if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 2)
+	if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 2) {
 		Start();
+	}
 	else if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 1) {
 		CStdString hostname = m_pOwner->m_pOptions->GetOption(OPTION_CUSTOMPASVIP);
 
 		SOCKADDR_IN sockAddr{};
 		sockAddr.sin_family = AF_INET;
-		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname));
+		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname).c_str());
 
 		if (sockAddr.sin_addr.s_addr == INADDR_NONE) {
 			LPHOSTENT lphost;
-			lphost = gethostbyname(ConvToLocal(hostname));
+			lphost = gethostbyname(ConvToLocal(hostname).c_str());
 			if (lphost != NULL) {
 				sockAddr.sin_addr.s_addr = ((LPIN_ADDR)lphost->h_addr)->s_addr;
 			}
@@ -70,8 +72,9 @@ CExternalIpCheck::CExternalIpCheck(CServerThread *pOwner)
 
 		const char *ip = inet_ntoa(sockAddr.sin_addr);
 
-		if (!ip)
+		if (!ip) {
 			return;
+		}
 
 		m_IP = ConvFromLocal(ip);
 	}
@@ -84,21 +87,23 @@ CExternalIpCheck::~CExternalIpCheck()
 
 void CExternalIpCheck::OnReceive(int nErrorCode)
 {
-	if (!m_bActive)
+	if (!m_bActive) {
 		return;
+	}
 
 	if (nErrorCode) {
 		m_bActive = FALSE;
 		Close();
-		m_nRetryCount++;
+		++m_nRetryCount;
 		return;
 	}
 	char buffer[1000];
 	int len = Receive(buffer, 999);
 
 	if (len == SOCKET_ERROR) {
-		if (GetLastError() == WSAEWOULDBLOCK)
+		if (GetLastError() == WSAEWOULDBLOCK) {
 			return;
+		}
 
 		Close();
 		m_nRetryCount++;
@@ -110,8 +115,9 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 
 	// Look for end of response header
 	char *p = strstr(buffer, "\r\n\r\n");
-	if (!p)
+	if (!p) {
 		p = strstr(buffer, "\n\n");
+	}
 
 	if (!p) {
 		Close();
@@ -121,8 +127,9 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 	}
 
 	// Remove leading whitespace
-	while (*p && (*p == '\n' || *p == '\r' || *p == ' ' || *p == '\t'))
+	while (*p && (*p == '\n' || *p == '\r' || *p == ' ' || *p == '\t')) {
 		++p;
+	}
 
 	if (!*p) {
 		Close();
@@ -133,8 +140,9 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 
 	// Keep everything up to the next whitespace
 	char * ip = p;
-	while (*p && *p != '\n' && *p != '\r' && *p != ' ' && *p != '\t')
+	while (*p && *p != '\n' && *p != '\r' && *p != ' ' && *p != '\t') {
 		++p;
+	}
 	*p = 0;
 
 	// Parse address
@@ -145,8 +153,9 @@ void CExternalIpCheck::OnReceive(int nErrorCode)
 	if (sockAddr.sin_addr.s_addr == INADDR_NONE) {
 		LPHOSTENT lphost;
 		lphost = gethostbyname(ip);
-		if (lphost != NULL)
+		if (lphost != NULL) {
 			sockAddr.sin_addr.s_addr = ((LPIN_ADDR)lphost->h_addr)->s_addr;
+		}
 		else {
 			Close();
 			m_nRetryCount++;
@@ -203,18 +212,17 @@ void CExternalIpCheck::OnConnect(int nErrorCode)
 
 void CExternalIpCheck::OnTimer()
 {
-	if (m_nElapsedSeconds <= 1000000)
+	if (m_nElapsedSeconds <= 1000000) {
 		m_nElapsedSeconds += TIMERINTERVAL;
+	}
 
-	if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE))
-	{
+	if (!m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE)) {
 		m_nRetryCount = 0;
 		Close();
 		m_bActive = FALSE;
 		return;
 	}
-	else if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 1)
-	{
+	else if (m_pOwner->m_pOptions->GetOptionVal(OPTION_CUSTOMPASVIPTYPE) == 1) {
 		m_nRetryCount = 0;
 		Close();
 		m_bActive = FALSE;
@@ -223,16 +231,15 @@ void CExternalIpCheck::OnTimer()
 		SOCKADDR_IN sockAddr{};
 
 		sockAddr.sin_family = AF_INET;
-		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname));
+		sockAddr.sin_addr.s_addr = inet_addr(ConvToLocal(hostname).c_str());
 
-		if (sockAddr.sin_addr.s_addr == INADDR_NONE)
-		{
+		if (sockAddr.sin_addr.s_addr == INADDR_NONE) {
 			LPHOSTENT lphost;
-			lphost = gethostbyname(ConvToLocal(hostname));
-			if (lphost != NULL)
+			lphost = gethostbyname(ConvToLocal(hostname).c_str());
+			if (lphost != NULL) {
 				sockAddr.sin_addr.s_addr = ((LPIN_ADDR)lphost->h_addr)->s_addr;
-			else
-			{
+			}
+			else {
 				Close();
 				m_nRetryCount++;
 				m_bActive = FALSE;
@@ -242,53 +249,48 @@ void CExternalIpCheck::OnTimer()
 
 		const char *ip = inet_ntoa(sockAddr.sin_addr);
 
-		if (!ip)
+		if (!ip) {
 			return;
+		}
 
 		m_IP = ConvFromLocal(ip);
 		m_nFailedConnections = 0;
 		return;
 	}
 
-	if (!m_bActive && m_nRetryCount)
-	{
-		if (m_nElapsedSeconds > 60 && m_nRetryCount < 5)
-		{
+	if (!m_bActive && m_nRetryCount) {
+		if (m_nElapsedSeconds > 60 && m_nRetryCount < 5) {
 			Start();
 			return;
 		}
-		else if (m_nElapsedSeconds > 300 && m_nRetryCount < 10)
-		{
+		else if (m_nElapsedSeconds > 300 && m_nRetryCount < 10) {
 			Start();
 			return;
 		}
-		else if (m_nElapsedSeconds > 900 && m_nRetryCount < 20)
-		{
+		else if (m_nElapsedSeconds > 900 && m_nRetryCount < 20) {
 			Start();
 			return;
 		}
-		else if (m_nElapsedSeconds > 3600)
-		{
+		else if (m_nElapsedSeconds > 3600) {
 			Start();
 			return;
 		}
 	}
-	else if (m_bActive)
-	{
-		if (m_nElapsedSeconds > 30)
-		{
+	else if (m_bActive) {
+		if (m_nElapsedSeconds > 30) {
 			m_bActive = FALSE;
 			Close();
 			m_nRetryCount++;
 			m_nElapsedSeconds = 0;
 		}
 	}
-	else
-	{
-		if (m_nElapsedSeconds > 300 && m_bTriggerUpdateCalled)
+	else {
+		if (m_nElapsedSeconds > 300 && m_bTriggerUpdateCalled) {
 			Start();
-		else if (m_nElapsedSeconds > 3600)
+		}
+		else if (m_nElapsedSeconds > 3600) {
 			Start();
+		}
 	}
 }
 

@@ -52,16 +52,14 @@ BOOL COptionsCompressionPage::IsDataValid()
 {
 	UpdateData();
 
-	if (_ttoi(m_LevelMin) < 1 || _ttoi(m_LevelMin) > 8)
-	{
+	if (_ttoi(m_LevelMin) < 1 || _ttoi(m_LevelMin) > 8) {
 		m_pOptionsDlg->ShowPage(this);
 		GetDlgItem(IDC_OPTIONS_COMPRESSION_LEVELMIN)->SetFocus();
 		AfxMessageBox(_T("Minimum compression level must be between 1 and 8"));
 		return false;
 	}
 
-	if (_ttoi(m_LevelMax) < 8 || _ttoi(m_LevelMax) > 9)
-	{
+	if (_ttoi(m_LevelMax) < 8 || _ttoi(m_LevelMax) > 9) {
 		m_pOptionsDlg->ShowPage(this);
 		GetDlgItem(IDC_OPTIONS_COMPRESSION_LEVELMAX)->SetFocus();
 		AfxMessageBox(_T("Maximum compression level must be between 8 and 9"));
@@ -70,8 +68,7 @@ BOOL COptionsCompressionPage::IsDataValid()
 
 
 
-	if (!ParseIPFilter(m_disallowedIPs))
-	{
+	if (!ParseIPFilter(std::wstring(m_disallowedIPs))) {
 		m_pOptionsDlg->ShowPage(this);
 		GetDlgItem(IDC_OPTIONS_COMPRESSION_DISALLOWED_IPS)->SetFocus();
 		AfxMessageBox(_T("Invalid IP address (range/mask) enterd."));

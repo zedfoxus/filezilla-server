@@ -1,71 +1,50 @@
 #include "stdafx.h"
 #include "conversion.h"
 
-CStdStringW ConvFromNetwork(const char* buffer)
+std::wstring ConvFromNetwork(std::string_view const& buffer)
 {
-	int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buffer, -1, 0, 0);
-	if (len)
-	{
-		CStdStringW str;
-		wchar_t* out = str.GetBuffer(len + 2);
-		len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buffer, -1, out, len + 1);
-		str.ReleaseBuffer();
-		if (!len)
-			str = L"";
-		return str;
-	}
-	len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, buffer, -1, 0, 0);
-	if (len)
-	{
-		CStdStringW str;
-		wchar_t* out = str.GetBuffer(len + 2);
-		len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, buffer, -1, out, len + 1);
-		str.ReleaseBuffer();
-		if (!len)
-			str = L"";
+	int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buffer.data(), buffer.size(), 0, 0);
+	if (len) {
+		std::wstring str;
+		str.resize(len);
+		len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buffer.data(), buffer.size(), str.data(), len);
+		if (!len) {
+			return std::wstring();
+		}
 		return str;
 	}
 
-	return L"";
+	return ConvFromLocal(buffer);
 }
 
-CStdStringA ConvToLocal(const CStdStringW& str)
+std::string ConvToLocal(std::wstring_view const& str)
 {
-	int len = WideCharToMultiByte(CP_ACP, 0, str, -1, 0, 0, 0, 0);
-	if (!len)
-		return "";
-
-	CStdStringA outStr;
-	char* output = outStr.GetBuffer(len + 2);
-	if (!WideCharToMultiByte(CP_ACP, 0, str, -1, output, len + 1, 0, 0))
-	{
-		output[0] = 0;
-		outStr.ReleaseBuffer();
-		return "";
+	int len = WideCharToMultiByte(CP_ACP, 0, str.data(), str.size(), 0, 0, 0, 0);
+	if (!len) {
+		return std::string();
 	}
-	outStr.ReleaseBuffer();
 
+	std::string outStr;
+	outStr.resize(len);
+	char* output = outStr.data();
+	if (!WideCharToMultiByte(CP_ACP, 0, str.data(), str.size(), output, len, 0, 0)) {
+		return std::string();
+	}
 	return outStr;
 }
 
-CStdStringA ConvToLocal(const CStdStringA& str)
+std::wstring ConvFromLocal(std::string_view const& local)
 {
-	return str;
-}
-
-CStdStringW ConvFromLocal(const CStdStringA& local)
-{
-	int len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, local, -1, 0, 0);
-	if (len)
-	{
-		CStdStringW str;
-		wchar_t* out = str.GetBuffer(len + 2);
-		len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, local, -1, out, len + 1);
-		str.ReleaseBuffer();
-		if (!len)
-			str = L"";
+	int len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, local.data(), local.size(), 0, 0);
+	if (len) {
+		std::wstring str;
+		str.resize(len);
+		len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, local.data(), local.size(), str.data(), len);
+		if (!len) {
+			return std::wstring();
+		}
 		return str;
 	}
 
-	return L"";
+	return std::wstring();
 }

@@ -40,7 +40,7 @@ public:
 
 // Operationen
 public:
-	void ShowStatus(LPCTSTR status, int type);
+	void ShowStatus(std::wstring const& status, int type);
 
 // Überschreibungen
 	// Vom Klassen-Assistenten generierte virtuelle Funktionsüberschreibungen

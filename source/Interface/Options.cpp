@@ -256,7 +256,7 @@ void COptions::Init()
 		if (!textNode || !textNode->ToText()) {
 			continue;
 		}
-		CString value = ConvFromNetwork(textNode->Value());
+		std::wstring value = ConvFromNetwork(textNode->Value());
 
 		for (int i = 0; i < IOPTIONS_NUM; ++i) {
 			if (name != m_Options[i].name) {
@@ -264,18 +264,16 @@ void COptions::Init()
 			}
 
 			if (m_OptionsCache[i].bCached) {
-				::AfxTrace( _T("Item '%s' is already in cache, ignoring item\n"), name);
 				break;
 			}
 
 			if (type == "numeric") {
 				if (m_Options[i].nType != 1) {
-					::AfxTrace( _T("Type mismatch for option '%s'. Type is %d, should be %d"), name, m_Options[i].nType, 1);
 					break;
 				}
 				m_OptionsCache[i].bCached = TRUE;
 				m_OptionsCache[i].nType = 1;
-				_int64 value64=_ttoi64(value);
+				_int64 value64 = _ttoi64(value.c_str());
 
 				switch (i + 1)
 				{

@@ -8,11 +8,11 @@
 namespace XML
 {
 
-CStdString ReadText(TiXmlElement* pElement)
+std::wstring ReadText(TiXmlElement* pElement)
 {
 	TiXmlNode* textNode = pElement->FirstChild();
 	if (!textNode || !textNode->ToText()) {
-		return _T("");
+		return std::wstring();
 	}
 
 	return ConvFromNetwork(textNode->Value());
@@ -23,7 +23,6 @@ void SetText(TiXmlElement* pElement, std::wstring const& text)
 	pElement->Clear();
 	pElement->LinkEndChild(new TiXmlText(fz::to_utf8(text).c_str()));
 }
-
 
 bool Load(TiXmlDocument & document, CStdString const& file)
 {

@@ -19,9 +19,11 @@
 #include "stdafx.h"
 #include "version.h"
 
-CStdString GetVersionString(bool include_suffix)
+#include <libfilezilla/format.hpp>
+
+std::wstring GetVersionString(bool include_suffix)
 {
-	CStdString version;
+	std::wstring version;
 
 	//Fill the version info
 	TCHAR fullpath[MAX_PATH + 10];
@@ -39,7 +41,7 @@ CStdString GetVersionString(bool include_suffix)
 		if (VerQueryValue(pBlock, _T("\\"), &ptr, &ptrlen)) {
 			VS_FIXEDFILEINFO *fi = (VS_FIXEDFILEINFO*)ptr;
 
-			CStdString suffix;
+			std::wstring suffix;
 			if (fi->dwFileVersionMS >> 16) {
 				//v1.00+
 				if (include_suffix) {
@@ -49,22 +51,25 @@ CStdString GetVersionString(bool include_suffix)
 				if (fi->dwFileVersionLS >> 16) {
 					TCHAR ch = 'a';
 					ch += static_cast<TCHAR>(fi->dwFileVersionLS >> 16) - 1;
-					version.Format(_T("%d.%d%c") + suffix, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF, ch);
+					version = fz::sprintf(L"%d.%d%c" + suffix, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF, ch);
 				}
-				else
-					version.Format(_T("%d.%d") + suffix, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF);
+				else {
+					version = fz::sprintf(L"%d.%d" + suffix, fi->dwFileVersionMS >> 16, fi->dwFileVersionMS & 0xFFFF);
+				}
 			}
 			else {
 				if (include_suffix) {
-					suffix = _T(" beta");
+					suffix = L" beta";
 				}
 				//beta versions
-				if ((fi->dwFileVersionLS & 0xFFFF) / 100)
+				if ((fi->dwFileVersionLS & 0xFFFF) / 100) {
 					//final version
-					version.Format(_T("0.%d.%d%c") + suffix, fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS>>16, (fi->dwFileVersionLS & 0xFFFF) / 100 + 'a' - 1);
-				else
+					version = fz::sprintf(L"0.%d.%d%c" + suffix, fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS >> 16, (fi->dwFileVersionLS & 0xFFFF) / 100 + 'a' - 1);
+				}
+				else {
 					//final version
-					version.Format(_T("0.%d.%d") + suffix, fi->dwFileVersionMS&0xFFFF, fi->dwFileVersionLS >> 16);
+					version = fz::sprintf(L"0.%d.%d" + suffix, fi->dwFileVersionMS & 0xFFFF, fi->dwFileVersionLS >> 16);
+				}
 			}
 
 		}
@@ -74,9 +79,9 @@ CStdString GetVersionString(bool include_suffix)
 	return version;
 }
 
-CStdString GetProductVersionString()
+std::wstring GetProductVersionString()
 {
-	CStdString ProductName = _T("Unknown");
+	std::wstring ProductName = L"Unknown";
 
 	//Fill the version info
 	TCHAR fullpath[MAX_PATH + 10];
@@ -127,5 +132,5 @@ CStdString GetProductVersionString()
 		delete [] str;
 		delete [] pBlock;
 	}
-	return ProductName + _T(" ") + GetVersionString(true);
+	return ProductName + L" " + GetVersionString(true);
 }

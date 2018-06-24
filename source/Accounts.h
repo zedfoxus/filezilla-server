@@ -8,9 +8,9 @@ class t_directory
 public:
 	std::wstring dir;
 	std::vector<std::wstring> aliases;
-	BOOL bFileRead{}, bFileWrite{}, bFileDelete{}, bFileAppend{};
-	BOOL bDirCreate{}, bDirDelete{}, bDirList{}, bDirSubdirs{}, bIsHome{};
-	BOOL bAutoCreate{};
+	bool bFileRead{}, bFileWrite{}, bFileDelete{}, bFileAppend{};
+	bool bDirCreate{}, bDirDelete{}, bDirList{}, bDirSubdirs{}, bIsHome{};
+	bool bAutoCreate{};
 };
 
 enum sltype
@@ -23,22 +23,26 @@ class t_group
 {
 public:
 	t_group();
-	virtual ~t_group() {}
+	virtual ~t_group() = default;
 
 	virtual int GetRequiredBufferLen() const;
-	virtual int GetRequiredStringBufferLen(std::wstring const& str) const;
 	virtual unsigned char * FillBuffer(unsigned char *p) const;
-	virtual void FillString(unsigned char *&p, std::wstring const& str) const;
 	virtual unsigned char * ParseBuffer(unsigned char *pBuffer, int length);
+	
+	int GetRequiredStringBufferLen(std::string const& str) const;
+	int GetRequiredStringBufferLen(std::wstring const& str) const;
+	
+	void FillString(unsigned char *&p, std::string const& str) const;
+	void FillString(unsigned char *&p, std::wstring const& str) const;
+	
+	bool BypassUserLimit() const;
+	int GetUserLimit() const;
+	int GetIpLimit() const;
+	bool IsEnabled() const;
+	bool ForceSsl() const;
 
-	virtual bool BypassUserLimit() const;
-	virtual int GetUserLimit() const;
-	virtual int GetIpLimit() const;
-	virtual bool IsEnabled() const;
-	virtual bool ForceSsl() const;
-
-	virtual int GetCurrentSpeedLimit(sltype type) const;
-	virtual bool BypassServerSpeedLimit(sltype type) const;
+	int GetCurrentSpeedLimit(sltype type) const;
+	bool BypassServerSpeedLimit(sltype type) const;
 
 	bool AccessAllowed(std::wstring const& ip) const;
 
@@ -60,25 +64,24 @@ public:
 
 	t_group const* pOwner{};
 
-	bool b8plus3{};
-
 protected:
+	bool ParseString(unsigned char const* endMarker, unsigned char *&p, std::string &string);
 	bool ParseString(unsigned char const* endMarker, unsigned char *&p, std::wstring &string);
 };
 
 class t_user : public t_group
 {
 public:
-	t_user();
+	t_user() = default;
 
-	virtual int GetRequiredBufferLen() const;
-	virtual unsigned char * FillBuffer(unsigned char *p) const;
-	virtual unsigned char * ParseBuffer(unsigned char *pBuffer, int length);
+	virtual int GetRequiredBufferLen() const override;
+	virtual unsigned char * FillBuffer(unsigned char *p) const override;
+	virtual unsigned char * ParseBuffer(unsigned char *pBuffer, int length)  override;
 	void generateSalt(); // Generates a new random salt of length 64, using all printable ASCII characters.
 
 	std::wstring user;
 	std::wstring password;
-	std::wstring salt;
+	std::string salt;
 };
 
-#endif //#define ACCOUNTS_H_INCLUDED
+#endif

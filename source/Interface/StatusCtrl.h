@@ -41,7 +41,7 @@ public:
 	CStatusCtrl();
 	virtual ~CStatusCtrl();
 
-	void ShowStatus(LPCTSTR status, int nType);
+	void ShowStatus(std::wstring const& status, int nType);
 	void Run();
 
 //	virtual BOOL Create( DWORD in_dwStyle, const RECT& in_rcRect,
@@ -55,7 +55,7 @@ protected:
 
 	struct t_buffer
 	{
-		CString status;
+		std::wstring status;
 		int pos;
 		int type;
 	};

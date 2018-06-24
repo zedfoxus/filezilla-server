@@ -24,6 +24,7 @@
 #include "../platform.h"
 #include "../misc\md5.h"
 
+#include <libfilezilla/format.hpp>
 #include <libfilezilla/string.hpp>
 
 #define BUFSIZE 4096
@@ -132,8 +133,8 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				return FALSE;
 			}
 			if (m_pRecvBuffer[0] != 'F' || m_pRecvBuffer[1] != 'Z' || m_pRecvBuffer[2] != 'S') {
-				CString str;
-				str.Format(_T("Protocol error: Unknown protocol identifier (0x%d 0x%d 0x%d). Most likely connected to the wrong port."), (int)m_pRecvBuffer[0], (int)m_pRecvBuffer[1], (int)m_pRecvBuffer[2]);
+				std::wstring str;
+				str = fz::sprintf(L"Protocol error: Unknown protocol identifier (0x%d 0x%d 0x%d). Most likely connected to the wrong port.", m_pRecvBuffer[0], m_pRecvBuffer[1], m_pRecvBuffer[2]);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
 				return FALSE;
@@ -143,8 +144,8 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			}
 			len = m_pRecvBuffer[3] * 256 + m_pRecvBuffer[4];
 			if (len != 4) {
-				CString str;
-				str.Format(_T("Protocol error: Invalid server version length (%lu)."), len);
+				std::wstring str;
+				str = fz::sprintf(L"Protocol error: Invalid server version length (%lu).", len);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
 				return FALSE;
@@ -155,8 +156,8 @@ BOOL CAdminSocket::ParseRecvBuffer()
 
 			int version = (int)GET32(m_pRecvBuffer + 5);
 			if (version != SERVER_VERSION) {
-				CString str;
-				str.Format(_T("Protocol warning: Server version mismatch: Server version is %d.%d.%d.%d, interface version is %d.%d.%d.%d"),
+				std::wstring str;
+				str = fz::sprintf(L"Protocol warning: Server version mismatch: Server version is %d.%d.%d.%d, interface version is %d.%d.%d.%d",
 						   (version >> 24) & 0xFF,
 						   (version >> 16) & 0xFF,
 						   (version >>  8) & 0xFF,
@@ -173,8 +174,8 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			}
 			len = m_pRecvBuffer[9] * 256 + m_pRecvBuffer[10];
 			if (len != 4) {
-				CString str;
-				str.Format(_T("Protocol error: Invalid protocol version length (%lu)."), len);
+				std::wstring str;
+				str = fz::sprintf(L"Protocol error: Invalid protocol version length (%u).", len);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
 				return FALSE;
@@ -184,8 +185,8 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			}
 			version = (int)GET32(m_pRecvBuffer + 11);
 			if (version != PROTOCOL_VERSION) {
-				CString str;
-				str.Format(_T("Protocol error: Protocol version mismatch: Server protocol version is %d.%d.%d.%d, interface protocol version is %d.%d.%d.%d"),
+				std::wstring str;
+				str = fz::sprintf(L"Protocol error: Protocol version mismatch: Server protocol version is %d.%d.%d.%d, interface protocol version is %d.%d.%d.%d",
 						   (version >> 24) & 0xFF,
 						   (version >> 16) & 0xFF,
 						   (version >>  8) & 0xFF,
@@ -209,8 +210,8 @@ BOOL CAdminSocket::ParseRecvBuffer()
 			return FALSE;
 		}
 		if ((m_pRecvBuffer[0]&0x03) > 2) {
-			CString str;
-			str.Format(_T("Protocol error: Unknown command type (%d), closing connection."), (int)(m_pRecvBuffer[0]&0x03));
+			std::wstring str;
+			str = fz::sprintf(L"Protocol error: Unknown command type (%d), closing connection.", m_pRecvBuffer[0] & 0x03);
 			m_pMainFrame->ShowStatus(str, 1);
 			Close();
 			return FALSE;
@@ -269,8 +270,8 @@ BOOL CAdminSocket::ParseRecvBuffer()
 				m_pMainFrame->ParseReply((m_pRecvBuffer[0] & 0x7C) >> 2, m_pRecvBuffer + 5, len);
 			}
 			else {
-				CString str;
-				str.Format(_T("Protocol error: Unknown command ID (%d), closing connection."), (int)(m_pRecvBuffer[0]&0x7C)>>2);
+				std::wstring str;
+				str = fz::sprintf(L"Protocol error: Unknown command ID (%d), closing connection.", (m_pRecvBuffer[0]&0x7C) >> 2);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
 				return FALSE;
@@ -286,8 +287,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 		int nType = *m_pRecvBuffer & 0x03;
 		int nID = (*m_pRecvBuffer & 0x7C) >> 2;
 		if (nType > 2 || nType < 1) {
-			CString str;
-			str.Format(_T("Protocol error: Unknown command type (%d), closing connection."), nType);
+			std::wstring str = fz::sprintf(L"Protocol error: Unknown command type (%d), closing connection.", nType);
 			m_pMainFrame->ShowStatus(str, 1);
 			Close();
 			return FALSE;
@@ -295,8 +295,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 		else {
 			len = (unsigned int)GET32(m_pRecvBuffer + 1);
 			if (len > 0xFFFFFF) {
-				CString str;
-				str.Format(_T("Protocol error: Invalid data length (%lu) for command (%d:%d)"), len, nType, nID);
+				std::wstring str = fz::sprintf(L"Protocol error: Invalid data length (%lu) for command (%d:%d)", len, nType, nID);
 				m_pMainFrame->ShowStatus(str, 1);
 				Close();
 				return FALSE;
@@ -312,8 +311,7 @@ BOOL CAdminSocket::ParseRecvBuffer()
 					m_pMainFrame->ParseStatus(nID, m_pRecvBuffer + 5, len);
 				}
 				else {
-					CString str;
-					str.Format(_T("Protocol warning: Command type %d not implemented."), nType);
+					std::wstring str = fz::sprintf(L"Protocol warning: Command type %d not implemented.", nType);
 					m_pMainFrame->ShowStatus(str, 1);
 				}
 

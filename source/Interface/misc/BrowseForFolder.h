@@ -133,7 +133,6 @@ protected:
 private:
 	static int __stdcall BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData);
 
-	typedef std::auto_ptr<char> AUTO_STR;
 	CString m_pchTitle;
 
 	BROWSEINFO m_bi;

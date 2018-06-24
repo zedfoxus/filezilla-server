@@ -23,12 +23,14 @@ class COptions;
 class CFileLogger final
 {
 public:
-	BOOL CheckLogFile();
-	BOOL Log(LPCTSTR msg);
 	CFileLogger(COptions *pOptions);
 	~CFileLogger();
+
+	bool CheckLogFile();
+	bool Log(LPCTSTR msg);
+
 protected:
-	LPTSTR m_pFileName;
+	std::wstring fileName_;
 	COptions *m_pOptions;
 	HANDLE m_hLogFile;
 };

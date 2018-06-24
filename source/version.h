@@ -18,5 +18,5 @@
 
 #pragma once
 
-CStdString GetProductVersionString();
-CStdString GetVersionString(bool include_suffix);
+std::wstring GetProductVersionString();
+std::wstring GetVersionString(bool include_suffix);

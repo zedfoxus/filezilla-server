@@ -46,7 +46,7 @@ public:
 	static BOOL FreeXML(TiXmlElement *pXML, bool save);
 
 	BOOL ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOOL bFromLocal = FALSE);
-	void SetOption(int nOptionID, LPCTSTR value, bool save = true);
+	void SetOption(int nOptionID, std::wstring str, bool save = true);
 	void SetOption(int nOptionID, _int64 value, bool save = true);
 	int GetCurrentSpeedLimit(int nMode);
 	void ReloadConfig();

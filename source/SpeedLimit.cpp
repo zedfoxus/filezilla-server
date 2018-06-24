@@ -244,87 +244,105 @@ CSpeedLimit::t_time CSpeedLimit::ReadTime(TiXmlElement* pElement)
 {
 	CSpeedLimit::t_time t;
 
-	CStdString str = ConvFromNetwork(pElement->Attribute("Hour"));
-	int n = _ttoi(str);
-	if (n < 0 || n > 23)
-		n = 0;
-	t.h = n;
-	str = ConvFromNetwork(pElement->Attribute("Minute"));
-	n = _ttoi(str);
-	if (n < 0 || n > 59)
-		n = 0;
-	t.m = n;
-	str = ConvFromNetwork(pElement->Attribute("Second"));
-	n = _ttoi(str);
-	if (n < 0 || n > 59)
-		n = 0;
-	t.s = n;
+	auto p = pElement->Attribute("Hour");
+	if (p) {
+		std::string str(p);
+		t.h = fz::to_integral<int>(str);
+		if (t.h < 0 || t.h > 23) {
+			t.h = 0;
+		}
+	}
+	p = pElement->Attribute("Minute");
+	if (p) {
+		std::string str(p);
+		t.m = fz::to_integral<int>(str);
+		if (t.m < 0 || t.m > 59) {
+			t.m = 0;
+		}
+	}
+	p = pElement->Attribute("Second");
+	if (p) {
+		std::string str(p);
+		t.h = fz::to_integral<int>(str);
+		if (t.s < 0 || t.s > 59) {
+			t.s = 0;
+		}
+	}
 
 	return t;
 }
 
 bool CSpeedLimit::Load(TiXmlElement* pElement)
 {
-	CStdString str;
-	str = ConvFromNetwork(pElement->Attribute("Speed"));
-	int n = _ttoi(str);
-	if (n < 0)
-		n = 0;
-	else if (n > 1048576)
-		n = 1048576;
-	m_Speed = n;
+	auto p = pElement->Attribute("Speed");
+	if (p) {
+		std::string str(p);
+		m_Speed = fz::to_integral<int>(str);
+		if (m_Speed < 0) {
+			m_Speed = 0;
+		}
+		else if (m_Speed > 1048576) {
+			m_Speed = 1048576;
+		}
+	}
+	else {
+		m_Speed = 0;
+	}
 
 	TiXmlElement* pDays = pElement->FirstChildElement("Days");
-	if (pDays)
-	{
-		str = XML::ReadText(pDays);
-		if (str != _T(""))
-			n = _ttoi(str);
-		else
-			n = 0x7F;
-		m_Day = n & 0x7F;
+	if (pDays) {
+		std::wstring str = XML::ReadText(pDays);
+		if (str.empty()) {
+			m_Day = 0x7F;
+		}
+		else {
+			m_Day = fz::to_integral<int>(str);
+		}
+		m_Day &= 0x7F;
 	}
 
 	m_DateCheck = false;
 
 	TiXmlElement* pDate = pElement->FirstChildElement("Date");
-	if (pDate)
-	{
+	if (pDate) {
 		m_DateCheck = true;
-		str = ConvFromNetwork(pDate->Attribute("Year"));
-		n = _ttoi(str);
-		if (n < 1900 || n > 3000)
+		auto p = pDate->Attribute("Year");
+		int n = fz::to_integral<int>(p ? p : std::string());
+		if (n < 1900 || n > 3000) {
 			n = 2003;
+		}
 		m_Date.y = n;
-		str = ConvFromNetwork(pDate->Attribute("Month"));
-		n = _ttoi(str);
-		if (n < 1 || n > 12)
+		p = pDate->Attribute("Month");
+		n = fz::to_integral<int>(p ? p : std::string());
+		if (n < 1 || n > 12) {
 			n = 1;
+		}
 		m_Date.m = n;
-		str = ConvFromNetwork(pDate->Attribute("Day"));
-		n = _ttoi(str);
-		if (n < 1 || n > 31)
+		p = pDate->Attribute("Day");
+		n = fz::to_integral<int>(p ? p : std::string());
+		if (n < 1 || n > 31) {
 			n = 1;
+		}
 		m_Date.d = n;
 	}
 
 	TiXmlElement* pFrom = pElement->FirstChildElement("From");
-	if (pFrom)
-	{
+	if (pFrom) {
 		m_FromCheck = true;
 		m_FromTime = ReadTime(pFrom);
 	}
-	else
+	else {
 		m_FromCheck = false;
+	}
 
 	TiXmlElement* pTo = pElement->FirstChildElement("To");
-	if (pTo)
-	{
+	if (pTo) {
 		m_ToCheck = true;
 		m_ToTime = ReadTime(pTo);
 	}
-	else
+	else {
 		m_ToCheck = false;
+	}
 
 	return true;
 }
