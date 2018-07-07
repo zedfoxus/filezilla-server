@@ -50,6 +50,9 @@
 #include <map>
 #include <vector>
 #include <list>
+#include <string>
+
+using namespace std::literals::string_literals;
 
 #include <assert.h>
 #include <iostream>
@@ -61,7 +64,6 @@
 #include <afxdhtml.h>
 
 #define CStdString CString
-#define CStdStringW CStringW
 #define CStdStringA CStringA
 
 #include "../conversion.h"

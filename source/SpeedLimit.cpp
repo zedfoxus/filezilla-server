@@ -23,25 +23,26 @@
 #include "stdafx.h"
 #include "SpeedLimit.h"
 #include "xml_utils.h"
-#include "tinyxml/tinyxml.h"
+#include "pugixml/pugixml.hpp"
 
 #include <libfilezilla/string.hpp>
 
 bool CSpeedLimit::IsItActive(const SYSTEMTIME &time) const
 {
-	if (m_DateCheck)
-	{
+	if (m_DateCheck) {
 		if ((m_Date.y != time.wYear) ||
 			(m_Date.m != time.wMonth) ||
 			(m_Date.d != time.wDay))
+		{
 			return false;
+		}
 	}
-	else
-	{
+	else {
 		int i = (time.wDayOfWeek + 6) % 7;
 
-		if (!(m_Day & ( 1 << i)))
+		if (!(m_Day & (1 << i))) {
 			return false;
+		}
 	}
 
 	int curTime = time.wHour * 60 * 60 +
@@ -50,38 +51,41 @@ bool CSpeedLimit::IsItActive(const SYSTEMTIME &time) const
 
 	int fromTime = 0;
 	int toTime = 0;
-	if (m_ToCheck)
+	if (m_ToCheck) {
 		toTime = m_ToTime.h * 60 * 60 +
-				 m_ToTime.m * 60 +
-				 m_ToTime.s;
-	if (m_FromCheck)
-		fromTime = m_FromTime.h * 60 * 60 +
-				   m_FromTime.m * 60 +
-				   m_FromTime.s;
-
-	if (m_FromCheck && m_ToCheck)
-	{
-		int span = toTime - fromTime;
-		if (span < 0)
-			span += 24 * 60 * 60;
-		int ref = curTime - fromTime;
-		if (ref < 0)
-			ref += 24 * 60 * 60;
-		if (span < ref)
-			return false;
+		         m_ToTime.m * 60 +
+		         m_ToTime.s;
 	}
-	else
-	{
-		if (m_ToCheck)
-		{
-			if (toTime < curTime)
+	if (m_FromCheck) {
+		fromTime = m_FromTime.h * 60 * 60 +
+		           m_FromTime.m * 60 +
+		           m_FromTime.s;
+	}
+
+	if (m_FromCheck && m_ToCheck) {
+		int span = toTime - fromTime;
+		if (span < 0) {
+			span += 24 * 60 * 60;
+		}
+		int ref = curTime - fromTime;
+		if (ref < 0) {
+			ref += 24 * 60 * 60;
+		}
+		if (span < ref) {
+			return false;
+		}
+	}
+	else {
+		if (m_ToCheck) {
+			if (toTime < curTime) {
 				return false;
+			}
 		}
 
-		if (m_FromCheck)
-		{
-			if (fromTime > curTime)
+		if (m_FromCheck) {
+			if (fromTime > curTime) {
 				return false;
+			}
 		}
 	}
 
@@ -142,8 +146,9 @@ unsigned char * CSpeedLimit::FillBuffer(unsigned char *p) const
 
 unsigned char * CSpeedLimit::ParseBuffer(unsigned char *pBuffer, int length)
 {
-	if (length < GetRequiredBufferLen())
+	if (length < GetRequiredBufferLen()) {
 		return 0;
+	}
 
 	unsigned char *p = pBuffer;
 
@@ -152,53 +157,51 @@ unsigned char * CSpeedLimit::ParseBuffer(unsigned char *pBuffer, int length)
 	m_Speed |= *p++ << 8;
 	m_Speed |= *p++;
 
-	if (m_Speed > 1048576)
+	if (m_Speed > 1048576) {
 		m_Speed = 1048576;
+	}
 
 	char tmp[4] = {0};
 
-	if (memcmp(p, tmp, 4))
-	{
+	if (memcmp(p, tmp, 4)) {
 		m_DateCheck = true;
 		m_Date.y = *p++ << 8;
 		m_Date.y |= *p++;
 		m_Date.m = *p++;
 		m_Date.d = *p++;
-		if (m_Date.y < 1900 || m_Date.y > 3000 || m_Date.m < 1 || m_Date.m > 12 || m_Date.d < 1 || m_Date.d > 31)
+		if (m_Date.y < 1900 || m_Date.y > 3000 || m_Date.m < 1 || m_Date.m > 12 || m_Date.d < 1 || m_Date.d > 31) {
 			return false;
+		}
 	}
-	else
-	{
+	else {
 		p += 4;
 		m_DateCheck = false;
 	}
 
-	if (memcmp(p, tmp, 3))
-	{
+	if (memcmp(p, tmp, 3)) {
 		m_FromCheck = true;
 		m_FromTime.h = *p++;
 		m_FromTime.m = *p++;
 		m_FromTime.s = *p++;
-		if (m_FromTime.h > 23 || m_FromTime.m > 59 || m_FromTime.s > 59)
+		if (m_FromTime.h > 23 || m_FromTime.m > 59 || m_FromTime.s > 59) {
 			return false;
+		}
 	}
-	else
-	{
+	else {
 		p += 3;
 		m_FromCheck = false;
 	}
 
-	if (memcmp(p, tmp, 3))
-	{
-		m_ToCheck = TRUE;
+	if (memcmp(p, tmp, 3)) {
+		m_ToCheck = true;
 		m_ToTime.h = *p++;
 		m_ToTime.m = *p++;
 		m_ToTime.s = *p++;
-		if (m_ToTime.h > 23 || m_ToTime.m > 59 || m_ToTime.s > 59)
+		if (m_ToTime.h > 23 || m_ToTime.m > 59 || m_ToTime.s > 59) {
 			return false;
+		}
 	}
-	else
-	{
+	else {
 		p += 3;
 		m_ToCheck = false;
 	}
@@ -208,137 +211,107 @@ unsigned char * CSpeedLimit::ParseBuffer(unsigned char *pBuffer, int length)
 	return p;
 }
 
-static void SaveTime(TiXmlElement* pElement, CSpeedLimit::t_time t)
+static void SaveTime(pugi::xml_node element, CSpeedLimit::t_time t)
 {
-	pElement->SetAttribute("Hour", t.h);
-	pElement->SetAttribute("Minute", t.m);
-	pElement->SetAttribute("Second", t.s);
+	element.append_attribute("Hour").set_value(t.h);
+	element.append_attribute("Minute").set_value(t.m);
+	element.append_attribute("Second").set_value(t.s);
 }
 
-void CSpeedLimit::Save(TiXmlElement* pElement) const
+void CSpeedLimit::Save(pugi::xml_node & element) const
 {
-	pElement->SetAttribute("Speed", m_Speed);
+	element.append_attribute("Speed").set_value(m_Speed);
 
-	TiXmlElement* pDays = pElement->LinkEndChild(new TiXmlElement("Days"))->ToElement();
-	XML::SetText(pDays, fz::to_wstring(m_Day));
+	auto days = element.append_child("Days");
+	days.text().set(m_Day);
 
 	if (m_DateCheck) {
-		TiXmlElement* pDate = pElement->LinkEndChild(new TiXmlElement("Date"))->ToElement();
-		pDate->SetAttribute("Year", m_Date.y);
-		pDate->SetAttribute("Month", m_Date.m);
-		pDate->SetAttribute("Day", m_Date.d);
+		auto date = element.append_child("Date");
+		date.append_attribute("Year").set_value(m_Date.y);
+		date.append_attribute("Month").set_value(m_Date.m);
+		date.append_attribute("Day").set_value(m_Date.d);
 	}
 
 	if (m_FromCheck) {
-		TiXmlElement* pFrom = pElement->LinkEndChild(new TiXmlElement("From"))->ToElement();
-		SaveTime(pFrom, m_FromTime);
+		auto from = element.append_child("From");
+		SaveTime(from, m_FromTime);
 	}
 
 	if (m_ToCheck) {
-		TiXmlElement* pTo = pElement->LinkEndChild(new TiXmlElement("To"))->ToElement();
-		SaveTime(pTo, m_ToTime);
+		auto to = element.append_child("To");
+		SaveTime(to, m_ToTime);
 	}
 }
 
-CSpeedLimit::t_time CSpeedLimit::ReadTime(TiXmlElement* pElement)
+static CSpeedLimit::t_time ReadTime(pugi::xml_node const& element)
 {
 	CSpeedLimit::t_time t;
 
-	auto p = pElement->Attribute("Hour");
-	if (p) {
-		std::string str(p);
-		t.h = fz::to_integral<int>(str);
-		if (t.h < 0 || t.h > 23) {
-			t.h = 0;
-		}
-	}
-	p = pElement->Attribute("Minute");
-	if (p) {
-		std::string str(p);
-		t.m = fz::to_integral<int>(str);
-		if (t.m < 0 || t.m > 59) {
-			t.m = 0;
-		}
-	}
-	p = pElement->Attribute("Second");
-	if (p) {
-		std::string str(p);
-		t.h = fz::to_integral<int>(str);
-		if (t.s < 0 || t.s > 59) {
-			t.s = 0;
-		}
+	t.h = element.attribute("Hour").as_int();
+	if (t.h < 0 || t.h > 23) {
+		t.h = 0;
 	}
 
+	t.m = element.attribute("Minute").as_int();
+	if (t.m < 0 || t.m > 59) {
+		t.m = 0;
+	}
+
+	t.s = element.attribute("Second").as_int();
+	if (t.s < 0 || t.s > 59) {
+		t.s = 0;
+	}
+	
 	return t;
 }
 
-bool CSpeedLimit::Load(TiXmlElement* pElement)
+bool CSpeedLimit::Load(pugi::xml_node const& element)
 {
-	auto p = pElement->Attribute("Speed");
-	if (p) {
-		std::string str(p);
-		m_Speed = fz::to_integral<int>(str);
-		if (m_Speed < 0) {
-			m_Speed = 0;
-		}
-		else if (m_Speed > 1048576) {
-			m_Speed = 1048576;
-		}
-	}
-	else {
+	m_Speed = element.attribute("Speed").as_int();
+	if (m_Speed < 0) {
 		m_Speed = 0;
 	}
-
-	TiXmlElement* pDays = pElement->FirstChildElement("Days");
-	if (pDays) {
-		std::wstring str = XML::ReadText(pDays);
-		if (str.empty()) {
-			m_Day = 0x7F;
-		}
-		else {
-			m_Day = fz::to_integral<int>(str);
-		}
-		m_Day &= 0x7F;
+	else if (m_Speed > 1048576) {
+		m_Speed = 1048576;
 	}
+
+	m_Day = element.child("Days").text().as_int(0x7F) & 0x7F;
 
 	m_DateCheck = false;
 
-	TiXmlElement* pDate = pElement->FirstChildElement("Date");
-	if (pDate) {
+	auto date = element.child("Date");
+	if (date) {
 		m_DateCheck = true;
-		auto p = pDate->Attribute("Year");
-		int n = fz::to_integral<int>(p ? p : std::string());
-		if (n < 1900 || n > 3000) {
-			n = 2003;
+
+		m_Date.y = element.attribute("Year").as_int();
+		if (m_Date.y < 1900 || m_Date.y > 3000) {
+			m_Date.y = 2018;
 		}
-		m_Date.y = n;
-		p = pDate->Attribute("Month");
-		n = fz::to_integral<int>(p ? p : std::string());
-		if (n < 1 || n > 12) {
-			n = 1;
+
+		m_Date.m = element.attribute("Month").as_int();
+		if (m_Date.m < 1 || m_Date.m > 12) {
+			m_Date.m = 1;
 		}
-		m_Date.m = n;
-		p = pDate->Attribute("Day");
-		n = fz::to_integral<int>(p ? p : std::string());
-		if (n < 1 || n > 31) {
-			n = 1;
+
+		m_Date.d = element.attribute("Day").as_int();
+		if (m_Date.d < 1 || m_Date.d > 31) {
+			m_Date.d = 1;
 		}
-		m_Date.d = n;
 	}
 
-	TiXmlElement* pFrom = pElement->FirstChildElement("From");
-	if (pFrom) {
+	auto from = element.child("From");
+	if (from) {
 		m_FromCheck = true;
-		m_FromTime = ReadTime(pFrom);
+		m_FromTime = ReadTime(from);
 	}
 	else {
 		m_FromCheck = false;
 	}
 
-	TiXmlElement* pTo = pElement->FirstChildElement("To");
-	if (pTo) {
+	auto to = element.child("To");
+	if (to) {
 		m_ToCheck = true;
-		m_ToTime = ReadTime(pTo);
+		m_ToTime = ReadTime(to);
 	}
 	else {
 		m_ToCheck = false;

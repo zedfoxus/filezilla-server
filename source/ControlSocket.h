@@ -81,7 +81,7 @@ public:
 	CAsyncSslSocketLayer * GetSslLayer() { return m_pSslLayer; }
 
 protected:
-	BOOL DoUserLogin(LPCTSTR password);
+	BOOL DoUserLogin(std::wstring const& password);
 	BOOL UnquoteArgs(CStdString &args);
 	static int GetUserCount(const CStdString &user);
 	static void IncUserCount(const CStdString &user);

@@ -1,6 +1,6 @@
 // FileZilla Server - a Windows ftp server
 
-// Copyright (C) 2002-2016 - Tim Kosse <tim.kosse@filezilla-project.org>
+// Copyright (C) 2002-2018 - Tim Kosse <tim.kosse@filezilla-project.org>
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -16,16 +16,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-// Permissions.h: Schnittstelle für die Klasse CPermissions.
-//
-//////////////////////////////////////////////////////////////////////
-
-#if !defined(AFX_PERMISSIONS_H__33DEA50E_AA34_4190_9ACD_355BF3D72FE0__INCLUDED_)
-#define AFX_PERMISSIONS_H__33DEA50E_AA34_4190_9ACD_355BF3D72FE0__INCLUDED_
-
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
+#ifndef FILEZILLA_SERVER_SERVICE_PERMISSIONS_HEADER
+#define FILEZILLA_SERVER_SERVICE_PERMISSIONS_HEADER
 
 #include "Accounts.h"
 
@@ -50,14 +42,13 @@
 #define MD5_HEX_FORM_LENGTH			 32
 #define SHA512_HEX_FORM_LENGTH		128		//Length of the hex string representation of a SHA512 hash
 
-class TiXmlElement;
 class CPermissionsHelperWindow;
 class COptions;
 
 class CUser final : public t_user
 {
 public:
-	CStdString homedir;
+	std::wstring homedir;
 
 	// Replace :u and :g (if a group it exists)
 	void DoReplacements(std::wstring& path) const;
@@ -69,18 +60,18 @@ public:
 	 */
 	struct t_alias
 	{
-		CStdString targetFolder;
-		CStdString name;
+		std::wstring targetFolder;
+		std::wstring name;
 	};
 
 	void PrepareAliasMap();
 
 	// GetAliasTarget returns the target of the alias with the specified
 	// path or returns an empty string if the alias can't be found.
-	CStdString GetAliasTarget(const CStdString& virtualPath) const;
+	std::wstring GetAliasTarget(std::wstring const& virtualPath) const;
 
-	std::map<CStdString, CStdString> virtualAliases;
-	std::multimap<CStdString, CStdString> virtualAliasNames;
+	std::map<std::wstring, std::wstring> virtualAliases;
+	std::multimap<std::wstring, std::wstring> virtualAliasNames;
 };
 
 struct t_dirlisting
@@ -107,7 +98,7 @@ public:
 	CPermissions(std::function<void()> const& updateCallback);
 	~CPermissions();
 
-	typedef void (*addFunc_t)(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
+	typedef void (*addFunc_t)(std::list<t_dirlisting> &result, bool isDir, std::string const& name, const t_directory& directory, __int64 size, FILETIME* pTime, std::string const& dirToDisplay, bool *enabledFacts);
 protected:
 	/*
 	 * CanonifyPath takes the current and the new server dir as parameter,
@@ -116,43 +107,43 @@ protected:
 	 * - convert backslashes into slashes
 	 * - remove double slashes
 	 */
-	CStdString CanonifyServerDir(CStdString currentDir, CStdString newDir) const;
+	std::wstring CanonifyServerDir(std::wstring currentDir, std::wstring newDir) const;
 
 public:
 	// Change current directory to the specified directory. Used by CWD and CDUP
-	int ChangeCurrentDir(CUser const& user, CStdString& currentdir, CStdString &dir);
+	int ChangeCurrentDir(CUser const& user, std::wstring& currentdir, std::wstring &dir);
 
 	// Retrieve a directory listing. Pass the actual formatting function as last parameter.
-	int GetDirectoryListing(CUser const& user, CStdString currentDir, CStdString dirToDisplay,
-							 std::list<t_dirlisting> &result, CStdString& physicalDir,
-							 CStdString& logicalDir,
+	int GetDirectoryListing(CUser const& user, std::wstring currentDir, std::wstring dirToDisplay,
+							 std::list<t_dirlisting> &result, std::wstring& physicalDir,
+							 std::wstring& logicalDir,
 							 addFunc_t addFunc,
 							 bool *enabledFacts = 0);
 
 	// Full directory listing with all details. Used by LIST command
-	static void AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *);
+	static void AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, std::string const& name, t_directory const& directory, __int64 size, FILETIME* pTime, std::string const& dirToDisplay, bool *);
 
 	// Directory listing with just the filenames. Used by NLST command
-	static void AddShortListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *);
+	static void AddShortListingEntry(std::list<t_dirlisting> &result, bool isDir, std::string const& name, t_directory const& directory, __int64 size, FILETIME* pTime, std::string const& dirToDisplay, bool *);
 
 	// Directory listing format used by MLSD
-	static void AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts);
+	static void AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, std::string const& name, t_directory const& directory, __int64 size, FILETIME* pTime, std::string const& dirToDisplay, bool *enabledFacts);
 
-	int CheckDirectoryPermissions(CUser const& user, CStdString dirname, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
-	int CheckFilePermissions(CUser const& user, CStdString filename, CStdString currentdir, int op, CStdString &physicalDir, CStdString &logicalDir);
+	int CheckDirectoryPermissions(CUser const& user, std::wstring dirname, std::wstring currentdir, int op, std::wstring &physicalDir, std::wstring &logicalDir);
+	int CheckFilePermissions(CUser const& user, std::wstring filename, std::wstring currentdir, int op, std::wstring &physicalDir, std::wstring &logicalDir);
 
-	CUser GetUser(CStdString const& username) const;
-	bool CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswordCheck = FALSE);
+	CUser GetUser(std::wstring const& username) const;
+	bool CheckUserLogin(CUser const& user, std::wstring const& pass, bool noPasswordCheck = false);
 
 	bool GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength);
-	BOOL ParseUsersCommand(unsigned char *pData, DWORD dwDataLength);
+	bool ParseUsersCommand(unsigned char *pData, DWORD dwDataLength);
 	void AutoCreateDirs(CUser const& user);
 	void ReloadConfig();
 
-	int GetFact(CUser const& user, CStdString const& currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3]);
+	int GetFact(CUser const& user, std::wstring const& currentDir, std::wstring file, std::wstring& fact, std::wstring& logicalName, bool enabledFacts[3]);
 
 protected:
-	CStdString GetHomeDir(CUser const& user) const;
+	std::wstring GetHomeDir(CUser const& user) const;
 
 	bool Init();
 	void UpdateInstances();
@@ -161,33 +152,20 @@ protected:
 	void ReadSettings();
 	bool SaveSettings();
 
-	void ReadPermissions(TiXmlElement *pXML, t_group &user, BOOL &bGotHome);
-	void SavePermissions(TiXmlElement *pXML, const t_group &user);
-
-	void ReadSpeedLimits(TiXmlElement *pXML, t_group &group);
-	void SaveSpeedLimits(TiXmlElement *pXML, const t_group &group);
-
-	void ReadIpFilter(TiXmlElement *pXML, t_group &group);
-	void SaveIpFilter(TiXmlElement *pXML, const t_group &group);
-
-	void SetKey(TiXmlElement *pXML, LPCTSTR name, std::string const& value);
-	void SetKey(TiXmlElement *pXML, LPCTSTR name, std::wstring const& value);
-	void SetKey(TiXmlElement *pXML, LPCTSTR name, int value);
-
-	int GetRealDirectory(CStdString directory, const CUser &user, t_directory &ret, BOOL &truematch);
+	int GetRealDirectory(std::wstring directory, CUser const& user, t_directory &ret, bool &truematch);
 
 	static std::recursive_mutex m_mutex;
 
-	bool WildcardMatch(CStdString string, CStdString pattern) const;
+	bool WildcardMatch(std::wstring string, std::wstring pattern) const;
 
-	typedef std::map<CStdString, CUser> t_UsersList;
+	typedef std::map<std::wstring, CUser> t_UsersList;
 	typedef std::vector<t_group> t_GroupsList;
 	static t_UsersList m_sUsersList;
 	static t_GroupsList m_sGroupsList;
 	t_UsersList m_UsersList;
 	t_GroupsList m_GroupsList;
 
-	static std::list<CPermissions *> m_sInstanceList;
+	static std::vector<CPermissions *> m_sInstanceList;
 	CPermissionsHelperWindow *m_pPermissionsHelperWindow;
 
 	friend CPermissionsHelperWindow;
@@ -195,4 +173,4 @@ protected:
 	std::function<void()> const updateCallback_;
 };
 
-#endif // !defined(AFX_PERMISSIONS_H__33DEA50E_AA34_4190_9ACD_355BF3D72FE0__INCLUDED_)
+#endif

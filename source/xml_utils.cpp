@@ -1,58 +1,42 @@
 #include "StdAfx.h"
 #include "xml_utils.h"
 #include "conversion.h"
-#include "tinyxml/tinyxml.h"
 
-#include <libfilezilla/string.hpp>
+#include <libfilezilla/local_filesys.hpp>
 
 namespace XML
 {
 
-std::wstring ReadText(TiXmlElement* pElement)
+file Load(std::wstring const& fn)
 {
-	TiXmlNode* textNode = pElement->FirstChild();
-	if (!textNode || !textNode->ToText()) {
-		return std::wstring();
-	}
+	file ret;
 
-	return ConvFromNetwork(textNode->Value());
-}
-
-void SetText(TiXmlElement* pElement, std::wstring const& text)
-{
-	pElement->Clear();
-	pElement->LinkEndChild(new TiXmlText(fz::to_utf8(text).c_str()));
-}
-
-bool Load(TiXmlDocument & document, CStdString const& file)
-{
-	bool ret = false;
-
-	FILE* f = _wfopen(file, L"rb");
-	if (f) {
-		ret = document.LoadFile(f);
-
-		fclose(f);
-	}
-
-	return ret;
-}
-
-bool Save(TiXmlNode & node, CStdString const& file)
-{
-	bool ret = false;
-
-	auto * document = node.GetDocument();
-	if (document) {
-		FILE* f = _wfopen(file, L"wb");
-		if (f) {
-			ret = document->SaveFile(f);
+	auto result = ret.document.load_file(fn.c_str());
+	if (!result) {
+		if (fz::local_filesys::get_size(fz::to_native(fn)) <= 0) {
+			// Create new one
+			ret.root = ret.document.append_child("FileZillaServer");
 		}
-
-		fclose(f);
+		else {
+			ret.document.reset();
+		}
+	}
+	else {
+		ret.root = ret.document.first_child();
+		if (ret.root.name() != "FileZillaServer"s) {
+			ret.root = pugi::xml_node();
+			ret.document.reset();
+		}
 	}
 
 	return ret;
 }
 
+bool Save(pugi::xml_document const& document, std::wstring const& fn)
+{
+	if (!document.first_child()) {
+		return false;
+	}
+	return document.save_file(fn.c_str());
+}
 }

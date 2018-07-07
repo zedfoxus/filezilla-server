@@ -66,7 +66,6 @@ to tim.kosse@filezilla-project.org
 
 #ifdef _AFX
 #define CStdString CString
-#define CStdStringW CStringW
 #define CStdStringA CStringA
 #endif //_AFX
 

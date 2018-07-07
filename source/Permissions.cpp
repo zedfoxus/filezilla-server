@@ -1,6 +1,6 @@
 // FileZilla Server - a Windows ftp server
 
-// Copyright (C) 2002-2016 - Tim Kosse <tim.kosse@filezilla-project.org>
+// Copyright (C) 2002-2018 - Tim Kosse <tim.kosse@filezilla-project.org>
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -16,21 +16,21 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-// Permissions.cpp: Implementierung der Klasse CPermissions.
-//
-//////////////////////////////////////////////////////////////////////
-
 #include "stdafx.h"
 #include "misc\md5.h"
 #include "Permissions.h"
-#include "tinyxml/tinyxml.h"
+#include "pugixml/pugixml.hpp"
 #include "xml_utils.h"
 #include "options.h"
 #include "iputils.h"
 
 #include "AsyncSslSocketLayer.h"
 
+#include <libfilezilla/format.hpp>
 #include <libfilezilla/string.hpp>
+
+#include <array>
+#include <cwctype>
 
 class CPermissionsHelperWindow final
 {
@@ -57,7 +57,7 @@ public:
 
 		RegisterClassEx(&wndclass);
 
-		m_hWnd=CreateWindow(_T("CPermissions Helper Window"), _T("CPermissions Helper Window"), 0, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(0));
+		m_hWnd = CreateWindow(_T("CPermissions Helper Window"), _T("CPermissions Helper Window"), 0, 0, 0, 0, 0, 0, 0, 0, GetModuleHandle(0));
 		ASSERT(m_hWnd);
 		SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG)this);
 	};
@@ -65,8 +65,7 @@ public:
 	~CPermissionsHelperWindow()
 	{
 		//Destroy window
-		if (m_hWnd)
-		{
+		if (m_hWnd) {
 			DestroyWindow(m_hWnd);
 			m_hWnd = 0;
 		}
@@ -80,18 +79,19 @@ public:
 protected:
 	static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
-		if (message==WM_USER)
-		{
+		if (message == WM_USER) {
 			/* If receiving WM_USER, update the permission data of the instance with the permission
 			 * data from the global data
 			 */
 
 			// Get own instance
 			CPermissionsHelperWindow *pWnd=(CPermissionsHelperWindow *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-			if (!pWnd)
+			if (!pWnd) {
 				return 0;
-			if (!pWnd->m_pPermissions)
+			}
+			if (!pWnd->m_pPermissions) {
 				return 0;
+			}
 
 			pWnd->m_pPermissions->UpdatePermissions(true);
 		}
@@ -111,7 +111,7 @@ private:
 std::recursive_mutex CPermissions::m_mutex;
 CPermissions::t_UsersList CPermissions::m_sUsersList;
 CPermissions::t_GroupsList CPermissions::m_sGroupsList;
-std::list<CPermissions *> CPermissions::m_sInstanceList;
+std::vector<CPermissions *> CPermissions::m_sInstanceList;
 
 //////////////////////////////////////////////////////////////////////
 // Konstruktion/Destruktion
@@ -126,20 +126,14 @@ CPermissions::CPermissions(std::function<void()> const& updateCallback)
 CPermissions::~CPermissions()
 {
 	simple_lock lock(m_mutex);
-	std::list<CPermissions *>::iterator instanceIter;
-	for (instanceIter = m_sInstanceList.begin(); instanceIter != m_sInstanceList.end(); ++instanceIter) {
-		if (*instanceIter == this) {
-			break;
-		}
-	}
-	ASSERT(instanceIter != m_sInstanceList.end());
-	if (instanceIter != m_sInstanceList.end()) {
-		m_sInstanceList.erase(instanceIter);
+	auto it = std::find(m_sInstanceList.begin(), m_sInstanceList.end(), this);
+	if (it != m_sInstanceList.end()) {
+		m_sInstanceList.erase(it);
 	}
 	delete m_pPermissionsHelperWindow;
 }
 
-void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char*, bool *)
+void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isDir, std::string const& name, const t_directory& directory, __int64 size, FILETIME* pTime, std::string const&, bool *)
 {
 	WIN32_FILE_ATTRIBUTE_DATA status{};
 	if (!pTime && GetStatus64(directory.dir.c_str(), status)) {
@@ -147,10 +141,8 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 		pTime = &status.ftLastWriteTime;
 	}
 
-	unsigned int nameLen = strlen(name);
-
 	// This wastes some memory but keeps the whole thing fast
-	if (result.empty() || (8192 - result.back().len) < (60 + nameLen)) {
+	if (result.empty() || (8192 - result.back().len) < (60 + name.size())) {
 		result.push_back(t_dirlisting());
 	}
 
@@ -163,20 +155,18 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 		result.back().buffer[result.back().len++] = directory.bFileRead ? 'r' : '-';
 		result.back().buffer[result.back().len++] = directory.bFileWrite ? 'w' : '-';
 
-		BOOL isexe = FALSE;
-		if (nameLen > 4) {
-			CStdStringA ext = name + nameLen - 4;
-			if (ext.ReverseFind('.') != -1) {
-				ext.MakeLower();
-				if (ext == ".exe") {
-					isexe = TRUE;
-				}
-				else if (ext == ".bat") {
-					isexe = TRUE;
-				}
-				else if (ext == ".com") {
-					isexe = TRUE;
-				}
+		bool isexe = false;
+		if (name.size() > 4 && name[name.size() - 4] == '.') {
+			std::string ext = name.substr(name.size() - 3);
+			ext = fz::str_tolower_ascii(ext);
+			if (ext == "exe") {
+				isexe = true;
+			}
+			else if (ext == "bat") {
+				isexe = true;
+			}
+			else if (ext == "com") {
+				isexe = true;
 			}
 		}
 		result.back().buffer[result.back().len++] = isexe ? 'x' : '-';
@@ -230,13 +220,13 @@ void CPermissions::AddLongListingEntry(std::list<t_dirlisting> &result, bool isD
 		result.back().len += sprintf(result.back().buffer + result.back().len, "%02d:%02d ", sFileTime.wHour, sFileTime.wMinute);
 	}
 
-	memcpy(result.back().buffer + result.back().len, name, nameLen);
-	result.back().len += nameLen;
+	memcpy(result.back().buffer + result.back().len, name.c_str(), name.size());
+	result.back().len += name.size();
 	result.back().buffer[result.back().len++] = '\r';
 	result.back().buffer[result.back().len++] = '\n';
 }
 
-void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char*, bool *enabledFacts)
+void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool isDir, std::string const& name, const t_directory& directory, __int64 size, FILETIME* pTime, std::string const&, bool *enabledFacts)
 {
 	WIN32_FILE_ATTRIBUTE_DATA status{};
 	if (!pTime && GetStatus64(directory.dir.c_str(), status)) {
@@ -244,10 +234,8 @@ void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool is
 		pTime = &status.ftLastWriteTime;
 	}
 
-	unsigned int nameLen = strlen(name);
-
 	// This wastes some memory but keeps the whole thing fast
-	if (result.empty() || (8192 - result.back().len) < (76 + nameLen)) {
+	if (result.empty() || (8192 - result.back().len) < (76 + name.size())) {
 		result.push_back(t_dirlisting());
 	}
 
@@ -269,17 +257,18 @@ void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool is
 	VERIFY(SystemTimeToFileTime(&sLocalTime, &fTime));
 
 	FILETIME mtime;
-	if (pTime)
+	if (pTime) {
 		mtime = *pTime;
-	else
+	}
+	else {
 		mtime = fTime;
+	}
 
 	if (!enabledFacts || enabledFacts[2]) {
 		if (mtime.dwHighDateTime || mtime.dwLowDateTime) {
 			SYSTEMTIME time;
 			FileTimeToSystemTime(&mtime, &time);
-			CStdStringA str;
-			str.Format("modify=%04d%02d%02d%02d%02d%02d;",
+			std::string str = fz::sprintf("modify=%04d%02d%02d%02d%02d%02d;",
 				time.wYear,
 				time.wMonth,
 				time.wDay,
@@ -287,14 +276,15 @@ void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool is
 				time.wMinute,
 				time.wSecond);
 
-			memcpy(result.back().buffer + result.back().len, str.c_str(), str.GetLength());
-			result.back().len += str.GetLength();
+			memcpy(result.back().buffer + result.back().len, str.c_str(), str.size());
+			result.back().len += str.size();
 		}
 	}
 
 	if (!enabledFacts || enabledFacts[1]) {
-		if (!isDir)
+		if (!isDir) {
 			result.back().len += sprintf(result.back().buffer + result.back().len, "size=%I64d;", size);
+		}
 	}
 
 	if (enabledFacts && enabledFacts[fact_perm]) {
@@ -302,72 +292,43 @@ void CPermissions::AddFactsListingEntry(std::list<t_dirlisting> &result, bool is
 		memcpy(result.back().buffer + result.back().len, "perm=", 5);
 		result.back().len += 5;
 		if (isDir) {
-			if (directory.bFileWrite)
+			if (directory.bFileWrite) {
 				result.back().buffer[result.back().len++] = 'c';
+			}
 			result.back().buffer[result.back().len++] = 'e';
-			if (directory.bDirList)
+			if (directory.bDirList) {
 				result.back().buffer[result.back().len++] = 'l';
-			if (directory.bFileDelete || directory.bDirDelete)
+			}
+			if (directory.bFileDelete || directory.bDirDelete) {
 				result.back().buffer[result.back().len++] = 'p';
+			}
 		}
 	}
 
-	result.back().len += sprintf(result.back().buffer + result.back().len, " %s\r\n", name);
+	result.back().len += sprintf(result.back().buffer + result.back().len, " %s\r\n", name.c_str());
 }
 
-void CPermissions::AddShortListingEntry(std::list<t_dirlisting> &result, bool, const char* name, const t_directory&, __int64, FILETIME*, const char* dirToDisplay, bool *)
+void CPermissions::AddShortListingEntry(std::list<t_dirlisting> &result, bool, std::string const& name, const t_directory&, __int64, FILETIME*, std::string const& dirToDisplay, bool *)
 {
-	unsigned int nameLen = strlen(name);
-	unsigned int dirToDisplayLen = strlen(dirToDisplay);
-
 	// This wastes some memory but keeps the whole thing fast
-	if (result.empty() || (8192 - result.back().len) < (10 + nameLen + dirToDisplayLen)) {
+	if (result.empty() || (8192 - result.back().len) < (10 + name.size() + dirToDisplay.size())) {
 		result.push_back(t_dirlisting());
 	}
 
-	memcpy(result.back().buffer + result.back().len, dirToDisplay, dirToDisplayLen);
-	result.back().len += dirToDisplayLen;
-	memcpy(result.back().buffer + result.back().len, name, nameLen);
-	result.back().len += nameLen;
+	memcpy(result.back().buffer + result.back().len, dirToDisplay.c_str(), dirToDisplay.size());
+	result.back().len += dirToDisplay.size();
+	memcpy(result.back().buffer + result.back().len, name.c_str(), name.size());
+	result.back().len += name.size();
 	result.back().buffer[result.back().len++] = '\r';
 	result.back().buffer[result.back().len++] = '\n';
 }
 
-bool is8dot3(const CStdString& file)
+int CPermissions::GetDirectoryListing(CUser const& user, std::wstring currentDir, std::wstring dirToDisplay,
+									  std::list<t_dirlisting> &result, std::wstring& physicalDir,
+									  std::wstring& logicalDir, addFunc_t addFunc,
+									  bool *enabledFacts)
 {
-	int i;
-	for (i = 0; i < 8; ++i) {
-		if (!file[i])
-			return true;
-
-		if (file[i] == '.')
-			break;
-	}
-	if (!file[i])
-		return true;
-	if (file[i++] != '.')
-		return false;
-
-	for (int j = 0; j < 3; j++)
-	{
-		const TCHAR &c = file[i++];
-		if (!c)
-			return true;
-		if (c == '.')
-			return false;
-	}
-	if (file[i])
-		return false;
-
-	return true;
-}
-
-int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, CStdString dirToDisplay,
-									  std::list<t_dirlisting> &result, CStdString& physicalDir,
-									  CStdString& logicalDir, void (*addFunc)(std::list<t_dirlisting> &result, bool isDir, const char* name, const t_directory& directory, __int64 size, FILETIME* pTime, const char* dirToDisplay, bool *enabledFacts),
-									  bool *enabledFacts /*=0*/)
-{
-	CStdString dir = CanonifyServerDir(currentDir, dirToDisplay);
+	std::wstring dir = CanonifyServerDir(currentDir, dirToDisplay);
 	if (dir.empty()) {
 		return PERMISSION_INVALIDNAME;
 	}
@@ -375,31 +336,35 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 
 	// Get directory from directory name
 	t_directory directory;
-	BOOL bTruematch;
+	bool bTruematch;
 	int res = GetRealDirectory(dir, user, directory, bTruematch);
 	std::wstring sFileSpec = L"*"; // Which files to list in the directory
 	if (res == PERMISSION_FILENOTDIR || res == PERMISSION_NOTFOUND) // Try listing using a direct wildcard filespec instead?
 	{
 		// Check dirToDisplay if we are allowed to go back a directory
-		dirToDisplay.Replace('\\', '/');
-		while (dirToDisplay.Replace(_T("//"), _T("/")));
-		if (dirToDisplay.Right(1) == _T("/")) {
+		fz::replace_substrings(dirToDisplay, L"\\", L"/");
+		while (fz::replace_substrings(dirToDisplay, _T("//"), _T("/")));
+		if (!dirToDisplay.empty() && dirToDisplay.back() == '/') {
 			return res;
 		}
-		int pos = dirToDisplay.ReverseFind('/');
-		if (res != PERMISSION_FILENOTDIR && dirToDisplay.Mid(pos + 1).Find('*') == -1) {
+		size_t pos = dirToDisplay.rfind('/');
+		if (res != PERMISSION_FILENOTDIR && pos != std::wstring::npos && dirToDisplay.find('*', pos + 1) == std::string::npos) {
 			return res;
 		}
-		dirToDisplay = dirToDisplay.Left(pos + 1);
+		if (pos != std::wstring::npos) {
+			dirToDisplay = dirToDisplay.substr(0, pos + 1);
+		}
 
 		if (dir == _T("/")) {
 			return res;
 		}
 
-		pos = dir.ReverseFind('/');
-		sFileSpec = dir.Mid(pos + 1);
-		if (pos) {
-			dir = dir.Left(pos);
+		pos = dir.rfind('/');
+		if (pos != std::wstring::npos) {
+			sFileSpec = dir.substr(pos + 1);
+		}
+		if (pos > 0) {
+			dir = dir.substr(0, pos);
 		}
 		else {
 			dir = _T("/");
@@ -425,8 +390,8 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 	_int64 offset = tzInfo.Bias+((tzRes==TIME_ZONE_ID_DAYLIGHT)?tzInfo.DaylightBias:tzInfo.StandardBias);
 	offset *= 60 * 10000000;
 
-	if (dirToDisplay != _T("") && dirToDisplay.Right(1) != _T("/")) {
-		dirToDisplay += _T("/");
+	if (!dirToDisplay.empty() && dirToDisplay.back() != '/') {
+		dirToDisplay.append(L"/");
 	}
 
 	auto dirToDisplayUTF8 = fz::to_utf8(dirToDisplay);
@@ -435,12 +400,12 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 	}
 
 	for (auto const& virtualAliasName : user.virtualAliasNames) {
-		if (virtualAliasName.first.CompareNoCase(dir)) {
+		if (fz::stricmp(virtualAliasName.first, dir)) {
 			continue;
 		}
 
 		t_directory directory;
-		BOOL truematch = false;
+		bool truematch = false;
 		if (GetRealDirectory(dir + _T("/") + virtualAliasName.second, user, directory, truematch)) {
 			continue;
 		}
@@ -459,7 +424,7 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 
 		auto name = fz::to_utf8(virtualAliasName.second);
 		if (!name.empty()) {
-			addFunc(result, true, name.c_str(), directory, 0, 0, dirToDisplayUTF8.c_str(), enabledFacts);
+			addFunc(result, true, name, directory, 0, 0, dirToDisplayUTF8, enabledFacts);
 		}
 	}
 
@@ -483,12 +448,12 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 			continue;
 		}
 
-		CStdString const fn = FindFileData.cFileName;
+		std::wstring const fn = FindFileData.cFileName;
 
 		if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 			// Check permissions of subdir. If we don't have LIST permission,
 			// don't display the subdir.
-			BOOL truematch;
+			bool truematch{};
 			t_directory subDir;
 			if (GetRealDirectory(dir + _T("/") + fn, user, subDir, truematch)) {
 				continue;
@@ -499,7 +464,7 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 				if (utf8.empty() && !fn.empty()) {
 					continue;
 				}
-				addFunc(result, true, utf8.c_str(), subDir, 0, &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
+				addFunc(result, true, utf8, subDir, 0, &FindFileData.ftLastWriteTime, dirToDisplayUTF8, enabledFacts);
 			}
 		}
 		else {
@@ -507,147 +472,175 @@ int CPermissions::GetDirectoryListing(CUser const& user, CStdString currentDir, 
 			if (utf8.empty() && !fn.empty()) {
 				continue;
 			}
-			addFunc(result, false, utf8.c_str(), directory, FindFileData.nFileSizeLow + ((_int64)FindFileData.nFileSizeHigh<<32), &FindFileData.ftLastWriteTime, dirToDisplayUTF8.c_str(), enabledFacts);
+			addFunc(result, false, utf8, directory, FindFileData.nFileSizeLow + ((_int64)FindFileData.nFileSizeHigh<<32), &FindFileData.ftLastWriteTime, dirToDisplayUTF8, enabledFacts);
 		}
 	}
 
 	return 0;
 }
 
-int CPermissions::CheckDirectoryPermissions(CUser const& user, CStdString dirname, CStdString currentdir, int op, CStdString& physicalDir, CStdString& logicalDir)
+int CPermissions::CheckDirectoryPermissions(CUser const& user, std::wstring dirname, std::wstring currentdir, int op, std::wstring& physicalDir, std::wstring& logicalDir)
 {
-	CStdString dir = CanonifyServerDir(currentdir, dirname);
-	if (dir.empty())
+	std::wstring dir = CanonifyServerDir(currentdir, dirname);
+	if (dir.empty()) {
 		return PERMISSION_INVALIDNAME;
-	if (dir == _T("/"))
+	}
+	if (dir == L"/") {
 		return PERMISSION_NOTFOUND;
+	}
 
-	int pos = dir.ReverseFind('/');
-	if (pos == -1 || !dir[pos + 1])
+	size_t pos = dir.rfind('/');
+	if (pos == std::wstring::npos || pos + 1 == dir.size()) {
 		return PERMISSION_NOTFOUND;
+	}
 	logicalDir = dir;
-	dirname = dir.Mid(pos + 1);
-	if (!pos)
-		dir = _T("/");
-	else
-		dir = dir.Left(pos);
+	dirname = dir.substr(pos + 1);
+	if (!pos) {
+		dir = L"/";
+	}
+	else {
+		dir = dir.substr(0, pos);
+	}
 
 	// dir now is the absolute path (logical server path of course)
 	// awhile dirname is the pure dirname without the full path
 
-	CStdString realDir;
-	CStdString realDirname;
+	std::wstring realDir;
+	std::wstring realDirname;
 
-	//Get the physical path, only of dir to get the right permissions
+	// Get the physical path, only of dir to get the right permissions
 	t_directory directory;
-	BOOL truematch;
+	bool truematch;
 	int res;
 
-	CStdString dir2 = dir;
-	CStdString dirname2 = dirname;
+	std::wstring dir2 = dir;
+	std::wstring dirname2 = dirname;
 	do
 	{
 		res = GetRealDirectory(dir2, user, directory, truematch);
 		if (res & PERMISSION_NOTFOUND && op == DOP_CREATE)
 		{ //that path could not be found. Maybe more than one directory level has to be created, check that
-			if (dir2 == _T("/"))
+			if (dir2 == L"/") {
 				return res;
+			}
 
-			int pos = dir2.ReverseFind('/');
-			if (pos == -1)
+			size_t pos = dir2.rfind('/');
+			if (pos == std::wstring::npos) {
 				return res;
+			}
 
-			dirname2 = dir2.Mid(pos+1) + _T("/") + dirname2;
-			if (pos)
-				dir2 = dir2.Left(pos);
-			else
+			dirname2 = dir2.substr(pos + 1) + _T("/") + dirname2;
+			if (pos) {
+				dir2 = dir2.substr(0, pos);
+			}
+			else {
 				dir2 = _T("/");
+			}
 
 			continue;
 		}
-		else if (res)
+		else if (res) {
 			return res;
+		}
 
 		realDir = directory.dir;
 		realDirname = dirname2;
-		if (!directory.bDirDelete && op & DOP_DELETE)
+		if (!directory.bDirDelete && op & DOP_DELETE) {
 			res |= PERMISSION_DENIED;
-		if (!directory.bDirCreate && op & DOP_CREATE)
+		}
+		if (!directory.bDirCreate && op & DOP_CREATE) {
 			res |= PERMISSION_DENIED;
+		}
 		break;
-	} while (TRUE);
+	} while (true);
 
-	realDirname.Replace(_T("/"), _T("\\"));
-	physicalDir = realDir + _T("\\") + realDirname;
+	fz::replace_substrings(realDirname, L"/", L"\\");
+	physicalDir = realDir + L"\\" + realDirname;
 
 	//Check if dir + dirname is a valid path
 	int res2 = GetRealDirectory(dir + _T("/") + dirname, user, directory, truematch);
 
-	if (!res2)
+	if (!res2) {
 		physicalDir = directory.dir;
+	}
 
-	if (!res2 && op&DOP_CREATE)
+	if (!res2 && op&DOP_CREATE) {
 		res |= PERMISSION_DOESALREADYEXIST;
+	}
 	else if (!(res2 & PERMISSION_NOTFOUND)) {
-		if (op&DOP_DELETE && user.GetAliasTarget(logicalDir + _T("/")) != _T(""))
+		if (op&DOP_DELETE && user.GetAliasTarget(logicalDir + _T("/")) != _T("")) {
 			res |= PERMISSION_DENIED;
+		}
 		return res | res2;
 	}
 
 	// check dir attributes
-	DWORD nAttributes = GetFileAttributes(physicalDir);
-	if (nAttributes==0xFFFFFFFF && !(op&DOP_CREATE))
+	DWORD nAttributes = GetFileAttributesW(physicalDir.c_str());
+	if (nAttributes == 0xFFFFFFFF && !(op&DOP_CREATE)) {
 		res |= PERMISSION_NOTFOUND;
-	else if (!(nAttributes&FILE_ATTRIBUTE_DIRECTORY))
+	}
+	else if (!(nAttributes&FILE_ATTRIBUTE_DIRECTORY)) {
 		res |= PERMISSION_FILENOTDIR;
+	}
 
 	//Finally, a valid path+dirname!
 	return res;
 }
 
-int CPermissions::CheckFilePermissions(CUser const& user, CStdString filename, CStdString currentdir, int op, CStdString& physicalFile, CStdString& logicalFile)
+int CPermissions::CheckFilePermissions(CUser const& user, std::wstring filename, std::wstring currentdir, int op, std::wstring& physicalFile, std::wstring& logicalFile)
 {
-	CStdString dir = CanonifyServerDir(currentdir, filename);
-	if (dir.empty())
+	std::wstring dir = CanonifyServerDir(currentdir, filename);
+	if (dir.empty()) {
 		return PERMISSION_INVALIDNAME;
-	if (dir == _T("/"))
+	}
+	if (dir == L"/") {
 		return PERMISSION_NOTFOUND;
+	}
 
-	int pos = dir.ReverseFind('/');
-	if (pos == -1)
+	size_t pos = dir.rfind('/');
+	if (pos == std::wstring::npos) {
 		return PERMISSION_NOTFOUND;
+	}
 
 	logicalFile = dir;
 
-	filename = dir.Mid(pos + 1);
-	if (pos)
-		dir = dir.Left(pos);
-	else
-		dir = "/";
+	filename = dir.substr(pos + 1);
+	if (pos) {
+		dir = dir.substr(0, pos);
+	}
+	else {
+		dir = L"/";
+	}
 
 	// dir now is the absolute path (logical server path of course)
 	// while filename is the filename
 
 	//Get the physical path
 	t_directory directory;
-	BOOL truematch;
+	bool truematch;
 	int res = GetRealDirectory(dir, user, directory, truematch);
 
-	if (res)
+	if (res) {
 		return res;
-	if (!directory.bFileRead && op&FOP_READ)
+	}
+	if (!directory.bFileRead && op&FOP_READ) {
 		res |= PERMISSION_DENIED;
-	if (!directory.bFileDelete && op&FOP_DELETE)
+	}
+	if (!directory.bFileDelete && op&FOP_DELETE) {
 		res |= PERMISSION_DENIED;
-	if (!directory.bFileWrite && op&(FOP_CREATENEW|FOP_WRITE|FOP_APPEND))
+	}
+	if (!directory.bFileWrite && op&(FOP_CREATENEW | FOP_WRITE | FOP_APPEND)) {
 		res |= PERMISSION_DENIED;
-	if ((!directory.bDirList || (!directory.bDirSubdirs && !truematch)) && op&FOP_LIST)
+	}
+	if ((!directory.bDirList || (!directory.bDirSubdirs && !truematch)) && op&FOP_LIST) {
 		res |= PERMISSION_DENIED;
-	if (op&FOP_DELETE && user.GetAliasTarget(logicalFile + _T("/")) != _T(""))
+	}
+	if (op&FOP_DELETE && user.GetAliasTarget(logicalFile + _T("/")) != _T("")) {
 		res |= PERMISSION_DENIED;
+	}
 
 	physicalFile = directory.dir + L"\\" + static_cast<std::wstring>(filename);
-	DWORD nAttributes = GetFileAttributes(physicalFile);
+	DWORD nAttributes = GetFileAttributesW(physicalFile.c_str());
 	if (nAttributes == 0xFFFFFFFF) {
 		if (!(op&(FOP_WRITE | FOP_APPEND | FOP_CREATENEW))) {
 			res |= PERMISSION_NOTFOUND;
@@ -672,19 +665,19 @@ int CPermissions::CheckFilePermissions(CUser const& user, CStdString filename, C
 	return res;
 }
 
-CStdString CPermissions::GetHomeDir(CUser const& user) const
+std::wstring CPermissions::GetHomeDir(CUser const& user) const
 {
 	if (user.homedir.empty()) {
-		return CStdString();
+		return std::wstring();
 	}
 
-	CStdString path = user.homedir;
+	std::wstring path = user.homedir;
 	user.DoReplacements(path);
 
 	return path;
 }
 
-int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_directory &ret, BOOL &truematch)
+int CPermissions::GetRealDirectory(std::wstring directory, const CUser &user, t_directory &ret, bool &truematch)
 {
 	/*
 	 * This function translates pathnames from absolute server paths
@@ -696,39 +689,30 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	 * sequentially or resolve aliases if required.
 	 */
 
-	directory.TrimLeft(_T("/"));
+	fz::ltrim(directory, L"/"s);
 
 	// Split server path
 	// --------------------
 
-	//Split dir into pieces
-	std::list<CStdString> PathPieces;
-	int pos;
-
-	while((pos = directory.Find('/')) != -1) {
-		PathPieces.push_back(directory.Left(pos));
-		directory = directory.Mid(pos + 1);
-	}
-	if (directory != _T("")) {
-		PathPieces.push_back(directory);
-	}
+	// Split dir into pieces
+	std::vector<std::wstring> pathPieces = fz::strtok(directory, L"/");
 
 	// Get absolute local path
 	// -----------------------
 
 	//First get the home dir
-	CStdString homepath = GetHomeDir(user);
+	std::wstring homepath = GetHomeDir(user);
 	if (homepath.empty()) {
 		//No homedir found
 		return PERMISSION_DENIED;
 	}
 
 	// Reassamble path to get local path
-	CStdString path = homepath; // Start with homedir as root
+	std::wstring path = homepath; // Start with homedir as root
 
-	CStdString virtualPath = _T("/");
-	if (PathPieces.empty()) {
-		DWORD nAttributes = GetFileAttributes(path);
+	std::wstring virtualPath = _T("/");
+	if (pathPieces.empty()) {
+		DWORD nAttributes = GetFileAttributesW(path.c_str());
 		if (nAttributes == 0xFFFFFFFF) {
 			return PERMISSION_NOTFOUND;
 		}
@@ -738,10 +722,10 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	}
 	else {
 		// Go through all pieces
-		for (auto const& piece : PathPieces) {
+		for (auto const& piece : pathPieces) {
 			// Check if piece exists
 			virtualPath += piece + _T("/");
-			DWORD nAttributes = GetFileAttributes(path + _T("\\") + piece);
+			DWORD nAttributes = GetFileAttributesW((path + _T("\\") + piece).c_str());
 			if (nAttributes != 0xFFFFFFFF) {
 				if (!(nAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
 					return PERMISSION_FILENOTDIR;
@@ -751,11 +735,11 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 			}
 			else {
 				// Physical path did not exist, check aliases
-				const CStdString& target = user.GetAliasTarget(virtualPath);
+				std::wstring const& target = user.GetAliasTarget(virtualPath);
 
 				if (!target.empty()) {
-					if (target.Right(1) != _T(":")) {
-						nAttributes = GetFileAttributes(target);
+					if (target.back() != ':') {
+						nAttributes = GetFileAttributesW(target.c_str());
 						if (nAttributes == 0xFFFFFFFF) {
 							return PERMISSION_NOTFOUND;
 						}
@@ -771,7 +755,7 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 			return PERMISSION_NOTFOUND;
 		}
 	}
-	const CStdString realpath = path;
+	std::wstring const realpath = path;
 
 	// Check permissions
 	// -----------------
@@ -783,18 +767,17 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	 * all path segments have been removed
 	 * Distinguish the case
 	 */
-	truematch = TRUE;
+	truematch = true;
 
-	while (path != _T("")) {
-		BOOL bFoundMatch = FALSE;
-		unsigned int i;
+	while (!path.empty()) {
+		bool bFoundMatch = false;
 
 		// Check user permissions
-		for (i = 0; i < user.permissions.size(); ++i) {
-			CStdString permissionPath = user.permissions[i].dir;
+		for (size_t i = 0; i < user.permissions.size(); ++i) {
+			std::wstring permissionPath = user.permissions[i].dir;
 			user.DoReplacements(permissionPath);
-			if (!permissionPath.CompareNoCase(path)) {
-				bFoundMatch = TRUE;
+			if (!fz::stricmp(permissionPath, path)) {
+				bFoundMatch = true;
 				ret = user.permissions[i];
 				break;
 			}
@@ -802,11 +785,11 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 
 		// Check owner (group) permissions
 		if (!bFoundMatch && user.pOwner) {
-			for (i = 0; i < user.pOwner->permissions.size(); ++i) {
-				CStdString permissionPath = user.pOwner->permissions[i].dir;
+			for (size_t i = 0; i < user.pOwner->permissions.size(); ++i) {
+				std::wstring permissionPath = user.pOwner->permissions[i].dir;
 				user.DoReplacements(permissionPath);
-				if (!permissionPath.CompareNoCase(path)) {
-					bFoundMatch = TRUE;
+				if (!fz::stricmp(permissionPath, path)) {
+					bFoundMatch = true;
 					ret = user.pOwner->permissions[i];
 					break;
 				}
@@ -815,9 +798,9 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 
 		if (!bFoundMatch) {
 			// No match found, remove last segment and try again
-			int pos = path.ReverseFind('\\');
-			if (pos != -1) {
-				path = path.Left(pos);
+			size_t pos = path.rfind('\\');
+			if (pos != std::wstring::npos) {
+				path = path.substr(0, pos);
 			}
 			else {
 				return PERMISSION_DENIED;
@@ -837,42 +820,44 @@ int CPermissions::GetRealDirectory(CStdString directory, const CUser &user, t_di
 	return PERMISSION_NOTFOUND;
 }
 
-int CPermissions::ChangeCurrentDir(CUser const& user, CStdString &currentdir, CStdString &dir)
+int CPermissions::ChangeCurrentDir(CUser const& user, std::wstring &currentdir, std::wstring &dir)
 {
-	CStdString canonifiedDir = CanonifyServerDir(currentdir, dir);
-	if (canonifiedDir.empty())
+	std::wstring canonifiedDir = CanonifyServerDir(currentdir, dir);
+	if (canonifiedDir.empty()) {
 		return PERMISSION_INVALIDNAME;
+	}
 	dir = canonifiedDir;
 
-	//Get the physical path
+	// Get the physical path
 	t_directory directory;
-	BOOL truematch;
+	bool truematch;
 	int res = GetRealDirectory(dir, user, directory, truematch);
-	if (res)
+	if (res) {
 		return res;
-	if (!directory.bDirList)
-	{
-		if (!directory.bFileRead && !directory.bFileWrite)
+	}
+	if (!directory.bDirList) {
+		if (!directory.bFileRead && !directory.bFileWrite) {
 			return PERMISSION_DENIED;
+		}
 	}
 
-	//Finally, a valid path!
-	currentdir = dir; //Server paths are relative, so we can use the absolute server path
+	// Finally, a valid path!
+	currentdir = dir; // Server paths are relative, so we can use the absolute server path
 
 	return 0;
 }
 
-CUser CPermissions::GetUser(CStdString const& username) const
+CUser CPermissions::GetUser(std::wstring const& username) const
 {
 	// Get user from username
 	auto const& it = m_UsersList.find(username);
-	if( it != m_UsersList.end() ) {
+	if (it != m_UsersList.end()) {
 		return it->second;
 	}
 	return CUser();
 }
 
-bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswordCheck /*=FALSE*/)
+bool CPermissions::CheckUserLogin(CUser const& user, std::wstring const& pass, bool noPasswordCheck)
 {
 	if (user.user.empty()) {
 		return false;
@@ -882,11 +867,8 @@ bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswo
 		return true;
 	}
 
-	if (!pass) {
-		return false;
-	}
 	auto tmp = fz::to_utf8(pass);
-	if (tmp.empty() && *pass) {
+	if (tmp.empty() && !pass.empty()) {
 		// Network broke. Meh...
 		return false;
 	}
@@ -902,10 +884,10 @@ bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswo
 		md5.update((unsigned char const*)tmp.c_str(), tmp.size());
 		md5.finalize();
 		char *res = md5.hex_digest();
-		CStdString hash = res;
+		std::string hash = res;
 		delete[] res;
 
-		return hash == user.password;
+		return fz::to_wstring_from_utf8(hash) == user.password;
 	}
 	
 	// It's a salted SHA-512 hash
@@ -916,7 +898,7 @@ bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswo
 	}
 
 	CAsyncSslSocketLayer ssl(0);
-	CStdString hash = ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size());
+	std::wstring hash = fz::to_wstring(ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size()));
 
 	return !hash.empty() && user.password == hash;
 }
@@ -924,67 +906,218 @@ bool CPermissions::CheckUserLogin(CUser const& user, LPCTSTR pass, BOOL noPasswo
 void CPermissions::UpdateInstances()
 {
 	simple_lock lock(m_mutex);
-	for (std::list<CPermissions *>::iterator iter=m_sInstanceList.begin(); iter!=m_sInstanceList.end(); ++iter) {
-		if (*iter != this) {
-			ASSERT((*iter)->m_pPermissionsHelperWindow);
-			::PostMessage((*iter)->m_pPermissionsHelperWindow->GetHwnd(), WM_USER, 0, 0);
+	for (auto instance : m_sInstanceList) {
+		if (instance != this) {
+			ASSERT(instance->m_pPermissionsHelperWindow);
+			::PostMessage(instance->m_pPermissionsHelperWindow->GetHwnd(), WM_USER, 0, 0);
 		}
 	}
 }
 
-void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, std::string const& value)
+namespace {
+void SetKey(pugi::xml_node & xml, std::string const& name, std::string const& value)
 {
-	SetKey(pXML, name, fz::to_wstring_from_utf8(value));
+	auto option = xml.append_child("Option");
+	option.append_attribute("Name").set_value(name.c_str());
+	option.text().set(value.c_str());
 }
 
-void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, std::wstring const& value)
+void SetKey(pugi::xml_node & xml, std::string const& name, std::wstring const& value)
 {
-	ASSERT(pXML);
-	TiXmlElement* pOption = new TiXmlElement("Option");
-	pOption->SetAttribute("Name", fz::to_utf8(name).c_str());
-	XML::SetText(pOption, value);
-	pXML->LinkEndChild(pOption);
+	SetKey(xml, name, fz::to_utf8(value));
 }
 
-void CPermissions::SetKey(TiXmlElement *pXML, LPCTSTR name, int value)
+void SetKey(pugi::xml_node & xml, std::string const& name, int value)
 {
-	ASSERT(pXML);
-	CStdString str;
-	str.Format(_T("%d"), value);
-	SetKey(pXML, name, str);
+	SetKey(xml, name, fz::to_string(value));
 }
 
-void CPermissions::SavePermissions(TiXmlElement *pXML, const t_group &user)
+void SavePermissions(pugi::xml_node & xml, const t_group &user)
 {
-	TiXmlElement* pPermissions = new TiXmlElement("Permissions");
-	pXML->LinkEndChild(pPermissions);
+	auto permissions = xml.append_child("Permissions");
+	
+	for (size_t i = 0; i < user.permissions.size(); ++i) {
+		auto permission = permissions.append_child("Permission");
 
-	for (unsigned int i=0; i < user.permissions.size(); i++)
-	{
-		TiXmlElement* pPermission = new TiXmlElement("Permission");
-		pPermissions->LinkEndChild(pPermission);
-
-		pPermission->SetAttribute("Dir", fz::to_utf8(user.permissions[i].dir).c_str());
+		permission.append_attribute("Dir").set_value(fz::to_utf8(user.permissions[i].dir).c_str());
 		if (!user.permissions[i].aliases.empty()) {
-			TiXmlElement* pAliases = new TiXmlElement("Aliases");
-			pPermission->LinkEndChild(pAliases);
+			auto aliases = permission.append_child("Aliases");
 			for (auto const& alias : user.permissions[i].aliases) {
-				TiXmlElement *pAlias = new TiXmlElement("Alias");
-				XML::SetText(pAlias, alias);
-				pAliases->LinkEndChild(pAlias);
+				aliases.append_child("Alias").text().set(fz::to_utf8(alias).c_str());
 			}
 		}
-		SetKey(pPermission, _T("FileRead"), user.permissions[i].bFileRead ? _T("1"):_T("0"));
-		SetKey(pPermission, _T("FileWrite"), user.permissions[i].bFileWrite ? _T("1"):_T("0"));
-		SetKey(pPermission, _T("FileDelete"), user.permissions[i].bFileDelete ?_T("1"):_T("0"));
-		SetKey(pPermission, _T("FileAppend"), user.permissions[i].bFileAppend ? _T("1"):_T("0"));
-		SetKey(pPermission, _T("DirCreate"), user.permissions[i].bDirCreate ? _T("1"):_T("0"));
-		SetKey(pPermission, _T("DirDelete"), user.permissions[i].bDirDelete ? _T("1"):_T("0"));
-		SetKey(pPermission, _T("DirList"), user.permissions[i].bDirList ? _T("1"):_T("0"));
-		SetKey(pPermission, _T("DirSubdirs"), user.permissions[i].bDirSubdirs ? _T("1"):_T("0"));
-		SetKey(pPermission, _T("IsHome"), user.permissions[i].bIsHome ? _T("1"):_T("0"));
-		SetKey(pPermission, _T("AutoCreate"), user.permissions[i].bAutoCreate ? _T("1"):_T("0"));
+		SetKey(permission, "FileRead", user.permissions[i].bFileRead ? _T("1") : _T("0"));
+		SetKey(permission, "FileWrite", user.permissions[i].bFileWrite ? _T("1") : _T("0"));
+		SetKey(permission, "FileDelete", user.permissions[i].bFileDelete ? _T("1") : _T("0"));
+		SetKey(permission, "FileAppend", user.permissions[i].bFileAppend ? _T("1") : _T("0"));
+		SetKey(permission, "DirCreate", user.permissions[i].bDirCreate ? _T("1") : _T("0"));
+		SetKey(permission, "DirDelete", user.permissions[i].bDirDelete ? _T("1") : _T("0"));
+		SetKey(permission, "DirList", user.permissions[i].bDirList ? _T("1") : _T("0"));
+		SetKey(permission, "DirSubdirs", user.permissions[i].bDirSubdirs ? _T("1") : _T("0"));
+		SetKey(permission, "IsHome", user.permissions[i].bIsHome ? _T("1") : _T("0"));
+		SetKey(permission, "AutoCreate", user.permissions[i].bAutoCreate ? _T("1") : _T("0"));
 	}
+}
+
+void ReadPermissions(pugi::xml_node const& xml, t_group &user, bool &bGotHome)
+{
+	bGotHome = false;
+	for (auto permissions = xml.child("Permissions"); permissions; permissions = permissions.next_sibling("Permissions")) {
+		for (auto permission = permissions.child("Permission"); permission; permission = permission.next_sibling("Permission")) {
+			t_directory dir;
+			dir.dir = fz::to_wstring_from_utf8(permission.attribute("Dir").value());
+			fz::replace_substrings(dir.dir, L"/", L"\\");
+			while (!dir.dir.empty() && dir.dir.back() == '\\') {
+				dir.dir.pop_back();
+			}
+			if (dir.dir.empty()) {
+				continue;
+			}
+
+			for (auto aliases = permission.child("Aliases"); aliases; aliases = aliases.next_sibling("Aliases")) {
+				for (auto xalias = aliases.child("Alias"); xalias; xalias = xalias.next_sibling("Alias")) {
+					std::wstring alias = fz::to_wstring_from_utf8(xalias.child_value());
+					if (alias.empty() || alias.front() != '/') {
+						continue;
+					}
+
+					fz::replace_substrings(alias, _T("\\"), _T("/"));
+					while (fz::replace_substrings(alias, _T("//"), _T("/")));
+					fz::rtrim(alias, L"/"s);
+					if (!alias.empty() && alias != L"/"s) {
+						dir.aliases.push_back(alias);
+					}
+				}
+			}
+			for (auto option = permission.child("Option"); option; option = option.next_sibling("Option")) {
+				std::wstring const name = fz::to_wstring_from_utf8(option.attribute("Name").value());
+				std::wstring const value = fz::to_wstring_from_utf8(option.child_value());
+
+				if (name == _T("FileRead")) {
+					dir.bFileRead = value == _T("1");
+				}
+				else if (name == _T("FileWrite")) {
+					dir.bFileWrite = value == _T("1");
+				}
+				else if (name == _T("FileDelete")) {
+					dir.bFileDelete = value == _T("1");
+				}
+				else if (name == _T("FileAppend")) {
+					dir.bFileAppend = value == _T("1");
+				}
+				else if (name == _T("DirCreate")) {
+					dir.bDirCreate = value == _T("1");
+				}
+				else if (name == _T("DirDelete")) {
+					dir.bDirDelete = value == _T("1");
+				}
+				else if (name == _T("DirList")) {
+					dir.bDirList = value == _T("1");
+				}
+				else if (name == _T("DirSubdirs")) {
+					dir.bDirSubdirs = value == _T("1");
+				}
+				else if (name == _T("IsHome")) {
+					dir.bIsHome = value == _T("1");
+				}
+				else if (name == _T("AutoCreate")) {
+					dir.bAutoCreate = value == _T("1");
+				}
+			}
+
+			//Avoid multiple home dirs
+			if (dir.bIsHome) {
+				if (!bGotHome) {
+					bGotHome = true;
+				}
+				else {
+					dir.bIsHome = false;
+				}
+			}
+
+			if (user.permissions.size() < 20000) {
+				user.permissions.push_back(dir);
+			}
+		}
+	}
+}
+
+void ReadSpeedLimits(pugi::xml_node const& xml, t_group &group)
+{
+	std::string const prefixes[] = { "Dl"s, "Ul"s };
+	const char* names[] = { "Download", "Upload" };
+
+	for (auto speedLimits = xml.child("SpeedLimits"); speedLimits; speedLimits = speedLimits.next_sibling("SpeedLimits")) {
+		for (int i = 0; i < 2; ++i) {
+			group.nSpeedLimitType[i] = speedLimits.attribute((prefixes[i] + "Type").c_str()).as_int();
+			if (group.nSpeedLimitType[i] < 0 || group.nSpeedLimitType[i] > 3) {
+				group.nSpeedLimitType[i] = 0;
+			}
+
+			group.nSpeedLimit[i] = speedLimits.attribute((prefixes[i] + "Limit").c_str()).as_int();
+			if (group.nSpeedLimit[i] < 0) {
+				group.nSpeedLimit[i] = 0;
+			}
+			else if (group.nSpeedLimit[i] > 1048576) {
+				group.nSpeedLimit[i] = 1048576;
+			}
+
+			group.nBypassServerSpeedLimit[i] = speedLimits.attribute(("Server" + prefixes[i] + "LimitBypass").c_str()).as_int();
+			if (group.nBypassServerSpeedLimit[i] < 0 || group.nBypassServerSpeedLimit[i] > 2) {
+				group.nBypassServerSpeedLimit[i] = 0;
+			}
+
+			for (auto direction = speedLimits.child(names[i]); direction; direction = direction.next_sibling(names[i])) {
+				for (auto rule = direction.child("Rule"); rule; rule = rule.next_sibling("Rule")) {
+					CSpeedLimit limit;
+					if (!limit.Load(rule)) {
+						continue;
+					}
+
+					if (group.SpeedLimits[i].size() < 20000) {
+						group.SpeedLimits[i].push_back(limit);
+					}
+				}
+			}
+		}
+	}
+}
+
+void SaveSpeedLimits(pugi::xml_node & xml, t_group const& group)
+{
+	auto speedLimits = xml.append_child("SpeedLimits");
+
+	std::string const prefixes[] = { "Dl"s, "Ul"s };
+	const char* names[] = { "Download", "Upload" };
+
+	for (int i = 0; i < 2; ++i) {
+		speedLimits.append_attribute((prefixes[i] + "Type").c_str()).set_value(group.nSpeedLimitType[i]);
+		speedLimits.append_attribute((prefixes[i] + "Limit").c_str()).set_value(group.nSpeedLimit[i]);
+		speedLimits.append_attribute(("Server" + prefixes[i] + "LimitBypass").c_str()).set_value(group.nBypassServerSpeedLimit[i]);
+
+		auto direction = speedLimits.append_child(names[i]);
+
+		for (auto const& limit : group.SpeedLimits[i]) {
+			auto rule = direction.append_child("Rule");
+			limit.Save(rule);
+		}
+	}
+}
+
+void SaveIpFilter(pugi::xml_node & xml, t_group const& group)
+{
+	auto filter = xml.append_child("IpFilter");
+
+	auto disallowed = filter.append_child("Disallowed");
+	for (auto const& disallowedIP : group.disallowedIPs) {
+		disallowed.append_child("IP").text().set(disallowedIP.c_str());
+	}
+
+	auto allowed = filter.append_child("Allowed");
+	for (auto const& allowedIP : group.allowedIPs) {
+		allowed.append_child("IP").text().set(allowedIP.c_str());
+	}
+}
 }
 
 bool CPermissions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
@@ -1021,8 +1154,8 @@ bool CPermissions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 		p = group.FillBuffer(p);
 		if (!p) {
 			delete [] *pBuffer;
-			*pBuffer = NULL;
-			return FALSE;
+			*pBuffer = nullptr;
+			return false;
 		}
 	}
 
@@ -1034,17 +1167,17 @@ bool CPermissions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 		p = iter.second.FillBuffer(p);
 		if (!p) {
 			delete [] *pBuffer;
-			*pBuffer = NULL;
-			return FALSE;
+			*pBuffer = nullptr;
+			return false;
 		}
 	}
 
 	*nBufferLength = len;
 
-	return TRUE;
+	return true;
 }
 
-BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
+bool CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 {
 	t_GroupsList groupsList;
 	t_UsersList usersList;
@@ -1052,8 +1185,9 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	unsigned char *p = pData;
 	unsigned char* endMarker = pData + dwDataLength;
 
-	if (dwDataLength < 3)
-		return FALSE;
+	if (dwDataLength < 3) {
+		return false;
+	}
 	int num = *p * 256 * 256 + p[1] * 256 + p[2];
 	p += 3;
 
@@ -1061,28 +1195,31 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 	for (i = 0; i < num; ++i) {
 		t_group group;
 		p = group.ParseBuffer(p, endMarker - p);
-		if (!p)
-			return FALSE;
+		if (!p) {
+			return false;
+		}
 
-		if (group.group != _T("")) {
+		if (!group.group.empty()) {
 			//Set a home dir if no home dir could be read
-			BOOL bGotHome = FALSE;
-			for (unsigned int dir = 0; dir < group.permissions.size(); dir++)
-				if (group.permissions[dir].bIsHome)
-				{
-					bGotHome = TRUE;
+			bool bGotHome = false;
+			for (unsigned int dir = 0; dir < group.permissions.size(); ++dir) {
+				if (group.permissions[dir].bIsHome) {
+					bGotHome = true;
 					break;
 				}
+			}
 
-			if (!bGotHome && !group.permissions.empty())
-				group.permissions.begin()->bIsHome = TRUE;
+			if (!bGotHome && !group.permissions.empty()) {
+				group.permissions.begin()->bIsHome = true;
+			}
 
 			groupsList.push_back(group);
 		}
 	}
 
-	if ((endMarker - p) < 3)
-		return FALSE;
+	if ((endMarker - p) < 3) {
+		return false;
+	}
 	num = *p * 256 * 256 + p[1] * 256 + p[2];
 	p += 3;
 
@@ -1090,47 +1227,48 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 		CUser user;
 
 		p = user.ParseBuffer(p, endMarker - p);
-		if (!p)
-			return FALSE;
+		if (!p) {
+			return false;
+		}
 
-		if (user.user != _T("")) {
-			user.pOwner = NULL;
-			if (user.group != _T("")) {
+		if (!user.user.empty()) {
+			user.pOwner = nullptr;
+			if (!user.group.empty()) {
 				for (auto const& group : groupsList) {
 					if (group.group == user.group) {
 						user.pOwner = &group;
 						break;
 					}
 				}
-				if (!user.pOwner)
-					user.group = _T("");
+				if (!user.pOwner) {
+					user.group.clear();
+				}
 			}
 
 			if (!user.pOwner) {
 				//Set a home dir if no home dir could be read
-				BOOL bGotHome = FALSE;
-				for (unsigned int dir = 0; dir < user.permissions.size(); dir++)
-					if (user.permissions[dir].bIsHome)
-					{
-						bGotHome = TRUE;
+				BOOL bGotHome = false;
+				for (unsigned int dir = 0; dir < user.permissions.size(); ++dir) {
+					if (user.permissions[dir].bIsHome) {
+						bGotHome = true;
 						break;
 					}
+				}
 
-				if (!bGotHome && !user.permissions.empty())
-					user.permissions.begin()->bIsHome = TRUE;
+				if (!bGotHome && !user.permissions.empty()) {
+					user.permissions.begin()->bIsHome = true;
+				}
 			}
 
 			std::vector<t_directory>::iterator iter;
-			for (iter = user.permissions.begin(); iter != user.permissions.end(); iter++)
-			{
-				if (iter->bIsHome)
-				{
+			for (iter = user.permissions.begin(); iter != user.permissions.end(); ++iter) {
+				if (iter->bIsHome) {
 					user.homedir = iter->dir;
 					break;
 				}
 			}
-			if (user.homedir == _T("") && user.pOwner) {
-				for (auto const& perm : user.pOwner->permissions ) {
+			if (user.homedir.empty() && user.pOwner) {
+				for (auto const& perm : user.pOwner->permissions) {
 					if (perm.bIsHome) {
 						user.homedir = perm.dir;
 						break;
@@ -1140,8 +1278,9 @@ BOOL CPermissions::ParseUsersCommand(unsigned char *pData, DWORD dwDataLength)
 
 			user.PrepareAliasMap();
 
-			CStdString name = user.user;
-			name.ToLower();
+
+			std::wstring name = user.user;
+			std::transform(name.begin(), name.end(), name.begin(), std::towlower);
 			usersList[name] = user;
 		}
 	}
@@ -1162,65 +1301,58 @@ bool CPermissions::SaveSettings()
 {
 	// Write the new account data into xml file
 
-	TiXmlElement *pXML = COptions::GetXML();
-	if (!pXML) {
+	XML::file *xml = COptions::GetXML();
+	if (!xml) {
 		return false;
 	}
 
-	TiXmlElement* pGroups;
-	while ((pGroups = pXML->FirstChildElement("Groups")))
-		pXML->RemoveChild(pGroups);
-	pGroups = new TiXmlElement("Groups");
-	pXML->LinkEndChild(pGroups);
+	do {} while (xml->root.remove_child("Groups"));
+	auto groups = xml->root.append_child("Groups");
 
 	//Save the changed user details
-	for (t_GroupsList::const_iterator groupiter = m_GroupsList.begin(); groupiter != m_GroupsList.end(); groupiter++) {
-		TiXmlElement* pGroup = new TiXmlElement("Group");
-		pGroups->LinkEndChild(pGroup);
+	for (auto const& group : m_GroupsList) {
+		auto xgroup = groups.append_child("Group");
 
-		pGroup->SetAttribute("Name", fz::to_utf8(groupiter->group).c_str());
+		xgroup.append_attribute("Name").set_value(fz::to_utf8(group.group).c_str());
 
-		SetKey(pGroup, _T("Bypass server userlimit"), groupiter->nBypassUserLimit);
-		SetKey(pGroup, _T("User Limit"), groupiter->nUserLimit);
-		SetKey(pGroup, _T("IP Limit"), groupiter->nIpLimit);
-		SetKey(pGroup, _T("Enabled"), groupiter->nEnabled);
-		SetKey(pGroup, _T("Comments"), groupiter->comment.c_str());
-		SetKey(pGroup, _T("ForceSsl"), groupiter->forceSsl);
+		SetKey(xgroup, "Bypass server userlimit", group.nBypassUserLimit);
+		SetKey(xgroup, "User Limit", group.nUserLimit);
+		SetKey(xgroup, "IP Limit", group.nIpLimit);
+		SetKey(xgroup, "Enabled", group.nEnabled);
+		SetKey(xgroup, "Comments", group.comment);
+		SetKey(xgroup, "ForceSsl", group.forceSsl);
 
-		SaveIpFilter(pGroup, *groupiter);
-		SavePermissions(pGroup, *groupiter);
-		SaveSpeedLimits(pGroup, *groupiter);
+		SaveIpFilter(xgroup, group);
+		SavePermissions(xgroup, group);
+		SaveSpeedLimits(xgroup, group);
 	}
 
-	TiXmlElement* pUsers;
-	while ((pUsers = pXML->FirstChildElement("Users")))
-		pXML->RemoveChild(pUsers);
-	pUsers = new TiXmlElement("Users");
-	pXML->LinkEndChild(pUsers);
+	do {} while (xml->root.remove_child("Users"));
+	auto users = xml->root.append_child("Users");
 
 	//Save the changed user details
 	for (auto const& iter : m_UsersList) {
 		CUser const& user = iter.second;
-		TiXmlElement* pUser = new TiXmlElement("User");
-		pUsers->LinkEndChild(pUser);
 
-		pUser->SetAttribute("Name", fz::to_utf8(user.user).c_str());
+		auto xuser = users.append_child("User");
 
-		SetKey(pUser, _T("Pass"), user.password.c_str());
-		SetKey(pUser, _T("Salt"), user.salt.c_str());
-		SetKey(pUser, _T("Group"), user.group.c_str());
-		SetKey(pUser, _T("Bypass server userlimit"), user.nBypassUserLimit);
-		SetKey(pUser, _T("User Limit"), user.nUserLimit);
-		SetKey(pUser, _T("IP Limit"), user.nIpLimit);
-		SetKey(pUser, _T("Enabled"), user.nEnabled);
-		SetKey(pUser, _T("Comments"), user.comment.c_str());
-		SetKey(pUser, _T("ForceSsl"), user.forceSsl);
+		xuser.append_attribute("Name").set_value(fz::to_utf8(user.user).c_str());
 
-		SaveIpFilter(pUser, user);
-		SavePermissions(pUser, user);
-		SaveSpeedLimits(pUser, user);
+		SetKey(xuser, "Pass", user.password.c_str());
+		SetKey(xuser, "Salt", user.salt.c_str());
+		SetKey(xuser, "Group", user.group.c_str());
+		SetKey(xuser, "Bypass server userlimit", user.nBypassUserLimit);
+		SetKey(xuser, "User Limit", user.nUserLimit);
+		SetKey(xuser, "IP Limit", user.nIpLimit);
+		SetKey(xuser, "Enabled", user.nEnabled);
+		SetKey(xuser, "Comments", user.comment.c_str());
+		SetKey(xuser, "ForceSsl", user.forceSsl);
+
+		SaveIpFilter(xuser, user);
+		SavePermissions(xuser, user);
+		SaveSpeedLimits(xuser, user);
 	}
-	if (!COptions::FreeXML(pXML, true)) {
+	if (!COptions::FreeXML(xml, true)) {
 		return false;
 	}
 
@@ -1238,83 +1370,12 @@ bool CPermissions::Init()
 	}
 	UpdatePermissions(false);
 
-	std::list<CPermissions *>::iterator instanceIter;
-	for (instanceIter = m_sInstanceList.begin(); instanceIter != m_sInstanceList.end(); instanceIter++)
-		if (*instanceIter == this)
-			break;
-	if (instanceIter == m_sInstanceList.end())
+	auto it = std::find(m_sInstanceList.begin(), m_sInstanceList.end(), this);
+	if (it == m_sInstanceList.end()) {
 		m_sInstanceList.push_back(this);
-
-	return TRUE;
-}
-
-void CPermissions::ReadPermissions(TiXmlElement *pXML, t_group &user, BOOL &bGotHome)
-{
-	bGotHome = FALSE;
-	for (TiXmlElement* pPermissions = pXML->FirstChildElement("Permissions"); pPermissions; pPermissions = pPermissions->NextSiblingElement("Permissions"))
-	{
-		for (TiXmlElement* pPermission = pPermissions->FirstChildElement("Permission"); pPermission; pPermission = pPermission->NextSiblingElement("Permission"))
-		{
-			t_directory dir;
-			dir.dir = ConvFromNetwork(pPermission->Attribute("Dir"));
-			fz::replace_substrings(dir.dir, L"/", L"\\");
-			while (!dir.dir.empty() && dir.dir.back() == '\\') {
-				dir.dir.pop_back();
-			}
-			if (dir.dir.empty()) {
-				continue;
-			}
-
-			for (TiXmlElement* pAliases = pPermission->FirstChildElement("Aliases"); pAliases; pAliases = pAliases->NextSiblingElement("Aliases")) {
-				for (TiXmlElement* pAlias = pAliases->FirstChildElement("Alias"); pAlias; pAlias = pAlias->NextSiblingElement("Alias"))	{
-					CStdString alias = XML::ReadText(pAlias);
-					if (alias == _T("") || alias[0] != '/')
-						continue;
-
-					alias.Replace(_T("\\"), _T("/"));
-					while (alias.Replace(_T("//"), _T("/")));
-					alias.TrimRight('/');
-					if (alias != _T("") && alias != _T("/"))
-						dir.aliases.push_back(alias);
-				}
-			}
-			for (TiXmlElement* pOption = pPermission->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option")) {
-				CStdString name = ConvFromNetwork(pOption->Attribute("Name"));
-				CStdString value = XML::ReadText(pOption);
-
-				if (name == _T("FileRead"))
-					dir.bFileRead = value == _T("1");
-				else if (name == _T("FileWrite"))
-					dir.bFileWrite = value == _T("1");
-				else if (name == _T("FileDelete"))
-					dir.bFileDelete = value == _T("1");
-				else if (name == _T("FileAppend"))
-					dir.bFileAppend = value == _T("1");
-				else if (name == _T("DirCreate"))
-					dir.bDirCreate = value == _T("1");
-				else if (name == _T("DirDelete"))
-					dir.bDirDelete = value == _T("1");
-				else if (name == _T("DirList"))
-					dir.bDirList = value == _T("1");
-				else if (name == _T("DirSubdirs"))
-					dir.bDirSubdirs = value == _T("1");
-				else if (name == _T("IsHome"))
-					dir.bIsHome = value == _T("1");
-				else if (name == _T("AutoCreate"))
-					dir.bAutoCreate = value == _T("1");
-			}
-
-			//Avoid multiple home dirs
-			if (dir.bIsHome)
-				if (!bGotHome)
-					bGotHome = TRUE;
-				else
-					dir.bIsHome = FALSE;
-
-			if (user.permissions.size() < 20000)
-				user.permissions.push_back(dir);
-		}
 	}
+
+	return true;
 }
 
 void CPermissions::AutoCreateDirs(CUser const& user)
@@ -1322,112 +1383,48 @@ void CPermissions::AutoCreateDirs(CUser const& user)
 	// Create missing directores after a user has logged on
 	for (auto const& permission : user.permissions) {
 		if (permission.bAutoCreate) {
-			CStdString dir = permission.dir;
+			std::wstring dir = permission.dir;
 			user.DoReplacements(dir);
 
 			dir += _T("\\");
-			CStdString str;
-			while (dir != _T("")) {
-				int pos = dir.Find(_T("\\"));
-				CStdString piece = dir.Left(pos + 1);
-				dir = dir.Mid(pos + 1);
+			std::wstring str;
+			while (!dir.empty()) {
+				size_t pos = dir.find('\\');
+				if (pos == std::wstring::npos) {
+					break;
+				}
+				std::wstring piece = dir.substr(0, pos + 1);
+				dir = dir.substr(pos + 1);
 
 				str += piece;
-				CreateDirectory(str, 0);
+				CreateDirectoryW(str.c_str(), 0);
 			}
 		}
 	}
 	if (user.pOwner) {
 		for (auto const& permission : user.pOwner->permissions) {
-			if (permission.bAutoCreate)
-			{
+			if (permission.bAutoCreate) {
 				CStdString dir = permission.dir;
 				user.DoReplacements(dir);
 
 				dir += _T("\\");
-				CStdString str;
-				while (dir != _T("")) {
-					int pos = dir.Find(_T("\\"));
-					CStdString piece = dir.Left(pos + 1);
-					dir = dir.Mid(pos + 1);
+				std::wstring str;
+				while (!dir.empty()) {
+					size_t pos = dir.find('\\');
+					if (pos == std::wstring::npos) {
+						break;
+					}
+					std::wstring piece = dir.substr(0, pos + 1);
+					dir = dir.substr(pos + 1);
 
 					str += piece;
-					CreateDirectory(str, 0);
+					CreateDirectoryW(str.c_str(), 0);
 				}
 			}
 		}
 	}
 }
 
-void CPermissions::ReadSpeedLimits(TiXmlElement *pXML, t_group &group)
-{
-	const CStdString prefixes[] = { _T("Dl"), _T("Ul") };
-	const char* names[] = { "Download", "Upload" };
-
-	for (TiXmlElement* pSpeedLimits = pXML->FirstChildElement("SpeedLimits"); pSpeedLimits; pSpeedLimits = pSpeedLimits->NextSiblingElement("SpeedLimits"))
-	{
-		CStdString str;
-		int n;
-
-		for (int i = 0; i < 2; i++)
-		{
-			str = pSpeedLimits->Attribute(fz::to_utf8(prefixes[i] + _T("Type")).c_str());
-			n = _ttoi(str);
-			if (n >= 0 && n < 4)
-				group.nSpeedLimitType[i] = n;
-			str = pSpeedLimits->Attribute(fz::to_utf8(prefixes[i] + _T("Limit")).c_str());
-			n = _ttoi(str);
-			if (n < 0)
-				group.nSpeedLimit[i] = 0;
-			else if (n > 1048576)
-				group.nSpeedLimit[i] = 1048576;
-			else
-				group.nSpeedLimit[i] = n;
-
-			str = pSpeedLimits->Attribute(fz::to_utf8(_T("Server") + prefixes[i] + _T("LimitBypass")).c_str());
-			n = _ttoi(str);
-			if (n >= 0 && n < 4)
-				group.nBypassServerSpeedLimit[i] = n;
-
-			for (TiXmlElement* pLimit = pSpeedLimits->FirstChildElement(names[i]); pLimit; pLimit = pLimit->NextSiblingElement(names[i]))
-			{
-				for (TiXmlElement* pRule = pLimit->FirstChildElement("Rule"); pRule; pRule = pRule->NextSiblingElement("Rule"))
-				{
-					CSpeedLimit limit;
-					if (!limit.Load(pRule))
-						continue;
-
-					if (group.SpeedLimits[i].size() < 20000)
-						group.SpeedLimits[i].push_back(limit);
-				}
-			}
-		}
-	}
-}
-
-void CPermissions::SaveSpeedLimits(TiXmlElement *pXML, const t_group &group)
-{
-	TiXmlElement* pSpeedLimits = pXML->LinkEndChild(new TiXmlElement("SpeedLimits"))->ToElement();
-
-	CStdString str;
-
-	const CStdString prefixes[] = { _T("Dl"), _T("Ul") };
-	const char* names[] = { "Download", "Upload" };
-
-	for (int i = 0; i < 2; ++i) {
-		pSpeedLimits->SetAttribute(fz::to_utf8(prefixes[i] + _T("Type")).c_str(), group.nSpeedLimitType[i]);
-		pSpeedLimits->SetAttribute(fz::to_utf8(prefixes[i] + _T("Limit")).c_str(), group.nSpeedLimit[i]);
-		pSpeedLimits->SetAttribute(fz::to_utf8(_T("Server") + prefixes[i] + _T("LimitBypass")).c_str(), group.nBypassServerSpeedLimit[i]);
-
-		TiXmlElement* pSpeedLimit = new TiXmlElement(names[i]);
-		pSpeedLimits->LinkEndChild(pSpeedLimit);
-
-		for (auto const& limit : group.SpeedLimits[i]) {
-			TiXmlElement* pRule = pSpeedLimit->LinkEndChild(new TiXmlElement("Rule"))->ToElement();
-			limit.Save(pRule);
-		}
-	}
-}
 
 void CPermissions::ReloadConfig()
 {
@@ -1436,13 +1433,14 @@ void CPermissions::ReloadConfig()
 	UpdateInstances();
 }
 
-void CPermissions::ReadIpFilter(TiXmlElement *pXML, t_group &group)
+namespace {
+void ReadIpFilter(pugi::xml_node const& xml, t_group & group)
 {
-	for (TiXmlElement* pFilter = pXML->FirstChildElement("IpFilter"); pFilter; pFilter = pFilter->NextSiblingElement("IpFilter")) {
-		for (TiXmlElement* pDisallowed = pFilter->FirstChildElement("Disallowed"); pDisallowed; pDisallowed = pDisallowed->NextSiblingElement("Disallowed")) {
-			for (TiXmlElement* pIP = pDisallowed->FirstChildElement("IP"); pIP; pIP = pIP->NextSiblingElement("IP")) {
-				CStdString ip = XML::ReadText(pIP);
-				if (ip == _T("")) {
+	for (auto filter = xml.child("IpFilter"); filter; filter = filter.next_sibling("IpFilter")) {
+		for (auto disallowed = filter.child("Disallowed"); disallowed; disallowed = disallowed.next_sibling("Disallowed")) {
+			for (auto xip = disallowed.child("IP"); xip; xip = xip.next_sibling("xip")) {
+				std::wstring ip = fz::to_wstring_from_utf8(xip.child_value());
+				if (ip.empty()) {
 					continue;
 				}
 
@@ -1460,10 +1458,10 @@ void CPermissions::ReadIpFilter(TiXmlElement *pXML, t_group &group)
 				}
 			}
 		}
-		for (TiXmlElement* pAllowed = pFilter->FirstChildElement("Allowed"); pAllowed; pAllowed = pAllowed->NextSiblingElement("Allowed")) {
-			for (TiXmlElement* pIP = pAllowed->FirstChildElement("IP"); pIP; pIP = pIP->NextSiblingElement("IP")) {
-				CStdString ip = XML::ReadText(pIP);
-				if (ip == _T("")) {
+		for (auto allowed = filter.child("Allowed"); allowed; allowed = allowed.next_sibling("Aallowed")) {
+			for (auto xip = allowed.child("IP"); xip; xip = xip.next_sibling("xip")) {
+				std::wstring ip = fz::to_wstring_from_utf8(xip.child_value());
+				if (ip.empty()) {
 					continue;
 				}
 
@@ -1483,27 +1481,9 @@ void CPermissions::ReadIpFilter(TiXmlElement *pXML, t_group &group)
 		}
 	}
 }
-
-void CPermissions::SaveIpFilter(TiXmlElement *pXML, const t_group &group)
-{
-	TiXmlElement* pFilter = pXML->LinkEndChild(new TiXmlElement("IpFilter"))->ToElement();
-
-	TiXmlElement* pDisallowed = pFilter->LinkEndChild(new TiXmlElement("Disallowed"))->ToElement();
-
-	for (auto const& disallowedIP : group.disallowedIPs) {
-		TiXmlElement* pIP = pDisallowed->LinkEndChild(new TiXmlElement("IP"))->ToElement();
-		XML::SetText(pIP, disallowedIP);
-	}
-
-	TiXmlElement* pAllowed = pFilter->LinkEndChild(new TiXmlElement("Allowed"))->ToElement();
-
-	for (auto const& allowedIP : group.allowedIPs) {
-		TiXmlElement* pIP = pAllowed->LinkEndChild(new TiXmlElement("IP"))->ToElement();
-		XML::SetText(pIP, allowedIP);
-	}
 }
 
-CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString newDir) const
+std::wstring CPermissions::CanonifyServerDir(std::wstring currentDir, std::wstring newDir) const
 {
 	/*
 	 * CanonifyPath takes the current and the new server dir as parameter,
@@ -1513,37 +1493,29 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 	 * - remove double slashes
 	 */
 
-	if (newDir == _T("")) {
+	if (newDir.empty()) {
 		return currentDir;
 	}
 
 	// Make segment separators pretty
-	newDir.Replace(_T("\\"), _T("/"));
-	while (newDir.Replace(_T("//"), _T("/")));
+	fz::replace_substrings(newDir, _T("\\"), _T("/"));
+	while (fz::replace_substrings(newDir, _T("//"), _T("/")));
 
 	if (newDir == _T("/")) {
 		return newDir;
 	}
 
 	// This list will hold the individual path segments
-	std::list<CStdString> piecelist;
+	std::vector<std::wstring> piecelist;
 
 	/*
 	 * Check the type of the path: Absolute or relative?
 	 * On relative paths, use currentDir as base, else use
 	 * only dir.
 	 */
-	if (newDir.Left(1) != _T("/")) {
+	if (newDir.front() != '/') {
 		// New relative path, split currentDir and add it to the piece list.
-		currentDir.TrimLeft(_T("/"));
-		int pos;
-		while((pos = currentDir.Find(_T("/"))) != -1) {
-			piecelist.push_back(currentDir.Left(pos));
-			currentDir = currentDir.Mid(pos + 1);
-		}
-		if (currentDir != _T("")) {
-			piecelist.push_back(currentDir);
-		}
+		piecelist = fz::strtok(currentDir, L"/"s);
 	}
 
 	/*
@@ -1552,29 +1524,18 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 	 * from the piece list on dots.
 	 */
 
-	int pos;
-	newDir.TrimLeft(_T("/"));
-	if (newDir.Right(1) != _T("/")) {
-		newDir += _T("/");
-	}
-	while ((pos = newDir.Find(_T("/"))) != -1) {
-		CStdString piece = newDir.Left(pos);
-		newDir = newDir.Mid(pos + 1);
-
-		if (piece == _T("")) {
-			continue;
-		}
-
+	for (auto const& segment : fz::strtok(newDir, L"/"s)) {
 		bool allDots = true;
 		int dotCount = 0;
-		for (int i = 0; i < piece.GetLength(); i++)
-			if (piece[i] != '.') {
+		for (size_t i = 0; i < segment.size(); ++i) {
+			if (segment[i] != '.') {
 				allDots = false;
 				break;
 			}
 			else {
-				dotCount++;
+				++dotCount;
 			}
+		}
 
 		if (allDots) {
 			while (--dotCount) {
@@ -1584,76 +1545,81 @@ CStdString CPermissions::CanonifyServerDir(CStdString currentDir, CStdString new
 			}
 		}
 		else {
-			piecelist.push_back(piece);
+			piecelist.push_back(segment);
 		}
 	}
 
 	// Reassemble the directory
-	CStdString result;
+	std::wstring result;
 
 	if (piecelist.empty()) {
-		return _T("/");
+		return L"/"s;
 	}
 
 	// List of reserved filenames which may not be used on a Windows system
-	static LPCTSTR reservedNames[] = {	_T("CON"),	_T("PRN"),	_T("AUX"),	_T("CLOCK$"), _T("NUL"),
-										_T("COM1"), _T("COM2"), _T("COM3"), _T("COM4"), _T("COM5"),
-										_T("COM6"), _T("COM7"), _T("COM8"), _T("COM9"),
-										_T("LPT1"), _T("LPT2"), _T("LPT3"), _T("LPT4"), _T("LPT5"),
-										_T("LPT6"), _T("LPT7"), _T("LPT8"), _T("LPT9"),
-										_T("") };
+	static std::array<std::wstring, 23> const reservedNames = {
+		L"CON"s,  L"PRN"s,  L"AUX"s,  L"CLOCK$"s, L"NUL"s,
+		L"COM1"s, L"COM2"s, L"COM3"s, L"COM4"s, L"COM5"s,
+		L"COM6"s, L"COM7"s, L"COM8"s, L"COM9"s,
+		L"LPT1"s, L"LPT2"s, L"LPT3"s, L"LPT4"s, L"LPT5"s,
+		L"LPT6"s, L"LPT7"s, L"LPT8"s, L"LPT9"s,
+	};
 
-	for (auto const& it : piecelist) {
+	for (auto const& piece : piecelist) {
 		// Check for reserved filenames
-		CStdString piece = it;
-		piece.MakeUpper();
-		for (LPCTSTR *reserved = reservedNames; **reserved; ++reserved) {
-			if (piece == *reserved) {
-				return _T("");
-			}
+		size_t pos = piece.find('.');
+
+		std::wstring upper;
+		if (pos != std::wstring::npos) {
+			upper = fz::str_toupper_ascii(piece.substr(0, pos));
 		}
-		int pos = piece.Find(_T("."));
-		if (pos >= 3) {
-			piece = piece.Left(pos);
-			for (LPCTSTR *reserved = reservedNames; **reserved; ++reserved) {
-				if (piece == *reserved) {
-					return _T("");
-				}
+		else {
+			upper = fz::str_toupper_ascii(piece);
+		}
+
+		for (auto const& reserved : reservedNames) {
+			if (upper == reserved) {
+				return std::wstring();
 			}
 		}
 
-		result += _T("/") + it;
+		result += _T("/") + piece;
 	}
 
 	// Now dir is the canonified absolute server path.
 	return result;
 }
 
-int CPermissions::GetFact(CUser const& user, CStdString const& currentDir, CStdString file, CStdString& fact, CStdString& logicalName, bool enabledFacts[3])
+int CPermissions::GetFact(CUser const& user, std::wstring const& currentDir, std::wstring file, std::wstring& fact, std::wstring& logicalName, bool enabledFacts[3])
 {
-	CStdString dir = CanonifyServerDir(currentDir, file);
-	if (dir.empty())
+	std::wstring dir = CanonifyServerDir(currentDir, file);
+	if (dir.empty()) {
 		return PERMISSION_INVALIDNAME;
+	}
 	logicalName = dir;
 
 	t_directory directory;
-	BOOL bTruematch;
+	bool bTruematch;
 	int res = GetRealDirectory(dir, user, directory, bTruematch);
 	if (res == PERMISSION_FILENOTDIR) {
-		if (dir == _T("/"))
+		if (dir == _T("/")) {
 			return res;
+		}
 
-		int pos = dir.ReverseFind('/');
-		if (pos == -1)
+		size_t pos = dir.rfind('/');
+		if (pos == std::wstring::npos) {
 			return res;
+		}
 
-		CStdString dir2;
-		if (pos)
-			dir2 = dir.Left(pos);
-		else
+		std::wstring dir2;
+		if (pos) {
+			dir2 = dir.substr(0, pos);
+		}
+		else {
 			dir2 = _T("/");
+		}
 
-		std::wstring fn = dir.Mid(pos + 1);
+		std::wstring fn = dir.substr(pos + 1);
 		int res = GetRealDirectory(dir2, user, directory, bTruematch);
 		if (res) {
 			return res | PERMISSION_FILENOTDIR;
@@ -1665,34 +1631,39 @@ int CPermissions::GetFact(CUser const& user, CStdString const& currentDir, CStdS
 
 		file = directory.dir + L"\\" + fn;
 
-		if (enabledFacts[0])
+		if (enabledFacts[0]) {
 			fact = _T("type=file;");
-		else
+		}
+		else {
 			fact = _T("");
+		}
 	}
-	else if (res)
+	else if (res) {
 		return res;
+	}
 	else {
-		if (!directory.bDirList)
+		if (!directory.bDirList) {
 			return PERMISSION_DENIED;
+		}
 
-		if (!bTruematch && !directory.bDirSubdirs)
+		if (!bTruematch && !directory.bDirSubdirs) {
 			return PERMISSION_DENIED;
+		}
 
 		file = directory.dir;
 
-		if (enabledFacts[0])
+		if (enabledFacts[0]) {
 			fact = _T("type=dir;");
-		else
+		}
+		else {
 			fact = _T("");
+		}
 	}
 
 	WIN32_FILE_ATTRIBUTE_DATA status{};
-	if (GetStatus64(file, status)) {
+	if (GetStatus64(file.c_str(), status)) {
 		if (enabledFacts[1] && !(status.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-			CStdString str;
-			str.Format(_T("size=%I64d;"), GetLength64(status));
-			fact += str;
+			fact += fz::sprintf(L"size=%d;", GetLength64(status));
 		}
 
 		if (enabledFacts[2]) {
@@ -1701,16 +1672,13 @@ int CPermissions::GetFact(CUser const& user, CStdString const& currentDir, CStdS
 			if (ftime.dwHighDateTime || ftime.dwLowDateTime) {
 				SYSTEMTIME time;
 				FileTimeToSystemTime(&ftime, &time);
-				CStdString str;
-				str.Format(_T("modify=%04d%02d%02d%02d%02d%02d;"),
+				fact += fz::sprintf(L"modify=%04d%02d%02d%02d%02d%02d;",
 					time.wYear,
 					time.wMonth,
 					time.wDay,
 					time.wHour,
 					time.wMinute,
 					time.wSecond);
-
-				fact += str;
 			}
 		}
 	}
@@ -1747,7 +1715,7 @@ void CUser::PrepareAliasMap()
 			if (dir.empty()) {
 				dir = L"/";
 			}
-			virtualAliasNames.insert(std::pair<CStdString, CStdString>(dir, alias.substr(pos + 1)));
+			virtualAliasNames.insert(std::make_pair(dir, alias.substr(pos + 1)));
 			virtualAliases[alias + L"/"] = permission.dir;
 			DoReplacements(virtualAliases[alias + L"/"]);
 		}
@@ -1777,215 +1745,204 @@ void CUser::PrepareAliasMap()
 	}
 }
 
-CStdString CUser::GetAliasTarget(CStdString const& virtualPath) const
+std::wstring CUser::GetAliasTarget(std::wstring const& virtualPath) const
 {
 	// Find the target for the alias with the specified path and name
 	for (auto const& alias : virtualAliases) {
-		if (!alias.first.CompareNoCase(virtualPath)) {
+		if (!fz::stricmp(alias.first, virtualPath)) {
 			return alias.second;
 		}
 	}
 
-	return CStdString();
+	return std::wstring();
 }
 
-void CPermissions::ReadSettings()
+void ReadCommonOption(pugi::xml_node const& option, std::string const& name, t_group & group)
 {
-	TiXmlElement *pXML = COptions::GetXML();
-	bool fileIsDirty = false; //By default, nothing gets changed when reading the file
-	if (!pXML)
-		return;
+	if (name == "Bypass server userlimit") {
+		group.nBypassUserLimit = option.text().as_int();
+	}
+	else if (name == "User Limit") {
+		group.nUserLimit = option.text().as_int();
 
-	simple_lock lock(m_mutex);
-
-	m_sGroupsList.clear();
-	m_sUsersList.clear();
-
-	TiXmlElement* pGroups = pXML->FirstChildElement("Groups");
-	if (!pGroups)
-		pGroups = pXML->LinkEndChild(new TiXmlElement("Groups"))->ToElement();
-
-	for (TiXmlElement* pGroup = pGroups->FirstChildElement("Group"); pGroup; pGroup = pGroup->NextSiblingElement("Group")) {
-		t_group group;
-		group.nBypassUserLimit = 2;
-		group.group = ConvFromNetwork(pGroup->Attribute("Name"));
-		if (group.group == _T(""))
-			continue;
-
-		for (TiXmlElement* pOption = pGroup->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option")) {
-			CStdString name = ConvFromNetwork(pOption->Attribute("Name"));
-			CStdString value = XML::ReadText(pOption);
-
-			if (name == _T("Bypass server userlimit"))
-				group.nBypassUserLimit = _ttoi(value);
-			else if (name == _T("User Limit"))
-				group.nUserLimit = _ttoi(value);
-			else if (name == _T("IP Limit"))
-				group.nIpLimit = _ttoi(value);
-			else if (name == _T("Enabled"))
-				group.nEnabled = _ttoi(value);
-			else if (name == _T("Comments"))
-				group.comment = value;
-			else if (name == _T("ForceSsl"))
-				group.forceSsl = _ttoi(value);
-		}
 		if (group.nUserLimit < 0 || group.nUserLimit > 999999999) {
 			group.nUserLimit = 0;
 		}
 		else if (group.nUserLimit > 0 && group.nUserLimit < 15) {
 			group.nUserLimit = 15;
 		}
+	}
+	else if (name == "IP Limit") {
+		group.nIpLimit = option.text().as_int();
+
 		if (group.nIpLimit < 0 || group.nIpLimit > 999999999) {
 			group.nIpLimit = 0;
 		}
 		else if (group.nIpLimit > 0 && group.nIpLimit < 15) {
 			group.nIpLimit = 15;
 		}
+	}
+	else if (name == "Enabled") {
+		group.nEnabled = option.text().as_int();
+	}
+	else if (name == "Comments") {
+		group.comment = fz::to_wstring_from_utf8(option.child_value());
+	}
+	else if (name == "ForceSsl") {
+		group.forceSsl = option.text().as_int();
+	}
+}
 
-		ReadIpFilter(pGroup, group);
-
-		BOOL bGotHome = FALSE;
-		ReadPermissions(pGroup, group, bGotHome);
-		//Set a home dir if no home dir could be read
-		if (!bGotHome && !group.permissions.empty())
-			group.permissions.begin()->bIsHome = TRUE;
-
-		ReadSpeedLimits(pGroup, group);
-
-		if (m_sGroupsList.size() < 200000)
-			m_sGroupsList.push_back(group);
+void CPermissions::ReadSettings()
+{
+	XML::file *xml  = COptions::GetXML();
+	bool fileIsDirty = false; //By default, nothing gets changed when reading the file
+	if (!xml) {
+		return;
 	}
 
-	TiXmlElement* pUsers = pXML->FirstChildElement("Users");
-	if (!pUsers) {
-		pUsers = pXML->LinkEndChild(new TiXmlElement("Users"))->ToElement();
-	}
+	simple_lock lock(m_mutex);
 
-	for (TiXmlElement* pUser = pUsers->FirstChildElement("User"); pUser; pUser = pUser->NextSiblingElement("User")) {
-		CUser user;
-		user.nBypassUserLimit = 2;
-		user.user = ConvFromNetwork(pUser->Attribute("Name"));
-		if (user.user == _T("")) {
-			continue;
-		}
+	m_sGroupsList.clear();
+	m_sUsersList.clear();
 
-		for (TiXmlElement* pOption = pUser->FirstChildElement("Option"); pOption; pOption = pOption->NextSiblingElement("Option")) {
-			CStdString name = ConvFromNetwork(pOption->Attribute("Name"));
-			CStdString value = XML::ReadText(pOption);
-
-			if (name == _T("Pass")) {
-				user.password = value;
-			}
-			else if (name == _T("Salt")) {
-				user.salt = fz::to_utf8(value);
-			}
-			else if (name == _T("Bypass server userlimit")) {
-				user.nBypassUserLimit = _ttoi(value);
-			}
-			else if (name == _T("User Limit")) {
-				user.nUserLimit = _ttoi(value);
-			}
-			else if (name == _T("IP Limit")) {
-				user.nIpLimit = _ttoi(value);
-			}
-			else if (name == _T("Group")) {
-				user.group = value;
-			}
-			else if (name == _T("Enabled")) {
-				user.nEnabled = _ttoi(value);
-			}
-			else if (name == _T("Comments")) {
-				user.comment = value;
-			}
-			else if (name == _T("ForceSsl")) {
-				user.forceSsl = _ttoi(value);
-			}
-		}
-
-		// If provided password is not a salted SHA512 hash and neither an old MD5 hash, convert it into a salted SHA512 hash
-		if (!user.password.empty() && user.salt.empty() && user.password.size() != MD5_HEX_FORM_LENGTH) {
-			user.generateSalt();
-
-			auto saltedPassword = fz::to_utf8(user.password) + user.salt;
-			if (saltedPassword.empty()) {
-				// We skip this user
+	auto groups = xml->root.child("Groups");
+	if (groups) {
+		for (auto xgroup = groups.child("Group"); xgroup; xgroup = xgroup.next_sibling("Group")) {
+			t_group group;
+			group.nBypassUserLimit = 2;
+			group.group = fz::to_wstring_from_utf8(xgroup.attribute("Name").value());
+			if (group.group.empty()) {
 				continue;
 			}
 
-			CAsyncSslSocketLayer ssl(0);
-			CStdString hash = ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size());
+			for (auto option = xgroup.child("Option"); option; option = option.next_sibling("Option")) {
+				std::string name = option.attribute("Name").value();
+				
+				ReadCommonOption(option, name, group);
+			}
+			
+			ReadIpFilter(xgroup, group);
 
-			if (hash.empty()) {
-				// We skip this user
+			bool bGotHome = false;
+			ReadPermissions(xgroup, group, bGotHome);
+			//Set a home dir if no home dir could be read
+			if (!bGotHome && !group.permissions.empty()) {
+				group.permissions.begin()->bIsHome = true;
+			}
+
+			ReadSpeedLimits(xgroup, group);
+
+			if (m_sGroupsList.size() < 200000) {
+				m_sGroupsList.push_back(group);
+			}
+		}
+	}
+
+	auto users = xml->root.child("Users");
+	if (users) {
+		for (auto xuser = users.child("User"); xuser; xuser = xuser.next_sibling("User")) {
+			CUser user;
+			user.nBypassUserLimit = 2;
+			user.user = fz::to_wstring_from_utf8(xuser.attribute("Name").value());
+			if (user.user.empty()) {
 				continue;
 			}
 
-			user.password = hash;
+			for (auto option = xuser.child("Option"); option; option = option.next_sibling("Option")) {
+				std::string name = option.attribute("Name").value();
 
-			fileIsDirty = true;
-		}
-
-		if (user.nUserLimit < 0 || user.nUserLimit > 999999999)
-			user.nUserLimit = 0;
-		else if (user.nUserLimit > 0 && user.nUserLimit < 15) {
-			user.nUserLimit = 15;
-		}
-		if (user.nIpLimit < 0 || user.nIpLimit > 999999999) {
-			user.nIpLimit = 0;
-		}
-		else if (user.nIpLimit > 0 && user.nIpLimit < 15) {
-			user.nIpLimit = 15;
-		}
-
-		if (user.group != _T("")) {
-			for (auto const& group : m_sGroupsList) {
-				if (group.group == user.group) {
-					user.pOwner = &group;
-					break;
+				if (name == "Pass") {
+					user.password = fz::to_wstring_from_utf8(option.child_value());
+				}
+				else if (name == "Salt") {
+					user.salt = option.child_value();
+				}
+				else if (name == "Group") {
+					user.group = fz::to_wstring_from_utf8(option.child_value());
+				}
+				else {
+					ReadCommonOption(option, name, user);
 				}
 			}
 
-			if (!user.pOwner)
-				user.group = _T("");
-		}
+			// If provided password is not a salted SHA512 hash and neither an old MD5 hash, convert it into a salted SHA512 hash
+			if (!user.password.empty() && user.salt.empty() && user.password.size() != MD5_HEX_FORM_LENGTH) {
+				user.generateSalt();
 
-		ReadIpFilter(pUser, user);
+				auto saltedPassword = fz::to_utf8(user.password) + user.salt;
+				if (saltedPassword.empty()) {
+					// We skip this user
+					continue;
+				}
 
-		BOOL bGotHome = FALSE;
-		ReadPermissions(pUser, user, bGotHome);
-		user.PrepareAliasMap();
+				CAsyncSslSocketLayer ssl(0);
+				CStdString hash = ssl.SHA512(reinterpret_cast<unsigned char const*>(saltedPassword.c_str()), saltedPassword.size());
 
-		//Set a home dir if no home dir could be read
-		if (!bGotHome && !user.pOwner) {
-			if (!user.permissions.empty())
-				user.permissions.begin()->bIsHome = TRUE;
-		}
+				if (hash.empty()) {
+					// We skip this user
+					continue;
+				}
 
-		std::vector<t_directory>::iterator iter;
-		for (iter = user.permissions.begin(); iter != user.permissions.end(); iter++) {
-			if (iter->bIsHome) {
-				user.homedir = iter->dir;
-				break;
+				user.password = hash;
+
+				fileIsDirty = true;
 			}
-		}
-		if (user.homedir == _T("") && user.pOwner) {
-			for (auto const& perm : user.pOwner->permissions ) {
-				if (perm.bIsHome) {
-					user.homedir = perm.dir;
+
+		
+			if (!user.group.empty()) {
+				for (auto const& group : m_sGroupsList) {
+					if (group.group == user.group) {
+						user.pOwner = &group;
+						break;
+					}
+				}
+
+				if (!user.pOwner) {
+					user.group.clear();
+				}
+			}
+
+			ReadIpFilter(xuser, user);
+
+			bool bGotHome = false;
+			ReadPermissions(xuser, user, bGotHome);
+			user.PrepareAliasMap();
+
+			// Set a home dir if no home dir could be read
+			if (!bGotHome && !user.pOwner) {
+				if (!user.permissions.empty()) {
+					user.permissions.begin()->bIsHome = true;
+				}
+			}
+
+			std::vector<t_directory>::iterator iter;
+			for (iter = user.permissions.begin(); iter != user.permissions.end(); iter++) {
+				if (iter->bIsHome) {
+					user.homedir = iter->dir;
 					break;
 				}
 			}
-		}
+			if (user.homedir.empty() && user.pOwner) {
+				for (auto const& perm : user.pOwner->permissions) {
+					if (perm.bIsHome) {
+						user.homedir = perm.dir;
+						break;
+					}
+				}
+			}
 
-		ReadSpeedLimits(pUser, user);
+			ReadSpeedLimits(xuser, user);
 
-		if (m_sUsersList.size() < 200000) {
-			CStdString name = user.user;
-			name.ToLower();
-			m_sUsersList[name] = user;
+			if (m_sUsersList.size() < 200000) {
+				CStdString name = user.user;
+				name.ToLower();
+				m_sUsersList[name] = user;
+			}
 		}
 	}
-	COptions::FreeXML(pXML, false);
+	
+	COptions::FreeXML(xml, false);
 
 	UpdatePermissions(false);
 
@@ -2005,46 +1962,47 @@ void CUser::DoReplacements(std::wstring& path) const
 	}
 }
 
-bool CPermissions::WildcardMatch(CStdString string, CStdString pattern) const
+bool CPermissions::WildcardMatch(std::wstring string, std::wstring pattern) const
 {
 	if (pattern == _T("*") || pattern == _T("*.*")) {
 		return true;
 	}
 
+	std::transform(string.begin(), string.end(), string.begin(), std::towlower);
+	std::transform(pattern.begin(), pattern.end(), pattern.begin(), std::towlower);
+
 	// Do a really primitive wildcard check, does even ignore ?
-	string.MakeLower();
-	pattern.MakeLower();
 
 	bool starFirst = false;
-	while (pattern != _T(""))
-	{
-		int pos = pattern.Find('*');
-		if (pos == -1)
-		{
-			if (starFirst)
-			{
-				if (string.GetLength() > pattern.GetLength())
-					string = string.Right(pattern.GetLength());
+	while (!pattern.empty()) {
+		size_t pos = pattern.find('*');
+		if (pos == std::wstring::npos) {
+			if (starFirst) {
+				if (string.size() > pattern.size()) {
+					string = string.substr(string.size() - pattern.size());
+				}
 			}
-			if (pattern != string)
+			if (pattern != string) {
 				return false;
-			else
+			}
+			else {
 				return true;
+			}
 		}
-		else if (!pos)
-		{
+		else if (!pos) {
 			starFirst = true;
-			pattern = pattern.Mid(1);
+			pattern = pattern.substr(1);
 		}
-		else
-		{
-			int npos = string.Find(pattern.Left(pos));
-			if (npos == -1)
+		else {
+			size_t pos2 = string.find(pattern.substr(0, pos));
+			if (pos2 == std::wstring::npos) {
 				return false;
-			if (npos && !starFirst)
+			}
+			if (pos2 && !starFirst) {
 				return false;
-			pattern = pattern.Mid(pos + 1);
-			string = string.Mid(npos + pos);
+			}
+			pattern = pattern.substr(pos + 1);
+			string = string.substr(pos2 + pos);
 
 			starFirst = true;
 		}
@@ -2059,17 +2017,17 @@ void CPermissions::UpdatePermissions(bool notifyOwner)
 
 		// Clear old group data and copy over the new data
 		m_GroupsList.clear();
-		for (auto const& group : m_sGroupsList ) {
+		for (auto const& group : m_sGroupsList) {
 			m_GroupsList.push_back(group);
 		}
 
 		// Clear old user data and copy over the new data
 		m_UsersList.clear();
-		for (auto const& it : m_sUsersList ) {
+		for (auto const& it : m_sUsersList) {
 			CUser user = it.second;
-			user.pOwner = NULL;
-			if (user.group != _T("")) {	// Set owner
-				for (auto const& group : m_GroupsList ) {
+			user.pOwner = nullptr;
+			if (!user.group.empty()) { // Set owner
+				for (auto const& group : m_GroupsList) {
 					if (group.group == user.group) {
 						user.pOwner = &group;
 						break;

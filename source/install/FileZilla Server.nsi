@@ -262,9 +262,9 @@ SectionIn 2
   File "StartupOptions.ini"
   File "InterfaceOptions.ini"
   File "uninstall.ico"
-  SetOutPath "$INSTDIR\source\tinyxml"
-  File "..\tinyxml\*.h"
-  File "..\tinyxml\*.cpp"
+  SetOutPath "$INSTDIR\source\pugixml"
+  File "..\pugixml\*.hpp"
+  File "..\pugixml\*.cpp"
 SectionEnd
 
 ; optional section
@@ -618,8 +618,8 @@ Section "Uninstall"
   Delete "$INSTDIR\source\install\FileZilla Server.nsi"
   Delete "$INSTDIR\source\install\StartupOptions.ini"
   Delete "$INSTDIR\source\install\InterfaceOptions.ini"
-  Delete "$INSTDIR\source\tinyxml\*.h"
-  Delete "$INSTDIR\source\tinyxml\*.cpp"
+  Delete "$INSTDIR\source\pugixml\*.hpp"
+  Delete "$INSTDIR\source\pugixml\*.cpp"
 
   ; MUST REMOVE UNINSTALLER, too
   Delete $INSTDIR\uninstall.exe
@@ -639,7 +639,7 @@ Section "Uninstall"
   RMDir "$INSTDIR\source\interface"
   RMDir "$INSTDIR\source\install"
   RMDir "$INSTDIR\source\includes"
-  RMDir "$INSTDIR\source\tinyxml"
+  RMDir "$INSTDIR\source\pugixml"
   RMDir "$INSTDIR\source"
   RMDir "$INSTDIR"
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "FileZilla Server"

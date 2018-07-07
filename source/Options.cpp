@@ -20,24 +20,24 @@
 #include "options.h"
 #include "platform.h"
 #include "version.h"
-#include "tinyxml/tinyxml.h"
+#include "pugixml/pugixml.hpp"
 #include "iputils.h"
 #include "OptionLimits.h"
 #include "xml_utils.h"
 
 #include <libfilezilla/string.hpp>
 
-std::list<COptions *> COptions::m_InstanceList;
+std::vector<COptions *> COptions::m_InstanceList;
 std::recursive_mutex COptions::m_mutex;
 COptions::t_OptionsCache COptions::m_sOptionsCache[OPTIONS_NUM];
-BOOL COptions::m_bInitialized = FALSE;
+bool COptions::m_bInitialized{};
 
 SPEEDLIMITSLIST COptions::m_sSpeedLimits[2];
 
 // Backslash-terminated
-CStdString GetExecutableDirectory()
+std::wstring GetExecutableDirectory()
 {
-	CStdString ret;
+	std::wstring ret;
 
 	TCHAR buffer[MAX_PATH + 1000]; //Make it large enough
 	if (GetModuleFileName(0, buffer, MAX_PATH) > 0) {
@@ -55,13 +55,15 @@ CStdString GetExecutableDirectory()
 /////////////////////////////////////////////////////////////////////////////
 // COptionsHelperWindow
 
-class COptionsHelperWindow
+class COptionsHelperWindow final
 {
 public:
+	COptionsHelperWindow() = delete;
+
 	COptionsHelperWindow(COptions *pOptions)
 	{
 		ASSERT(pOptions);
-		m_pOptions=pOptions;
+		m_pOptions = pOptions;
 
 		//Create window
 		WNDCLASSEX wndclass;
@@ -85,7 +87,7 @@ public:
 		SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG)this);
 	};
 
-	virtual ~COptionsHelperWindow()
+	~COptionsHelperWindow()
 	{
 		//Destroy window
 		if (m_hWnd) {
@@ -103,13 +105,15 @@ protected:
 	static LRESULT CALLBACK WindowProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 	{
 		if (message == WM_USER) {
-			COptionsHelperWindow *pWnd=(COptionsHelperWindow *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-			if (!pWnd)
+			COptionsHelperWindow *pWnd = (COptionsHelperWindow *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+			if (!pWnd) {
 				return 0;
+			}
 			ASSERT(pWnd);
 			ASSERT(pWnd->m_pOptions);
-			for (int i=0;i<OPTIONS_NUM;i++)
-				pWnd->m_pOptions->m_OptionsCache[i].bCached = FALSE;
+			for (int i = 0; i < OPTIONS_NUM; ++i) {
+				pWnd->m_pOptions->m_OptionsCache[i].bCached = false;
+			}
 			simple_lock lock(COptions::m_mutex);
 			pWnd->m_pOptions->m_SpeedLimits[0] = COptions::m_sSpeedLimits[0];
 			pWnd->m_pOptions->m_SpeedLimits[1] = COptions::m_sSpeedLimits[1];
@@ -127,14 +131,11 @@ private:
 
 COptions::COptions()
 {
-	for (int i = 0; i < OPTIONS_NUM; ++i)
-		m_OptionsCache[i].bCached = FALSE;
+	for (int i = 0; i < OPTIONS_NUM; ++i) {
+		m_OptionsCache[i].bCached = false;
+	}
 	m_pOptionsHelperWindow = new COptionsHelperWindow(this);
 	simple_lock lock(m_mutex);
-#ifdef _DEBUG
-	for (std::list<COptions *>::iterator iter=m_InstanceList.begin(); iter != m_InstanceList.end(); ++iter)
-		ASSERT(*iter != this);
-#endif _DEBUG
 	m_InstanceList.push_back(this);
 	m_SpeedLimits[0] = m_sSpeedLimits[0];
 	m_SpeedLimits[1] = m_sSpeedLimits[1];
@@ -144,23 +145,20 @@ COptions::~COptions()
 {
 	{
 		simple_lock lock(m_mutex);
-		std::list<COptions *>::iterator iter;
-		for (iter=m_InstanceList.begin(); iter != m_InstanceList.end(); ++iter) {
-			if (*iter == this)
-				break;
-		}
-
+		auto iter = std::find(m_InstanceList.begin(), m_InstanceList.end(), this);
 		ASSERT(iter != m_InstanceList.end());
-		if (iter != m_InstanceList.end())
+		if (iter != m_InstanceList.end()) {
 			m_InstanceList.erase(iter);
+		}
 	}
 
-	if (m_pOptionsHelperWindow)
+	if (m_pOptionsHelperWindow) {
 		delete m_pOptionsHelperWindow;
-	m_pOptionsHelperWindow=0;
+		m_pOptionsHelperWindow = nullptr;
+	}
 }
 
-void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
+void COptions::SetOption(int nOptionID, int64_t value, bool save)
 {
 	switch (nOptionID)
 	{
@@ -181,152 +179,161 @@ void COptions::SetOption(int nOptionID, _int64 value, bool save /*=true*/)
 		}
 		break;
 	case OPTION_TIMEOUT:
-		if (value < 0)
+		if (value < 0) {
 			value = 120;
-		else if (value > 9999)
+		}
+		else if (value > 9999) {
 			value = 120;
+		}
 		break;
 	case OPTION_NOTRANSFERTIMEOUT:
-		if (value < 600 && value != 0)
+		if (value < 600 && value != 0) {
 			value = 600;
-		else if (value > 9999)
+		}
+		else if (value > 9999) {
 			value = 600;
+		}
 		break;
 	case OPTION_LOGINTIMEOUT:
-		if (value < 0)
+		if (value < 0) {
 			value = 60;
-		else if (value > 9999)
+		}
+		else if (value > 9999) {
 			value = 60;
+		}
 		break;
 	case OPTION_ADMINPORT:
-		if (value > 65535)
+		if (value > 65535) {
 			value = 14147;
-		else if (value < 1)
+		}
+		else if (value < 1) {
 			value = 14147;
+		}
 		break;
 	case OPTION_LOGTYPE:
-		if (value != 0 && value != 1)
+		if (value != 0 && value != 1) {
 			value = 0;
+		}
 		break;
 	case OPTION_LOGLIMITSIZE:
-		if ((value > 999999 || value < 10) && value != 0)
+		if ((value > 999999 || value < 10) && value != 0) {
 			value = 100;
+		}
 		break;
 	case OPTION_LOGDELETETIME:
-		if (value > 999 || value < 0)
+		if (value > 999 || value < 0) {
 			value = 14;
+		}
 		break;
 	case OPTION_DOWNLOADSPEEDLIMITTYPE:
 	case OPTION_UPLOADSPEEDLIMITTYPE:
-		if (value < 0 || value > 2)
+		if (value < 0 || value > 2) {
 			value = 0;
+		}
 		break;
 	case OPTION_DOWNLOADSPEEDLIMIT:
 	case OPTION_UPLOADSPEEDLIMIT:
-		if (value < 1)
+		if (value < 1) {
 			value = 1;
-		else if (value > 1048576)
+		}
+		else if (value > 1048576) {
 			value = 1048576;
+		}
 		break;
 	case OPTION_BUFFERSIZE:
-		if (value < 256 || value > (1024*1024))
+		if (value < 256 || value >(1024 * 1024)) {
 			value = 32768;
+		}
 		break;
 	case OPTION_BUFFERSIZE2:
-		if (value < 256 || value > (1024*1024*128))
+		if (value < 256 || value >(1024 * 1024 * 128)) {
 			value = 262144;
+		}
 		break;
 	case OPTION_CUSTOMPASVIPTYPE:
-		if (value < 0 || value > 2)
+		if (value < 0 || value > 2) {
 			value = 0;
+		}
 		break;
 	case OPTION_MODEZ_USE:
-		if (value < 0 || value > 1)
+		if (value < 0 || value > 1) {
 			value = 0;
+		}
 		break;
 	case OPTION_MODEZ_LEVELMIN:
-		if (value < 0 || value > 8)
+		if (value < 0 || value > 8) {
 			value = 1;
+		}
 		break;
 	case OPTION_MODEZ_LEVELMAX:
-		if (value < 8 || value > 9)
+		if (value < 8 || value > 9) {
 			value = 9;
+		}
 		break;
 	case OPTION_MODEZ_ALLOWLOCAL:
-		if (value < 0 || value > 1)
+		if (value < 0 || value > 1) {
 			value = 0;
+		}
 		break;
 	case OPTION_AUTOBAN_ATTEMPTS:
-		if (value < OPTION_AUTOBAN_ATTEMPTS_MIN)
+		if (value < OPTION_AUTOBAN_ATTEMPTS_MIN) {
 			value = OPTION_AUTOBAN_ATTEMPTS_MIN;
-		if (value > OPTION_AUTOBAN_ATTEMPTS_MAX)
+		}
+		if (value > OPTION_AUTOBAN_ATTEMPTS_MAX) {
 			value = OPTION_AUTOBAN_ATTEMPTS_MAX;
+		}
 		break;
 	case OPTION_AUTOBAN_BANTIME:
-		if (value < 1)
+		if (value < 1) {
 			value = 1;
-		if (value > 999)
+		}
+		if (value > 999) {
 			value = 999;
+		}
 		break;
 	}
 
 	Init();
 
+	std::string valuestr = fz::to_string(value);
+
 	{
 		simple_lock lock(m_mutex);
-		m_sOptionsCache[nOptionID-1].nType = 1;
-		m_sOptionsCache[nOptionID-1].value = value;
-		m_sOptionsCache[nOptionID-1].bCached = TRUE;
-		m_OptionsCache[nOptionID-1] = m_sOptionsCache[nOptionID - 1];
+		m_sOptionsCache[nOptionID - 1].value = value;
+		m_sOptionsCache[nOptionID - 1].str = fz::to_wstring(valuestr);
+		m_sOptionsCache[nOptionID - 1].bCached = true;
+		m_OptionsCache[nOptionID - 1] = m_sOptionsCache[nOptionID - 1];
 	}
 
 	if (!save) {
 		return;
 	}
 
-	CStdString valuestr;
-	valuestr.Format( _T("%I64d"), value);
+	std::wstring const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 
-	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-
-	TiXmlDocument document;
-	if (!XML::Load(document, xmlFileName)) {
+	XML::file file = XML::Load(xmlFileName);
+	if (!file) {
 		return;
 	}
 
-	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot) {
-		return;
+	auto settings = file.root.child("Settings");
+	if (!settings) {
+		settings = file.root.append_child("Settings");
 	}
 
-	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
-	if (!pSettings) {
-		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+	pugi::xml_node setting;
+	pugi::xml_node_iterator it = settings.find_child_by_attribute("Item", "name", m_Options[nOptionID - 1].name);
+	if (it == settings.end()) {
+		setting = settings.append_child("Item");
+		setting.append_attribute("name").set_value(m_Options[nOptionID - 1].name);
+	}
+	else {
+		setting = *it;
 	}
 
-	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
-		const char* pName = pItem->Attribute("name");
-		if (!pName) {
-			continue;
-		}
-		std::string_view name(pName);
-		if (name != m_Options[nOptionID - 1].name) {
-			continue;
-		}
+	setting.text().set(valuestr.c_str());
 
-		break;
-	}
-
-	if (!pItem) {
-		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
-	}
-	pItem->Clear();
-	pItem->SetAttribute("name", fz::to_utf8(m_Options[nOptionID-1].name).c_str());
-	pItem->SetAttribute("type", "numeric");
-	pItem->LinkEndChild(new TiXmlText(fz::to_utf8(valuestr).c_str()));
-
-	XML::Save(document, xmlFileName);
+	XML::Save(file.document, xmlFileName);
 }
 
 void COptions::SetOption(int nOptionID, std::wstring str, bool save)
@@ -361,9 +368,7 @@ void COptions::SetOption(int nOptionID, std::wstring str, bool save)
 
 			str.clear();
 			for (int port : portSet) {
-				CStdString tmp;
-				tmp.Format(_T("%d "), port);
-				str += tmp;
+				str += fz::to_wstring(port) + L" ";
 			}
 			if (!str.empty()) {
 				str.pop_back();
@@ -530,62 +535,47 @@ void COptions::SetOption(int nOptionID, std::wstring str, bool save)
 
 	{
 		simple_lock lock(m_mutex);
-		m_sOptionsCache[nOptionID-1].bCached = TRUE;
-		m_sOptionsCache[nOptionID-1].nType = 0;
-		m_sOptionsCache[nOptionID-1].str = str;
-		m_OptionsCache[nOptionID-1]=m_sOptionsCache[nOptionID-1];
+		m_sOptionsCache[nOptionID - 1].bCached = true;
+		m_sOptionsCache[nOptionID - 1].str = str;
+		m_sOptionsCache[nOptionID - 1].value = fz::to_integral<int64_t>(str);
+		m_OptionsCache[nOptionID - 1] = m_sOptionsCache[nOptionID - 1];
 	}
 
 	if (!save) {
 		return;
 	}
 
-	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-	
-	TiXmlDocument document;
-	if (!XML::Load(document, xmlFileName)) {
+	std::wstring const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+
+	XML::file file = XML::Load(xmlFileName);
+	if (!file) {
 		return;
 	}
 
-	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot) {
-		return;
+	auto settings = file.root.child("Settings");
+	if (!settings) {
+		settings = file.root.append_child("Settings");
 	}
 
-	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
-	if (!pSettings) {
-		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+	pugi::xml_node setting;
+	pugi::xml_node_iterator it = settings.find_child_by_attribute("Item", "name", m_Options[nOptionID - 1].name);
+	if (it == settings.end()) {
+		setting = settings.append_child("Item");
+		setting.append_attribute("name").set_value(m_Options[nOptionID - 1].name);
+	}
+	else {
+		setting = *it;
 	}
 
-	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
-		const char* pName = pItem->Attribute("name");
-		if (!pName) {
-			continue;
-		}
-		std::string name(pName);
-		if (name != m_Options[nOptionID - 1].name) {
-			continue;
-		}
+	setting.text().set(fz::to_utf8(str).c_str());
 
-		break;
-	}
-
-	if (!pItem) {
-		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
-	}
-	pItem->Clear();
-	pItem->SetAttribute("name", fz::to_utf8(m_Options[nOptionID - 1].name).c_str());
-	pItem->SetAttribute("type", "string");
-	pItem->LinkEndChild(new TiXmlText(fz::to_utf8(str).c_str()));
-
-	XML::Save(document, xmlFileName);
+	XML::Save(file.document, xmlFileName);
 }
 
 std::wstring COptions::GetOption(int nOptionID)
 {
 	ASSERT(nOptionID > 0 && nOptionID <= OPTIONS_NUM);
-	ASSERT(!m_Options[nOptionID-1].nType);
+	ASSERT(!m_Options[nOptionID - 1].nType);
 	Init();
 
 	if (m_OptionsCache[nOptionID - 1].bCached) {
@@ -594,122 +584,121 @@ std::wstring COptions::GetOption(int nOptionID)
 
 	simple_lock lock(m_mutex);
 
-	if (!m_sOptionsCache[nOptionID-1].bCached) {
+	if (!m_sOptionsCache[nOptionID - 1].bCached) {
 		//Default values
 		switch (nOptionID)
 		{
 		case OPTION_SERVERPORT:
-			m_sOptionsCache[nOptionID-1].str = _T("21");
+			m_sOptionsCache[nOptionID - 1].str = _T("21");
 			break;
 		case OPTION_WELCOMEMESSAGE:
-			m_sOptionsCache[nOptionID-1].str = _T("%v");
-			m_sOptionsCache[nOptionID-1].str += _T("\r\nwritten by Tim Kosse (tim.kosse@filezilla-project.org)");
-			m_sOptionsCache[nOptionID-1].str += _T("\r\nPlease visit https://filezilla-project.org/");
+			m_sOptionsCache[nOptionID - 1].str = _T("%v");
+			m_sOptionsCache[nOptionID - 1].str += _T("\r\nwritten by Tim Kosse (tim.kosse@filezilla-project.org)");
+			m_sOptionsCache[nOptionID - 1].str += _T("\r\nPlease visit https://filezilla-project.org/");
 			break;
 		case OPTION_CUSTOMPASVIPSERVER:
-			m_sOptionsCache[nOptionID-1].str = _T("http://ip.filezilla-project.org/ip.php");
+			m_sOptionsCache[nOptionID - 1].str = _T("http://ip.filezilla-project.org/ip.php");
 			break;
 		case OPTION_IPBINDINGS:
-			m_sOptionsCache[nOptionID-1].str = _T("*");
+			m_sOptionsCache[nOptionID - 1].str = _T("*");
 			break;
 		case OPTION_TLSPORTS:
-			m_sOptionsCache[nOptionID-1].str = _T("990");
+			m_sOptionsCache[nOptionID - 1].str = _T("990");
 			break;
 		default:
-			m_sOptionsCache[nOptionID-1].str = _T("");
+			m_sOptionsCache[nOptionID - 1].str = _T("");
 			break;
 		}
-		m_sOptionsCache[nOptionID-1].bCached = TRUE;
-		m_sOptionsCache[nOptionID-1].nType = 0;
+		m_sOptionsCache[nOptionID - 1].bCached = true;
 	}
-	m_OptionsCache[nOptionID-1] = m_sOptionsCache[nOptionID - 1];
-	return m_OptionsCache[nOptionID-1].str;
+	m_OptionsCache[nOptionID - 1] = m_sOptionsCache[nOptionID - 1];
+	return m_OptionsCache[nOptionID - 1].str;
 }
 
 _int64 COptions::GetOptionVal(int nOptionID)
 {
-	ASSERT(nOptionID>0 && nOptionID<=OPTIONS_NUM);
-	ASSERT(m_Options[nOptionID-1].nType == 1);
+	ASSERT(nOptionID > 0 && nOptionID <= OPTIONS_NUM);
+	ASSERT(m_Options[nOptionID - 1].nType == 1);
 	Init();
 
-	if (m_OptionsCache[nOptionID-1].bCached)
-		return m_OptionsCache[nOptionID-1].value;
+	if (m_OptionsCache[nOptionID - 1].bCached) {
+		return m_OptionsCache[nOptionID - 1].value;
+	}
 
 	simple_lock lock(m_mutex);
 
-	if (!m_sOptionsCache[nOptionID-1].bCached) {
+	if (!m_sOptionsCache[nOptionID - 1].bCached) {
 		//Default values
 		switch (nOptionID)
 		{
 			case OPTION_CHECK_DATA_CONNECTION_IP:
-				m_sOptionsCache[nOptionID-1].value = 2;
+				m_sOptionsCache[nOptionID - 1].value = 2;
 				break;
 			case OPTION_MAXUSERS:
-				m_sOptionsCache[nOptionID-1].value = 0;
+				m_sOptionsCache[nOptionID - 1].value = 0;
 				break;
 			case OPTION_THREADNUM:
-				m_sOptionsCache[nOptionID-1].value = 4;
+				m_sOptionsCache[nOptionID - 1].value = 4;
 				break;
 			case OPTION_TIMEOUT:
 			case OPTION_NOTRANSFERTIMEOUT:
-				m_sOptionsCache[nOptionID-1].value = 120;
+				m_sOptionsCache[nOptionID - 1].value = 120;
 				break;
 			case OPTION_LOGINTIMEOUT:
-				m_sOptionsCache[nOptionID-1].value = 60;
+				m_sOptionsCache[nOptionID - 1].value = 60;
 				break;
 			case OPTION_ADMINPORT:
-				m_sOptionsCache[nOptionID-1].value = 14147;
+				m_sOptionsCache[nOptionID - 1].value = 14147;
 				break;
 			case OPTION_DOWNLOADSPEEDLIMIT:
 			case OPTION_UPLOADSPEEDLIMIT:
-				m_sOptionsCache[nOptionID-1].value = 10;
+				m_sOptionsCache[nOptionID - 1].value = 10;
 				break;
 			case OPTION_BUFFERSIZE:
-				m_sOptionsCache[nOptionID-1].value = 32768;
+				m_sOptionsCache[nOptionID - 1].value = 32768;
 				break;
 			case OPTION_CUSTOMPASVIPTYPE:
-				m_sOptionsCache[nOptionID-1].value = 0;
+				m_sOptionsCache[nOptionID - 1].value = 0;
 				break;
 			case OPTION_MODEZ_USE:
-				m_sOptionsCache[nOptionID-1].value = 0;
+				m_sOptionsCache[nOptionID - 1].value = 0;
 				break;
 			case OPTION_MODEZ_LEVELMIN:
-				m_sOptionsCache[nOptionID-1].value = 1;
+				m_sOptionsCache[nOptionID - 1].value = 1;
 				break;
 			case OPTION_MODEZ_LEVELMAX:
-				m_sOptionsCache[nOptionID-1].value = 9;
+				m_sOptionsCache[nOptionID - 1].value = 9;
 				break;
 			case OPTION_MODEZ_ALLOWLOCAL:
-				m_sOptionsCache[nOptionID-1].value = 0;
+				m_sOptionsCache[nOptionID - 1].value = 0;
 				break;
 			case OPTION_ALLOWEXPLICITTLS:
 			case OPTION_FORCEPROTP:
 			case OPTION_TLS_REQUIRE_SESSION_RESUMPTION:
-				m_sOptionsCache[nOptionID-1].value = 1;
+				m_sOptionsCache[nOptionID - 1].value = 1;
 				break;
 			case OPTION_BUFFERSIZE2:
-				m_sOptionsCache[nOptionID-1].value = 65536*4;
+				m_sOptionsCache[nOptionID - 1].value = 65536*4;
 				break;
 			case OPTION_NOEXTERNALIPONLOCAL:
-				m_sOptionsCache[nOptionID-1].value = 1;
+				m_sOptionsCache[nOptionID - 1].value = 1;
 				break;
 			case OPTION_ACTIVE_IGNORELOCAL:
-				m_sOptionsCache[nOptionID-1].value = 1;
+				m_sOptionsCache[nOptionID - 1].value = 1;
 				break;
 			case OPTION_AUTOBAN_BANTIME:
-				m_sOptionsCache[nOptionID-1].value = 1;
+				m_sOptionsCache[nOptionID - 1].value = 1;
 				break;
 			case OPTION_AUTOBAN_ATTEMPTS:
-				m_sOptionsCache[nOptionID-1].value = 10;
+				m_sOptionsCache[nOptionID - 1].value = 10;
 				break;
 			default:
-				m_sOptionsCache[nOptionID-1].value = 0;
+				m_sOptionsCache[nOptionID - 1].value = 0;
 		}
-		m_sOptionsCache[nOptionID-1].bCached=TRUE;
-		m_sOptionsCache[nOptionID-1].nType=1;
+		m_sOptionsCache[nOptionID - 1].bCached = true;
 	}
-	m_OptionsCache[nOptionID-1]=m_sOptionsCache[nOptionID-1];
-	return m_OptionsCache[nOptionID-1].value;
+	m_OptionsCache[nOptionID - 1] = m_sOptionsCache[nOptionID - 1];
+	return m_OptionsCache[nOptionID - 1].value;
 }
 
 void COptions::UpdateInstances()
@@ -721,63 +710,33 @@ void COptions::UpdateInstances()
 	}
 }
 
-void COptions::Init()
+void COptions::Init(bool reload)
 {
-	if (m_bInitialized)
+	if (m_bInitialized && !reload) {
 		return;
+	}
 	simple_lock lock(m_mutex);
-	m_bInitialized = TRUE;
+	m_bInitialized = true;
 
-	for (int i = 0; i < OPTIONS_NUM; ++i)
-		m_sOptionsCache[i].bCached = FALSE;
-
-	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-
-	TiXmlDocument document;
-
-	WIN32_FILE_ATTRIBUTE_DATA status{};
-	if (!GetStatus64(xmlFileName, status) ) {
-		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
-		XML::Save(document, xmlFileName);
+	for (int i = 0; i < OPTIONS_NUM; ++i) {
+		m_sOptionsCache[i].bCached = false;
 	}
-	else if (status.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+
+	std::wstring const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+
+	XML::file file = XML::Load(xmlFileName);
+	if (!file) {
 		return;
 	}
-
-	if (!XML::Load(document, xmlFileName)) {
-		return;
+	
+	auto settings = file.root.child("Settings");
+	if (settings) {
+		settings = file.root.append_child("Settings");
 	}
 
-	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot) {
-		return;
-	}
-
-	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
-	if (!pSettings) {
-		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
-	}
-
-	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
-		const char* pName = pItem->Attribute("name");
-		if (!pName) {
-			continue;
-		}
-		std::string name(pName);
-
-		const char* pType = pItem->Attribute("type");
-		if (!pType) {
-			continue;
-		}
-		CStdString type(pType);
-
-		TiXmlNode* textNode = pItem->FirstChild();
-		CStdString value;
-		if (textNode && textNode->ToText()) {
-			value = ConvFromNetwork(textNode->Value());
-		}
-		else if (type == _T("numeric")) {
+	for (auto setting = settings.child("Item"); setting; setting = setting.next_sibling("Item")) {
+		std::string name = setting.attribute("name").value();
+		if (name.empty()) {
 			continue;
 		}
 
@@ -789,88 +748,58 @@ void COptions::Init()
 				break;
 			}
 
-			if (type == _T("numeric")) {
-				if (m_Options[i].nType != 1) {
-					break;
-				}
-				_int64 value64 = _ttoi64(value);
-				if (IsNumeric(value)) {
-					SetOption(i + 1, value64, false);
-				}
+			std::wstring value = fz::to_wstring_from_utf8(setting.child_value());
+			if (m_Options[i].nType) {
+				SetOption(i, fz::to_integral<int64_t>(value), false);
 			}
 			else {
-				if (m_Options[i].nType != 0) {
-					break;
-				}
-				SetOption(i + 1, value, false);
+				SetOption(i, value, false);
 			}
 			break;
 		}
 	}
-	ReadSpeedLimits(pSettings);
+	ReadSpeedLimits(settings);
 
 	UpdateInstances();
 }
 
-bool COptions::IsNumeric(LPCTSTR str)
-{
-	if (!str)
-		return false;
-	LPCTSTR p = str;
-	while (*p) {
-		if (*p < '0' || *p > '9') {
-			return false;
-		}
-		++p;
-	}
-	return true;
-}
-
-TiXmlElement *COptions::GetXML()
+XML::file* COptions::GetXML()
 {
 	simple_lock lock(m_mutex);
 
-	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	std::wstring const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 
-	TiXmlDocument *pDocument = new TiXmlDocument;
-
-	if (!XML::Load(*pDocument, xmlFileName)) {
-		delete pDocument;
-		return NULL;
+	XML::file *pFile = new XML::file;
+	*pFile = XML::Load(xmlFileName);
+	if (!*pFile) {
+		delete pFile;
+		return nullptr;
 	}
-
-	TiXmlElement* pElement = pDocument->FirstChildElement("FileZillaServer");
-	if (!pElement) {
-		delete pDocument;
-		return NULL;
-	}
-
+	
 	// Must call FreeXML
 	m_mutex.lock();
-
-	return pElement;
+	
+	return pFile;
 }
 
-BOOL COptions::FreeXML(TiXmlElement *pXML, bool save)
+bool COptions::FreeXML(XML::file *pXML, bool save)
 {
 	ASSERT(pXML);
-	if (!pXML)
-		return FALSE;
+	if (!pXML) {
+		return false;
+	}
 
 	simple_lock lock(m_mutex);
 
 	// As locked by GetXML
 	m_mutex.unlock();
 
-	if (!save) {
-		delete pXML->GetDocument();
-		return FALSE;
+	bool ret = true;
+	if (save) {
+		std::wstring const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+		ret = XML::Save(pXML->document, xmlFileName);
 	}
-
-	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-	bool ret = XML::Save(*pXML, xmlFileName);
-
-	delete pXML->GetDocument();
+	delete pXML;
 
 	return ret;
 }
@@ -920,13 +849,13 @@ bool COptions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 		switch (m_Options[i].nType) {
 		case 0:
 			{
-				CStdString str = GetOption(i+1);
+				std::wstring str = GetOption(i+1);
 				if ((i+1) == OPTION_ADMINPASS) //Do NOT send admin password,
 											 //instead send empty string if admin pass is set
 											 //and send a single char if admin pass is invalid (len < 6)
 				{
-					if (str.GetLength() >= 6 || str == _T("")) {
-						str = _T("");
+					if (str.size() >= 6 || str.empty()) {
+						str.clear();
 					}
 					else {
 						str = _T("*");
@@ -951,7 +880,7 @@ bool COptions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 			}
 			break;
 		default:
-			ASSERT(FALSE);
+			ASSERT(false);
 		}
 	}
 
@@ -965,32 +894,32 @@ bool COptions::GetAsCommand(unsigned char **pBuffer, DWORD *nBufferLength)
 
 	*nBufferLength = len;
 
-	return TRUE;
+	return true;
 }
 
-BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOOL bFromLocal)
+bool COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, bool bFromLocal)
 {
 	unsigned char *p = pData;
 	int num = *p * 256 + p[1];
 	p+=2;
 	if (num != OPTIONS_NUM) {
-		return FALSE;
+		return false;
 	}
 
 	int i;
 	for (i = 0; i < num; ++i) {
 		if ((DWORD)(p - pData) >= dwDataLength) {
-			return FALSE;
+			return false;
 		}
 		int nType = *p++;
 		if (!nType) {
 			if ((DWORD)(p - pData + 3) >= dwDataLength) {
-				return 2;
+				return false;
 			}
 			int len = *p * 256 * 256 + p[1] * 256 + p[2];
 			p += 3;
 			if ((DWORD)(p - pData + len) > dwDataLength) {
-				return FALSE;
+				return false;
 			}
 			char *pBuffer = new char[len + 1];
 			memcpy(pBuffer, p, len);
@@ -1003,7 +932,7 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 		}
 		else if (nType == 1) {
 			if ((DWORD)(p - pData + 8) > dwDataLength) {
-				return FALSE;
+				return false;
 			}
 			if (!m_Options[i].bOnlyLocal || bFromLocal) { //Do not change admin interface settings from remote connections				
 				SetOption(i + 1, GET64(p), false);
@@ -1011,15 +940,16 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 			p += 8;
 		}
 		else {
-			return FALSE;
+			return false;
 		}
 	}
 
 	SPEEDLIMITSLIST dl;
 	SPEEDLIMITSLIST ul;
 
-	if ((DWORD)(p-pData+2)>dwDataLength)
-		return FALSE;
+	if ((DWORD)(p - pData + 2) > dwDataLength) {
+		return false;
+	}
 	num = *p++ << 8;
 	num |= *p++;
 
@@ -1029,22 +959,21 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 		CSpeedLimit limit;
 		p = limit.ParseBuffer(p, dwDataLength - (p - pData));
 		if (!p) {
-			return FALSE;
+			return false;
 		}
 		dl.push_back(limit);
 	}
 
 	if ((DWORD)(p-pData+2)>dwDataLength) {
-		return FALSE;
+		return false;
 	}
 	num = *p++ << 8;
 	num |= *p++;
-	for (i=0; i<num; i++)
-	{
+	for (i=0; i<num; ++i) {
 		CSpeedLimit limit;
 		p = limit.ParseBuffer(p, dwDataLength - (p - pData));
 		if (!p) {
-			return FALSE;
+			return false;
 		}
 		ul.push_back(limit);
 	}
@@ -1056,75 +985,53 @@ BOOL COptions::ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOO
 
 	UpdateInstances();
 
-	return TRUE;
+	return true;
 }
 
-static void SetText(TiXmlElement* pElement, const CStdString& text)
+bool COptions::SaveSpeedLimits(pugi::xml_node & settings)
 {
-	pElement->Clear();
-	pElement->LinkEndChild(new TiXmlText(fz::to_utf8(text).c_str()));
-}
+	do {} while (settings.remove_child("SpeedLimits"));
 
-BOOL COptions::SaveSpeedLimits(TiXmlElement* pSettings)
-{
-	TiXmlElement* pSpeedLimits;
-	while ((pSpeedLimits = pSettings->FirstChildElement("SpeedLimits")))
-		pSettings->RemoveChild(pSpeedLimits);
-
-	pSpeedLimits = pSettings->LinkEndChild(new TiXmlElement("SpeedLimits"))->ToElement();
+	auto speedLimits = settings.append_child("SpeedLimits");
 
 	const char* names[] = { "Download", "Upload" };
 
-	for (int i = 0; i < 2; i++)
-	{
-		TiXmlElement* pSpeedLimit = new TiXmlElement(names[i]);
-		pSpeedLimits->LinkEndChild(pSpeedLimit);
+	for (int i = 0; i < 2; ++i) {
+		auto direction = speedLimits.append_child(names[i]);
 
-		for (unsigned int j = 0; j < m_sSpeedLimits[i].size(); j++)
-		{
+		for (unsigned int j = 0; j < m_sSpeedLimits[i].size(); ++j) {
 			CSpeedLimit limit = m_sSpeedLimits[i][j];
 
-			TiXmlElement* pRule = pSpeedLimit->LinkEndChild(new TiXmlElement("Rule"))->ToElement();
-			limit.Save(pRule);
+			auto rule = direction.append_child("Rule");
+			limit.Save(rule);
 		}
 	}
 
-	return TRUE;
+	return true;
 }
 
-CStdString ReadText(TiXmlElement* pElement)
-{
-	TiXmlNode* textNode = pElement->FirstChild();
-	if (!textNode || !textNode->ToText())
-		return _T("");
-
-	return ConvFromNetwork(textNode->Value());
-}
-
-BOOL COptions::ReadSpeedLimits(TiXmlElement *pXML)
+bool COptions::ReadSpeedLimits(pugi::xml_node const& settings)
 {
 	const char* names[] = { "Download", "Upload" };
 
-	for (int i = 0; i < 2; i++)
-	{
-		for (TiXmlElement* pSpeedLimits = pXML->FirstChildElement("SpeedLimits"); pSpeedLimits; pSpeedLimits = pSpeedLimits->NextSiblingElement("SpeedLimits"))
-		{
-			for (TiXmlElement* pLimit = pSpeedLimits->FirstChildElement(names[i]); pLimit; pLimit = pLimit->NextSiblingElement(names[i]))
-			{
-				for (TiXmlElement* pRule = pLimit->FirstChildElement("Rule"); pRule; pRule = pRule->NextSiblingElement("Rule"))
-				{
-					CSpeedLimit limit;
-					if (!limit.Load(pRule))
-						continue;
+	auto speedLimits = settings.child("SpeedLimits");
 
-					if (m_sSpeedLimits[i].size() < 20000)
-						m_sSpeedLimits[i].push_back(limit);
-				}
+	for (int i = 0; i < 2; ++i) {
+		auto direction = speedLimits.child(names[i]);
+
+		for (auto rule = direction.child("Rule"); rule; rule = rule.next_sibling("Rule")) {
+			CSpeedLimit limit;
+			if (!limit.Load(rule)) {
+				continue;
+			}
+
+			if (m_sSpeedLimits[i].size() < 20000) {
+				m_sSpeedLimits[i].push_back(limit);
 			}
 		}
 	}
 
-	return TRUE;
+	return true;
 }
 
 int COptions::GetCurrentSpeedLimit(int nMode)
@@ -1145,9 +1052,11 @@ int COptions::GetCurrentSpeedLimit(int nMode)
 		{
 			SYSTEMTIME s;
 			GetLocalTime(&s);
-			for (SPEEDLIMITSLIST::const_iterator iter = m_SpeedLimits[nMode].begin(); iter != m_SpeedLimits[nMode].end(); iter++)
-				if (iter->IsItActive(s))
+			for (SPEEDLIMITSLIST::const_iterator iter = m_SpeedLimits[nMode].begin(); iter != m_SpeedLimits[nMode].end(); ++iter) {
+				if (iter->IsItActive(s)) {
 					return iter->m_Speed;
+				}
+			}
 			return -1;
 		}
 	}
@@ -1155,125 +1064,39 @@ int COptions::GetCurrentSpeedLimit(int nMode)
 
 void COptions::ReloadConfig()
 {
-	simple_lock lock(m_mutex);
-
-	m_bInitialized = TRUE;
-
-	for (int i = 0; i < OPTIONS_NUM; i++)
-		m_sOptionsCache[i].bCached = FALSE;
-
-	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
-
-	TiXmlDocument document;
-
-	WIN32_FILE_ATTRIBUTE_DATA status{};
-	if (!GetStatus64(xmlFileName, status) ) {
-		document.LinkEndChild(new TiXmlElement("FileZillaServer"));
-		XML::Save(document, xmlFileName);
-	}
-	else if (status.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-		return;
-	}
-
-	if (!XML::Load(document, xmlFileName)) {
-		return;
-	}
-
-	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot) {
-		return;
-	}
-
-	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
-	if (!pSettings)
-		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
-
-	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
-		const char* pName = pItem->Attribute("name");
-		if (!pName) {
-			continue;
-		}
-		std::string name(pName);
-		const char* pType = pItem->Attribute("type");
-		if (!pType) {
-			continue;
-		}
-		CStdString type(pType);
-		TiXmlNode* textNode = pItem->FirstChild();
-		if (!textNode || !textNode->ToText()) {
-			continue;
-		}
-		CStdString value = ConvFromNetwork(textNode->Value());
-
-
-		for (int i = 0; i < OPTIONS_NUM; ++i) {
-			if (name != m_Options[i].name) {
-				continue;
-			}
-			if (m_sOptionsCache[i].bCached) {
-				break;
-			}
-			if (type == _T("numeric")) {
-				if (m_Options[i].nType != 1)
-					break;
-				_int64 value64 = _ttoi64(value);
-				if (IsNumeric(value))
-					SetOption(i + 1, value64, false);
-			}
-			else {
-				if (m_Options[i].nType != 0)
-					break;
-				SetOption(i  +1, value, false);
-			}
-			break;
-		}
-	}
-	ReadSpeedLimits(pSettings);
-
-	UpdateInstances();
+	Init(true);
 }
 
 void COptions::SaveOptions()
 {
-	CStdString const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
+	std::wstring const xmlFileName = GetExecutableDirectory() + _T("FileZilla Server.xml");
 
-	TiXmlDocument document;
-	if (!XML::Load(document, xmlFileName)) {
+	XML::file file = XML::Load(xmlFileName);
+	if (!file) {
 		return;
 	}
 
-	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot) {
-		return;
-	}
-
-	TiXmlElement* pSettings;
-	while ((pSettings = pRoot->FirstChildElement("Settings"))) {
-		pRoot->RemoveChild(pSettings);
-	}
-	pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
+	do {} while (file.root.remove_child("SpeedLimits"));
+	auto settings = file.root.append_child("Settings");
 
 	for (unsigned int i = 0; i < OPTIONS_NUM; ++i) {
-		if (!m_OptionsCache[i].bCached)
+		if (!m_OptionsCache[i].bCached) {
 			continue;
+		}
 
-		CStdString valuestr;
-		if (!m_OptionsCache[i].nType)
-			valuestr = m_OptionsCache[i].str;
-		else
-			valuestr.Format( _T("%I64d"), m_OptionsCache[i].value);
+		std::string valuestr;
+		if (!m_Options[i].nType) {
+			valuestr = fz::to_utf8(m_OptionsCache[i].str);
+		}
+		else {
+			valuestr = fz::to_string(m_OptionsCache[i].value);
+		}
 
-		TiXmlElement* pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
-		pItem->SetAttribute("name", fz::to_utf8(m_Options[i].name).c_str());
-		if (!m_OptionsCache[i].nType)
-			pItem->SetAttribute("type", "string");
-		else
-			pItem->SetAttribute("type", "numeric");
-		pItem->LinkEndChild(new TiXmlText(fz::to_utf8(valuestr).c_str()));
+		auto item = settings.append_child("Item");
+		item.append_attribute("name").set_value(m_Options[i].name);
 	}
 
-	SaveSpeedLimits(pSettings);
+	SaveSpeedLimits(settings);
 
-	XML::Save(document, xmlFileName);
+	XML::Save(file.document, xmlFileName);
 }

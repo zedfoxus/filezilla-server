@@ -1,6 +1,6 @@
 // FileZilla Server - a Windows ftp server
 
-// Copyright (C) 2002-2016 - Tim Kosse <tim.kosse@filezilla-project.org>
+// Copyright (C) 2002-2018 - Tim Kosse <tim.kosse@filezilla-project.org>
 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -16,19 +16,22 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#if !defined(AFX_OPTIONS_H__3E60F2D3_99F3_4271_92A3_2CF71AF62731__INCLUDED_)
-#define AFX_OPTIONS_H__3E60F2D3_99F3_4271_92A3_2CF71AF62731__INCLUDED_
-
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
+#ifndef FILEZILLA_SERVER_SERVICE_OPTIONS_HEADER
+#define FILEZILLA_SERVER_SERVICE_OPTIONS_HEADER
 
 #include "OptionTypes.h"
 #include "SpeedLimit.h"
 
-#include <list>
+#include <Vector>
 
-class TiXmlElement;
+namespace pugi {
+class xml_node;
+}
+
+namespace XML {
+class file;
+}
+
 class COptionsHelperWindow;
 class COptions final
 {
@@ -42,45 +45,39 @@ public:
 	COptions();
 	~COptions();
 
-	static TiXmlElement *GetXML();
-	static BOOL FreeXML(TiXmlElement *pXML, bool save);
+	static XML::file *GetXML();
+	static bool FreeXML(XML::file *pXML, bool save);
 
-	BOOL ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, BOOL bFromLocal = FALSE);
+	bool ParseOptionsCommand(unsigned char *pData, DWORD dwDataLength, bool bFromLocal = false);
 	void SetOption(int nOptionID, std::wstring str, bool save = true);
-	void SetOption(int nOptionID, _int64 value, bool save = true);
+	void SetOption(int nOptionID, int64_t value, bool save = true);
 	int GetCurrentSpeedLimit(int nMode);
 	void ReloadConfig();
 
 protected:
 	static std::recursive_mutex m_mutex;
-	static std::list<COptions *> m_InstanceList;
-	static bool IsNumeric(LPCTSTR str);
+	static std::vector<COptions *> m_InstanceList;
 
 	void SaveOptions();
 
-	BOOL ReadSpeedLimits(TiXmlElement *pXML);
-	BOOL SaveSpeedLimits(TiXmlElement* pSettings);
+	bool ReadSpeedLimits(pugi::xml_node const& settings);
+	bool SaveSpeedLimits(pugi::xml_node & settings);
 
 	static SPEEDLIMITSLIST m_sSpeedLimits[2];
 	SPEEDLIMITSLIST m_SpeedLimits[2];
 
 	struct t_OptionsCache {
-		BOOL bCached;
-		int nType;
-		CStdString str;
-		_int64 value;
+		bool bCached;
+		std::wstring str;
+		int64_t value;
 	} m_OptionsCache[OPTIONS_NUM];
 	static t_OptionsCache m_sOptionsCache[OPTIONS_NUM];
 
-	void Init();
-	static BOOL m_bInitialized;
+	void Init(bool reload = false);
+	static bool m_bInitialized;
 
 	static void UpdateInstances();
-	COptionsHelperWindow *m_pOptionsHelperWindow;
+	COptionsHelperWindow *m_pOptionsHelperWindow{};
 };
 
-
-//{{AFX_INSERT_LOCATION}}
-// Microsoft Visual C++ fügt unmittelbar vor der vorhergehenden Zeile zusätzliche Deklarationen ein.
-
-#endif // AFX_OPTIONS_H__3E60F2D3_99F3_4271_92A3_2CF71AF62731__INCLUDED_
+#endif

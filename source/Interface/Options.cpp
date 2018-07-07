@@ -16,66 +16,42 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-// Options.cpp: Implementierungsdatei
-//
-
 #include "stdafx.h"
 #include "options.h"
 #include "../version.h"
 #include "filezilla server.h"
-#include "../tinyxml/tinyxml.h"
 #include "../xml_utils.h"
 
 #include <libfilezilla/string.hpp>
 
-BOOL COptions::m_bInitialized = FALSE;
-
-namespace {
-TiXmlElement* GetSettings(TiXmlDocument& document)
-{
-	TiXmlElement* pRoot = document.FirstChildElement("FileZillaServer");
-	if (!pRoot) {
-		if (document.FirstChildElement()) {
-			return 0;
-		}
-		pRoot = document.LinkEndChild(new TiXmlElement("FileZillaServer"))->ToElement();
-	}
-
-	TiXmlElement* pSettings = pRoot->FirstChildElement("Settings");
-	if (!pSettings)
-		pSettings = pRoot->LinkEndChild(new TiXmlElement("Settings"))->ToElement();
-
-	return pSettings;
-}
-}
+bool COptions::m_bInitialized = false;
 
 /////////////////////////////////////////////////////////////////////////////
 // Dialogfeld COptions
 
 struct t_Option final
 {
-	TCHAR name[30];
+	std::string name;
 	int nType;
 };
 
 static const t_Option m_Options[IOPTIONS_NUM] = {
-	{ _T("Start Minimized"),        1 },
-	{ _T("Last Server Address"),    0 },
-	{ _T("Last Server Port"),       1 },
-	{ _T("Last Server Password"),   0 },
-	{ _T("Always use last server"), 1 },
-	{ _T("User Sorting"),           1 },
-	{ _T("Filename Display"),       1 },
-	{ _T("Max reconnect count"),    1 },
+	{ "Start Minimized",        1 },
+	{ "Last Server Address",    0 },
+	{ "Last Server Port",       1 },
+	{ "Last Server Password",   0 },
+	{ "Always use last server", 1 },
+	{ "User Sorting",           1 },
+	{ "Filename Display",       1 },
+	{ "Max reconnect count",    1 },
 };
 
-void COptions::SetOption(int nOptionID, __int64 value)
+void COptions::SetOption(int nOptionID, int64_t value)
 {
 	Init();
 
-	m_OptionsCache[nOptionID - 1].bCached = TRUE;
-	m_OptionsCache[nOptionID - 1].nType = 1;
-	m_OptionsCache[nOptionID - 1].value = value;
+	m_OptionsCache[nOptionID].bCached = true;
+	m_OptionsCache[nOptionID].value = value;
 
 	SaveOption(nOptionID, fz::to_wstring(value));
 }
@@ -84,9 +60,8 @@ void COptions::SetOption(int nOptionID, std::wstring const& value)
 {
 	Init();
 
-	m_OptionsCache[nOptionID - 1].bCached = TRUE;
-	m_OptionsCache[nOptionID - 1].nType = 0;
-	m_OptionsCache[nOptionID - 1].str = value;
+	m_OptionsCache[nOptionID].bCached = true;
+	m_OptionsCache[nOptionID].str = value;
 
 	SaveOption(nOptionID, value);
 }
@@ -95,87 +70,79 @@ void COptions::SaveOption(int nOptionID, std::wstring const& value)
 {
 	std::wstring const file = GetFileName(true);
 
-	TiXmlDocument document;
-	XML::Load(document, file.c_str());
-
-	TiXmlElement* pSettings = GetSettings(document);
-	if (!pSettings) {
+	XML::file xml = XML::Load(file);
+	if (!xml) {
 		return;
 	}
 
-	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
-		const char* pName = pItem->Attribute("name");
-		if (!pName) {
-			continue;
-		}
-		CString name(pName);
-		if (name != m_Options[nOptionID - 1].name) {
-			continue;
-		}
-
-		break;
+	auto settings = xml.root.child("Settings");
+	if (!settings) {
+		settings = xml.root.append_child("Settings");
 	}
 
-	if (!pItem) {
-		pItem = pSettings->LinkEndChild(new TiXmlElement("Item"))->ToElement();
+	pugi::xml_node item;
+	for (item = settings.child("Item"); item; item = item.next_sibling("Item")) {
+		if (item.attribute("name").value() == m_Options[nOptionID].name) {
+			break;
+		}
 	}
-	pItem->Clear();
-	pItem->SetAttribute("name", fz::to_utf8(m_Options[nOptionID - 1].name).c_str());
-	pItem->SetAttribute("type", m_OptionsCache[nOptionID - 1].nType ? "numeric" : "string");
-	pItem->LinkEndChild(new TiXmlText(fz::to_utf8(value).c_str()));
 
-	XML::Save(document, file.c_str());
+	if (!item) {
+		item = settings.append_child("Item");
+		item.append_attribute("name").set_value(m_Options[nOptionID].name.c_str());
+	}
+
+	item.text().set(fz::to_utf8(value).c_str());
+
+	xml.document.save_file(file.c_str());
 }
 
 std::wstring COptions::GetOption(int nOptionID)
 {
-	ASSERT(nOptionID > 0 && nOptionID <= IOPTIONS_NUM);
-	ASSERT(!m_Options[nOptionID - 1].nType);
+	ASSERT(nOptionID >= 0 && nOptionID < IOPTIONS_NUM);
+	ASSERT(!m_Options[nOptionID].nType);
 	Init();
 
-	if (m_OptionsCache[nOptionID - 1].bCached) {
-		return m_OptionsCache[nOptionID - 1].str;
+	if (m_OptionsCache[nOptionID].bCached) {
+		return m_OptionsCache[nOptionID].str;
 	}
 
 	//Verification
 	switch (nOptionID)
 	{
 	case IOPTION_LASTSERVERADDRESS:
-		m_OptionsCache[nOptionID - 1].str = _T("localhost");
+		m_OptionsCache[nOptionID].str = _T("localhost");
 		break;
 	default:
-		m_OptionsCache[nOptionID - 1].str.clear();
+		m_OptionsCache[nOptionID].str.clear();
 		break;
 	}
-	m_OptionsCache[nOptionID - 1].bCached = TRUE;
-	m_OptionsCache[nOptionID - 1].nType = 0;
-	return m_OptionsCache[nOptionID - 1].str;
+	m_OptionsCache[nOptionID].bCached = true;
+	return m_OptionsCache[nOptionID].str;
 }
 
 __int64 COptions::GetOptionVal(int nOptionID)
 {
-	ASSERT(nOptionID>0 && nOptionID<=IOPTIONS_NUM);
-	ASSERT(m_Options[nOptionID - 1].nType == 1);
+	ASSERT(nOptionID >= 0 && nOptionID < IOPTIONS_NUM);
+	ASSERT(m_Options[nOptionID].nType == 1);
 	Init();
 
-	if (m_OptionsCache[nOptionID - 1].bCached) {
-		return m_OptionsCache[nOptionID - 1].value;
+	if (m_OptionsCache[nOptionID].bCached) {
+		return m_OptionsCache[nOptionID].value;
 	}
 
 	switch (nOptionID) {
 	case IOPTION_LASTSERVERPORT:
-		m_OptionsCache[nOptionID - 1].value = 14147;
+		m_OptionsCache[nOptionID].value = 14147;
 		break;
 	case IOPTION_RECONNECTCOUNT:
-		m_OptionsCache[nOptionID - 1].value = 15;
+		m_OptionsCache[nOptionID].value = 15;
 		break;
 	default:
-		m_OptionsCache[nOptionID - 1].value = 0;
+		m_OptionsCache[nOptionID].value = 0;
 	}
-	m_OptionsCache[nOptionID - 1].bCached = TRUE;
-	m_OptionsCache[nOptionID - 1].nType = 0;
-	return m_OptionsCache[nOptionID - 1].value;
+	m_OptionsCache[nOptionID].bCached = TRUE;
+	return m_OptionsCache[nOptionID].value;
 }
 
 std::wstring COptions::GetFileName(bool for_saving)
@@ -224,39 +191,28 @@ void COptions::Init()
 	if (m_bInitialized) {
 		return;
 	}
-	m_bInitialized = TRUE;
+	m_bInitialized = true;
 		
 	for (int i = 0; i < IOPTIONS_NUM; ++i) {
-		m_OptionsCache[i].bCached = FALSE;
+		m_OptionsCache[i].bCached = false;
 	}
 
-	TiXmlDocument document;
-	if (!XML::Load(document, GetFileName(false).c_str())) {
+	std::wstring file = GetFileName(false).c_str();
+	XML::file xml = XML::Load(file);
+	if (!xml) {
 		return;
 	}
 
-	TiXmlElement* pSettings = GetSettings(document);
-	if (!pSettings) {
+	auto settings = xml.root.child("Settings");
+	if (!settings) {
 		return;
 	}
 
-	TiXmlElement* pItem;
-	for (pItem = pSettings->FirstChildElement("Item"); pItem; pItem = pItem->NextSiblingElement("Item")) {
-		const char* pName = pItem->Attribute("name");
-		if (!pName) {
+	for (auto item = settings.child("Item"); item; item = item.next_sibling("Item")) {
+		std::string name = item.attribute("name").value();
+		if (name.empty()) {
 			continue;
 		}
-		CString name(pName);
-		const char* pType = pItem->Attribute("type");
-		if (!pType) {
-			continue;
-		}
-		CString type(pType);
-		TiXmlNode* textNode = pItem->FirstChild();
-		if (!textNode || !textNode->ToText()) {
-			continue;
-		}
-		std::wstring value = ConvFromNetwork(textNode->Value());
 
 		for (int i = 0; i < IOPTIONS_NUM; ++i) {
 			if (name != m_Options[i].name) {
@@ -266,55 +222,25 @@ void COptions::Init()
 			if (m_OptionsCache[i].bCached) {
 				break;
 			}
+			m_OptionsCache[i].bCached = true;
 
-			if (type == "numeric") {
-				if (m_Options[i].nType != 1) {
-					break;
-				}
-				m_OptionsCache[i].bCached = TRUE;
-				m_OptionsCache[i].nType = 1;
-				_int64 value64 = _ttoi64(value.c_str());
+			if (m_Options[i].nType == 1) {
+				m_OptionsCache[i].value = item.text().as_llong();
 
-				switch (i + 1)
+				switch (i)
 				{
 				case IOPTION_LASTSERVERPORT:
-					if (value64 < 1 || value64 > 65535) {
-						value64 = 14147;
+					if (m_OptionsCache[i].value < 1 || m_OptionsCache[i].value > 65535) {
+						m_OptionsCache[i].value = 14147;
 					}
 					break;
 				default:
 					break;
 				}
-
-				m_OptionsCache[i].value = value64;
 			}
 			else {
-				if (type != "string")
-					::AfxTrace( _T("Unknown option type '%s' for item '%s', assuming string\n"), type, name);
-				if (m_Options[i].nType != 0)
-				{
-					::AfxTrace( _T("Type mismatch for option '%s'. Type is %d, should be %d"), name, m_Options[i].nType, 0);
-					break;
-				}
-				m_OptionsCache[i].bCached = TRUE;
-				m_OptionsCache[i].nType = 0;
-
-				m_OptionsCache[i].str = value;
+				m_OptionsCache[i].str = fz::to_wstring_from_utf8(item.child_value());
 			}
 		}
 	}
-}
-
-bool COptions::IsNumeric(LPCTSTR str)
-{
-	if (!str)
-		return false;
-	LPCTSTR p = str;
-	while (*p) {
-		if (*p < '0' || *p > '9') {
-			return false;
-		}
-		p++;
-	}
-	return true;
 }

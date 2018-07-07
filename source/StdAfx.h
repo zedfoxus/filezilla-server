@@ -41,7 +41,10 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 #include <vector>
+
+using namespace std::literals::string_literals;
 
 #include "conversion.h"
 

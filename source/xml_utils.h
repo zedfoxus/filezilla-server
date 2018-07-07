@@ -1,19 +1,26 @@
-#ifndef __XML_UTILS_H__
-#define __XML_UTILS_H__
+#ifndef FILEZILLA_SERVER_XML_UTILS_HEADER
+#define FILEZILLA_SERVER_XML_UTILS_HEADER
 
-class TiXmlDocument;
-class TiXmlElement;
-class TiXmlNode;
+#include "pugixml/pugixml.hpp"
 
 namespace XML
 {
 
-std::wstring ReadText(TiXmlElement* pElement);
-void SetText(TiXmlElement* pElement, std::wstring const& text);
+class file
+{
+public:
+	pugi::xml_document document;
+	pugi::xml_node root;
 
-bool Load(TiXmlDocument & document, CStdString const& file);
-bool Save(TiXmlNode & element, CStdString const& file);
+	explicit operator bool() const {
+		return document.first_child();
+	}
+};
+
+file Load(std::wstring const& fn);
+bool Save(pugi::xml_document const& document, std::wstring const& fn);
 
 }
+
 
 #endif

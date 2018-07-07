@@ -538,7 +538,7 @@ void CControlSocket::ParseCommand()
 			m_status.username = args;
 			UpdateUser();
 			if (!m_pSslLayer) {
-				if (m_owner.m_pPermissions->CheckUserLogin(m_status.user, _T(""), true) && m_status.user.ForceSsl()) {
+				if (m_owner.m_pPermissions->CheckUserLogin(m_status.user, std::wstring(), true) && m_status.user.ForceSsl()) {
 					m_status.username.clear();
 					UpdateUser();
 					Send(_T("530 TLS required"));
@@ -551,10 +551,12 @@ void CControlSocket::ParseCommand()
 	case commands::PASS:
 		AntiHammerIncrease();
 
-		if (m_status.loggedon)
+		if (m_status.loggedon) {
 			Send(_T("503 Bad sequence of commands."));
-		else if (DoUserLogin(args))
+		}
+		else if (DoUserLogin(args)) {
 			Send(_T("230 Logged on"));
+		}
 		break;
 	case commands::QUIT:
 		m_bQuitCommand = true;
@@ -809,10 +811,10 @@ void CControlSocket::ParseCommand()
 			}
 
 			CPermissions::addFunc_t addFunc = CPermissions::AddFactsListingEntry;
-			if( cmd.id == commands::LIST ) {
+			if (cmd.id == commands::LIST) {
 				addFunc = CPermissions::AddLongListingEntry;
 			}
-			else if( cmd.id == commands::NLST ) {
+			else if (cmd.id == commands::NLST) {
 				addFunc = CPermissions::AddShortListingEntry;
 			}
 
@@ -2276,7 +2278,7 @@ void CControlSocket::OnSend(int nErrorCode)
 	}
 }
 
-BOOL CControlSocket::DoUserLogin(LPCTSTR password)
+BOOL CControlSocket::DoUserLogin(std::wstring const& password)
 {
 	if (!m_owner.m_pPermissions->CheckUserLogin(m_status.user, password, false)) {
 		AntiHammerIncrease(2);

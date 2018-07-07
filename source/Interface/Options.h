@@ -19,14 +19,14 @@
 #ifndef FILEZILLA_SERVER_INTERFACE_OPTIONS_HEADER
 #define FILEZILLA_SERVER_INTERFACE_OPTIONS_HEADER
 
-#define IOPTION_STARTMINIMIZED 1
-#define IOPTION_LASTSERVERADDRESS 2
-#define IOPTION_LASTSERVERPORT 3
-#define IOPTION_LASTSERVERPASS 4
-#define IOPTION_ALWAYS 5
-#define IOPTION_USERSORTING 6
-#define IOPTION_FILENAMEDISPLAY 7
-#define IOPTION_RECONNECTCOUNT 8
+#define IOPTION_STARTMINIMIZED 0
+#define IOPTION_LASTSERVERADDRESS 1
+#define IOPTION_LASTSERVERPORT 2
+#define IOPTION_LASTSERVERPASS 3
+#define IOPTION_ALWAYS 4
+#define IOPTION_USERSORTING 5
+#define IOPTION_FILENAMEDISPLAY 6
+#define IOPTION_RECONNECTCOUNT 7
 
 #define IOPTIONS_NUM 8
 
@@ -39,25 +39,22 @@ public:
 	std::wstring GetOption(int nOptionID);
 	__int64 GetOptionVal(int nOptionID);
 	void SetOption(int nOptionID, std::wstring const& value);
-	void SetOption(int nOptionID, __int64 value);
+	void SetOption(int nOptionID, int64_t value);
 
 protected:
 	std::wstring GetFileName(bool for_saving);
 
 	void SaveOption(int nOptionID, std::wstring const& value);
 
-	static bool IsNumeric(LPCTSTR str);
-
 	struct t_OptionsCache final
 	{
-		BOOL bCached{};
+		bool bCached{};
 		CTime createtime;
-		int nType{};
 		std::wstring str;
-		_int64 value{};
+		int64_t value{};
 	} m_OptionsCache[IOPTIONS_NUM];
 	void Init();
-	static BOOL m_bInitialized;
+	static bool m_bInitialized;
 };
 
 #endif
